@@ -65,6 +65,68 @@ var defaultFonts = {
     }
 }
 
+var propsHash = {
+
+    //general
+    "visible":18,
+    "opacity":27,
+    "r":5,
+    "g":6,
+    "b":7,
+    "texid":8,
+    "w":10,
+    "h":11,
+    "x":21,
+    "y":22,
+
+    //transforms  (use x and y for translate in X and Y)
+    "scalex":2,
+    "scaley":3,
+    "rotateZ":4,
+    "rotateX":19,
+    "rotateY":20,
+
+    //text
+    "text":9,
+    "fontSize":12,
+    "fontId":28,
+
+    //animation
+    "count":29,
+    "lerplinear":13,
+    "lerpcubicin":14,
+    "lerpcubicout":15,
+    "lerpprop":16,
+    "lerpcubicinout":17,
+    "autoreverse":35,
+
+
+    //geometry
+    "geometry":24,
+    "filled":25,
+    "closed":26,
+    "dimension": 36,
+
+    //rectangle texture
+    "textureLeft":  30,
+    "textureRight": 31,
+    "textureTop":   32,
+    "textureBottom":33,
+
+    //clipping
+    "cliprect": 34
+
+
+};
+
+var remap = {
+    'x':'tx',
+    'y':'ty',
+    'rx':'rotateX',
+    'ry':'rotateY',
+    'rz':'rotateZ'
+};
+
 function JSFont(desc) {
     this.name = desc.name;
     var reg = desc.weights[400];
@@ -121,59 +183,49 @@ function JSFont(desc) {
     }
 }
 
-var propsHash = {
+function JSPropAnim(target,name) {
+    this._from = null;
+    this._to = null;
+    this._duration = 1000;
+    this._loop = 1;
+    this._delay = 0;
+    this._autoreverse = 0;
+    if(remap[name]) {
+        name = remap[name];
+    }
+    this._then_fun = null;
 
-    //general
-    "visible":18,
-    "opacity":27,
-    "r":5,
-    "g":6,
-    "b":7,
-    "texid":8,
-    "w":10,
-    "h":11,
-    "x":21,
-    "y":22,
+    this.from = function(val) {  this._from = val;        return this;  }
+    this.to   = function(val) {  this._to = val;          return this;  }
+    this.dur  = function(val) {  this._duration = val;    return this;  }
+    this.delay= function(val) {  this._delay = val;       return this;  }
+    this.loop = function(val) {  this._loop = val;        return this;  }
+    this.then = function(fun) {  this._then_fun = fun;    return this;  }
+    this.autoreverse = function(val) { this._autoreverse = val?1:0; return this;  }
 
-    //transforms  (use x and y for translate in X and Y)
-    "scalex":2,
-    "scaley":3,
-    "rotateZ":4,
-    "rotateX":19,
-    "rotateY":20,
+    this.start = function() {
+        var self = this;
+        setTimeout(function(){
+            var nat = Core.getCore().getNative();
+            self.handle = nat.createAnim(target.handle, name, self._from,self._to,self._duration);
+            nat.updateAnimProperty(self.handle, 'count', self._loop);
+            nat.updateAnimProperty(self.handle, 'autoreverse', self._autoreverse);
+            nat.updateAnimProperty(self.handle, 'lerpprop', 17); //17 is cubic in out
+            Core.getCore().anims.push(self);
+        },this._delay);
+        return this;
+    }
 
-    //text
-    "text":9,
-    "fontSize":12,
-    "fontId":28,
-
-    //animation
-    "count":29,
-    "lerplinear":13,
-    "lerpcubicin":14,
-    "lerpcubicout":15,
-    "lerpprop":16,
-    "lerpcubicinout":17,
-    "autoreverse":35,
-
-
-    //geometry
-    "geometry":24,
-    "filled":25,
-    "closed":26,
-    "dimension": 36,
-
-    //rectangle texture
-    "textureLeft":  30,
-    "textureRight": 31,
-    "textureTop":   32,
-    "textureBottom":33,
-
-    //clipping
-    "cliprect": 34
+    this.finish = function() {
+        if(this._then_fun != null) {
+            this._then_fun();
+        }
+    }
 
 
-};
+}
+
+
 
 var gl_native = {
     createNativeFont: function(path) {
@@ -245,6 +297,24 @@ var gl_native = {
     removeNodeFromGroup: function(h1, h2) {
         sgtest.removeNodeFromGroup(h1, h2);
     },
+    loadImage: function(src, cb) {
+        var fbuf = fs.readFileSync(src);
+        function bufferToTexture(ibuf) {
+            Core.getCore().getNative().loadBufferToTexture(-1, ibuf.w, ibuf.h, ibuf.bpp, ibuf.buffer, function (texture) {
+                cb(texture);
+            });
+        }
+
+        if (src.toLowerCase().endsWith(".png")) {
+            Core.getCore().getNative().decodePngBuffer(fbuf, bufferToTexture);
+            return;
+        }
+        if (src.toLowerCase().endsWith(".jpg")) {
+            Core.getCore().getNative().decodeJpegBuffer(fbuf, bufferToTexture);
+            return;
+        }
+        console.log("ERROR! Invalid image",src);
+    },
     decodePngBuffer: function(fbuf, cb) {
         cb(sgtest.decodePngBuffer(fbuf));
     },
@@ -265,16 +335,14 @@ var gl_native = {
         };
     },
     createAnim: function(handle,prop,start,end,dur,count,rev) {
-        return amino.sgtest.createAnim(handle,propsHash[prop],start,end,dur,count,rev);
+        return sgtest.createAnim(handle,propsHash[prop],start,end,dur,count,rev);
+    },
+    createPropAnim: function(obj,name) {
+        return new JSPropAnim(obj,name);
     },
     updateAnimProperty: function(handle, prop, type) {
-        amino.sgtest.updateAnimProperty(handle, propsHash[prop], type);
+        sgtest.updateAnimProperty(handle, propsHash[prop], type);
     },
-
-    runTest: function(opts) {
-        return amino.sgtest.runTest(opts);
-    }
-
 }
 
 exports.input = amino_core.input;
@@ -303,11 +371,12 @@ exports.start = function(cb) {
 
 exports.makeProps = amino_core.makeProps;
 
-exports.Rect     = amino_core.Rect;
-exports.Group    = amino_core.Group;
-exports.Circle   = amino_core.Circle;
-exports.Polygon  = amino_core.Polygon;
-exports.Text     = amino_core.Text;
+exports.Rect      = amino_core.Rect;
+exports.Group     = amino_core.Group;
+exports.Circle    = amino_core.Circle;
+exports.Polygon   = amino_core.Polygon;
+exports.Text      = amino_core.Text;
+exports.ImageView = amino_core.ImageView;
 
 exports.input.init(OS);
 
@@ -319,7 +388,6 @@ exports.input.init(OS);
 //exports.getCore = amino.getCore;
 //exports.native = amino.native;
 //exports.PixelView = amino.primitives.PixelView;
-//exports.ImageView = amino.primitives.ImageView;
 //exports.RichTextView = amino.primitives.RichTextView;
 //exports.registerFont = amino.registerFont;
 

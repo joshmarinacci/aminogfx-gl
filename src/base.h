@@ -119,7 +119,6 @@ public:
         y = 0;
         scalex = 1;
         scaley = 1;
-        printf("scalex set to %f\n", scalex);
         rotatex = 0;
         rotatey = 0;
         rotatez = 0;
