@@ -168,7 +168,7 @@ public:
     std::wstring text;
     vertex_buffer_t * buffer;
     TextNode() {
-        r = 0; g = 0; b = 0;
+        r = 1.0; g = 1.0; b = 1.0;
         type = TEXT;
         text = L"foo";
         fontsize = 40;
@@ -716,12 +716,12 @@ inline static Handle<Value> decodePngBuffer(const Arguments& args) {
     }
 
     upng_decode(upng);
-    printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
-    printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
+    //printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
+    //printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
 
     image = upng_get_buffer(upng);
     lengthout = upng_get_size(upng);
-    printf("length of uncompressed buffer = %d\n", lengthout);
+    //printf("length of uncompressed buffer = %d\n", lengthout);
     Buffer *bufferout;
     bufferout = Buffer::New(lengthout);
     memcpy(Buffer::Data(bufferout), image, lengthout);
@@ -902,7 +902,7 @@ inline static Handle<Value> createNativeFont(const Arguments& args) {
     char* shader_base = TO_CHAR(args[1]);
 
     printf("loading font file %s\n",afont->filename);
-    printf("shader base = %s\n",shader_base);
+    //printf("shader base = %s\n",shader_base);
 
     std::string str ("");
     std::string str2 = str + shader_base;

@@ -214,10 +214,10 @@ void SimpleRenderer::drawPoly(GLContext* ctx, PolyNode* poly) {
 }
 void SimpleRenderer::drawRect(GLContext* c, Rect* rect) {
     c->save();
-    float x =  rect->x;
-    float y =  rect->y;
-    float x2 = rect->x+rect->w;
-    float y2 = rect->y+rect->h;
+    float x =  0;
+    float y =  0;
+    float x2 = rect->w;
+    float y2 = rect->h;
 
     GLfloat verts[6][2];
     verts[0][0] = x;

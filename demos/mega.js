@@ -51,11 +51,9 @@ exports.go = function(canvas) {
 		//press drag release a rect
 		function pressDragReleaseTest() {
 			var g = new amino.Group();
-			var t = new amino.Text().text("press to turn blue, then drag").x(20).y(20).fontSize(20)
-                //text should default to white!
-                .fill("#ffffff");
-			var r = new amino.Rect().w(40).h(40).fill("#00ff00")
-				.x(20).y(30);
+			var t = new amino.Text().text("press to turn blue, then drag").x(20).y(20).fontSize(20);
+            g.add(t);
+			var r = new amino.Rect().w(50).h(50).fill("#00ff00").x(50).y(50);
 			r.acceptsMouseEvents = true;
 			core.on('press',r,function() {
 				r.fill("#0000ff");
@@ -70,7 +68,6 @@ exports.go = function(canvas) {
 
 
 
-			g.add(t);
 			g.add(r);
 
 
@@ -78,9 +75,7 @@ exports.go = function(canvas) {
 			overlay.opacity(0.6);
 			overlay.acceptsMouseEvents = true;
 			g.add(overlay);
-			var tt = new amino.Text().text("mouse blocking overlay").x(20).y(100).fontSize(20)
-                    .fill("#ffffff")
-                ;
+			var tt = new amino.Text().text("mouse blocking overlay").x(20).y(100).fontSize(20);
 			g.add(tt);
 
 			g.x(250).y(20);

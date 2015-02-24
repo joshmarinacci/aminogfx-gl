@@ -228,17 +228,9 @@ function JSPropAnim(target,name) {
 
 
 var gl_native = {
-    createNativeFont: function(path) {
-        var shaderpath = __dirname+'/resources/shaders';
-        console.log("invoking native font. shader path = ",shaderpath);
-        return sgtest.createNativeFont(path,shaderpath);
-    },
-    registerFont:function(args) {
-        fontmap[args.name] = new JSFont(args);
-    },
-    init: function(core) {
-        sgtest.init();
-    },
+    createNativeFont: function(path) {  return sgtest.createNativeFont(path, __dirname+'/resources/shaders');  },
+    registerFont:function(args) { fontmap[args.name] = new JSFont(args); },
+    init: function(core) { return sgtest.init(); },
     startEventLoop : function() {
         console.log("starting the event loop");
         var self = this;
@@ -266,37 +258,27 @@ var gl_native = {
         this.updateProperty(this.rootWrapper, "scaley", core.DPIScale);
         sgtest.setRoot(this.rootWrapper);
     },
-    getFont: function(name) {
-        return fontmap[name];
-    },
+    getFont: function(name) { return fontmap[name]; },
     updateProperty: function(handle, name, value) {
         if(handle == undefined) throw new Error("Can't set a property on an undefined handle!!");
         //console.log('setting', name, propsHash[name], value, typeof value);
         sgtest.updateProperty(handle, propsHash[name], value);
     },
-    setRoot: function(handle) {
-        sgtest.addNodeToGroup(handle,this.rootWrapper);
-    },
+    setRoot: function(handle) { return  sgtest.addNodeToGroup(handle,this.rootWrapper);  },
     tick: function() {
         sgtest.tick();
     },
     setImmediate: function(loop) {
         setImmediate(loop);
     },
-    setEventCallback: function(cb) {
-        sgtest.setEventCallback(cb);
-    },
-    createRect: function()  {          return sgtest.createRect();    },
-    createGroup: function() {          return sgtest.createGroup();   },
-    createPoly: function()  {          return sgtest.createPoly();    },
-    createText: function() {           return sgtest.createText(); },
-    createGLNode: function(cb)  {      return sgtest.createGLNode(cb);  },
-    addNodeToGroup: function(h1,h2) {
-        sgtest.addNodeToGroup(h1,h2);
-    },
-    removeNodeFromGroup: function(h1, h2) {
-        sgtest.removeNodeFromGroup(h1, h2);
-    },
+    setEventCallback: function(cb) {   return sgtest.setEventCallback(cb);   },
+    createRect: function()  {          return sgtest.createRect();           },
+    createGroup: function() {          return sgtest.createGroup();          },
+    createPoly: function()  {          return sgtest.createPoly();           },
+    createText: function() {           return sgtest.createText();           },
+    createGLNode: function(cb)  {      return sgtest.createGLNode(cb);       },
+    addNodeToGroup: function(h1,h2) {  return sgtest.addNodeToGroup(h1,h2);  },
+    removeNodeFromGroup: function(h1, h2) { return sgtest.removeNodeFromGroup(h1, h2);  },
     loadImage: function(src, cb) {
         var fbuf = fs.readFileSync(src);
         function bufferToTexture(ibuf) {
@@ -315,16 +297,9 @@ var gl_native = {
         }
         console.log("ERROR! Invalid image",src);
     },
-    decodePngBuffer: function(fbuf, cb) {
-        cb(sgtest.decodePngBuffer(fbuf));
-    },
-    decodeJpegBuffer: function(fbuf, cb) {
-        cb(sgtest.decodeJpegBuffer(fbuf));
-    },
-    loadBufferToTexture: function(texid, w, h, bpp, buf, cb) {
-        var img = sgtest.loadBufferToTexture(texid, w,h, bpp, buf)
-        cb(img);
-    },
+    decodePngBuffer: function(fbuf, cb) {  return cb(sgtest.decodePngBuffer(fbuf));  },
+    decodeJpegBuffer: function(fbuf, cb) { return cb(sgtest.decodeJpegBuffer(fbuf)); },
+    loadBufferToTexture: function(texid, w, h, bpp, buf, cb) { return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf)); },
     setWindowSize: function(w,h) { sgtest.setWindowSize(w*Core.getCore().DPIScale,h*Core.getCore().DPIScale); },
     getWindowSize: function(w,h) {
         var dpi = Core.getCore().DPIScale;
@@ -334,15 +309,9 @@ var gl_native = {
             h: size.h/dpi
         };
     },
-    createAnim: function(handle,prop,start,end,dur,count,rev) {
-        return sgtest.createAnim(handle,propsHash[prop],start,end,dur,count,rev);
-    },
-    createPropAnim: function(obj,name) {
-        return new JSPropAnim(obj,name);
-    },
-    updateAnimProperty: function(handle, prop, type) {
-        sgtest.updateAnimProperty(handle, propsHash[prop], type);
-    },
+    createAnim: function(handle,prop,start,end,dur,count,rev) { return sgtest.createAnim(handle,propsHash[prop],start,end,dur,count,rev); },
+    createPropAnim: function(obj,name) { return new JSPropAnim(obj,name); },
+    updateAnimProperty: function(handle, prop, type) { return  sgtest.updateAnimProperty(handle, propsHash[prop], type); }
 }
 
 exports.input = amino_core.input;
