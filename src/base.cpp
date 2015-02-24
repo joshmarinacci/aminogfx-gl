@@ -8,6 +8,9 @@ ColorShader* colorShader;
 TextureShader* textureShader;
 GLfloat* modelView;
 GLfloat* globaltx;
+float window_fill_red;
+float window_fill_green;
+float window_fill_blue;
 int width = 640;
 int height = 480;
 

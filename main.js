@@ -4,7 +4,7 @@ var binary = require('node-pre-gyp');
 var path = require('path');
 var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
 var sgtest = require(binding_path);
-console.log('sgtest = ', sgtest);
+//console.log('sgtest = ', sgtest);
 
 var OS = "KLAATU";
 if(process.arch == 'arm') {
@@ -80,8 +80,8 @@ var propsHash = {
     "y":22,
 
     //transforms  (use x and y for translate in X and Y)
-    "scalex":2,
-    "scaley":3,
+    "sx":2,
+    "sy":3,
     "rz":4,
     "rx":19,
     "ry":20,
@@ -250,7 +250,7 @@ var gl_native = {
     getFont: function(name) { return fontmap[name]; },
     updateProperty: function(handle, name, value) {
         if(handle == undefined) throw new Error("Can't set a property on an undefined handle!!");
-        //console.log('setting', name, propsHash[name], value, typeof value);
+        //console.log('setting', handle, name, propsHash[name], value, typeof value);
         sgtest.updateProperty(handle, propsHash[name], value);
     },
     setRoot: function(handle) { return  sgtest.addNodeToGroup(handle,this.rootWrapper);  },
@@ -299,24 +299,32 @@ var gl_native = {
         };
     },
     createAnim: function(handle,prop,start,end,dur) {
-        if(!propsHash[prop]) {
-            throw new Error("invalid native property name",prop);
-        }
-        return sgtest.createAnim(handle,propsHash[prop],start,end,dur); },
+        if(!propsHash[prop]) throw new Error("invalid native property name",prop);
+        return sgtest.createAnim(handle,propsHash[prop],start,end,dur);
+    },
     createPropAnim: function(obj,name) { return new JSPropAnim(obj,name); },
-    updateAnimProperty: function(handle, prop, type) { return  sgtest.updateAnimProperty(handle, propsHash[prop], type); }
+    updateAnimProperty: function(handle, prop, type) { return  sgtest.updateAnimProperty(handle, propsHash[prop], type); },
+    updateWindowProperty:function(stage,prop,value){
+        if(!propsHash[prop]) throw new Error("invalid native property name",prop);
+        return sgtest.updateWindowProperty(-1,propsHash[prop],value);
+    }
 }
 
 exports.input = amino_core.input;
 exports.start = function(cb) {
     if(!cb) throw new Error("CB parameter missing to start app");
-    console.log("core = ", Core);
     Core.setCore(new Core());
     var core = Core.getCore();
     core.native = gl_native;
     amino_core.native = gl_native;
     core.init();
     var stage = Core._core.createStage(600,600);
+    stage.fill.watch(function(){
+        var color = amino_core.ParseRGBString(stage.fill());
+        gl_native.updateWindowProperty(stage,'r',color.r);
+        gl_native.updateWindowProperty(stage,'g',color.g);
+        gl_native.updateWindowProperty(stage,'b',color.b);
+    });
     //mirror fonts
     /*
     var source_font = exports.getRegisteredFonts().source;

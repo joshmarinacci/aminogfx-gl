@@ -38,6 +38,7 @@ const int ANIM = 4;
 const int POLY = 5;
 const int GLNODE = 6;
 const int INVALID = -1;
+const int WINDOW = 7;
 
 
 static const int FOREVER = -1;
@@ -94,6 +95,9 @@ extern ColorShader* colorShader;
 extern TextureShader* textureShader;
 extern GLfloat* modelView;
 extern GLfloat* globaltx;
+extern float window_fill_red;
+extern float window_fill_green;
+extern float window_fill_blue;
 
 extern std::stack<void*> matrixStack;
 extern int rootHandle;
@@ -428,6 +432,18 @@ public:
             }
             return;
         }
+        if(type == WINDOW) {
+            if(property == R) {
+                window_fill_red = value;
+            }
+            if(property == G) {
+                window_fill_green = value;
+            }
+            if(property == B) {
+                window_fill_blue = value;
+            }
+            return;
+        }
         AminoNode* target = rects[node];
         if(property == X_PROP) target->x = value;
         if(property == Y_PROP) target->y = value;
@@ -616,6 +632,23 @@ inline Handle<Value> updateAnimProperty(const Arguments& args) {
         wstr = GetWC(cstr);
     }
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL));
+    return scope.Close(Undefined());
+}
+
+inline Handle<Value> updateWindowProperty(const Arguments& args) {
+    HandleScope scope;
+    int windowHandle   = args[0]->ToNumber()->NumberValue();
+    int property     = args[1]->ToNumber()->NumberValue();
+    float value = 0;
+    std::wstring wstr = L"";
+    if(args[2]->IsNumber()) {
+        value = args[2]->ToNumber()->NumberValue();
+    }
+    if(args[2]->IsString()) {
+       char* cstr = TO_CHAR(args[2]);
+        wstr = GetWC(cstr);
+    }
+    updates.push_back(new Update(WINDOW, windowHandle, property, value, wstr, NULL));
     return scope.Close(Undefined());
 }
 

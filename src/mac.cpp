@@ -113,6 +113,9 @@ Handle<Value> createWindow(const Arguments& args) {
     modelView = new GLfloat[16];
 
     globaltx = new GLfloat[16];
+    window_fill_red = 0;
+    window_fill_green = 0;
+    window_fill_blue = 0;
     make_identity_matrix(globaltx);
 
 
@@ -186,7 +189,7 @@ void render() {
     mul_matrix(modelView,pixelM,m4);
     make_identity_matrix(globaltx);
     glViewport(0,0,width, height);
-    glClearColor(0,0,0,1);
+    glClearColor(window_fill_red,window_fill_green,window_fill_blue,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 
@@ -319,6 +322,7 @@ void InitAll(Handle<Object> exports, Handle<Object> module) {
     exports->Set(String::NewSymbol("stopAnim"),         FunctionTemplate::New(stopAnim)->GetFunction());
     exports->Set(String::NewSymbol("updateProperty"),   FunctionTemplate::New(updateProperty)->GetFunction());
     exports->Set(String::NewSymbol("updateAnimProperty"),FunctionTemplate::New(updateAnimProperty)->GetFunction());
+    exports->Set(String::NewSymbol("updateWindowProperty"),  FunctionTemplate::New(updateWindowProperty)->GetFunction());
     exports->Set(String::NewSymbol("addNodeToGroup"),   FunctionTemplate::New(addNodeToGroup)->GetFunction());
     exports->Set(String::NewSymbol("removeNodeFromGroup"),   FunctionTemplate::New(removeNodeFromGroup)->GetFunction());
     exports->Set(String::NewSymbol("tick"),             FunctionTemplate::New(tick)->GetFunction());
