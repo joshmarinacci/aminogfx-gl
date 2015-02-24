@@ -179,7 +179,7 @@ var propsHash = {
 
 var gl_native = {
     createNativeFont: function(path) {
-        var shaderpath = __dirname+'/shaders';
+        var shaderpath = __dirname+'/resources/shaders';
         console.log("invoking native font. shader path = ",shaderpath);
         return sgtest.createNativeFont(path,shaderpath);
     },
@@ -282,6 +282,7 @@ var gl_native = {
 exports.input = amino_core.input;
 exports.start = function(cb) {
     if(!cb) throw new Error("CB parameter missing to start app");
+    console.log("core = ", Core);
     Core.setCore(new Core());
     var core = Core.getCore();
     core.native = gl_native;
