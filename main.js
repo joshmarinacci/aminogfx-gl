@@ -135,9 +135,7 @@ var propsHash = {
     "x":21,
     "y":22,
 
-    //transforms
-    "tx":23,
-    "ty":1,
+    //transforms  (use x and y for translate in X and Y)
     "scalex":2,
     "scaley":3,
     "rotateZ":4,
@@ -305,16 +303,15 @@ exports.start = function(cb) {
 
 exports.makeProps = amino_core.makeProps;
 
-exports.Rect = amino_core.Rect;
+exports.Rect     = amino_core.Rect;
+exports.Group    = amino_core.Group;
+exports.Circle   = amino_core.Circle;
+exports.Polygon  = amino_core.Polygon;
+exports.Text     = amino_core.Text;
 
 exports.input.init(OS);
 
 
-//exports.Group = amino.Group;
-//exports.Circle = amino.Circle;
-//exports.Rect = amino.Rect;
-//exports.Polygon = amino.Polygon;
-//exports.Text = amino.Text;
 //exports.input = amino.input;
 
 

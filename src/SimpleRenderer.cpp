@@ -25,7 +25,7 @@ void SimpleRenderer::render(GLContext* c, AminoNode* root) {
     if(root->visible != 1) return;
 
     c->save();
-    c->translate(root->tx,root->ty);
+    c->translate(root->x,root->y);
     c->scale(root->scalex,root->scaley);
     c->rotate(root->rotatex,root->rotatey,root->rotatez);
 

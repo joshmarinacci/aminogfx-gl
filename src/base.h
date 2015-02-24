@@ -41,7 +41,6 @@ const int INVALID = -1;
 
 
 static const int FOREVER = -1;
-static const int TY = 1;
 static const int SCALEX = 2;
 static const int SCALEY = 3;
 static const int ROTATEZ = 4;
@@ -66,7 +65,6 @@ static const int ROTATEY = 20;
 
 static const int X_PROP = 21;
 static const int Y_PROP = 22;
-static const int TX = 23;
 static const int GEOMETRY = 24;
 static const int FILLED = 25;
 
@@ -106,8 +104,8 @@ extern std::map<int,AminoFont*> fontmap;
 
 class AminoNode {
 public:
-    float tx;
-    float ty;
+    float x;
+    float y;
     float scalex;
     float scaley;
     float rotatex;
@@ -117,8 +115,8 @@ public:
     int type;
     int visible;
     AminoNode() {
-        tx = 0;
-        ty = 0;
+        x = 0;
+        y = 0;
         scalex = 1;
         scaley = 1;
         printf("scalex set to %f\n", scalex);
@@ -163,8 +161,6 @@ static void warnAbort(char * str) {
 
 class TextNode : public AminoNode {
 public:
-    float x;
-    float y;
     float r;
     float g;
     float b;
@@ -173,7 +169,6 @@ public:
     std::wstring text;
     vertex_buffer_t * buffer;
     TextNode() {
-        x = 0; y = 0;
         r = 0; g = 0; b = 0;
         type = TEXT;
         text = L"foo";
@@ -254,8 +249,8 @@ public:
         }
     }
     void applyValue(float value) {
-        if(property == TX) target->tx = value;
-        if(property == TY) target->ty = value;
+        if(property == X_PROP) target->x = value;
+        if(property == Y_PROP) target->y = value;
         if(property == SCALEX) target->scalex = value;
         if(property == SCALEY) target->scaley = value;
         if(property == ROTATEX) target->rotatex = value;
@@ -325,8 +320,6 @@ static std::vector<Anim*> anims;
 
 class Rect : public AminoNode {
 public:
-    float x;
-    float y;
     float w;
     float h;
     float r;
@@ -338,7 +331,7 @@ public:
     float bottom;
     int texid;
     Rect() {
-        x = 0; y = 0; w = 100; h = 100;
+        w = 100; h = 100;
         r = 0; g = 1; b = 0;
         opacity = 1;
         type = RECT;
@@ -437,9 +430,8 @@ public:
             return;
         }
         AminoNode* target = rects[node];
-
-        if(property == TX) target->tx = value;
-        if(property == TY) target->ty = value;
+        if(property == X_PROP) target->x = value;
+        if(property == Y_PROP) target->y = value;
         if(property == SCALEX) target->scalex = value;
         if(property == SCALEY) target->scaley = value;
         if(property == ROTATEX) target->rotatex = value;
@@ -453,8 +445,6 @@ public:
             if(property == R) rect->r = value;
             if(property == G) rect->g = value;
             if(property == B) rect->b = value;
-            if(property == X_PROP) rect->x = value;
-            if(property == Y_PROP) rect->y = value;
             if(property == W_PROP) rect->w = value;
             if(property == H_PROP) rect->h = value;
             if(property == TEXID) rect->texid = value;
