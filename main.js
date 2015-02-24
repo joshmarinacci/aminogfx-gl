@@ -59,7 +59,7 @@ var defaultFonts = {
         name:'awesome',
         weights: {
             400: {
-                normal: "fontawesome-webfont.ttf",
+                normal: "fontawesome-webfont.ttf"
             }
         }
     }
@@ -82,9 +82,9 @@ var propsHash = {
     //transforms  (use x and y for translate in X and Y)
     "scalex":2,
     "scaley":3,
-    "rotateZ":4,
-    "rotateX":19,
-    "rotateY":20,
+    "rz":4,
+    "rx":19,
+    "ry":20,
 
     //text
     "text":9,
@@ -117,14 +117,6 @@ var propsHash = {
     "cliprect": 34
 
 
-};
-
-var remap = {
-    'x':'tx',
-    'y':'ty',
-    'rx':'rotateX',
-    'ry':'rotateY',
-    'rz':'rotateZ'
 };
 
 function JSFont(desc) {
@@ -190,9 +182,6 @@ function JSPropAnim(target,name) {
     this._loop = 1;
     this._delay = 0;
     this._autoreverse = 0;
-    if(remap[name]) {
-        name = remap[name];
-    }
     this._then_fun = null;
 
     this.from = function(val) {  this._from = val;        return this;  }
@@ -309,7 +298,11 @@ var gl_native = {
             h: size.h/dpi
         };
     },
-    createAnim: function(handle,prop,start,end,dur,count,rev) { return sgtest.createAnim(handle,propsHash[prop],start,end,dur,count,rev); },
+    createAnim: function(handle,prop,start,end,dur) {
+        if(!propsHash[prop]) {
+            throw new Error("invalid native property name",prop);
+        }
+        return sgtest.createAnim(handle,propsHash[prop],start,end,dur); },
     createPropAnim: function(obj,name) { return new JSPropAnim(obj,name); },
     updateAnimProperty: function(handle, prop, type) { return  sgtest.updateAnimProperty(handle, propsHash[prop], type); }
 }

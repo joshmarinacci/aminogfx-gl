@@ -10,13 +10,13 @@ exports.go = function(canvas) {
 	        path:__dirname+'/oswald/',
 	        weights: {
 	            200: {
-	                normal:'Oswald-Light.ttf',
+	                normal:'Oswald-Light.ttf'
 	            },
 	            400: {
-	                normal:'Oswald-Regular.ttf',
+	                normal:'Oswald-Regular.ttf'
 	            },
 	            800: {
-	                normal:'Oswald-Bold.ttf',
+	                normal:'Oswald-Bold.ttf'
 	            }
 	        }
 	    });
@@ -92,6 +92,7 @@ exports.go = function(canvas) {
 			iv.sx(4).sy(4);
 			var g = new amino.Group();
 			g.add(iv);
+            g.rz.anim().from(0).to(360*4).dur(10000).loop(-1).start();
 			g.x(20).y(300);
 			root.add(g);
 
@@ -123,8 +124,8 @@ exports.go = function(canvas) {
 		imageSwappingTests();
 
 		function imageAnimTests() {
-			var i1 = new amino.ImageView().src(__dirname+'/images/tree.png');
-			i1.x.anim().from(0).to(100).dur(1000).loop(-1).start();
+            var i1 = new amino.ImageView().src(__dirname+'/images/tree.png');
+			i1.x.anim().from(0).to(100).dur(1000).loop(-1).start().autoreverse(true);
 			i1.opacity.anim().from(0).to(1.0).dur(1000).loop(-1).start();
 
 			var g = new amino.Group().x(20).y(500).add(i1);
