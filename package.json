@@ -1,6 +1,6 @@
 {
   "name": "aminogfx-gl",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "AminoGFX implementation for OpenGL / GLES2",
   "main": "main.js",
   "scripts": {
@@ -17,9 +17,12 @@
     "url": "https://github.com/joshmarinacci/aminogfx-gl.git"
   },
   "dependencies": {
-    "aminogfx": "^0.0.17",
+    "aminogfx": "^0.0.19",
     "node-pre-gyp": "0.5.x",
     "wrench": "^1.5.8"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
   },
   "author": {
     "name": "Josh Marinacci",
