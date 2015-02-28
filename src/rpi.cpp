@@ -102,14 +102,16 @@ static void init_ogl(PWindow *state) {
 
    VC_DISPMANX_ALPHA_T         dispman_alpha;
 
-   dispman_alpha.flags = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;
-   dispman_alpha.opacity = 0xFF;
-   dispman_alpha.mask = NULL;
+   dispman_alpha.flags = DISPMANX_FLAGS_ALPHA_FROM_SOURCE;
+   dispman_alpha.opacity = 255;
+   dispman_alpha.mask = 0;
 
    int LAYER = 0;
    dispman_element = vc_dispmanx_element_add ( dispman_update, dispman_display,
       LAYER/*layer*/, &dst_rect, 0/*src*/,
-      &src_rect, DISPMANX_PROTECTION_NONE, &dispman_alpha  /*alpha*/, 0/*clamp*/, (DISPMANX_TRANSFORM_T)0/*transform*/);
+      &src_rect, DISPMANX_PROTECTION_NONE, 
+      &dispman_alpha  /*alpha*/,
+      0/*clamp*/, (DISPMANX_TRANSFORM_T)0/*transform*/);
 
    nativewindow.element = dispman_element;
    nativewindow.width = state->screen_width;
@@ -123,15 +125,7 @@ static void init_ogl(PWindow *state) {
    result = eglMakeCurrent(state->display, state->surface, state->surface, state->context);
    assert(EGL_FALSE != result);
 
-
-
-   //now we have a real opengl context so we can do stuff
-   glClearColor(1,0,0,1);
-   glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   eglSwapBuffers(state->display, state->surface);
-
    printf("rpi.c: got to the real opengl context\n");
-
 }
 
 
@@ -364,6 +358,10 @@ Handle<Value> createWindow(const Arguments& args) {
 
     globaltx = new GLfloat[16];
     make_identity_matrix(globaltx);
+    window_fill_red = 0;
+    window_fill_green = 0;
+    window_fill_blue = 0;
+    window_opacity = 1;
 
 
 
@@ -429,7 +427,7 @@ void render() {
     mul_matrix(modelView,pixelM,m4);
     make_identity_matrix(globaltx);
     glViewport(0,0,width, height);
-    glClearColor(0,0,0,1);
+    glClearColor(window_fill_red,window_fill_green,window_fill_blue,window_opacity);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     AminoNode* root = rects[rootHandle];

@@ -326,7 +326,7 @@ exports.start = function(cb) {
         gl_native.updateWindowProperty(stage,'b',color.b);
     });
     stage.opacity.watch(function() {
-        gl_native.updateWindowProperty(stage,'opacity',stage.opacity);
+        gl_native.updateWindowProperty(stage,'opacity',stage.opacity());
     });
     //mirror fonts to PureImage
     /*
