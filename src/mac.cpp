@@ -116,6 +116,7 @@ Handle<Value> createWindow(const Arguments& args) {
     window_fill_red = 0;
     window_fill_green = 0;
     window_fill_blue = 0;
+    window_opacity = 1;
     make_identity_matrix(globaltx);
 
 
@@ -189,7 +190,7 @@ void render() {
     mul_matrix(modelView,pixelM,m4);
     make_identity_matrix(globaltx);
     glViewport(0,0,width, height);
-    glClearColor(window_fill_red,window_fill_green,window_fill_blue,1);
+    glClearColor(window_fill_red,window_fill_green,window_fill_blue,window_opacity);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 

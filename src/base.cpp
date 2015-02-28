@@ -11,6 +11,7 @@ GLfloat* globaltx;
 float window_fill_red;
 float window_fill_green;
 float window_fill_blue;
+float window_opacity;
 int width = 640;
 int height = 480;
 

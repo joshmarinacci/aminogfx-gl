@@ -98,6 +98,7 @@ extern GLfloat* globaltx;
 extern float window_fill_red;
 extern float window_fill_green;
 extern float window_fill_blue;
+extern float window_opacity;
 
 extern std::stack<void*> matrixStack;
 extern int rootHandle;
@@ -441,6 +442,9 @@ public:
             }
             if(property == B) {
                 window_fill_blue = value;
+            }
+            if(property == OPACITY_PROP) {
+                window_opacity = value;
             }
             return;
         }

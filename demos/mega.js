@@ -142,6 +142,7 @@ exports.go = function(canvas) {
 		},2000)
 
 		setTimeout(function() {
+            stage.opacity(0.1);
 			//stage.transparent(true);
 		},4000);
 

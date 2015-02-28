@@ -325,7 +325,10 @@ exports.start = function(cb) {
         gl_native.updateWindowProperty(stage,'g',color.g);
         gl_native.updateWindowProperty(stage,'b',color.b);
     });
-    //mirror fonts
+    stage.opacity.watch(function() {
+        gl_native.updateWindowProperty(stage,'opacity',stage.opacity);
+    });
+    //mirror fonts to PureImage
     /*
     var source_font = exports.getRegisteredFonts().source;
     var fnt = PImage.registerFont(source_font.filepaths[400],source_font.name);
@@ -350,17 +353,5 @@ exports.ImageView = amino_core.ImageView;
 
 exports.input.init(OS);
 
-
-//exports.input = amino.input;
-
-
-//exports.makeProps = amino.makeProps;
-//exports.getCore = amino.getCore;
-//exports.native = amino.native;
-//exports.PixelView = amino.primitives.PixelView;
-//exports.RichTextView = amino.primitives.RichTextView;
-//exports.registerFont = amino.registerFont;
-
-//exports.ParseRGBString = amino.primitives.ParseRGBString;
 //exports.PureImageView = amino.primitives.PureImageView;
 //exports.ConstraintSolver = require('./src/ConstraintSolver');
