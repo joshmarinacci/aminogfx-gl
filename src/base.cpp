@@ -133,97 +133,79 @@ void TextNode::refreshText() {
 
 
 
-Handle<Value> node_glCreateShader(const Arguments& args) {
-  HandleScope scope;
-  int type   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glCreateShader) {
+  int type   = info[0]->Uint32Value();
   int shader = glCreateShader(type);
-  return scope.Close(Number::New(shader));
+  info.GetReturnValue().Set(shader);
 }
 
 
-Handle<Value> node_glShaderSource(const Arguments& args) {
-  HandleScope scope;
-  int shader   = args[0]->ToNumber()->NumberValue();
-  int count    = args[1]->ToNumber()->NumberValue();
-  v8::String::Utf8Value jsource(args[2]->ToString());
+NAN_METHOD(node_glShaderSource) {
+  int shader   = info[0]->Uint32Value();
+  int count    = info[1]->Uint32Value();
+  v8::String::Utf8Value jsource(info[2]->ToString());
   const char *source = *jsource;
   glShaderSource(shader, count, &source, NULL);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glCompileShader(const Arguments& args) {
-  HandleScope scope;
-  int shader   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glCompileShader) {
+  int shader   = info[0]->Uint32Value();
   glCompileShader(shader);
-  return scope.Close(Undefined());
 }
-Handle<Value> node_glGetShaderiv(const Arguments& args) {
-  HandleScope scope;
-  int shader   = args[0]->ToNumber()->NumberValue();
-  int flag   = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGetShaderiv) {
+  int shader   = info[0]->Uint32Value();
+  int flag   = info[1]->Uint32Value();
   GLint status;
   glGetShaderiv(shader,flag,&status);
-  return scope.Close(Number::New(status));
+  info.GetReturnValue().Set(status);
 }
-Handle<Value> node_glGetProgramiv(const Arguments& args) {
-  HandleScope scope;
-  int prog   = args[0]->ToNumber()->NumberValue();
-  int flag   = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGetProgramiv) {
+  int prog   = info[0]->Uint32Value();
+  int flag   = info[1]->Uint32Value();
   GLint status;
   glGetProgramiv(prog,flag,&status);
-  return scope.Close(Number::New(status));
+  info.GetReturnValue().Set(status);
 }
-Handle<Value> node_glGetShaderInfoLog(const Arguments& args) {
-  HandleScope scope;
-  int shader   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGetShaderInfoLog) {
+  int shader   = info[0]->Uint32Value();
   char buffer[513];
   glGetShaderInfoLog(shader,512,NULL,buffer);
-  return scope.Close(String::New(buffer,strlen(buffer)));
+  info.GetReturnValue().Set(Nan::New(buffer,strlen(buffer)).ToLocalChecked());
 }
-Handle<Value> node_glGetProgramInfoLog(const Arguments& args) {
-  HandleScope scope;
-  int shader   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGetProgramInfoLog) {
+  int shader   = info[0]->Uint32Value();
   char buffer[513];
   glGetProgramInfoLog(shader,512,NULL,buffer);
-  return scope.Close(String::New(buffer,strlen(buffer)));
+  info.GetReturnValue().Set(Nan::New(buffer,strlen(buffer)).ToLocalChecked());
 }
-Handle<Value> node_glCreateProgram(const Arguments& args) {
-  HandleScope scope;
+NAN_METHOD(node_glCreateProgram) {
   int prog = glCreateProgram();
-  return scope.Close(Number::New(prog));
+  info.GetReturnValue().Set(prog);
 }
-Handle<Value> node_glAttachShader(const Arguments& args) {
-  HandleScope scope;
-  int prog     = args[0]->ToNumber()->NumberValue();
-  int shader   = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glAttachShader) {
+  int prog     = info[0]->Uint32Value();
+  int shader   = info[1]->Uint32Value();
   glAttachShader(prog,shader);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glLinkProgram(const Arguments& args) {
-    HandleScope scope;
-    int prog     = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glLinkProgram) {
+    int prog     = info[0]->Uint32Value();
     glLinkProgram(prog);
-    return scope.Close(Undefined());
 }
-Handle<Value> node_glUseProgram(const Arguments& args) {
-    HandleScope scope;
-    int prog     = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glUseProgram) {
+    int prog     = info[0]->Uint32Value();
     glUseProgram(prog);
-    return scope.Close(Undefined());
 }
-Handle<Value> node_glGetAttribLocation(const Arguments& args) {
-  HandleScope scope;
-  int prog                 = args[0]->ToNumber()->NumberValue();
-  v8::String::Utf8Value name(args[1]->ToString());
+NAN_METHOD(node_glGetAttribLocation) {
+  int prog                 = info[0]->Uint32Value();
+  v8::String::Utf8Value name(info[1]->ToString());
   int loc = glGetAttribLocation(prog,*name);
-  return scope.Close(Number::New(loc));
+  info.GetReturnValue().Set(loc);
 }
 
-Handle<Value> node_glGetUniformLocation(const Arguments& args) {
-    HandleScope scope;
-    int prog                 = args[0]->ToNumber()->NumberValue();
-    v8::String::Utf8Value name(args[1]->ToString());
+NAN_METHOD(node_glGetUniformLocation) {
+    int prog                 = info[0]->Uint32Value();
+    v8::String::Utf8Value name(info[1]->ToString());
     int loc = glGetUniformLocation(prog,*name);
-    return scope.Close(Number::New(loc));
+    info.GetReturnValue().Set(loc);
 }

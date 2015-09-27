@@ -300,22 +300,19 @@ void SimpleRenderer::drawText(GLContext* c, TextNode* text) {
     c->restore();
 }
 
-Handle<Value> node_glGetString(const Arguments& args) {
-  HandleScope scope;
-  int val   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGetString) {
+  int val   = info[0]->Uint32Value();
   const char * version = (const char*)glGetString(val);
-  Local<String> str = String::New(version);
-  return scope.Close(str);
+  info.GetReturnValue().Set(Nan::New(version).ToLocalChecked());
 }
-Handle<Value> node_glGetError(const Arguments& args) {
-  HandleScope scope;
+NAN_METHOD(node_glGetError) {
   int val = glGetError();;
-  return scope.Close(Number::New(val));
+  info.GetReturnValue().Set(val);
 }
 /*
-Handle<Value> node_glGenVertexArrays(const Arguments& args) {
+NAN_METHOD(node_glGenVertexArrays) {
   HandleScope scope;
-  int val   = args[0]->ToNumber()->NumberValue();
+  int val   = info[0]->Uint32Value();
   GLuint vao;
   glGenVertexArrays(val, &vao);
   Local<Number> str = Number::New(vao);
@@ -323,134 +320,110 @@ Handle<Value> node_glGenVertexArrays(const Arguments& args) {
 }
 
 
-Handle<Value> node_glBindVertexArray(const Arguments& args) {
+NAN_METHOD(node_glBindVertexArray) {
   HandleScope scope;
-  int val   = args[0]->ToNumber()->NumberValue();
+  int val   = info[0]->Uint32Value();
   glBindVertexArray(val);
   return scope.Close(Undefined());
 }
 */
-Handle<Value> node_glGenBuffers(const Arguments& args) {
-  HandleScope scope;
-  int val   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGenBuffers) {
+  int val   = info[0]->Uint32Value();
   GLuint vbo;
   glGenBuffers(val, &vbo);
-  Local<Number> str = Number::New(vbo);
-  return scope.Close(str);
+  info.GetReturnValue().Set(vbo);
 }
-Handle<Value> node_glBindBuffer(const Arguments& args) {
-  HandleScope scope;
-  int type   = args[0]->ToNumber()->NumberValue();
-  int vbo    = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glBindBuffer) {
+  int type   = info[0]->Uint32Value();
+  int vbo    = info[1]->Uint32Value();
   glBindBuffer(type,vbo);
-  return scope.Close(Undefined());
 }
 
 
-Handle<Value> node_glBufferData(const Arguments& args) {
-  HandleScope scope;
-  int type   = args[0]->ToNumber()->NumberValue();
-  Handle<Array> array = Handle<Array>::Cast(args[1]);
+NAN_METHOD(node_glBufferData) {
+  int type   = info[0]->Uint32Value();
+  Handle<Array> array = Handle<Array>::Cast(info[1]);
   float* verts = new float[array->Length()];
   for(std::size_t i=0; i<array->Length(); i++) {
       verts[i] = array->Get(i)->ToNumber()->NumberValue();
   }
-  int kind = args[2]->ToNumber()->NumberValue();
+  int kind = info[2]->Uint32Value();
   glBufferData(type,sizeof(float)*array->Length(),verts,kind);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glGenFramebuffers(const Arguments& args) {
-  HandleScope scope;
-  int val   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGenFramebuffers) {
+  int val   = info[0]->Uint32Value();
   GLuint buf;
   glGenFramebuffers(val, &buf);
-  Local<Number> str = Number::New(buf);
-  return scope.Close(str);
+  info.GetReturnValue().Set(buf);
 }
-Handle<Value> node_glBindFramebuffer(const Arguments& args) {
-  HandleScope scope;
-  int type   = args[0]->ToNumber()->NumberValue();
-  int buf    = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glBindFramebuffer) {
+  int type   = info[0]->Uint32Value();
+  int buf    = info[1]->Uint32Value();
   glBindFramebuffer(type,buf);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glCheckFramebufferStatus(const Arguments& args) {
-  HandleScope scope;
-  int buf    = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glCheckFramebufferStatus) {
+  int buf    = info[0]->Uint32Value();
   GLuint val = glCheckFramebufferStatus(buf);
-  Local<Number> nval = Number::New(val);
-  return scope.Close(nval);
+  info.GetReturnValue().Set(val);
 }
 
-Handle<Value> node_glGenTextures(const Arguments& args) {
-  HandleScope scope;
-  int val   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glGenTextures) {
+  int val   = info[0]->Uint32Value();
   GLuint tex;
   glGenTextures(val, &tex);
-  Local<Number> ntex = Number::New(tex);
-  return scope.Close(ntex);
+  info.GetReturnValue().Set(tex);
 }
 
-Handle<Value> node_glBindTexture(const Arguments& args) {
-  HandleScope scope;
-  int type   = args[0]->ToNumber()->NumberValue();
-  int tex    = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glBindTexture) {
+  int type   = info[0]->Uint32Value();
+  int tex    = info[1]->Uint32Value();
   glBindTexture(type,tex);
-  return scope.Close(Undefined());
 }
-Handle<Value> node_glActiveTexture(const Arguments& args) {
-  HandleScope scope;
-  int type   = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glActiveTexture) {
+  int type   = info[0]->Uint32Value();
   glActiveTexture(type);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glTexImage2D(const Arguments& args) {
-  HandleScope scope;
-  int type     = args[0]->ToNumber()->NumberValue();
-  int v1       = args[1]->ToNumber()->NumberValue();
-  int format1  = args[2]->ToNumber()->NumberValue();
-  int width    = args[3]->ToNumber()->NumberValue();
-  int height   = args[4]->ToNumber()->NumberValue();
-  int depth    = args[5]->ToNumber()->NumberValue();
-  int format2  = args[6]->ToNumber()->NumberValue();
-  int type2    = args[7]->ToNumber()->NumberValue();
-//  int data     = args[8]->ToNumber()->NumberValue();
+NAN_METHOD(node_glTexImage2D) {
+  int type     = info[0]->Uint32Value();
+  int v1       = info[1]->Uint32Value();
+  int format1  = info[2]->Uint32Value();
+  int width    = info[3]->Uint32Value();
+  int height   = info[4]->Uint32Value();
+  int depth    = info[5]->Uint32Value();
+  int format2  = info[6]->Uint32Value();
+  int type2    = info[7]->Uint32Value();
+//  int data     = info[8]->Uint32Value();
   glTexImage2D(type,v1,format1,width,height,depth,format2,type2,NULL);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glTexParameteri(const Arguments& args) {
-    HandleScope scope;
-    int type     = args[0]->ToNumber()->NumberValue();
-    int param    = args[1]->ToNumber()->NumberValue();
-    int value    = args[2]->ToNumber()->NumberValue();
+NAN_METHOD(node_glTexParameteri) {
+    int type     = info[0]->Uint32Value();
+    int param    = info[1]->Uint32Value();
+    int value    = info[2]->Uint32Value();
     glTexParameteri(type, param, value);
-    return scope.Close(Undefined());
 }
 
-Handle<Value> node_glFramebufferTexture2D(const Arguments& args) {
-    HandleScope scope;
-    int type     = args[0]->ToNumber()->NumberValue();
-    int attach   = args[1]->ToNumber()->NumberValue();
-    int type2    = args[2]->ToNumber()->NumberValue();
-    int value    = args[3]->ToNumber()->NumberValue();
-    int other    = args[4]->ToNumber()->NumberValue();
+NAN_METHOD(node_glFramebufferTexture2D) {
+    int type     = info[0]->Uint32Value();
+    int attach   = info[1]->Uint32Value();
+    int type2    = info[2]->Uint32Value();
+    int value    = info[3]->Uint32Value();
+    int other    = info[4]->Uint32Value();
     glFramebufferTexture2D(type, attach, type2, value, other);
-    return scope.Close(Undefined());
 }
 
-using node::Buffer;
-Handle<Value> node_glReadPixels(const Arguments& args) {
-    HandleScope scope;
-    int x     = args[0]->ToNumber()->NumberValue();
-    int y     = args[1]->ToNumber()->NumberValue();
-    int w     = args[2]->ToNumber()->NumberValue();
-    int h     = args[3]->ToNumber()->NumberValue();
-    int format= args[4]->ToNumber()->NumberValue();
-    int type  = args[5]->ToNumber()->NumberValue();
+//using node::Buffer;
+NAN_METHOD(node_glReadPixels) {
+/*
+    int x     = info[0]->Uint32Value();
+    int y     = info[1]->Uint32Value();
+    int w     = info[2]->Uint32Value();
+    int h     = info[3]->Uint32Value();
+    int format= info[4]->Uint32Value();
+    int type  = info[5]->Uint32Value();
 
     int length = w*h*3;
     char* data = (char*)malloc(length);
@@ -462,124 +435,104 @@ Handle<Value> node_glReadPixels(const Arguments& args) {
     Handle<Value> constructorArgs[3] = { slowBuffer->handle_, v8::Integer::New(length), v8::Integer::New(0) };
     Local<Object> actualBuffer = bufferConstructor->NewInstance(3, constructorArgs);
     return scope.Close(actualBuffer);
+    */
 }
 
 
 
 
 
-Handle<Value> node_glEnableVertexAttribArray(const Arguments& args) {
+NAN_METHOD(node_glEnableVertexAttribArray) {
   HandleScope scope;
-  int loc                 = args[0]->ToNumber()->NumberValue();
+  int loc                 = info[0]->Uint32Value();
   glEnableVertexAttribArray(loc);
-  return scope.Close(Number::New(loc));
+  info.GetReturnValue().Set(loc);
 }
 
 
-Handle<Value> node_glVertexAttribPointer(const Arguments& args) {
-  HandleScope scope;
-  int loc                        = args[0]->ToNumber()->NumberValue();
-  int count                      = args[1]->ToNumber()->NumberValue();
-  int size                       = args[2]->ToNumber()->NumberValue();
-  int other                      = args[3]->ToNumber()->NumberValue();
-  int size2  = sizeof(float)*(int)(args[4]->ToNumber()->NumberValue());
-  int offset = sizeof(float)*(int)(args[5]->ToNumber()->NumberValue());
+NAN_METHOD(node_glVertexAttribPointer) {
+  int loc                        = info[0]->Uint32Value();
+  int count                      = info[1]->Uint32Value();
+  int size                       = info[2]->Uint32Value();
+  int other                      = info[3]->Uint32Value();
+  int size2  = sizeof(float)*(int)(info[4]->Uint32Value());
+  int offset = sizeof(float)*(int)(info[5]->Uint32Value());
   glVertexAttribPointer(loc,count,size,other,size2,(void*)offset);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glUniform1f(const Arguments& args) {
-  HandleScope scope;
-  int loc                 = args[0]->ToNumber()->NumberValue();
-  float value             = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glUniform1f) {
+  int loc                 = info[0]->Uint32Value();
+  float value             = info[1]->Uint32Value();
   glUniform1f(loc,value);
-  return scope.Close(Undefined());
 }
-Handle<Value> node_glUniform2f(const Arguments& args) {
-  HandleScope scope;
-  int loc                 = args[0]->ToNumber()->NumberValue();
-  float value             = args[1]->ToNumber()->NumberValue();
-  float value2            = args[2]->ToNumber()->NumberValue();
+NAN_METHOD(node_glUniform2f) {
+  int loc                 = info[0]->Uint32Value();
+  float value             = info[1]->Uint32Value();
+  float value2            = info[2]->Uint32Value();
   glUniform2f(loc,value,value2);
-  return scope.Close(Undefined());
 }
 
 
-Handle<Value> node_glPointSize(const Arguments& args) {
-  HandleScope scope;
+NAN_METHOD(node_glPointSize) {
   float size                 = args[0]->ToNumber()->NumberValue();
   glPointSize(size);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glEnable(const Arguments& args) {
-  HandleScope scope;
-  int var                 = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glEnable) {
+  int var                 = info[0]->Uint32Value();
   glEnable(var);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glBlendFunc(const Arguments& args) {
-  HandleScope scope;
-  int src                 = args[0]->ToNumber()->NumberValue();
-  int dst                 = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(node_glBlendFunc) {
+  int src                 = info[0]->Uint32Value();
+  int dst                 = info[1]->Uint32Value();
   glBlendFunc(src,dst);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glBlendFuncSeparate(const Arguments& args) {
-  HandleScope scope;
-  int a                 = args[0]->ToNumber()->NumberValue();
-  int b                 = args[1]->ToNumber()->NumberValue();
-  int c                 = args[2]->ToNumber()->NumberValue();
-  int d                = args[3]->ToNumber()->NumberValue();
+NAN_METHOD(node_glBlendFuncSeparate) {
+  int a                 = info[0]->Uint32Value();
+  int b                 = info[1]->Uint32Value();
+  int c                 = info[2]->Uint32Value();
+  int d                = info[3]->Uint32Value();
   glBlendFuncSeparate(a,b,c,d);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_glBlendEquation(const Arguments& args) {
-  HandleScope scope;
-  int eq                 = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_glBlendEquation) {
+  int eq                 = info[0]->Uint32Value();
   glBlendEquation(eq);
-  return scope.Close(Undefined());
 }
 
 
-Handle<Value> node_glDrawArrays(const Arguments& args) {
-  HandleScope scope;
-  int type               = args[0]->ToNumber()->NumberValue();
-  int c1                 = args[1]->ToNumber()->NumberValue();
-  int count              = args[2]->ToNumber()->NumberValue();
+NAN_METHOD(node_glDrawArrays) {
+  int type               = info[0]->Uint32Value();
+  int c1                 = info[1]->Uint32Value();
+  int count              = info[2]->Uint32Value();
   glDrawArrays(type,c1,count);
-  return scope.Close(Undefined());
 }
 
-Handle<Value> node_setModelView(const Arguments& args) {
-  HandleScope scope;
-  int id               = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(node_setModelView) {
+  int id               = info[0]->Uint32Value();
   //printf("setting to %d\n",id);
   glUniformMatrix4fv(id, 1, GL_FALSE, modelView);
 //    glUniformMatrix4fv(u_trans,  1, GL_FALSE, trans);
-  return scope.Close(Undefined());
 }
 
 static GLContext* sctx;
-Handle<Value> node_setGlobalTransform(const Arguments& args) {
-  HandleScope scope;
-  int id               = args[0]->ToNumber()->NumberValue();
+
+NAN_METHOD(node_setGlobalTransform) {
+  int id               = info[0]->Uint32Value();
 //  sctx->dumpGlobalTransform();
   glUniformMatrix4fv(id, 1, GL_FALSE, sctx->globaltx);
-  return scope.Close(Undefined());
 }
 
 void SimpleRenderer::drawGLNode(GLContext* ctx, GLNode* glnode) {
     sctx = ctx;
-    Local<Object> event_obj = Object::New();
-    event_obj->Set(String::NewSymbol("type"), String::New("glnode"));
-    event_obj->Set(String::NewSymbol("GL_SHADING_LANGUAGE_VERSION"), Number::New(GL_SHADING_LANGUAGE_VERSION));
-    event_obj->Set(String::NewSymbol("GL_ARRAY_BUFFER"), Number::New(GL_ARRAY_BUFFER));
-    event_obj->Set(String::NewSymbol("GL_STATIC_DRAW"), Number::New(GL_STATIC_DRAW));
-    event_obj->Set(String::NewSymbol("GL_VERTEX_SHADER"), Number::New(GL_VERTEX_SHADER));
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("glnode").ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("GL_SHADING_LANGUAGE_VERSION").ToLocalChecked(), Nan::New(GL_SHADING_LANGUAGE_VERSION));
+    Nan::Set(event_obj, Nan::New("GL_ARRAY_BUFFER").ToLocalChecked(), Nan::New(GL_ARRAY_BUFFER));
+    Nan::Set(event_obj, Nan::New("GL_STATIC_DRAW").ToLocalChecked(), Nan::New(GL_STATIC_DRAW));
+    Nan::Set(event_obj, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(), Nan::New(GL_VERTEX_SHADER));
     event_obj->Set(String::NewSymbol("GL_FRAGMENT_SHADER"), Number::New(GL_FRAGMENT_SHADER));
     event_obj->Set(String::NewSymbol("GL_COMPILE_STATUS"), Number::New(GL_COMPILE_STATUS));
     event_obj->Set(String::NewSymbol("GL_LINK_STATUS"), Number::New(GL_LINK_STATUS));

@@ -606,26 +606,23 @@ NAN_METHOD(updateProperty) {
     updates.push_back(new Update(RECT, rectHandle, property, value, wstr,arr));
 }
 
-inline Handle<Value> updateAnimProperty(const Arguments& args) {
-    HandleScope scope;
-    int rectHandle   = args[0]->ToNumber()->NumberValue();
-    int property     = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(updateAnimProperty) {
+    int rectHandle   = info[0]->Uint32Value();
+    int property     = info[1]->Uint32Value();
     float value = 0;
     //char* cstr = "";
     std::wstring wstr = L"";
-    if(args[2]->IsNumber()) {
-        value = args[2]->ToNumber()->NumberValue();
+    if(info[2]->IsNumber()) {
+        value = info[2]->ToNumber()->NumberValue();
     }
-    if(args[2]->IsString()) {
-       char* cstr = TO_CHAR(args[2]);
+    if(info[2]->IsString()) {
+       char* cstr = TO_CHAR(info[2]);
         wstr = GetWC(cstr);
     }
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL));
-    return scope.Close(Undefined());
 }
 
-inline Handle<Value> updateWindowProperty(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(updateWindowProperty) {
     int windowHandle   = args[0]->ToNumber()->NumberValue();
     int property     = args[1]->ToNumber()->NumberValue();
     float value = 0;
@@ -638,23 +635,19 @@ inline Handle<Value> updateWindowProperty(const Arguments& args) {
         wstr = GetWC(cstr);
     }
     updates.push_back(new Update(WINDOW, windowHandle, property, value, wstr, NULL));
-    return scope.Close(Undefined());
 }
 
-inline Handle<Value> addNodeToGroup(const Arguments& args) {
-    HandleScope scope;
-    int rectHandle   = args[0]->ToNumber()->NumberValue();
-    int groupHandle  = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(addNodeToGroup) {
+    int rectHandle   = info[0]->Uint32Value();
+    int groupHandle  = info[1]->Uint32Value();
     Group* group = (Group*)rects[groupHandle];
     AminoNode* node = rects[rectHandle];
     group->children.push_back(node);
-    return scope.Close(Undefined());
 }
 
-inline Handle<Value> removeNodeFromGroup(const Arguments& args) {
-    HandleScope scope;
-    int rectHandle   = args[0]->ToNumber()->NumberValue();
-    int groupHandle  = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(removeNodeFromGroup) {
+    int rectHandle   = info[0]->Uint32Value();
+    int groupHandle  = info[1]->Uint32Value();
     Group* group = (Group*)rects[groupHandle];
     AminoNode* node = rects[rectHandle];
     int n = -1;
@@ -665,132 +658,20 @@ inline Handle<Value> removeNodeFromGroup(const Arguments& args) {
     }
 
     group->children.erase(group->children.begin()+n);
-    return scope.Close(Undefined());
 }
 
-inline static Handle<Value> setRoot(const Arguments& args) {
-    HandleScope scope;
-    rootHandle = args[0]->ToNumber()->NumberValue();
-    return scope.Close(Undefined());
+NAN_METHOD(setRoot) {
+    rootHandle = info[0]->Uint32Value();
 }
 
-inline static Handle<Value> decodeJpegBuffer(const Arguments& args) {
-    HandleScope scope;
-
-    if(!Buffer::HasInstance(args[0])){
-        printf("first argument must be a buffer.\n");
-        return scope.Close(Undefined());
-    }
-
-    uint8_t *bufferin;
-    unsigned lengthin, lengthout;
-    bufferin = (uint8_t *) Buffer::Data(args[0]->ToObject());
-    lengthin = Buffer::Length(args[0]->ToObject());
-
-
-    njInit();
-    if (njDecode(bufferin, lengthin)) {
-        printf("Error decoding the input file.\n");
-        return scope.Close(Undefined());
-    }
-
-    printf("got an image %d %d\n",njGetWidth(),njGetHeight());
-    printf("size = %d\n",njGetImageSize());
-    lengthout = njGetImageSize();
-
-    Buffer *bufferout;
-    bufferout = Buffer::New(lengthout);
-    memcpy(Buffer::Data(bufferout), njGetImage(), lengthout);
-
-    Local<Object> obj = Object::New();
-    obj->Set(String::NewSymbol("w"),     Number::New(njGetWidth()));
-    obj->Set(String::NewSymbol("h"),     Number::New(njGetHeight()));
-    obj->Set(String::NewSymbol("alpha"),  Number::New(false));
-    obj->Set(String::NewSymbol("bpp"),  Number::New(3));
-    obj->Set(String::NewSymbol("buffer"), bufferout->handle_);
-    njDone();
-    return scope.Close(obj);
-}
-
-inline static Handle<Value> decodePngBuffer(const Arguments& args) {
-    HandleScope scope;
-
-    if(!Buffer::HasInstance(args[0])){
-        printf("first argument must be a buffer.\n");
-        return scope.Close(Undefined());
-    }
-
-    uint8_t *bufferin;
-    unsigned lengthin, lengthout;
-    bufferin = (uint8_t *) Buffer::Data(args[0]->ToObject());
-    lengthin = Buffer::Length(args[0]->ToObject());
-
-
-
-    unsigned width, height;
-    unsigned char* png;
-    const unsigned char* image;
-
-    upng_t* upng = upng_new_from_bytes(bufferin, lengthin);
-    if(upng == NULL) {
-        printf("error decoding png file");
-        return scope.Close(Undefined());
-    }
-
-    upng_decode(upng);
-    //printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
-    //printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
-
-    image = upng_get_buffer(upng);
-    lengthout = upng_get_size(upng);
-    //printf("length of uncompressed buffer = %d\n", lengthout);
-    Buffer *bufferout;
-    bufferout = Buffer::New(lengthout);
-    memcpy(Buffer::Data(bufferout), image, lengthout);
-
-    Local<Object> obj = Object::New();
-    obj->Set(String::NewSymbol("w"),     Number::New(upng_get_width(upng)));
-    obj->Set(String::NewSymbol("h"),     Number::New(upng_get_height(upng)));
-    obj->Set(String::NewSymbol("alpha"),  Number::New(true));
-    obj->Set(String::NewSymbol("bpp"),  Number::New(4));
-    obj->Set(String::NewSymbol("buffer"), bufferout->handle_);
-
-    upng_free(upng);
-    return scope.Close(obj);
-
-/*
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-    if(image->hasAlpha) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->w, image->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->data);
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->w, image->h, 0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
-    }
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    free(image->data);
-
-    Local<Object> obj = Object::New();
-    obj->Set(String::NewSymbol("texid"), Number::New(texture));
-    obj->Set(String::NewSymbol("w"),     Number::New(image->w));
-    obj->Set(String::NewSymbol("h"),     Number::New(image->h));
-    return scope.Close(obj);
-    */
-}
-
-inline static Handle<Value> loadBufferToTexture(const Arguments& args) {
-    HandleScope scope;
-    int texid   = args[0]->ToNumber()->NumberValue();
-    int w   = args[1]->ToNumber()->NumberValue();
-    int h   = args[2]->ToNumber()->NumberValue();
+NAN_METHOD(loadBufferToTexture) {
+    int texid   = info[0]->Uint32Value();
+    int w   = info[1]->Uint32Value();
+    int h   = info[2]->ToNumber()->NumberValue();
     // this is *bytes* per pixel. usually 3 or 4
-    int bpp = args[3]->ToNumber()->NumberValue();
+    int bpp = info[3]->Uint32Value();
     //printf("got w %d h %d\n",w,h);
-    Local<Object> bufferObj = args[4]->ToObject();
+    Local<Object> bufferObj = info[4]->ToObject();
     char* bufferData = Buffer::Data(bufferObj);
     size_t bufferLength = Buffer::Length(bufferObj);
     //printf("buffer length = %d\n", bufferLength);
@@ -814,11 +695,11 @@ inline static Handle<Value> loadBufferToTexture(const Arguments& args) {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    Local<Object> obj = Object::New();
-    obj->Set(String::NewSymbol("texid"), Number::New(texture));
-    obj->Set(String::NewSymbol("w"),     Number::New(w));
-    obj->Set(String::NewSymbol("h"),     Number::New(h));
-    return scope.Close(obj);
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    Nan::Set(obj, Nan::New("texid").ToLocalChecked(), Nan::New(texture));
+    Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+    Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+    info.GetReturnValue().Set(obj);
 }
 /*static float* toFloatArray(Local<Object> obj, char* name) {
     Handle<Array>  oarray = Handle<Array>::Cast(obj->Get(String::New(name)));
@@ -837,19 +718,16 @@ typedef struct {
 } vertex_t;
 
 
-inline static Handle<Value> getFontHeight(const Arguments& args) {
-    HandleScope scope;
-    int fontsize   = args[0]->ToNumber()->NumberValue();
-    int fontindex  = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(getFontHeight) {
+    int fontsize   = info[0]->Uint32Value();
+    int fontindex  = info[1]->Uint32Value();
     AminoFont * font = fontmap[fontindex];
     texture_font_t *tf = font->fonts[fontsize];
-    Local<Number> num = Number::New(tf->ascender-tf->descender);
-    return scope.Close(num);
+    info.GetReturnValue().Set(tf->ascender-tf->descender);
 }
-inline static Handle<Value> getFontAscender(const Arguments& args) {
-    HandleScope scope;
-    int fontsize   = args[0]->ToNumber()->NumberValue();
-    int fontindex  = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(getFontAscender) {
+    int fontsize   = info[0]->Uint32Value();
+    int fontindex  = info[1]->Uint32Value();
     AminoFont * font = fontmap[fontindex];
     std::map<int,texture_font_t*>::iterator it = font->fonts.find(fontsize);
     if(it == font->fonts.end()) {
@@ -858,13 +736,11 @@ inline static Handle<Value> getFontAscender(const Arguments& args) {
         font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
     }
     texture_font_t *tf = font->fonts[fontsize];
-    Local<Number> num = Number::New(tf->ascender);
-    return scope.Close(num);
+    info.GetReturnValue().Set(tf->ascender);
 }
-inline static Handle<Value> getFontDescender(const Arguments& args) {
-    HandleScope scope;
-    int fontsize   = args[0]->ToNumber()->NumberValue();
-    int fontindex  = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(getFontDescender) {
+    int fontsize   = info[0]->Uint32Value();
+    int fontindex  = info[1]->Uint32Value();
     AminoFont * font = fontmap[fontindex];
     std::map<int,texture_font_t*>::iterator it = font->fonts.find(fontsize);
     if(it == font->fonts.end()) {
@@ -873,15 +749,13 @@ inline static Handle<Value> getFontDescender(const Arguments& args) {
         font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
     }
     texture_font_t *tf = font->fonts[fontsize];
-    Local<Number> num = Number::New(tf->descender);
-    return scope.Close(num);
+    info.GetReturnValue().Set(tf->descender);
 }
-inline static Handle<Value> getCharWidth(const Arguments& args) {
-    HandleScope scope;
-    std::wstring wstr = GetWString(args[0]->ToString());
+NAN_METHOD(getCharWidth) {
+    std::wstring wstr = GetWString(info[0]->ToString());
 
-    int fontsize  = args[1]->ToNumber()->NumberValue();
-    int fontindex  = args[2]->ToNumber()->NumberValue();
+    int fontsize  = info[1]->Uint32Value();
+    int fontindex  = info[2]->Uint32Value();
 
     AminoFont * font = fontmap[fontindex];
     assert(font);
@@ -908,20 +782,17 @@ inline static Handle<Value> getCharWidth(const Arguments& args) {
         }
         w += glyph->advance_x;
     }
-    Local<Number> num = Number::New(w);
-    return scope.Close(num);
+    info.GetReturnValue().Set(w);
 }
 
-inline static Handle<Value> createNativeFont(const Arguments& args) {
-    HandleScope scope;
-
+NAN_METHOD(createNativeFont) {
     AminoFont* afont = new AminoFont();
     int id = fontmap.size();
     fontmap[id] = afont;
 
-    afont->filename = TO_CHAR(args[0]);
+    afont->filename = TO_CHAR(info[0]);
 
-    char* shader_base = TO_CHAR(args[1]);
+    char* shader_base = TO_CHAR(info[1]);
 
     printf("loading font file %s\n",afont->filename);
     //printf("shader base = %s\n",shader_base);
@@ -933,10 +804,9 @@ inline static Handle<Value> createNativeFont(const Arguments& args) {
 
     afont->atlas = texture_atlas_new(512,512,1);
     afont->shader = shader_load(vert.c_str(),frag.c_str());
-    Local<Number> num = Number::New(id);
-    return scope.Close(num);
+    info.GetReturnValue().Set(id);
 }
-
+/*
 static void sendValidate() {
     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
     Local<Object> event_obj = Object::New();
@@ -944,57 +814,53 @@ static void sendValidate() {
     Handle<Value> event_argv[] = {event_obj};
     NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
 }
+*/
 
 
 
-
-inline static Handle<Value> initColorShader(const Arguments& args) {
-    HandleScope scope;
-    if(args.Length() < 5) {
+NAN_METHOD(initColorShader) {
+    if(info.Length() < 5) {
         printf("initColorShader: not enough args\n");
         exit(1);
     };
-    colorShader->prog        = args[0]->ToNumber()->NumberValue();
-    colorShader->u_matrix    = args[1]->ToNumber()->NumberValue();
-    colorShader->u_trans     = args[2]->ToNumber()->NumberValue();
-    colorShader->u_opacity   = args[3]->ToNumber()->NumberValue();
-    colorShader->attr_pos    = args[4]->ToNumber()->NumberValue();
-    colorShader->attr_color  = args[5]->ToNumber()->NumberValue();
-    return scope.Close(Undefined());
+    colorShader->prog        = info[0]->Uint32Value();
+    colorShader->u_matrix    = info[1]->Uint32Value();
+    colorShader->u_trans     = info[2]->Uint32Value();
+    colorShader->u_opacity   = info[3]->Uint32Value();
+    colorShader->attr_pos    = info[4]->Uint32Value();
+    colorShader->attr_color  = info[5]->Uint32Value();
 }
 
-inline static Handle<Value> initTextureShader(const Arguments& args) {
-    HandleScope scope;
-    if(args.Length() < 6) {
+NAN_METHOD(initTextureShader) {
+    if(info.Length() < 6) {
         printf("initTextureShader: not enough args\n");
         exit(1);
     };
-    textureShader->prog        = args[0]->ToNumber()->NumberValue();
-    textureShader->u_matrix    = args[1]->ToNumber()->NumberValue();
-    textureShader->u_trans     = args[2]->ToNumber()->NumberValue();
-    textureShader->u_opacity   = args[3]->ToNumber()->NumberValue();
+    textureShader->prog        = info[0]->Uint32Value();
+    textureShader->u_matrix    = info[1]->Uint32Value();
+    textureShader->u_trans     = info[2]->Uint32Value();
+    textureShader->u_opacity   = info[3]->Uint32Value();
 
-    textureShader->attr_pos    = args[4]->ToNumber()->NumberValue();
-    textureShader->attr_texcoords  = args[5]->ToNumber()->NumberValue();
-    textureShader->attr_tex    = args[6]->ToNumber()->NumberValue();
-    return scope.Close(Undefined());
+    textureShader->attr_pos    = info[4]->Uint32Value();
+    textureShader->attr_texcoords  = info[5]->Uint32Value();
+    textureShader->attr_tex    = info[6]->Uint32Value();
 }
 
 
 
-Handle<Value> node_glCreateShader(const Arguments& args);
-Handle<Value> node_glShaderSource(const Arguments& args);
-Handle<Value> node_glCompileShader(const Arguments& args);
-Handle<Value> node_glGetShaderiv(const Arguments& args);
-Handle<Value> node_glGetProgramiv(const Arguments& args);
-Handle<Value> node_glGetShaderInfoLog(const Arguments& args);
-Handle<Value> node_glGetProgramInfoLog(const Arguments& args);
-Handle<Value> node_glCreateProgram(const Arguments& args);
-Handle<Value> node_glAttachShader(const Arguments& args);
-Handle<Value> node_glLinkProgram(const Arguments& args);
-Handle<Value> node_glUseProgram(const Arguments& args);
-Handle<Value> node_glGetAttribLocation(const Arguments& args);
-Handle<Value> node_glGetUniformLocation(const Arguments& args);
+NAN_METHOD(node_glCreateShader);
+NAN_METHOD(node_glShaderSource);
+NAN_METHOD(node_glCompileShader);
+NAN_METHOD(node_glGetShaderiv);
+NAN_METHOD(node_glGetProgramiv);
+NAN_METHOD(node_glGetShaderInfoLog);
+NAN_METHOD(node_glGetProgramInfoLog);
+NAN_METHOD(node_glCreateProgram);
+NAN_METHOD(node_glAttachShader);
+NAN_METHOD(node_glLinkProgram);
+NAN_METHOD(node_glUseProgram);
+NAN_METHOD(node_glGetAttribLocation);
+NAN_METHOD(node_glGetUniformLocation);
 
 
 
