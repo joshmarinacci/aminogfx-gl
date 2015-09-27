@@ -80,10 +80,9 @@ function loadShaderCode(path, OS) {
 exports.init = function(sgtest, OS) {
     var cshader = Object.create(Shader);
     cshader.GL = sgtest;
-    console.log("dirtname = ", __dirname);
-    var basepath = __dirname + "/../resources/shaders";
-    cshader.vertText = loadShaderCode(basepath+"/color.vert",OS);
-    cshader.fragText = loadShaderCode(basepath+"/color.frag",OS);
+    console.log("__dirname = ", __dirname);
+    cshader.vertText = loadShaderCode(__dirname+"/shaders/color.vert",OS);
+    cshader.fragText = loadShaderCode(__dirname+"/shaders/color.frag",OS);
     cshader.build();
     cshader.useProgram();
     cshader.locateAttrib('pos');
@@ -101,8 +100,8 @@ exports.init = function(sgtest, OS) {
 
     var tshader = Object.create(Shader);
     tshader.GL = sgtest;
-    tshader.vertText = loadShaderCode(basepath+"/texture.vert");
-    tshader.fragText = loadShaderCode(basepath+"/texture.frag");
+    tshader.vertText = loadShaderCode(__dirname+"/shaders/texture.vert");
+    tshader.fragText = loadShaderCode(__dirname+"/shaders/texture.frag");
     tshader.build();
     tshader.useProgram();
     tshader.locateUniform('modelviewProjection');
