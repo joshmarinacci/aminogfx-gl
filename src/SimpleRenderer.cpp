@@ -1,5 +1,5 @@
 #include "SimpleRenderer.h"
-#include <node_buffer.h>
+//#include <node_buffer.h>
 
 
 SimpleRenderer::SimpleRenderer() {
@@ -354,19 +354,19 @@ NAN_METHOD(node_glBufferData) {
 NAN_METHOD(node_glGenFramebuffers) {
   int val   = info[0]->Uint32Value();
   GLuint buf;
-  glGenFramebuffers(val, &buf);
-  info.GetReturnValue().Set(buf);
+//  glGenFramebuffers(val, &buf);
+//  info.GetReturnValue().Set(buf);
 }
 NAN_METHOD(node_glBindFramebuffer) {
   int type   = info[0]->Uint32Value();
   int buf    = info[1]->Uint32Value();
-  glBindFramebuffer(type,buf);
+//  glBindFramebuffer(type,buf);
 }
 
 NAN_METHOD(node_glCheckFramebufferStatus) {
   int buf    = info[0]->Uint32Value();
-  GLuint val = glCheckFramebufferStatus(buf);
-  info.GetReturnValue().Set(val);
+//  GLuint val = glCheckFramebufferStatus(buf);
+//  info.GetReturnValue().Set(val);
 }
 
 NAN_METHOD(node_glGenTextures) {
@@ -406,14 +406,14 @@ NAN_METHOD(node_glTexParameteri) {
     glTexParameteri(type, param, value);
 }
 
-NAN_METHOD(node_glFramebufferTexture2D) {
-    int type     = info[0]->Uint32Value();
-    int attach   = info[1]->Uint32Value();
-    int type2    = info[2]->Uint32Value();
-    int value    = info[3]->Uint32Value();
-    int other    = info[4]->Uint32Value();
-    glFramebufferTexture2D(type, attach, type2, value, other);
-}
+//NAN_METHOD(node_glFramebufferTexture2D) {
+//    int type     = info[0]->Uint32Value();
+//    int attach   = info[1]->Uint32Value();
+//    int type2    = info[2]->Uint32Value();
+//    int value    = info[3]->Uint32Value();
+//    int other    = info[4]->Uint32Value();
+//    glFramebufferTexture2D(type, attach, type2, value, other);
+//}
 
 //using node::Buffer;
 NAN_METHOD(node_glReadPixels) {
@@ -443,7 +443,6 @@ NAN_METHOD(node_glReadPixels) {
 
 
 NAN_METHOD(node_glEnableVertexAttribArray) {
-  HandleScope scope;
   int loc                 = info[0]->Uint32Value();
   glEnableVertexAttribArray(loc);
   info.GetReturnValue().Set(loc);
@@ -462,20 +461,20 @@ NAN_METHOD(node_glVertexAttribPointer) {
 
 NAN_METHOD(node_glUniform1f) {
   int loc                 = info[0]->Uint32Value();
-  float value             = info[1]->Uint32Value();
-  glUniform1f(loc,value);
+  //float value             = info[1]->Uint32Value();
+  //glUniform1f(loc,value);
 }
 NAN_METHOD(node_glUniform2f) {
   int loc                 = info[0]->Uint32Value();
-  float value             = info[1]->Uint32Value();
-  float value2            = info[2]->Uint32Value();
-  glUniform2f(loc,value,value2);
+//  float value             = info[1]->Uint32Value();
+//  float value2            = info[2]->Uint32Value();
+//  glUniform2f(loc,value,value2);
 }
 
 
 NAN_METHOD(node_glPointSize) {
-  float size                 = args[0]->ToNumber()->NumberValue();
-  glPointSize(size);
+//  float size                 = args[0]->ToDoubleValue();
+//  glPointSize(size);
 }
 
 NAN_METHOD(node_glEnable) {
@@ -533,94 +532,94 @@ void SimpleRenderer::drawGLNode(GLContext* ctx, GLNode* glnode) {
     Nan::Set(event_obj, Nan::New("GL_ARRAY_BUFFER").ToLocalChecked(), Nan::New(GL_ARRAY_BUFFER));
     Nan::Set(event_obj, Nan::New("GL_STATIC_DRAW").ToLocalChecked(), Nan::New(GL_STATIC_DRAW));
     Nan::Set(event_obj, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(), Nan::New(GL_VERTEX_SHADER));
-    event_obj->Set(String::NewSymbol("GL_FRAGMENT_SHADER"), Number::New(GL_FRAGMENT_SHADER));
-    event_obj->Set(String::NewSymbol("GL_COMPILE_STATUS"), Number::New(GL_COMPILE_STATUS));
-    event_obj->Set(String::NewSymbol("GL_LINK_STATUS"), Number::New(GL_LINK_STATUS));
-    event_obj->Set(String::NewSymbol("GL_TRUE"), Number::New(GL_TRUE));
-    event_obj->Set(String::NewSymbol("GL_FALSE"), Number::New(GL_FALSE));
-    event_obj->Set(String::NewSymbol("GL_FLOAT"), Number::New(GL_FLOAT));
-    event_obj->Set(String::NewSymbol("GL_BLEND"), Number::New(GL_BLEND));
-    event_obj->Set(String::NewSymbol("GL_SRC_ALPHA"), Number::New(GL_SRC_ALPHA));
-    event_obj->Set(String::NewSymbol("GL_ONE_MINUS_SRC_ALPHA"), Number::New(GL_ONE_MINUS_SRC_ALPHA));
-//    event_obj->Set(String::NewSymbol("GL_MAX"), Number::New(GL_MAX_EXT));
-    //event_obj->Set(String::NewSymbol("GL_ADD"), Number::New(GL_ADD));
-    event_obj->Set(String::NewSymbol("GL_POINTS"), Number::New(GL_POINTS));
-    event_obj->Set(String::NewSymbol("GL_LINES"), Number::New(GL_LINES));
-    event_obj->Set(String::NewSymbol("GL_LINE_STRIP"), Number::New(GL_LINE_STRIP));
-    event_obj->Set(String::NewSymbol("GL_LINE_LOOP"), Number::New(GL_LINE_LOOP));
-    event_obj->Set(String::NewSymbol("GL_TRIANGLE_FAN"), Number::New(GL_TRIANGLE_FAN));
-    event_obj->Set(String::NewSymbol("GL_TRIANGLE_STRIP"), Number::New(GL_TRIANGLE_STRIP));
-    event_obj->Set(String::NewSymbol("GL_TRIANGLES"), Number::New(GL_TRIANGLES));
+    Nan::Set(event_obj, Nan::New("GL_FRAGMENT_SHADER").ToLocalChecked(), Nan::New(GL_FRAGMENT_SHADER));
+    Nan::Set(event_obj, Nan::New("GL_COMPILE_STATUS").ToLocalChecked(), Nan::New(GL_COMPILE_STATUS));
+    Nan::Set(event_obj, Nan::New("GL_LINK_STATUS").ToLocalChecked(), Nan::New(GL_LINK_STATUS));
+    Nan::Set(event_obj, Nan::New("GL_TRUE").ToLocalChecked(), Nan::New(GL_TRUE));
+    Nan::Set(event_obj, Nan::New("GL_FALSE").ToLocalChecked(), Nan::New(GL_FALSE));
+    Nan::Set(event_obj, Nan::New("GL_FLOAT").ToLocalChecked(), Nan::New(GL_FLOAT));
+    Nan::Set(event_obj, Nan::New("GL_BLEND").ToLocalChecked(), Nan::New(GL_BLEND));
+    Nan::Set(event_obj, Nan::New("GL_SRC_ALPHA").ToLocalChecked(), Nan::New(GL_SRC_ALPHA));
+    Nan::Set(event_obj, Nan::New("GL_ONE_MINUS_SRC_ALPHA").ToLocalChecked(), Nan::New(GL_ONE_MINUS_SRC_ALPHA));
 
-    event_obj->Set(String::NewSymbol("GL_NO_ERROR"), Number::New(GL_NO_ERROR));
-    event_obj->Set(String::NewSymbol("GL_INVALID_ENUM"), Number::New(GL_INVALID_ENUM));
-    event_obj->Set(String::NewSymbol("GL_INVALID_VALUE"), Number::New(GL_INVALID_VALUE));
-    event_obj->Set(String::NewSymbol("GL_INVALID_OPERATION"), Number::New(GL_INVALID_OPERATION));
-    event_obj->Set(String::NewSymbol("GL_OUT_OF_MEMORY"), Number::New(GL_OUT_OF_MEMORY));
-    event_obj->Set(String::NewSymbol("GL_TEXTURE_2D"), Number::New(GL_TEXTURE_2D));
-    event_obj->Set(String::NewSymbol("GL_TEXTURE0"), Number::New(GL_TEXTURE0));
-    event_obj->Set(String::NewSymbol("GL_RGB"), Number::New(GL_RGB));
-    event_obj->Set(String::NewSymbol("GL_TEXTURE_MIN_FILTER"), Number::New(GL_TEXTURE_MIN_FILTER));
-    event_obj->Set(String::NewSymbol("GL_TEXTURE_MAG_FILTER"), Number::New(GL_TEXTURE_MAG_FILTER));
-    event_obj->Set(String::NewSymbol("GL_LINEAR"), Number::New(GL_LINEAR));
-    event_obj->Set(String::NewSymbol("GL_UNSIGNED_BYTE"), Number::New(GL_UNSIGNED_BYTE));
-    event_obj->Set(String::NewSymbol("NULL"), Number::New(NULL));
-    event_obj->Set(String::NewSymbol("GL_FRAMEBUFFER"), Number::New(GL_FRAMEBUFFER));
-    event_obj->Set(String::NewSymbol("GL_FRAMEBUFFER_COMPLETE"), Number::New(GL_FRAMEBUFFER_COMPLETE));
-    event_obj->Set(String::NewSymbol("GL_COLOR_ATTACHMENT0"), Number::New(GL_COLOR_ATTACHMENT0));
+//    Nan::Set(event_obj, Nan::New("GL_MAX"), Nan::New(GL_MAX_EXT));
+    //Nan::Set(event_obj, Nan::New("GL_ADD"), Nan::New(GL_ADD));
+    Nan::Set(event_obj, Nan::New("GL_POINTS").ToLocalChecked(), Nan::New(GL_POINTS));
+    Nan::Set(event_obj, Nan::New("GL_LINES").ToLocalChecked(), Nan::New(GL_LINES));
+    Nan::Set(event_obj, Nan::New("GL_LINE_STRIP").ToLocalChecked(), Nan::New(GL_LINE_STRIP));
+    Nan::Set(event_obj, Nan::New("GL_LINE_LOOP").ToLocalChecked(), Nan::New(GL_LINE_LOOP));
+    Nan::Set(event_obj, Nan::New("GL_TRIANGLE_FAN").ToLocalChecked(), Nan::New(GL_TRIANGLE_FAN));
+    Nan::Set(event_obj, Nan::New("GL_TRIANGLE_STRIP").ToLocalChecked(), Nan::New(GL_TRIANGLE_STRIP));
+    Nan::Set(event_obj, Nan::New("GL_TRIANGLES").ToLocalChecked(), Nan::New(GL_TRIANGLES));
+
+    Nan::Set(event_obj, Nan::New("GL_NO_ERROR").ToLocalChecked(), Nan::New(GL_NO_ERROR));
+    Nan::Set(event_obj, Nan::New("GL_INVALID_ENUM").ToLocalChecked(), Nan::New(GL_INVALID_ENUM));
+    Nan::Set(event_obj, Nan::New("GL_INVALID_VALUE").ToLocalChecked(), Nan::New(GL_INVALID_VALUE));
+    Nan::Set(event_obj, Nan::New("GL_INVALID_OPERATION").ToLocalChecked(), Nan::New(GL_INVALID_OPERATION));
+    Nan::Set(event_obj, Nan::New("GL_OUT_OF_MEMORY").ToLocalChecked(), Nan::New(GL_OUT_OF_MEMORY));
+    Nan::Set(event_obj, Nan::New("GL_TEXTURE_2D").ToLocalChecked(), Nan::New(GL_TEXTURE_2D));
+    Nan::Set(event_obj, Nan::New("GL_TEXTURE0").ToLocalChecked(), Nan::New(GL_TEXTURE0));
+    Nan::Set(event_obj, Nan::New("GL_RGB").ToLocalChecked(), Nan::New(GL_RGB));
+    Nan::Set(event_obj, Nan::New("GL_TEXTURE_MIN_FILTER").ToLocalChecked(), Nan::New(GL_TEXTURE_MIN_FILTER));
+    Nan::Set(event_obj, Nan::New("GL_TEXTURE_MAG_FILTER").ToLocalChecked(), Nan::New(GL_TEXTURE_MAG_FILTER));
+    Nan::Set(event_obj, Nan::New("GL_LINEAR").ToLocalChecked(), Nan::New(GL_LINEAR));
+    Nan::Set(event_obj, Nan::New("GL_UNSIGNED_BYTE").ToLocalChecked(), Nan::New(GL_UNSIGNED_BYTE));
+//    Nan::Set(event_obj, Nan::New("NULL").ToLocalChecked(), Nan::New((int)NULL));
+//    Nan::Set(event_obj, Nan::New("GL_FRAMEBUFFER").ToLocalChecked(), Nan::New(GL_FRAMEBUFFER));
+//    Nan::Set(event_obj, Nan::New("GL_FRAMEBUFFER_COMPLETE").ToLocalChecked(), Nan::New(GL_FRAMEBUFFER_COMPLETE));
+//    Nan::Set(event_obj, Nan::New("GL_COLOR_ATTACHMENT0").ToLocalChecked(), Nan::New(GL_COLOR_ATTACHMENT0));
+
+    Nan::Set(event_obj, Nan::New("glGetString").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetString)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetError").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetError)).ToLocalChecked());
+//    Nan::Set(event_obj, Nan::New("glGenVertexArrays").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenVertexArrays)).ToLocalChecked());
+//    Nan::Set(event_obj, Nan::New("glBindVertexArray").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindVertexArray)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGenBuffers").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenBuffers)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBindBuffer").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindBuffer)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBufferData").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBufferData)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetProgramiv").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetShaderInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetShaderInfoLog)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glEnableVertexAttribArray").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glEnableVertexAttribArray)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glVertexAttribPointer").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glVertexAttribPointer)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glUniform1f").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUniform1f)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glUniform2f").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUniform2f)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glPointSize").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glPointSize)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glEnable").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glEnable)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBlendFunc").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBlendFunc)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBlendFuncSeparate").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBlendFuncSeparate)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBlendEquation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBlendEquation)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("GL_FUNC_ADD").ToLocalChecked(), Nan::New(GL_FUNC_ADD));
+    Nan::Set(event_obj, Nan::New("GL_ONE").ToLocalChecked(), Nan::New(GL_ONE));
+    Nan::Set(event_obj, Nan::New("GL_ZERO").ToLocalChecked(), Nan::New(GL_ZERO));
+    Nan::Set(event_obj, Nan::New("glDrawArrays").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glDrawArrays)).ToLocalChecked());
+
+    Nan::Set(event_obj, Nan::New("glGenFramebuffers").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenFramebuffers)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBindFramebuffer").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindFramebuffer)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCheckFramebufferStatus").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCheckFramebufferStatus)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGenTextures").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenTextures)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBindTexture").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindTexture)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glActiveTexture").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glActiveTexture)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glTexImage2D").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glTexImage2D)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glTexParameteri").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glTexParameteri)).ToLocalChecked());
+//    Nan::Set(event_obj, Nan::New("glFramebufferTexture2D").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glFramebufferTexture2D)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glReadPixels").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glReadPixels)).ToLocalChecked());
 
 
-    event_obj->Set(String::NewSymbol("glGetString"), FunctionTemplate::New(node_glGetString)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetError"), FunctionTemplate::New(node_glGetError)->GetFunction());
-//    event_obj->Set(String::NewSymbol("glGenVertexArrays"), FunctionTemplate::New(node_glGenVertexArrays)->GetFunction());
-//    event_obj->Set(String::NewSymbol("glBindVertexArray"), FunctionTemplate::New(node_glBindVertexArray)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGenBuffers"), FunctionTemplate::New(node_glGenBuffers)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBindBuffer"), FunctionTemplate::New(node_glBindBuffer)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBufferData"), FunctionTemplate::New(node_glBufferData)->GetFunction());
-    event_obj->Set(String::NewSymbol("glCreateShader"), FunctionTemplate::New(node_glCreateShader)->GetFunction());
-    event_obj->Set(String::NewSymbol("glShaderSource"), FunctionTemplate::New(node_glShaderSource)->GetFunction());
-    event_obj->Set(String::NewSymbol("glCompileShader"), FunctionTemplate::New(node_glCompileShader)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetShaderiv"), FunctionTemplate::New(node_glGetShaderiv)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetProgramiv"), FunctionTemplate::New(node_glGetProgramiv)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetShaderInfoLog"), FunctionTemplate::New(node_glGetShaderInfoLog)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetProgramInfoLog"), FunctionTemplate::New(node_glGetProgramInfoLog)->GetFunction());
-    event_obj->Set(String::NewSymbol("glCreateProgram"), FunctionTemplate::New(node_glCreateProgram)->GetFunction());
-    event_obj->Set(String::NewSymbol("glAttachShader"), FunctionTemplate::New(node_glAttachShader)->GetFunction());
-    event_obj->Set(String::NewSymbol("glLinkProgram"), FunctionTemplate::New(node_glLinkProgram)->GetFunction());
-    event_obj->Set(String::NewSymbol("glUseProgram"), FunctionTemplate::New(node_glUseProgram)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetAttribLocation"), FunctionTemplate::New(node_glGetAttribLocation)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGetUniformLocation"), FunctionTemplate::New(node_glGetUniformLocation)->GetFunction());
-    event_obj->Set(String::NewSymbol("glEnableVertexAttribArray"), FunctionTemplate::New(node_glEnableVertexAttribArray)->GetFunction());
-    event_obj->Set(String::NewSymbol("glVertexAttribPointer"), FunctionTemplate::New(node_glVertexAttribPointer)->GetFunction());
-    event_obj->Set(String::NewSymbol("glUniform1f"), FunctionTemplate::New(node_glUniform1f)->GetFunction());
-    event_obj->Set(String::NewSymbol("glUniform2f"), FunctionTemplate::New(node_glUniform2f)->GetFunction());
-    event_obj->Set(String::NewSymbol("glPointSize"), FunctionTemplate::New(node_glPointSize)->GetFunction());
-    event_obj->Set(String::NewSymbol("glEnable"), FunctionTemplate::New(node_glEnable)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBlendFunc"), FunctionTemplate::New(node_glBlendFunc)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBlendFuncSeparate"), FunctionTemplate::New(node_glBlendFuncSeparate)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBlendEquation"), FunctionTemplate::New(node_glBlendEquation)->GetFunction());
-    event_obj->Set(String::NewSymbol("GL_FUNC_ADD"), Number::New(GL_FUNC_ADD));
-    event_obj->Set(String::NewSymbol("GL_ONE"), Number::New(GL_ONE));
-    event_obj->Set(String::NewSymbol("GL_ZERO"), Number::New(GL_ZERO));
-    event_obj->Set(String::NewSymbol("glDrawArrays"), FunctionTemplate::New(node_glDrawArrays)->GetFunction());
+    Nan::Set(event_obj, Nan::New("setModelView").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_setModelView)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("setGlobalTransform").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_setGlobalTransform)).ToLocalChecked());
 
-    event_obj->Set(String::NewSymbol("glGenFramebuffers"), FunctionTemplate::New(node_glGenFramebuffers)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBindFramebuffer"), FunctionTemplate::New(node_glBindFramebuffer)->GetFunction());
-    event_obj->Set(String::NewSymbol("glCheckFramebufferStatus"), FunctionTemplate::New(node_glCheckFramebufferStatus)->GetFunction());
-    event_obj->Set(String::NewSymbol("glGenTextures"), FunctionTemplate::New(node_glGenTextures)->GetFunction());
-    event_obj->Set(String::NewSymbol("glBindTexture"), FunctionTemplate::New(node_glBindTexture)->GetFunction());
-    event_obj->Set(String::NewSymbol("glActiveTexture"), FunctionTemplate::New(node_glActiveTexture)->GetFunction());
-    event_obj->Set(String::NewSymbol("glTexImage2D"), FunctionTemplate::New(node_glTexImage2D)->GetFunction());
-    event_obj->Set(String::NewSymbol("glTexParameteri"), FunctionTemplate::New(node_glTexParameteri)->GetFunction());
-    event_obj->Set(String::NewSymbol("glFramebufferTexture2D"), FunctionTemplate::New(node_glFramebufferTexture2D)->GetFunction());
-    event_obj->Set(String::NewSymbol("glReadPixels"), FunctionTemplate::New(node_glReadPixels)->GetFunction());
-
-
-    event_obj->Set(String::NewSymbol("setModelView"), FunctionTemplate::New(node_setModelView)->GetFunction());
-    event_obj->Set(String::NewSymbol("setGlobalTransform"), FunctionTemplate::New(node_setGlobalTransform)->GetFunction());
-
-    Handle<Value> event_argv[] = {event_obj};
-    glnode->callback->Call(Context::GetCurrent()->Global(),1,event_argv);
+//    Handle<Value> event_argv[] = {event_obj};
+//    glnode->callback->Call(Context::GetCurrent()->Global(),1,event_argv);
 
 
 }
