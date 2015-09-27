@@ -40,11 +40,7 @@ extern "C" {
 
 //#include "opengl.h"
 #ifdef MAC
-#include <GL/glfw.h>
-#endif
-
-#ifdef KLAATU
-#include <GLES2/gl2.h>
+#include <GLFW/glfw3.h>
 #endif
 
 #ifdef LINUX
@@ -195,7 +191,7 @@ typedef struct
  * Render a specified item from the vertex buffer.
  *
  * @param  self   a vertex buffer
- * @param  index index of the item to be rendered 
+ * @param  index index of the item to be rendered
  */
   void
   vertex_buffer_render_item ( vertex_buffer_t *self,
@@ -325,7 +321,7 @@ typedef struct
  */
   size_t
   vertex_buffer_push_back( vertex_buffer_t * self,
-                           const void * vertices, const size_t vcount,  
+                           const void * vertices, const size_t vcount,
                            const GLushort * indices, const size_t icount );
 
 
@@ -342,7 +338,7 @@ typedef struct
   size_t
   vertex_buffer_insert( vertex_buffer_t * self,
                         size_t index,
-                        const void * vertices, const size_t vcount,  
+                        const void * vertices, const size_t vcount,
                         const GLushort * indices, const size_t icount );
 
 /**

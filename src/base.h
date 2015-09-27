@@ -269,16 +269,22 @@ public:
         }
     }
 
-void endAnimation() {
+/*NAN_METHOD(endAnimation) {
      applyValue(end);
      if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-     Local<Object> event_obj = Object::New();
-     event_obj->Set(String::NewSymbol("type"), String::New("animend"));
-     event_obj->Set(String::NewSymbol("id"), Number::New(id));
-     Handle<Value> event_argv[] = {event_obj};
-     NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-}
 
+     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+     //Local<Object> event_obj = Object::New();
+     Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("animend").ToLocalChecked());
+     //event_obj->Set(String::NewSymbol("type"), String::New("animend"));
+     Nan::Set(event_obj, Nan::New("id").ToLocalChecked(), Nan::New(id));
+     //event_obj->Set(String::NewSymbol("id"), Number::New(id));
+
+     //Handle<Value> event_argv[] = {event_obj};
+     //NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
+     info.GetReturnValue().Set(event_obj);
+}
+*/
 
 void update() {
     	if(!active) return;
@@ -304,7 +310,7 @@ void update() {
                     startTime = getTime();
                     toggle();
                 } else {
-                    endAnimation();
+                    //endAnimation();
                     return;
                 }
             }
@@ -511,75 +517,56 @@ public:
 
 static std::vector<Update*> updates;
 
-inline Handle<Value> createRect(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(createRect) {
     Rect* rect = new Rect();
     rects.push_back(rect);
     rects.size();
-    Local<Number> num = Number::New(rects.size()-1);
-    return scope.Close(num);
+    info.GetReturnValue().Set((int)rects.size()-1);
 }
-inline Handle<Value> createPoly(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(createPoly) {
     PolyNode* node = new PolyNode();
     rects.push_back(node);
-    Local<Number> num = Number::New(rects.size()-1);
-    return scope.Close(num);
+    info.GetReturnValue().Set((int)rects.size()-1);
 }
-inline Handle<Value> createText(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(createText) {
     TextNode * node = new TextNode();
     rects.push_back(node);
-    Local<Number> num = Number::New(rects.size()-1);
-    return scope.Close(num);
+    info.GetReturnValue().Set((int)rects.size()-1);
 }
-inline Handle<Value> createGroup(const Arguments& args) {
-    HandleScope scope;
-
+NAN_METHOD(createGroup) {
     Group* node = new Group();
     rects.push_back(node);
     rects.size();
-
-    Local<Number> num = Number::New(rects.size()-1);
-    return scope.Close(num);
+    info.GetReturnValue().Set((int)rects.size()-1);
 }
-inline Handle<Value> createGLNode(const Arguments& args) {
-    HandleScope scope;
-
+NAN_METHOD(createGLNode) {
     GLNode* node = new GLNode();
-    node->callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
+    //node->callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
     rects.push_back(node);
     rects.size();
-
-    Local<Number> num = Number::New(rects.size()-1);
-    return scope.Close(num);
+    info.GetReturnValue().Set((int)rects.size()-1);
 }
 
-inline Handle<Value> createAnim(const Arguments& args) {
-    HandleScope scope;
-
-    int rectHandle   = args[0]->ToNumber()->NumberValue();
-    int property     = args[1]->ToNumber()->NumberValue();
-    float start      = args[2]->ToNumber()->NumberValue();
-    float end        = args[3]->ToNumber()->NumberValue();
-    float duration   = args[4]->ToNumber()->NumberValue();
+NAN_METHOD(createAnim) {
+    int rectHandle   = info[0]->Uint32Value();
+    int property     = info[1]->Uint32Value();
+    float start      = info[2]->Uint32Value();
+    float end        = info[3]->Uint32Value();
+    float duration   = info[4]->Uint32Value();
 
     Anim* anim = new Anim(rects[rectHandle],property, start,end,  duration);
     anims.push_back(anim);
     anims.size();
-    Local<Number> num = Number::New(anims.size()-1);
     anim->id = anims.size()-1;
     anim->active = true;
-    return scope.Close(num);
+    info.GetReturnValue().Set((int)anims.size()-1);
 }
 
 
-inline Handle<Value> stopAnim(const Arguments& args) {
-	HandleScope scope;
-	int id = args[0]->ToNumber()->NumberValue();
+NAN_METHOD(stopAnim) {
+	int id = info[0]->Uint32Value();
 	Anim* anim = anims[id];
 	anim->active = false;
-	return scope.Close(Undefined());
 }
 
 static std::wstring GetWString(v8::Handle<v8::String> str) {
@@ -601,24 +588,22 @@ static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
     return carray;
 }
 
-inline Handle<Value> updateProperty(const Arguments& args) {
-    HandleScope scope;
-    int rectHandle   = args[0]->ToNumber()->NumberValue();
-    int property     = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(updateProperty) {
+    int rectHandle   = info[0]->Uint32Value();
+    int property     = info[1]->Uint32Value();
     float value = 0;
     std::wstring wstr = L"";
-    if(args[2]->IsNumber()) {
-        value = args[2]->ToNumber()->NumberValue();
+    if(info[2]->IsNumber()) {
+        value = info[2]->Uint32Value();
     }
-    if(args[2]->IsString()) {
-        wstr = GetWString(args[2]->ToString());
+    if(info[2]->IsString()) {
+        wstr = GetWString(info[2]->ToString());
     }
     std::vector<float>* arr = NULL;
-    if(args[2]->IsArray()) {
-        arr = GetFloatArray(v8::Handle<v8::Array>::Cast(args[2]));
+    if(info[2]->IsArray()) {
+        arr = GetFloatArray(v8::Handle<v8::Array>::Cast(info[2]));
     }
     updates.push_back(new Update(RECT, rectHandle, property, value, wstr,arr));
-    return scope.Close(Undefined());
 }
 
 inline Handle<Value> updateAnimProperty(const Arguments& args) {

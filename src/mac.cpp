@@ -73,15 +73,13 @@ static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(int wheel) {
     NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
 }
 
-Handle<Value> init(const Arguments& args) {
+NAN_METHOD(init) {
 	matrixStack = std::stack<void*>();
-    HandleScope scope;
     if(!glfwInit()) {
         printf("error. quitting\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-    return scope.Close(Undefined());
 }
 
 
@@ -309,12 +307,12 @@ Handle<Value> setEventCallback(const Arguments& args) {
 
 
 
-void InitAll(Handle<Object> exports, Handle<Object> module) {
-    exports->Set(String::NewSymbol("init"),             FunctionTemplate::New(init)->GetFunction());
+NAN_MODULE_INIT(InitAll) {
+    Nan::Set(target, Nan::New("init").toLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(init)).toLocalChecked());
     exports->Set(String::NewSymbol("createWindow"),     FunctionTemplate::New(createWindow)->GetFunction());
     exports->Set(String::NewSymbol("setWindowSize"),    FunctionTemplate::New(setWindowSize)->GetFunction());
     exports->Set(String::NewSymbol("getWindowSize"),    FunctionTemplate::New(getWindowSize)->GetFunction());
-    exports->Set(String::NewSymbol("createRect"),       FunctionTemplate::New(createRect)->GetFunction());
+	Nan::Set(target, Nan::New("createRect").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(createReact)).ToLocalChecked());
     exports->Set(String::NewSymbol("createPoly"),       FunctionTemplate::New(createPoly)->GetFunction());
     exports->Set(String::NewSymbol("createGroup"),      FunctionTemplate::New(createGroup)->GetFunction());
     exports->Set(String::NewSymbol("createText"),       FunctionTemplate::New(createText)->GetFunction());
@@ -328,7 +326,7 @@ void InitAll(Handle<Object> exports, Handle<Object> module) {
     exports->Set(String::NewSymbol("removeNodeFromGroup"),   FunctionTemplate::New(removeNodeFromGroup)->GetFunction());
     exports->Set(String::NewSymbol("tick"),             FunctionTemplate::New(tick)->GetFunction());
     exports->Set(String::NewSymbol("selfDrive"),        FunctionTemplate::New(selfDrive)->GetFunction());
-    exports->Set(String::NewSymbol("setEventCallback"), FunctionTemplate::New(setEventCallback)->GetFunction());
+	Nan::Set(target, Nan::New("setEventCallback").toLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(setEventCallback)).toLocalChecked());
     exports->Set(String::NewSymbol("setRoot"),          FunctionTemplate::New(setRoot)->GetFunction());
     exports->Set(String::NewSymbol("decodePngBuffer"),  FunctionTemplate::New(decodePngBuffer)->GetFunction());
     exports->Set(String::NewSymbol("decodeJpegBuffer"),  FunctionTemplate::New(decodeJpegBuffer)->GetFunction());

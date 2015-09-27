@@ -2,9 +2,10 @@
 #define AMINOGFX
 #include "freetype-gl.h"
 #include "vertex-buffer.h"
+#include <nan.h>
 
 #ifdef MAC
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <sys/time.h>
 

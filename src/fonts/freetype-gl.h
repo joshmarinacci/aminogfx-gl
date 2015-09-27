@@ -36,11 +36,7 @@
 
 /* Mandatory */
 #ifdef MAC
-#include <GL/glfw.h>
-#endif
-
-#ifdef KLAATU
-#include <GLES2/gl2.h>
+#include <GLFW/glfw3.h>
 #endif
 
 #ifdef LINUX

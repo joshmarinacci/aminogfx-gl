@@ -1,12 +1,11 @@
 {
   "name": "aminogfx-gl",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "AminoGFX implementation for OpenGL / GLES2",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp rebuild"
-  },
+    "install": "node-pre-gyp install --fallback-to-build"
+  }
   "binary": {
     "module_name": "aminonative",
     "module_path": "./build/binding/",
@@ -17,12 +16,10 @@
     "url": "https://github.com/joshmarinacci/aminogfx-gl.git"
   },
   "dependencies": {
-    "aminogfx": "^0.0.19",
+    "aminogfx": "^0.0.20",
+    "nan": "^2.0.9",
     "node-pre-gyp": "0.5.x",
     "wrench": "^1.5.8"
-  },
-  "engines": {
-    "node": ">= 0.10.0"
   },
   "author": {
     "name": "Josh Marinacci",
@@ -34,8 +31,5 @@
   "bugs": {
     "url": "https://github.com/joshmarinacci/aminogfx-gl/issues"
   },
-  "homepage": "https://github.com/joshmarinacci/aminogfx-gl",
-  "scripts": {
-    "install": "node-pre-gyp install --fallback-to-build"
-  }
+  "homepage": "https://github.com/joshmarinacci/aminogfx-gl"
 }

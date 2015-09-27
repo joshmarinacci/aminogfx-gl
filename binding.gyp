@@ -18,6 +18,7 @@
                 "src/SimpleRenderer.cpp"
             ],
             "include_dirs": [
+                "<!(node -e \"require('nan')\")",
                 "src/",
                 "src/fonts/",
             ],
@@ -26,10 +27,10 @@
                 ['OS=="mac"', {
                     "include_dirs": [
                         " <!@(freetype-config --cflags)",
-                        " <!@(pkg-config --cflags libglfw)",
+                        " <!@(pkg-config --cflags glfw3)",
                     ],
                     "libraries": [
-                        " <!@(pkg-config --libs libglfw)",
+                        " <!@(pkg-config --libs glfw3)",
                         '-framework OpenGL',
                         '-framework OpenCL',
                         '-framework IOKit',
@@ -42,12 +43,6 @@
                         "MAC",
                         "GLFW_NO_GLU",
                         "GLFW_INCLUDE_GL3",
-                    ]
-                }],
-
-                ['OS=="klaatu"', {
-                    "defines": [
-                        "KLAATU"
                     ]
                 }],
 
