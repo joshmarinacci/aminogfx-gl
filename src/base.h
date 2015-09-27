@@ -515,7 +515,7 @@ public:
     }
 };
 
-static std::vector<Update*> updates;
+extern std::vector<Update*> updates;
 
 NAN_METHOD(createRect);
 NAN_METHOD(createPoly);

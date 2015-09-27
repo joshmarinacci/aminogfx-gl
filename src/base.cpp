@@ -20,7 +20,7 @@ std::stack<void*> matrixStack;
 int rootHandle;
 std::map<int,AminoFont*> fontmap;
 std::vector<AminoNode*> rects;
-
+std::vector<Update*> updates;
 
 void scale(double x, double y){
     GLfloat scale[16];
