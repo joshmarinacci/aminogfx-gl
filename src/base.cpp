@@ -218,6 +218,7 @@ NAN_METHOD(updateProperty) {
     std::wstring wstr = L"";
     if(info[2]->IsNumber()) {
         value = info[2]->Uint32Value();
+        printf("  setting number %f on prop %d \n",value,property);
     }
     if(info[2]->IsString()) {
         wstr = GetWString(info[2]->ToString());
