@@ -546,6 +546,7 @@ static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
 }
 
 NAN_METHOD(updateProperty);
+NAN_METHOD(updateWindowProperty);
 NAN_METHOD(updateAnimProperty);
 NAN_METHOD(addNodeToGroup);
 NAN_METHOD(removeNodeFromGroup);

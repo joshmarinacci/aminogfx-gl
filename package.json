@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "install": "node-pre-gyp install --fallback-to-build"
-  }
+  },
   "binary": {
     "module_name": "aminonative",
     "module_path": "./build/binding/",

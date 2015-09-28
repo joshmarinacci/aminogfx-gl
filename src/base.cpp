@@ -246,6 +246,21 @@ NAN_METHOD(updateAnimProperty) {
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL));
 }
 
+NAN_METHOD(updateWindowProperty) {
+    int windowHandle   = info[0]->Uint32Value();
+    int property       = info[1]->Uint32Value();
+    float value = 0;
+    std::wstring wstr = L"";
+    if(info[2]->IsNumber()) {
+        value = info[2]->Uint32Value();
+    }
+    if(info[2]->IsString()) {
+       char* cstr = TO_CHAR(info[2]);
+        wstr = GetWC(cstr);
+    }
+    updates.push_back(new Update(WINDOW, windowHandle, property, value, wstr, NULL));
+}
+
 NAN_METHOD(addNodeToGroup) {
     int rectHandle   = info[0]->Uint32Value();
     int groupHandle  = info[1]->Uint32Value();
