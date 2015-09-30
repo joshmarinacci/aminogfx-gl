@@ -85,10 +85,10 @@ static void add_text( vertex_buffer_t * buffer, texture_font_t * font,
                 kerning = texture_glyph_get_kerning( glyph, text[i-1] );
             }
             pen->x += kerning;
-            int x0  = (int)( pen->x + glyph->offset_x );
-            int y0  = (int)( pen->y + glyph->offset_y );
-            int x1  = (int)( x0 + glyph->width );
-            int y1  = (int)( y0 - glyph->height );
+            float x0  = ( pen->x + glyph->offset_x );
+            float y0  = ( pen->y + glyph->offset_y );
+            float x1  = ( x0 + glyph->width );
+            float y1  = ( y0 - glyph->height );
             float s0 = glyph->s0;
             float t0 = glyph->t0;
             float s1 = glyph->s1;
