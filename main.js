@@ -260,7 +260,11 @@ var gl_native = {
     setImmediate: function(loop) {
         setImmediate(loop);
     },
-    setEventCallback: function(cb) {   return sgtest.setEventCallback(cb);   },
+//    setEventCallback: function(cb) {   return sgtest.setEventCallback(cb);   },
+    setEventCallback: function(cb) {   return sgtest.setEventCallback(function(){
+        //console.log("got some stuff",arguments);
+        cb(arguments[1]);
+    });   },
     createRect: function()  {          return sgtest.createRect();           },
     createGroup: function() {          return sgtest.createGroup();          },
     createPoly: function()  {          return sgtest.createPoly();           },

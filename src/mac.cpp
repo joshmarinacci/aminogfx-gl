@@ -6,72 +6,73 @@
 // ========== Event Callbacks ===========
 
 static bool windowSizeChanged = true;
-static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(int newWidth, int newHeight) {
+static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow * window, int newWidth, int newHeight) {
 	width = newWidth;
 	height = newHeight;
 	windowSizeChanged = true;
     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-//    Local<Object> event_obj = Object::New();
-//    event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("windowsize"));
-//    event_obj->Set(String::NewSymbol("width").ToLocalChecked(), Number::New(width));
-//    event_obj->Set(String::NewSymbol("height").ToLocalChecked(), Number::New(height));
-    //Handle<Value> event_argv[] = {event_obj};
-    //NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("windowsize").ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("width").ToLocalChecked(),    Nan::New(width));
+    Nan::Set(event_obj, Nan::New("height").ToLocalChecked(),   Nan::New(height));
+    Local<Value> argv[] = { Nan::Null(), event_obj };
+    NODE_EVENT_CALLBACK->Call(2,argv);
 }
-static int GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(void) {
+static void GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(GLFWwindow * window) {
     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-//    Local<Object> event_obj = Object::New();
-//    event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("windowclose"));
-//    Handle<Value> event_argv[] = {event_obj};
-//    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-    return GL_TRUE;
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("windowclose").ToLocalChecked());
+    Local<Value> argv[] = { Nan::Null(), event_obj };
+    NODE_EVENT_CALLBACK->Call(2,argv);
 }
 static float near = 150;
 static float far = -300;
 static float eye = 600;
 
-static void GLFW_KEY_CALLBACK_FUNCTION(int key, int action) {
+static void GLFW_KEY_CALLBACK_FUNCTION(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-//    Local<Object> event_obj = Object::New();
-//    if(action == 1) {
-//        event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("keypress"));
-//    }
-//    if(action == 0) {
-//        event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("keyrelease"));
-//    }
-//    event_obj->Set(String::NewSymbol("keycode").ToLocalChecked(), Number::New(key));
-//    Handle<Value> event_argv[] = {event_obj};
-//    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    if(action == 0) {
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("keyrelease").ToLocalChecked());
+    }
+    if(action == 1) {
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("keypress").ToLocalChecked());
+    }
+
+    Nan::Set(event_obj, Nan::New("keycode").ToLocalChecked(),     Nan::New(key));
+    Local<Value> argv[] = { Nan::Null(), event_obj };
+    NODE_EVENT_CALLBACK->Call(2,argv);
 }
 
 
-static void GLFW_MOUSE_POS_CALLBACK_FUNCTION(int x, int y) {
+static void GLFW_MOUSE_POS_CALLBACK_FUNCTION(GLFWwindow *window, double x, double y) {
     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-//    Local<Object> event_obj = Object::New();
-//    event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("mouseposition"));
-//    event_obj->Set(String::NewSymbol("x").ToLocalChecked(), Number::New(x));
-//    event_obj->Set(String::NewSymbol("y").ToLocalChecked(), Number::New(y));
-//    Handle<Value> event_argv[] = {event_obj};
-//    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),  Nan::New("mouseposition").ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("x").ToLocalChecked(),     Nan::New(x));
+    Nan::Set(event_obj, Nan::New("y").ToLocalChecked(),     Nan::New(y));
+    Local<Value> argv[] = { Nan::Null(), event_obj };
+    NODE_EVENT_CALLBACK->Call(2,argv);
 }
 
-static void GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(int button, int state) {
+static void GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(GLFWwindow *window, int button, int action, int mods) {
     if(!eventCallbackSet) warnAbort("ERROR. Event callback not set");
-//    Local<Object> event_obj = Object::New();
-//    event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("mousebutton"));
-//    event_obj->Set(String::NewSymbol("button").ToLocalChecked(), Number::New(button));
-//    event_obj->Set(String::NewSymbol("state").ToLocalChecked(), Number::New(state));
-//    Handle<Value> event_argv[] = {event_obj};
-//    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousebutton").ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("button").ToLocalChecked(), Nan::New(button));
+    Nan::Set(event_obj, Nan::New("state").ToLocalChecked(),  Nan::New(action));
+    Local<Value> argv[] = { Nan::Null(), event_obj };
+    NODE_EVENT_CALLBACK->Call(2,argv);
 }
 
-static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(int wheel) {
+static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(GLFWwindow *window, double xoff, double yoff) {
     if(!eventCallbackSet) warnAbort("ERROR. Event callback not set");
-//    Local<Object> event_obj = Object::New();
-//    event_obj->Set(String::NewSymbol("type").ToLocalChecked(), String::New("mousewheelv"));
-//    event_obj->Set(String::NewSymbol("position").ToLocalChecked(), Number::New(wheel));
-//    Handle<Value> event_argv[] = {event_obj};
-//    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
+    v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+    Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousewheelv").ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("xoff").ToLocalChecked(),   Nan::New(xoff));
+    Nan::Set(event_obj, Nan::New("yoff").ToLocalChecked(),   Nan::New(yoff));
+    Local<Value> argv[] = { Nan::Null(), event_obj };
+    NODE_EVENT_CALLBACK->Call(2,argv);
 }
 
 NAN_METHOD(init) {
@@ -95,7 +96,6 @@ NAN_METHOD(createWindow) {
 
     //glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    //    if(!glfwOpenWindow(800,600, 0,0,0,0,0,0, GLFW_WINDOW)) {
     window = glfwCreateWindow(width,height,"simple window",NULL, NULL);
 
     if(!window) {
@@ -104,12 +104,14 @@ NAN_METHOD(createWindow) {
         exit(EXIT_FAILURE);
     }
 
-//    glfwSetWindowSizeCallback(GLFW_WINDOW_SIZE_CALLBACK_FUNCTION);
-//    glfwSetWindowCloseCallback(GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION);
-//    glfwSetMousePosCallback(GLFW_MOUSE_POS_CALLBACK_FUNCTION);
-//    glfwSetMouseButtonCallback(GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION);
-//    glfwSetKeyCallback(GLFW_KEY_CALLBACK_FUNCTION);
-//    glfwSetMouseWheelCallback(GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION);
+    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, GLFW_KEY_CALLBACK_FUNCTION);
+    glfwSetCursorPosCallback(window, GLFW_MOUSE_POS_CALLBACK_FUNCTION);
+    glfwSetMouseButtonCallback(window, GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION);
+    glfwSetScrollCallback(window, GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION);
+    glfwSetWindowSizeCallback(window, GLFW_WINDOW_SIZE_CALLBACK_FUNCTION);
+    glfwSetWindowCloseCallback(window, GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION);
+
 	colorShader = new ColorShader();
 	textureShader = new TextureShader();
     modelView = new GLfloat[16];
@@ -219,6 +221,8 @@ void render() {
         avg_frametime = total/FPS_LEN;
     }
     currentFrame = (currentFrame+1)%FPS_LEN;
+
+    glfwPollEvents();
 //    printf("input = %.2f validate = %.2f update = %.2f update count %d ",  de.inputtime, de.validatetime, de.updatestime, updatecount);
 //    printf("animtime = %.2f render = %.2f frame = %.2f, full frame = %.2f\n", de.animationstime, de.rendertime, de.frametime, de.framewithsynctime);
 }
@@ -298,7 +302,7 @@ NAN_METHOD(tick) {
 
 NAN_METHOD(setEventCallback) {
     eventCallbackSet = true;
-//    NODE_EVENT_CALLBACK = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
+    NODE_EVENT_CALLBACK = new Nan::Callback(info[0].As<v8::Function>());
 }
 
 

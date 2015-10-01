@@ -13,5 +13,13 @@ amino.start(function(core, stage) {
         .fill('#ffcccc').filled(true)
         .x(100).y(100);
     //root.x(100);
+
+    core.on('click',circle,function() {
+        console.log("clicked on the circle");
+    });
+    core.on("keypress",null,function() {
+        console.log("key was pressed");
+    });
+
     root.add(circle);
 });

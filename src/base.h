@@ -86,7 +86,6 @@ static const int DIMENSION = 36;
 using namespace v8;
 
 static bool eventCallbackSet = false;
-static Persistent<Function> NODE_EVENT_CALLBACK;
 
 extern int width;
 extern int height;
@@ -103,6 +102,7 @@ extern float window_opacity;
 extern std::stack<void*> matrixStack;
 extern int rootHandle;
 extern std::map<int,AminoFont*> fontmap;
+extern Nan::Callback* NODE_EVENT_CALLBACK;
 
 
 

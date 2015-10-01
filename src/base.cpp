@@ -19,6 +19,7 @@ int height = 480;
 std::stack<void*> matrixStack;
 int rootHandle;
 std::map<int,AminoFont*> fontmap;
+Nan::Callback* NODE_EVENT_CALLBACK;
 std::vector<AminoNode*> rects;
 std::vector<Update*> updates;
 
