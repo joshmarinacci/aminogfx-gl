@@ -229,7 +229,7 @@ static void init_inputs() {
         closedir(dir);
     }
 }
-
+/*
 static void GLFW_MOUSE_POS_CALLBACK_FUNCTION(int x, int y) {
     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
     Local<Object> event_obj = Object::New();
@@ -276,6 +276,7 @@ static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(int wheel) {
     Handle<Value> event_argv[] = {event_obj};
     NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
 }
+*/
 static void handleEvent(input_event ev) {
     // relative event. probably mouse
     if(ev.type == EV_REL) {
@@ -290,22 +291,22 @@ static void handleEvent(input_event ev) {
         if(mouse_y < 0) mouse_y = 0;
         if(mouse_x > width)  { mouse_x = width;  }
         if(mouse_y > height) { mouse_y = height; }
-        GLFW_MOUSE_POS_CALLBACK_FUNCTION(mouse_x, mouse_y);
+//        GLFW_MOUSE_POS_CALLBACK_FUNCTION(mouse_x, mouse_y);
         return;
     }
 
     //mouse wheel
     if(ev.type == EV_REL && ev.code == 8) {
-        GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(ev.value);
+  //      GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(ev.value);
         return;
     }
     if(ev.type == EV_KEY) {
         printf("key or button pressed code = %d, state = %d\n",ev.code, ev.value);
         if(ev.code == BTN_LEFT) {
-            GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(ev.code,ev.value);
+    //        GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(ev.code,ev.value);
             return;
         }
-        GLFW_KEY_CALLBACK_FUNCTION(ev.code, ev.value);
+      //  GLFW_KEY_CALLBACK_FUNCTION(ev.code, ev.value);
         return;
     }
 }
@@ -327,9 +328,8 @@ static void processInputs() {
     }
 }
 
-Handle<Value> init(const Arguments& args) {
+NAN_METHOD(init) {
 	matrixStack = std::stack<void*>();
-    HandleScope scope;
     bcm_host_init();
     // Clear application state
     memset( state, 0, sizeof( *state ) );
@@ -341,15 +341,11 @@ Handle<Value> init(const Arguments& args) {
     height = state->screen_height;
 
     init_inputs();
-
-    return scope.Close(Undefined());
 }
 
-
-Handle<Value> createWindow(const Arguments& args) {
-    HandleScope scope;
-    int w  = args[0]->ToNumber()->NumberValue();
-    int h  = args[1]->ToNumber()->NumberValue();
+NAN_METHOD(createWindow) {
+    int w  = info[0]->Uint32Value();
+    int h  = info[1]->Uint32Value();
     //window already allocated at this point.
 
     colorShader = new ColorShader();
@@ -366,21 +362,17 @@ Handle<Value> createWindow(const Arguments& args) {
 
 
     glViewport(0,0,width, height);
-    return scope.Close(Undefined());
 }
 
-Handle<Value> setWindowSize(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(setWindowSize) {
     printf("pretending to set the window size to: %d %d\n",width,height);
-    return scope.Close(Undefined());
 }
 
-Handle<Value> getWindowSize(const Arguments& args) {
-    HandleScope scope;
-    Local<Object> obj = Object::New();
-    obj->Set(String::NewSymbol("w"), Number::New(width));
-    obj->Set(String::NewSymbol("h"), Number::New(height));
-    return scope.Close(obj);
+NAN_METHOD(getWindowSize) {
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(width));
+    Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(height));
+    info.GetReturnValue().Set(obj);
 }
 
 
@@ -395,7 +387,7 @@ void render() {
     de.inputtime = postinput-starttime;
 
     //send the validate event
-    sendValidate();
+    //sendValidate();
     double postvalidate = getTime();
     de.validatetime = postvalidate-postinput;
 
@@ -445,12 +437,11 @@ void render() {
     //    printf("animtime = %.2f render = %.2f frame = %.2f, full frame = %.2f\n", de.animationstime, de.rendertime, de.frametime, de.framewithsynctime);
 }
 
-Handle<Value> tick(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(tick) {
     render();
-    return scope.Close(Undefined());
 }
 
+/*
 Handle<Value> selfDrive(const Arguments& args) {
     HandleScope scope;
     for(int i =0; i<100; i++) {
@@ -458,6 +449,7 @@ Handle<Value> selfDrive(const Arguments& args) {
     }
     return scope.Close(Undefined());
 }
+
 
 Handle<Value> runTest(const Arguments& args) {
     HandleScope scope;
@@ -520,11 +512,9 @@ Handle<Value> runTest(const Arguments& args) {
     printf("running %d times\n",count);
     for(int i=0; i<count; i++) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        /*
         for(int j=0; j<anims.size(); j++) {
             anims[j]->update();
         }
-        */
         AminoNode* root = rects[rootHandle];
         SimpleRenderer* rend = new SimpleRenderer();
         rend->startRender(root);
@@ -540,18 +530,67 @@ Handle<Value> runTest(const Arguments& args) {
     ret->Set(String::NewSymbol("totalTime"),Number::New(endTime-startTime));
     return scope.Close(ret);
 }
+*/
 
-
-Handle<Value> setEventCallback(const Arguments& args) {
-    HandleScope scope;
+NAN_METHOD(setEventCallback) {
     eventCallbackSet = true;
-    NODE_EVENT_CALLBACK = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
-    return scope.Close(Undefined());
+    NODE_EVENT_CALLBACK = new Nan::Callback(info[0].As<v8::Function>());
 }
 
 
 
-void InitAll(Handle<Object> exports, Handle<Object> module) {
+NAN_MODULE_INIT(InitAll) {
+	
+    Nan::Set(target, Nan::New("init").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(init)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createWindow").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createWindow)).ToLocalChecked());
+    Nan::Set(target, Nan::New("setWindowSize").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(setWindowSize)).ToLocalChecked());
+    Nan::Set(target, Nan::New("getWindowSize").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getWindowSize)).ToLocalChecked());
+	Nan::Set(target, Nan::New("createRect").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createRect)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createPoly)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createGroup").ToLocalChecked(),      Nan::GetFunction(Nan::New<FunctionTemplate>(createGroup)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createText)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createGLNode").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createGLNode)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createAnim)).ToLocalChecked());
+    Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<FunctionTemplate>(stopAnim)).ToLocalChecked());
+    Nan::Set(target, Nan::New("updateProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(updateProperty)).ToLocalChecked());
+    Nan::Set(target, Nan::New("updateWindowProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(updateWindowProperty)).ToLocalChecked());
+    Nan::Set(target, Nan::New("updateAnimProperty").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(updateAnimProperty)).ToLocalChecked());
+    Nan::Set(target, Nan::New("addNodeToGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<FunctionTemplate>(addNodeToGroup)).ToLocalChecked());
+    Nan::Set(target, Nan::New("removeNodeFromGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<FunctionTemplate>(removeNodeFromGroup)).ToLocalChecked());
+    Nan::Set(target, Nan::New("tick").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(tick)).ToLocalChecked());
+//    Nan::Set(target, Nan::New("selfDrive").ToLocalChecked(),        Nan::GetFunction(Nan::New<FunctionTemplate>(selfDrive)).ToLocalChecked());
+	Nan::Set(target, Nan::New("setEventCallback").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(setEventCallback)).ToLocalChecked());
+    Nan::Set(target, Nan::New("setRoot").ToLocalChecked(),          Nan::GetFunction(Nan::New<FunctionTemplate>(setRoot)).ToLocalChecked());
+//    Nan::Set(target, Nan::New("decodePngBuffer").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(decodePngBuffer)).ToLocalChecked());
+//    Nan::Set(target, Nan::New("decodeJpegBuffer").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(decodeJpegBuffer)).ToLocalChecked());
+    Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
+    Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(createNativeFont)).ToLocalChecked());
+    Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(getCharWidth)).ToLocalChecked());
+    Nan::Set(target, Nan::New("getFontHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontHeight)).ToLocalChecked());
+    Nan::Set(target, Nan::New("getFontAscender").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontAscender)).ToLocalChecked());
+    Nan::Set(target, Nan::New("getFontDescender").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontDescender)).ToLocalChecked());
+//	Nan::Set(target, Nan::New("runTest").ToLocalChecked(),          Nan::GetFunction(Nan::New<FunctionTemplate>(runTest)).ToLocalChecked());
+	Nan::Set(target, Nan::New("initColorShader").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(initColorShader)).ToLocalChecked());
+	Nan::Set(target, Nan::New("initTextureShader").ToLocalChecked(),Nan::GetFunction(Nan::New<FunctionTemplate>(initTextureShader)).ToLocalChecked());
+
+	Nan::Set(target, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(),    Nan::New(GL_VERTEX_SHADER));
+	Nan::Set(target, Nan::New("GL_FRAGMENT_SHADER").ToLocalChecked(),  Nan::New(GL_FRAGMENT_SHADER));
+	Nan::Set(target, Nan::New("GL_COMPILE_STATUS").ToLocalChecked(),   Nan::New(GL_COMPILE_STATUS));
+	Nan::Set(target, Nan::New("GL_LINK_STATUS").ToLocalChecked(),      Nan::New(GL_LINK_STATUS));
+
+	Nan::Set(target, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glGetProgramiv").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
+	Nan::Set(target, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
+/*	
     exports->Set(String::NewSymbol("init"),             FunctionTemplate::New(init)->GetFunction());
     exports->Set(String::NewSymbol("createWindow"),     FunctionTemplate::New(createWindow)->GetFunction());
     exports->Set(String::NewSymbol("setWindowSize"),    FunctionTemplate::New(setWindowSize)->GetFunction());
@@ -599,7 +638,7 @@ void InitAll(Handle<Object> exports, Handle<Object> module) {
 	exports->Set(String::NewSymbol("glGetAttribLocation"), FunctionTemplate::New(node_glGetAttribLocation)->GetFunction());
 	exports->Set(String::NewSymbol("glGetUniformLocation"), FunctionTemplate::New(node_glGetUniformLocation)->GetFunction());
 	exports->Set(String::NewSymbol("glGetProgramInfoLog"), FunctionTemplate::New(node_glGetProgramInfoLog)->GetFunction());
-
+*/
 
 
 }
