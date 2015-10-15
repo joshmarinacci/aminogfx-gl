@@ -41,4 +41,7 @@ amino.start(function(core, stage) {
     iv2.x(300);
     root.add(iv2);
 
+    iv2.x.anim().delay(1000).from(0).to(1000).dur(3000).start();
+
+
 });

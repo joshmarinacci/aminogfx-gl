@@ -218,7 +218,7 @@ NAN_METHOD(updateProperty) {
     float value = 0;
     std::wstring wstr = L"";
     if(info[2]->IsNumber()) {
-        value = info[2]->Uint32Value();
+        value = info[2]->NumberValue();
         printf("  setting number %f on prop %d \n",value,property);
     }
     if(info[2]->IsString()) {
@@ -238,7 +238,7 @@ NAN_METHOD(updateAnimProperty) {
     //char* cstr = "";
     std::wstring wstr = L"";
     if(info[2]->IsNumber()) {
-        value = info[2]->ToNumber()->NumberValue();
+        value = info[2]->NumberValue();
     }
     if(info[2]->IsString()) {
        char* cstr = TO_CHAR(info[2]);
