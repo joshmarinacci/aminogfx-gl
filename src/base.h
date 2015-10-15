@@ -552,6 +552,8 @@ NAN_METHOD(addNodeToGroup);
 NAN_METHOD(removeNodeFromGroup);
 NAN_METHOD(setRoot);
 NAN_METHOD(loadBufferToTexture);
+NAN_METHOD(decodeJpegBuffer);
+NAN_METHOD(decodePngBuffer);
 NAN_METHOD(getFontHeight);
 NAN_METHOD(getFontAscender);
 NAN_METHOD(getFontDescender);

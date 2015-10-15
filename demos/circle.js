@@ -27,5 +27,18 @@ amino.start(function(core, stage) {
     core.on('click',rect,function() {
         console.log("clicked on the rect");
     });
-    //root.add(circle);
+
+    root.add(circle);
+
+    var iv = new amino.ImageView();
+    iv.src(__dirname+'/images/tree.png');
+    iv.sx(4).sy(4);
+    root.add(iv);
+
+    var iv2 = new amino.ImageView();
+    iv2.src(__dirname+'/images/yose.jpg');
+    iv2.sx(4).sy(4);
+    iv2.x(300);
+    root.add(iv2);
+
 });

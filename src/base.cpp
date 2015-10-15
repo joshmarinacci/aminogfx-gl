@@ -289,6 +289,90 @@ NAN_METHOD(setRoot) {
     rootHandle = info[0]->Uint32Value();
 }
 
+
+NAN_METHOD(decodeJpegBuffer) {
+    //   if(!Buffer::HasInstance(args[0])){
+    //       printf("first argument must be a buffer.\n");
+    //       return scope.Close(Undefined());
+    //   }
+
+    Local<Object> bufferObj = info[0]->ToObject();
+    char* bufferin = Buffer::Data(bufferObj);
+    size_t bufferLength = Buffer::Length(bufferObj);
+
+
+    njInit();
+    if (njDecode(bufferin, bufferLength)) {
+        printf("Error decoding the input file.\n");
+        return;
+    }
+
+    printf("got an image %d %d\n",njGetWidth(),njGetHeight());
+    printf("size = %d\n",njGetImageSize());
+    int lengthout = njGetImageSize();
+    char* image = (char*) njGetImage();
+
+    MaybeLocal<Object> buff = Nan::CopyBuffer(image, lengthout);
+
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(njGetWidth()));
+    Nan::Set(obj, Nan::New("h").ToLocalChecked(),      Nan::New(njGetHeight()));
+    Nan::Set(obj, Nan::New("alpha").ToLocalChecked(),  Nan::New(false));
+    Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(3));
+    Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff.ToLocalChecked());
+    info.GetReturnValue().Set(obj);
+
+    njDone();
+}
+
+ 
+NAN_METHOD(decodePngBuffer) {
+    //    if(!Buffer::HasInstance(args[0])){
+    //        printf("first argument must be a buffer.\n");
+    //        return scope.Close(Undefined());
+    //    }
+
+
+    Local<Object> bufferObj = info[0]->ToObject();
+    char* bufferin = Buffer::Data(bufferObj);
+    size_t bufferLength = Buffer::Length(bufferObj);
+    //    printf("the size of the buffer is %d\n",bufferLength);
+
+
+
+    unsigned width, height;
+    unsigned char* png;
+    char* image;
+
+    upng_t* upng = upng_new_from_bytes((const unsigned char*) bufferin, bufferLength);
+    if(upng == NULL) {
+        printf("error decoding png file");
+        return;
+    }
+
+    upng_decode(upng);
+    //    printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
+    //    printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
+
+    image = (char*) upng_get_buffer(upng);
+    int lengthout = upng_get_size(upng);
+    //    printf("length of uncompressed buffer = %d\n", lengthout);
+
+    MaybeLocal<Object> buff = Nan::CopyBuffer(image, lengthout);
+
+
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(upng_get_width(upng)));
+    Nan::Set(obj, Nan::New("h").ToLocalChecked(),      Nan::New(upng_get_height(upng)));
+    Nan::Set(obj, Nan::New("alpha").ToLocalChecked(),  Nan::New(true));
+    Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(4));
+    Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff.ToLocalChecked());
+    info.GetReturnValue().Set(obj);
+
+    upng_free(upng);
+}
+
+
 NAN_METHOD(loadBufferToTexture) {
     int texid   = info[0]->Uint32Value();
     int w   = info[1]->Uint32Value();
