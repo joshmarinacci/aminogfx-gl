@@ -237,14 +237,19 @@ NAN_METHOD(updateAnimProperty) {
     float value = 0;
     //char* cstr = "";
     std::wstring wstr = L"";
+    printf("doing anim update\n");
     if(info[2]->IsNumber()) {
         value = info[2]->NumberValue();
+        printf("  setting number %f on prop %d \n",value,property);
     }
     if(info[2]->IsString()) {
+       printf("trying to do a string\n");
        char* cstr = TO_CHAR(info[2]);
         wstr = GetWC(cstr);
     }
+    printf("pushing\n");
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL));
+    printf("done pushing\n");
 }
 
 NAN_METHOD(updateWindowProperty) {
@@ -253,6 +258,7 @@ NAN_METHOD(updateWindowProperty) {
     float value = 0;
     std::wstring wstr = L"";
     if(info[2]->IsNumber()) {
+        printf("updating window property %d \n",property);
         value = info[2]->Uint32Value();
     }
     if(info[2]->IsString()) {

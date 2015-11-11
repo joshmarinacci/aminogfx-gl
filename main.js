@@ -193,10 +193,13 @@ function JSPropAnim(target,name) {
     this.autoreverse = function(val) { this._autoreverse = val?1:0; return this;  }
 
     this.start = function() {
+        console.log("startin anim");
         var self = this;
         setTimeout(function(){
+            console.log("after delay. making it.");
             var nat = Core.getCore().getNative();
             self.handle = nat.createAnim(target.handle, name, self._from,self._to,self._duration);
+            console.log("handle is",self.handle);
             nat.updateAnimProperty(self.handle, 'count', self._loop);
             nat.updateAnimProperty(self.handle, 'autoreverse', self._autoreverse);
             nat.updateAnimProperty(self.handle, 'lerpprop', 17); //17 is cubic in out
