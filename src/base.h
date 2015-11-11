@@ -324,7 +324,7 @@ void update() {
     }
 };
 
-static std::vector<Anim*> anims;
+extern std::vector<Anim*> anims;
 
 
 

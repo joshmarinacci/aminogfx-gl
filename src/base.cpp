@@ -21,6 +21,7 @@ int rootHandle;
 std::map<int,AminoFont*> fontmap;
 Nan::Callback* NODE_EVENT_CALLBACK;
 std::vector<AminoNode*> rects;
+std::vector<Anim*> anims;
 std::vector<Update*> updates;
 
 void scale(double x, double y){

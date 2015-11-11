@@ -15,3 +15,8 @@ node demos/circle.js
 ```
 
 
+During development you'll want to rebuild the source constantly. use
+
+```
+npm install --build-from-source
+```
