@@ -1,4 +1,5 @@
 var DEBUG = false;
+var DEBUG_FPS = false;
 
 if (DEBUG) {
     console.log('inside of the aminogfx main.js');
@@ -312,6 +313,17 @@ var gl_native = {
                 return;
             }
 
+            //debug: fps
+            if (DEBUG_FPS) {
+                var time = (new Date()).getTime();
+
+                if (self.lastTime) {
+                    console.log('fps: ' + (1000 / (time - self.lastTime)));
+                }
+                self.lastTime = time;
+            }
+
+            //next cycle
             self.setImmediate(immediateLoop);
         }
 
@@ -350,7 +362,8 @@ var gl_native = {
     tick: function() {
         sgtest.tick();
     },
-    setImmediate: function(loop) {
+    setImmediate: function (loop) {
+        //see https://nodejs.org/api/timers.html#timers_setimmediate_callback_arg
         setImmediate(loop);
     },
 //    setEventCallback: function(cb) {   return sgtest.setEventCallback(cb);   },
