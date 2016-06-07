@@ -4,6 +4,7 @@ exports.go = function(canvas) {
 	//amino.setCanvas(canvas);
 	amino.start(function(core,stage){
 		console.log("width = ", stage.w());
+
         stage.smooth(false);
 	    core.registerFont({
 	        name:'Oswald',

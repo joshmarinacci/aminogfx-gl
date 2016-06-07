@@ -103,7 +103,7 @@ var Shader = {
         this.attribs[name] = this.GL.glGetAttribLocation(this.prog, name);
 
         if (this.attribs[name] == -1) {
-            console.log('WARNING. got -1 for location of ', name);
+            console.log('WARNING. got -1 for location of ' + name + ' attrib');
         }
     },
 
@@ -111,7 +111,7 @@ var Shader = {
         this.uniforms[name] = this.GL.glGetUniformLocation(this.prog, name);
 
         if (this.uniforms[name] == -1) {
-            console.log('WARNING. got -1 for location of ', name);
+            console.log('WARNING. got -1 for location of ' + name + ' uniform');
         }
     }
 

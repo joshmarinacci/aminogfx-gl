@@ -2,7 +2,7 @@
 
 using namespace v8;
 
-
+#define DEBUG_BASE false
 
 ColorShader* colorShader;
 TextureShader* textureShader;
@@ -15,7 +15,6 @@ float window_opacity;
 int width = 640;
 int height = 480;
 
-
 std::stack<void*> matrixStack;
 int rootHandle;
 std::map<int,AminoFont*> fontmap;
@@ -27,6 +26,7 @@ std::vector<Update*> updates;
 void scale(double x, double y){
     GLfloat scale[16];
     GLfloat temp[16];
+
     make_scale_matrix((float)x,(float)y, 1.0, scale);
     mul_matrix(temp, globaltx, scale);
     copy_matrix(globaltx,temp);
@@ -35,6 +35,7 @@ void scale(double x, double y){
 void translate(double x, double y) {
     GLfloat tr[16];
     GLfloat trans2[16];
+
     make_trans_matrix((float)x,(float)y,0,tr);
     mul_matrix(trans2, globaltx, tr);
     copy_matrix(globaltx,trans2);
@@ -59,6 +60,7 @@ void rotate(double x, double y, double z) {
 
 void save() {
     GLfloat* temp = new GLfloat[16];
+
     copy_matrix(temp,globaltx);
     matrixStack.push(globaltx);
     globaltx = temp;
@@ -108,10 +110,15 @@ static void add_text( vertex_buffer_t * buffer, texture_font_t * font,
 
 void TextNode::refreshText() {
     if(fontid == INVALID) return;
+
     AminoFont* font = fontmap[fontid];
     std::map<int,texture_font_t*>::iterator it = font->fonts.find(fontsize);
-    if(it == font->fonts.end()) {
-        printf("loading size %d for font %s\n",fontsize,font->filename);
+
+    if (it == font->fonts.end()) {
+        if (DEBUG_BASE) {
+            printf("loading size %d for font %s\n", fontsize, font->filename);
+        }
+
         font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
     }
 
@@ -134,14 +141,11 @@ void TextNode::refreshText() {
 //    texture_font_delete(afont->font);
 }
 
-
-
 NAN_METHOD(node_glCreateShader) {
   int type   = info[0]->Uint32Value();
   int shader = glCreateShader(type);
   info.GetReturnValue().Set(shader);
 }
-
 
 NAN_METHOD(node_glShaderSource) {
   int shader   = info[0]->Uint32Value();
@@ -155,6 +159,7 @@ NAN_METHOD(node_glCompileShader) {
   int shader   = info[0]->Uint32Value();
   glCompileShader(shader);
 }
+
 NAN_METHOD(node_glGetShaderiv) {
   int shader   = info[0]->Uint32Value();
   int flag   = info[1]->Uint32Value();
@@ -162,6 +167,7 @@ NAN_METHOD(node_glGetShaderiv) {
   glGetShaderiv(shader,flag,&status);
   info.GetReturnValue().Set(status);
 }
+
 NAN_METHOD(node_glGetProgramiv) {
   int prog   = info[0]->Uint32Value();
   int flag   = info[1]->Uint32Value();
@@ -169,22 +175,26 @@ NAN_METHOD(node_glGetProgramiv) {
   glGetProgramiv(prog,flag,&status);
   info.GetReturnValue().Set(status);
 }
+
 NAN_METHOD(node_glGetShaderInfoLog) {
   int shader   = info[0]->Uint32Value();
   char buffer[513];
   glGetShaderInfoLog(shader,512,NULL,buffer);
   info.GetReturnValue().Set(Nan::New(buffer,strlen(buffer)).ToLocalChecked());
 }
+
 NAN_METHOD(node_glGetProgramInfoLog) {
   int shader   = info[0]->Uint32Value();
   char buffer[513];
   glGetProgramInfoLog(shader,512,NULL,buffer);
   info.GetReturnValue().Set(Nan::New(buffer,strlen(buffer)).ToLocalChecked());
 }
+
 NAN_METHOD(node_glCreateProgram) {
   int prog = glCreateProgram();
   info.GetReturnValue().Set(prog);
 }
+
 NAN_METHOD(node_glAttachShader) {
   int prog     = info[0]->Uint32Value();
   int shader   = info[1]->Uint32Value();
@@ -195,10 +205,12 @@ NAN_METHOD(node_glLinkProgram) {
     int prog     = info[0]->Uint32Value();
     glLinkProgram(prog);
 }
+
 NAN_METHOD(node_glUseProgram) {
     int prog     = info[0]->Uint32Value();
     glUseProgram(prog);
 }
+
 NAN_METHOD(node_glGetAttribLocation) {
   int prog                 = info[0]->Uint32Value();
   v8::String::Utf8Value name(info[1]->ToString());
@@ -220,7 +232,10 @@ NAN_METHOD(updateProperty) {
     std::wstring wstr = L"";
     if(info[2]->IsNumber()) {
         value = info[2]->NumberValue();
-        printf("  setting number %f on prop %d \n",value,property);
+
+        if (DEBUG_BASE) {
+            printf("  setting number %f on prop %d \n", value, property);
+        }
     }
     if(info[2]->IsString()) {
         wstr = GetWString(info[2]->ToString());
@@ -238,19 +253,36 @@ NAN_METHOD(updateAnimProperty) {
     float value = 0;
     //char* cstr = "";
     std::wstring wstr = L"";
-    printf("doing anim update\n");
+
+    if (DEBUG_BASE) {
+        printf("doing anim update\n");
+    }
+
     if(info[2]->IsNumber()) {
         value = info[2]->NumberValue();
-        printf("  setting number %f on prop %d \n",value,property);
+
+        if (DEBUG_BASE) {
+            printf("  setting number %f on prop %d \n",value,property);
+        }
     }
     if(info[2]->IsString()) {
-       printf("trying to do a string\n");
+       if (DEBUG_BASE) {
+        printf("trying to do a string\n");
+       }
+
        char* cstr = TO_CHAR(info[2]);
         wstr = GetWC(cstr);
     }
-    printf("pushing\n");
+
+    if (DEBUG_BASE) {
+        printf("pushing\n");
+    }
+
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL));
-    printf("done pushing\n");
+
+    if (DEBUG_BASE) {
+        printf("done pushing\n");
+    }
 }
 
 NAN_METHOD(updateWindowProperty) {
@@ -259,7 +291,10 @@ NAN_METHOD(updateWindowProperty) {
     float value = 0;
     std::wstring wstr = L"";
     if(info[2]->IsNumber()) {
-        printf("updating window property %d \n",property);
+        if (DEBUG_BASE) {
+            printf("updating window property %d \n",property);
+        }
+
         value = info[2]->Uint32Value();
     }
     if(info[2]->IsString()) {
@@ -296,7 +331,6 @@ NAN_METHOD(setRoot) {
     rootHandle = info[0]->Uint32Value();
 }
 
-
 NAN_METHOD(decodeJpegBuffer) {
     //   if(!Buffer::HasInstance(args[0])){
     //       printf("first argument must be a buffer.\n");
@@ -314,8 +348,11 @@ NAN_METHOD(decodeJpegBuffer) {
         return;
     }
 
-    printf("got an image %d %d\n",njGetWidth(),njGetHeight());
-    printf("size = %d\n",njGetImageSize());
+    if (DEBUG_BASE) {
+        printf("got an image %d %d\n",njGetWidth(),njGetHeight());
+        printf("size = %d\n",njGetImageSize());
+    }
+
     int lengthout = njGetImageSize();
     char* image = (char*) njGetImage();
 
@@ -332,7 +369,6 @@ NAN_METHOD(decodeJpegBuffer) {
     njDone();
 }
 
- 
 NAN_METHOD(decodePngBuffer) {
     //    if(!Buffer::HasInstance(args[0])){
     //        printf("first argument must be a buffer.\n");
@@ -379,7 +415,6 @@ NAN_METHOD(decodePngBuffer) {
     upng_free(upng);
 }
 
-
 NAN_METHOD(loadBufferToTexture) {
     int texid   = info[0]->Uint32Value();
     int w   = info[1]->Uint32Value();
@@ -417,6 +452,7 @@ NAN_METHOD(loadBufferToTexture) {
     Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
     info.GetReturnValue().Set(obj);
 }
+
 NAN_METHOD(getFontHeight) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
@@ -424,6 +460,7 @@ NAN_METHOD(getFontHeight) {
     texture_font_t *tf = font->fonts[fontsize];
     info.GetReturnValue().Set(tf->ascender-tf->descender);
 }
+
 NAN_METHOD(getFontAscender) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
@@ -437,6 +474,7 @@ NAN_METHOD(getFontAscender) {
     texture_font_t *tf = font->fonts[fontsize];
     info.GetReturnValue().Set(tf->ascender);
 }
+
 NAN_METHOD(getFontDescender) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
@@ -450,6 +488,7 @@ NAN_METHOD(getFontDescender) {
     texture_font_t *tf = font->fonts[fontsize];
     info.GetReturnValue().Set(tf->descender);
 }
+
 NAN_METHOD(getCharWidth) {
     std::wstring wstr = GetWString(info[0]->ToString());
 
@@ -493,8 +532,10 @@ NAN_METHOD(createNativeFont) {
 
     char* shader_base = TO_CHAR(info[1]);
 
-    printf("loading font file %s\n",afont->filename);
-    printf("shader base = %s\n",shader_base);
+    if (DEBUG_BASE) {
+        printf("loading font file %s\n",afont->filename);
+        printf("shader base = %s\n",shader_base);
+    }
 
     std::string str ("");
     std::string str2 = str + shader_base;
@@ -534,28 +575,31 @@ NAN_METHOD(initTextureShader) {
     textureShader->attr_tex    = info[6]->Uint32Value();
 }
 
-
 NAN_METHOD(createRect) {
     Rect* rect = new Rect();
     rects.push_back(rect);
     rects.size();
     info.GetReturnValue().Set((int)rects.size()-1);
 }
+
 NAN_METHOD(createPoly) {
     PolyNode* node = new PolyNode();
     rects.push_back(node);
     info.GetReturnValue().Set((int)rects.size()-1);
 }
+
 NAN_METHOD(createText) {
     TextNode * node = new TextNode();
     rects.push_back(node);
     info.GetReturnValue().Set((int)rects.size()-1);
 }
+
 NAN_METHOD(createGroup) {
     Group* node = new Group();
     rects.push_back(node);
     info.GetReturnValue().Set((int)rects.size()-1);
 }
+
 NAN_METHOD(createGLNode) {
     GLNode* node = new GLNode();
     //node->callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
@@ -577,7 +621,6 @@ NAN_METHOD(createAnim) {
     anim->active = true;
     info.GetReturnValue().Set((int)anims.size()-1);
 }
-
 
 NAN_METHOD(stopAnim) {
 	int id = info[0]->Uint32Value();
