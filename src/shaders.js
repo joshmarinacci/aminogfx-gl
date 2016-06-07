@@ -1,95 +1,160 @@
+'use strict';
+
+/*
+ * Shader Tools
+ */
+
+var DEBUG = false;
+
 var fs = require('fs');
+
 var Shader = {
-    compileVertShader: function(text) {
-        var stat;
-        var vertShader = this.GL.glCreateShader(this.GL.GL_VERTEX_SHADER);
-        this.GL.glShaderSource(vertShader, 1, text, null);
-        this.GL.glCompileShader(vertShader);
-        var stat = this.GL.glGetShaderiv(vertShader, this.GL.GL_COMPILE_STATUS);
+    /**
+     * Compile and create a vertex shader.
+     */
+    compileVertShader: function (text) {
+        var GL = this.GL;
+        var vertShader = GL.glCreateShader(GL.GL_VERTEX_SHADER);
+
+        GL.glShaderSource(vertShader, 1, text, null);
+        GL.glCompileShader(vertShader);
+
+        var stat = GL.glGetShaderiv(vertShader, GL.GL_COMPILE_STATUS);
+
         if (!stat) {
-            console.log("Error: vertex shader did not compile!\n");
+            //exit
+            console.log('Error: vertex shader did not compile!\n');
             process.exit(1);
         }
+
         return vertShader;
     },
-    compileFragShader:function(text) {
-        var stat;
-        var vertShader = this.GL.glCreateShader(this.GL.GL_FRAGMENT_SHADER);
-        this.GL.glShaderSource(vertShader, 1, text, null);
-        this.GL.glCompileShader(vertShader);
-        var stat = this.GL.glGetShaderiv(vertShader, this.GL.GL_COMPILE_STATUS);
+    /**
+     * Compile and create a fragment shader.
+     */
+    compileFragShader: function (text) {
+        var GL = this.GL;
+        var fragShader = GL.glCreateShader(GL.GL_FRAGMENT_SHADER);
+
+        GL.glShaderSource(fragShader, 1, text, null);
+        GL.glCompileShader(fragShader);
+
+        var stat = GL.glGetShaderiv(fragShader, GL.GL_COMPILE_STATUS);
+
         if (!stat) {
-            console.log("Error: fragment shader did not compile!\n");
+            //exit
+            console.log('Error: fragment shader did not compile!\n');
             process.exit(1);
         }
-        return vertShader;
+
+        return fragShader;
     },
-    compileProgram:function(shader) {
-        var program = this.GL.glCreateProgram();
-        if(!shader.frag) throw Error("missing shader.frag");
-        if(!shader.vert) throw Error("missing shader.vert");
-        this.GL.glAttachShader(program, shader.vert);
-        this.GL.glAttachShader(program, shader.frag);
-        this.GL.glLinkProgram(program);
+    /**
+     * Compile and create shader program.
+     */
+    compileProgram: function (shader) {
+        var GL = this.GL;
+        var program = GL.glCreateProgram();
+
+        //verify params
+        if (!shader.frag) {
+            throw Error('missing shader.frag');
+        }
+
+        if (!shader.vert) {
+            throw Error('missing shader.vert');
+        }
+
+        GL.glAttachShader(program, shader.vert);
+        GL.glAttachShader(program, shader.frag);
+        GL.glLinkProgram(program);
+
         var stat = this.GL.glGetProgramiv(program, this.GL.GL_LINK_STATUS);
+
         if (!stat) {
-            var log = this.GL.glGetProgramInfoLog(program, 1000);//, &len, log);
-            console.log("error linking ",log);
+            //exit
+            var log = this.GL.glGetProgramInfoLog(program, 1000); //, &len, log);
+
+            console.log('error linking ', log);
             process.exit(1);
         }
         return program;
     },
 
-    build: function() {
+    /**
+     * Build shader program.
+     */
+    build: function () {
         this.vert = this.compileVertShader(this.vertText);
         this.frag = this.compileFragShader(this.fragText);
         this.prog = this.compileProgram(this);
     },
 
+    /**
+     * Activate shader program.
+     */
     useProgram: function() {
         this.GL.glUseProgram(this.prog);
     },
     attribs:{},
     uniforms:{},
 
-    locateAttrib: function(name) {
+    locateAttrib: function (name) {
         this.attribs[name] = this.GL.glGetAttribLocation(this.prog, name);
-        if(this.attribs[name] == -1) {
-            console.log("WARNING. got -1 for location of ", name);
+
+        if (this.attribs[name] == -1) {
+            console.log('WARNING. got -1 for location of ', name);
         }
     },
 
-    locateUniform: function(name) {
+    locateUniform: function (name) {
         this.uniforms[name] = this.GL.glGetUniformLocation(this.prog, name);
-        if(this.uniforms[name] == -1) {
-            console.log("WARNING. got -1 for location of ", name);
+
+        if (this.uniforms[name] == -1) {
+            console.log('WARNING. got -1 for location of ', name);
         }
     }
 
 }
 
-
+/**
+ * Load shader code from file system.
+ */
 function loadShaderCode(path, OS) {
     var src = fs.readFileSync(path).toString();
-    if(OS == "RPI" ) {
-        src = "#version 100\n" + src;
+
+    if (OS == 'RPI') {
+        //Raspberry Pi need version number in shader
+        src = '#version 100\n' + src;
     }
+
     return src;
 }
 
-exports.init = function(sgtest, OS) {
+/**
+ * Initialize the basic aminogfx shaders.
+ */
+exports.init = function (sgtest, OS) {
     var cshader = Object.create(Shader);
+
     cshader.GL = sgtest;
-    console.log("__dirname = ", __dirname);
-    cshader.vertText = loadShaderCode(__dirname+"/shaders/color.vert",OS);
-    cshader.fragText = loadShaderCode(__dirname+"/shaders/color.frag",OS);
+
+    if (DEBUG) {
+        console.log('__dirname = ', __dirname);
+    }
+
+    //color shader
+    cshader.vertText = loadShaderCode(__dirname + '/shaders/color.vert', OS);
+    cshader.fragText = loadShaderCode(__dirname + '/shaders/color.frag', OS);
     cshader.build();
+
     cshader.useProgram();
     cshader.locateAttrib('pos');
     cshader.locateUniform('modelviewProjection');
     cshader.locateUniform('trans');
     cshader.locateUniform('opacity');
     cshader.locateAttrib('color');
+
     sgtest.initColorShader(cshader.prog,
         cshader.uniforms.modelviewProjection,
         cshader.uniforms.trans,
@@ -97,20 +162,22 @@ exports.init = function(sgtest, OS) {
         cshader.attribs.pos,
         cshader.attribs.color);
 
-
+    //texture shader
     var tshader = Object.create(Shader);
+
     tshader.GL = sgtest;
-    tshader.vertText = loadShaderCode(__dirname+"/shaders/texture.vert");
-    tshader.fragText = loadShaderCode(__dirname+"/shaders/texture.frag");
+    tshader.vertText = loadShaderCode(__dirname + '/shaders/texture.vert');
+    tshader.fragText = loadShaderCode(__dirname + '/shaders/texture.frag');
     tshader.build();
+
     tshader.useProgram();
+
     tshader.locateUniform('modelviewProjection');
     tshader.locateUniform('trans');
     tshader.locateUniform('opacity');
     tshader.locateAttrib('pos');
     tshader.locateAttrib('texcoords');
     tshader.locateAttrib('tex');
-
 
     sgtest.initTextureShader(tshader.prog,
         tshader.uniforms.modelviewProjection,
