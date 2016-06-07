@@ -1,27 +1,30 @@
-console.log("inside of the aminogfx main.js");
+var DEBUG = false;
+
+if (DEBUG) {
+    console.log('inside of the aminogfx main.js');
+}
 
 var binary = require('node-pre-gyp');
 var path = require('path');
 var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
 var sgtest = require(binding_path);
-//console.log('sgtest = ', sgtest);
 
-var OS = "KLAATU";
-if(process.arch == 'arm') {
-    OS = "RPI";
+//detect platform
+var OS = 'KLAATU';
+
+if (process.arch == 'arm') {
+    OS = 'RPI';
 }
-if(process.platform == "darwin") {
-    OS = "MAC";
+if (process.platform == 'darwin') {
+    OS ='MAC';
 }
 
-
-//var amino = require('aminogfx');
 var amino_core = require('aminogfx');
 var Core = amino_core.Core;
 var Shaders = require('./src/shaders.js');
 var fs = require('fs');
 
-//amino_core.OS = OS;
+//Fonts
 
 var fontmap = {};
 var defaultFonts = {
@@ -217,19 +220,24 @@ function JSPropAnim(target,name) {
 
 }
 
-
+var PNG_HEADER = new Buffer([ 137, 80, 78, 71, 13, 10, 26, 10 ]); //PNG Header
 
 var gl_native = {
     createNativeFont: function(path) {  return sgtest.createNativeFont(path, __dirname+'/resources/shaders');  },
     registerFont:function(args) { fontmap[args.name] = new JSFont(args); },
     init: function(core) { return sgtest.init(); },
     startEventLoop : function() {
-        console.log("starting the event loop");
+        if (DEBUG) {
+            console.log('starting the event loop');
+        }
+
         var self = this;
+
         function immediateLoop() {
             try {
                 self.tick(Core.getCore());
             } catch (ex) {
+                //report
                 console.log(ex);
                 console.log(ex.stack);
                 console.log("EXCEPTION. QUITTING!");
@@ -276,22 +284,93 @@ var gl_native = {
     addNodeToGroup: function(h1,h2) {  return sgtest.addNodeToGroup(h1,h2);  },
     removeNodeFromGroup: function(h1, h2) { return sgtest.removeNodeFromGroup(h1, h2);  },
     loadImage: function(src, cb) {
-        var fbuf = fs.readFileSync(src);
+        var buffer;
+        var type;
+
+        //check buffer
+        if (Buffer.isBuffer(src)) {
+            buffer = src;
+
+            //check PNG
+            if (buffer.slice(0, 8).equals(PNG_HEADER)) {
+                //PNG
+                type = 'png';
+            } else {
+                //JPEG
+                type = 'jpg';
+            }
+        } else if (typeof src === 'string') {
+            //load file (blocking)
+            var buffer = fs.readFileSync(src);
+
+            if (!buffer) {
+                if (DEBUG) {
+                    console.log('File not found: ' + src);
+                }
+
+                cb();
+                return;
+            }
+
+            //check file name
+            var name = src.toLowerCase();
+
+            if (name.endsWith('.png')) {
+                type = 'png';
+            } else if (name.endsWith(".jpg")) {
+                type = 'jpg';
+            } else {
+                if (DEBUG) {
+                    console.log('Unsupported file format: ' + src);
+                }
+
+                cb();
+                return;
+            }
+        } else {
+            if (DEBUG) {
+                console.log('Invalid src format!');
+            }
+
+            cb();
+            return;
+        }
+
+        //debug
+        if (DEBUG) {
+            console.log('loadImage() type=' + type + ' length=' + buffer.length);
+        }
+
+        //decode
+        var nat = Core.getCore().getNative();
+
         function bufferToTexture(ibuf) {
-            Core.getCore().getNative().loadBufferToTexture(-1, ibuf.w, ibuf.h, ibuf.bpp, ibuf.buffer, function (texture) {
+            //check error
+            if (!ibuf) {
+                if (DEBUG) {
+                    console.log('could not load image: type='  + type);
+                }
+
+                cb();
+                return;
+            }
+
+            //load texture
+            nat.loadBufferToTexture(-1, ibuf.w, ibuf.h, ibuf.bpp, ibuf.buffer, function (texture) {
                 cb(texture);
             });
         }
 
-        if (src.toLowerCase().endsWith(".png")) {
-            Core.getCore().getNative().decodePngBuffer(fbuf, bufferToTexture);
-            return;
+        switch (type) {
+            case 'png':
+                nat.decodePngBuffer(buffer, bufferToTexture);
+                break;
+
+            case 'jpg':
+                nat.decodeJpegBuffer(buffer, bufferToTexture);
+                break;
         }
-        if (src.toLowerCase().endsWith(".jpg")) {
-            Core.getCore().getNative().decodeJpegBuffer(fbuf, bufferToTexture);
-            return;
-        }
-        console.log("ERROR! Invalid image",src);
+
     },
     decodePngBuffer: function(fbuf, cb) {  return cb(sgtest.decodePngBuffer(fbuf));  },
     decodeJpegBuffer: function(fbuf, cb) { return cb(sgtest.decodeJpegBuffer(fbuf)); },
