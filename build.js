@@ -66,10 +66,6 @@ var outdir = "build";
 function eq(a,b) {
     if(a != b) throw (a + " != " + b);
 }
-function p(s) {
-    console.log(s);
-}
-
 
 
 function copyFileTo(file, dir) {
