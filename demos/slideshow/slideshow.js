@@ -31,8 +31,13 @@ var files = new CircularBuffer(filelist);
 
 amino.start(function (core, stage) {
 //FIXME    stage.setSize(800, 600);
+    //setup size
+    stage.w(800);
+    stage.h(600);
 
+    //init root
     var root = new Group();
+
     stage.setRoot(root);
 
 //FIXME    var sw = stage.getW();
@@ -45,10 +50,15 @@ amino.start(function (core, stage) {
     var iv2 = new ImageView().x(1000);
 
     //add to the scene
-    root.add(iv1,iv2);
+    root.add(iv1, iv2);
 
     //auto scale them
-    function scaleImage(img,prop,obj) {
+    function scaleImage(img, prop, obj) {
+        if (!img) {
+            console.log('missing image!');
+            return;
+        }
+
         var scale = Math.min(sw / img.w, sh / img.h);
 
         obj.sx(scale).sy(scale);
@@ -63,16 +73,17 @@ amino.start(function (core, stage) {
 
     //animate out and in
     function swap() {
+        //move left (out)
+        //FIXME not visible on Mac OS X!
         iv1.x.anim().delay(1000).from(0).to(-sw).dur(3000).start();
+
+        //move left (in)
         iv2.x.anim().delay(1000).from(sw).to(0).dur(3000)
             .then(afterAnim).start();
     }
     swap();
 
     function afterAnim() {
-        //FIXME never called so far
-        console.log('afterAnim()');
-
         //swap images and move views back in place
         iv1.x(0);
         iv2.x(sw);

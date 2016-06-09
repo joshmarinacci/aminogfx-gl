@@ -25,11 +25,12 @@ using namespace node;
 #include "vertex-buffer.h"
 #include "texture-font.h"
 
-
 extern "C" {
     #include "nanojpeg.h"
     #include "upng.h"
 }
+
+#define DEBUG_BASE false
 
 const int GROUP = 1;
 const int RECT = 2;
@@ -39,7 +40,6 @@ const int POLY = 5;
 const int GLNODE = 6;
 const int INVALID = -1;
 const int WINDOW = 7;
-
 
 static const int FOREVER = -1;
 static const int SCALEX = 2;
@@ -82,11 +82,11 @@ static const int TEXTUREBOTTOM_PROP = 33;
 static const int CLIPRECT_PROP = 34;
 static const int AUTOREVERSE = 35;
 static const int DIMENSION = 36;
+static const int THEN = 37;
 
 using namespace v8;
 
 static bool eventCallbackSet = false;
-
 extern int width;
 extern int height;
 
@@ -102,55 +102,96 @@ extern float window_opacity;
 extern std::stack<void*> matrixStack;
 extern int rootHandle;
 extern std::map<int,AminoFont*> fontmap;
-extern Nan::Callback* NODE_EVENT_CALLBACK;
+extern Nan::Callback *NODE_EVENT_CALLBACK;
 
-
-
-
+/**
+ * Base class for all rendering nodes.
+ */
 class AminoNode {
 public:
+    int type;
+
+    //location
     float x;
     float y;
+
+    //zoom factor
     float scalex;
     float scaley;
+
+    //rotation
     float rotatex;
     float rotatey;
     float rotatez;
+
+    //opacity
     float opacity;
-    int type;
+
+    //visibility
     int visible;
+
     AminoNode() {
+        type = 0;
+
+        //location
         x = 0;
         y = 0;
+
+        //zoom factor
         scalex = 1;
         scaley = 1;
+
+        //rotation
         rotatex = 0;
         rotatey = 0;
         rotatez = 0;
-        type = 0;
-        visible = 1;
+
+        //opacity
         opacity = 1;
+
+        //visibility
+        visible = 1;
     }
+
     virtual ~AminoNode() {
+        //destroy (if not called before)
+        destroy();
+    }
+
+    /**
+     * Free all resources.
+     */
+    virtual void destroy() {
+        //to be overwritten
     }
 
 };
 
-// convert a v8::String to a (char*) -- any call to this should later be free'd
+/**
+ * Convert a v8::String to a (char*).
+ *
+ * Note: Any call to this should later be free'd. Never returns null.
+ */
 static inline char *TO_CHAR(Handle<Value> val) {
     String::Utf8Value utf8(val->ToString());
-
     int len = utf8.length() + 1;
-    char *str = (char *) calloc(sizeof(char), len);
+    char *str = (char *)calloc(sizeof(char), len);
+
     strncpy(str, *utf8, len);
 
     return str;
 }
 
+/**
+ * Get wide char string.
+ *
+ * Note: any call to this should later be free'd
+ */
 static wchar_t *GetWC(const char *c)
 {
-    const size_t cSize = strlen(c)+1;
-    wchar_t* wc = new wchar_t[cSize];
+    const size_t cSize = strlen(c) + 1;
+    wchar_t *wc = new wchar_t[cSize];
+
     mbstowcs (wc, c, cSize);
 
     return wc;
@@ -158,11 +199,17 @@ static wchar_t *GetWC(const char *c)
 
 extern std::vector<AminoNode*> rects;
 
+/**
+ * Display a warning and exit application.
+ */
 static void warnAbort(char * str) {
-    printf("%s\n",str);
+    printf("%s\n", str);
     exit(-1);
 }
 
+/**
+ * Text node class.
+ */
 class TextNode : public AminoNode {
 public:
     float r;
@@ -171,25 +218,50 @@ public:
     int fontid;
     int fontsize;
     std::wstring text;
-    vertex_buffer_t * buffer;
+    vertex_buffer_t *buffer;
+
     TextNode() {
-        r = 1.0; g = 1.0; b = 1.0;
         type = TEXT;
-        text = L"foo";
+
+        //white color
+        r = 1.0; g = 1.0; b = 1.0;
+        opacity = 1;
+
+        //properties
+        text = L"";
         fontsize = 40;
         fontid = INVALID;
-        buffer = vertex_buffer_new( "vertex:3f,tex_coord:2f,color:4f" );
-        opacity = 1;
+        buffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
     }
+
     virtual ~TextNode() {
     }
+
+    /**
+     * Update the rendered text.
+     */
     void refreshText();
+
+    void destroy() {
+        if (DEBUG_BASE) {
+            printf("TextNode: destroy()\n");
+        }
+
+        AminoNode::destroy();
+
+        if (buffer) {
+            vertex_buffer_delete(buffer);
+            buffer = NULL;
+        }
+    }
 };
 
-
+/**
+ * Animation class.
+ */
 class Anim {
 public:
-    AminoNode* target;
+    AminoNode *target;
     float start;
     float end;
     int property;
@@ -197,14 +269,19 @@ public:
     bool started;
     bool active;
     double startTime;
+    double lastTime;
+    double pauseTime;
     int loopcount;
     float duration;
     bool autoreverse;
     int direction;
+    Nan::Callback *then;
+    int lerptype;
+
     static const int FORWARD = 1;
     static const int BACKWARD = 2;
-    int lerptype;
-    Anim(AminoNode* Target, int Property, float Start, float End,
+
+    Anim(AminoNode *Target, int Property, float Start, float End,
             float Duration) {
         id = -1;
         target = Target;
@@ -217,60 +294,172 @@ public:
         autoreverse = false;
         direction = FORWARD;
         lerptype = LERP_LINEAR;
+        then = NULL;
         active = true;
     }
 
-    float cubicIn(float t) {
-        return pow(t,3);
-    }
-    float cubicOut(float t) {
-        return 1-cubicIn(1-t);
-    }
-    float cubicInOut(float t) {
-        if(t < 0.5) return cubicIn(t*2.0)/2.0 ;
-        return 1-cubicIn((1-t)*2)/2;
-    }
+    virtual ~Anim() {
+        if (DEBUG_BASE) {
+            printf("Anim: destructor()\n");
+        }
 
-    float lerp(float t) {
-        if(lerptype != LERP_LINEAR) {
-            float t2 = 0;
-            if(lerptype == LERP_CUBIC_IN) { t2 = cubicIn(t); }
-            if(lerptype == LERP_CUBIC_OUT) { t2 = cubicOut(t); }
-            if(lerptype == LERP_CUBIC_IN_OUT) { t2 = cubicInOut(t); }
-            return start + (end-start)*t2;
-        } else {
-            return start + (end-start)*t;
+        if (then) {
+            delete then;
         }
     }
 
+    /**
+     * Cubic-in time function.
+     */
+    float cubicIn(float t) {
+        return pow(t, 3);
+    }
+
+    /**
+     * Cubic-out time function.
+     */
+    float cubicOut(float t) {
+        return 1 - cubicIn(1 - t);
+    }
+
+    /**
+     * Cubic-in-out time function.
+     */
+    float cubicInOut(float t) {
+        if (t < 0.5) {
+            return cubicIn(t * 2.0) / 2.0;
+        }
+
+        return 1 - cubicIn((1 - t) * 2) / 2;
+    }
+
+    /**
+     * Call time function.
+     */
+    float lerp(float t) {
+        float t2 = 0;
+
+        switch (lerptype) {
+            case LERP_CUBIC_IN:
+                t2 = cubicIn(t);
+                break;
+
+            case LERP_CUBIC_OUT:
+                t2 = cubicOut(t);
+                break;
+
+            case LERP_CUBIC_IN_OUT:
+                t2 = cubicInOut(t);
+                break;
+
+            //TODO JS callback
+
+            case LERP_LINEAR:
+            default:
+                t2 = t;
+                break;
+        }
+
+        return start + (end - start) * t2;
+    }
+
+    /**
+     * Toggle animation direction.
+     *
+     * Note: works only if autoreverse is enabled
+     */
     void toggle() {
-        if(autoreverse) {
-            if(direction == FORWARD) {
+        if (autoreverse) {
+            if (direction == FORWARD) {
                 direction = BACKWARD;
             } else {
                 direction = FORWARD;
             }
         }
     }
+
     void applyValue(float value) {
-        if(property == X_PROP) target->x = value;
-        if(property == Y_PROP) target->y = value;
-        if(property == SCALEX) target->scalex = value;
-        if(property == SCALEY) target->scaley = value;
-        if(property == ROTATEX) target->rotatex = value;
-        if(property == ROTATEY) target->rotatey = value;
-        if(property == ROTATEZ) target->rotatez = value;
-        if(property == OPACITY_PROP) {
-            target->opacity = value;
-            if(target->type == TEXT) {
-                TextNode* textnode = (TextNode*)target;
-                textnode->refreshText();
-            };
+        switch (property) {
+            //translation
+            case X_PROP:
+                target->x = value;
+                break;
+
+            case Y_PROP:
+                target->y = value;
+                break;
+
+            //zoom
+            case SCALEX:
+                target->scalex = value;
+                break;
+
+            case SCALEY:
+                target->scaley = value;
+                break;
+
+            //rotation
+            case ROTATEX:
+                target->rotatex = value;
+                break;
+
+            case ROTATEY:
+                target->rotatey = value;
+                break;
+
+            case ROTATEZ:
+                target->rotatez = value;
+                break;
+
+            //opacity
+            case OPACITY_PROP:
+                target->opacity = value;
+
+                //handle text opacity
+                if (target->type == TEXT) {
+                    //TODO use fragment shader with opacity value
+                    TextNode *textnode = (TextNode *)target;
+
+                    textnode->refreshText();
+                };
+                break;
+
+            //TODO js callback
+
+            default:
+                printf("Unknown animation property: %i\n", property);
+                break;
         }
     }
 
-/*NAN_METHOD(endAnimation) {
-     applyValue(end);
+    //TODO pause
+    //TODO resume
+    //TODO stop (set active)
+    //TODO reset (start from beginning)
+
+    void endAnimation() {
+        if (DEBUG_BASE) {
+            printf("Anim: endAnimation()\n");
+        }
+
+        //apply end state
+        applyValue(end);
+
+        //callback function
+        if (then) {
+            if (DEBUG_BASE) {
+                printf("-> callback used\n");
+            }
+
+            then->Call(0, NULL);
+        }
+
+        //TODO remove instance (needs refactoring; memory leak)
+
+        //deactivate
+        active = false;
+
+/*
      if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
 
      v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -283,51 +472,88 @@ public:
      //Handle<Value> event_argv[] = {event_obj};
      //NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
      info.GetReturnValue().Set(event_obj);
-}
 */
+    }
 
-void update() {
-    	if(!active) return;
-        if(loopcount == 0) {
+    void update() {
+        //check active
+    	if (!active) {
             return;
         }
-        if(!started) {
+
+        //check remaining loops
+        if (loopcount == 0) {
+            return;
+        }
+
+        //handle first start
+        if (!started) {
             started = true;
             startTime = getTime();
+            lastTime = startTime;
+            pauseTime = 0;
         }
+
+        //validate time
         double currentTime = getTime();
-        float t = (currentTime-startTime)/duration;
-        if(t > 1) {
-            if(loopcount == FOREVER) {
-                startTime = getTime();
-                t = 0;
-                toggle();
+
+        if (currentTime < startTime) {
+            //smooth animation
+            startTime = currentTime - (lastTime - startTime);
+            lastTime = currentTime;
+        }
+
+        //process
+        float t = (currentTime - startTime) / duration;
+
+        lastTime = currentTime;
+
+        if (t > 1) {
+            //end reached
+            bool doToggle = false;
+
+            if (loopcount == FOREVER) {
+                doToggle = true;
             }
-            if(loopcount > 0) {
+
+            if (loopcount > 0) {
                 loopcount--;
-                if(loopcount > 0) {
-                    t = 0;
-                    startTime = getTime();
-                    toggle();
+
+                if (loopcount > 0) {
+                    doToggle = true;
                 } else {
-                    //endAnimation();
+                    endAnimation();
                     return;
                 }
             }
+
+            if (doToggle) {
+                //next cycle
+                startTime = currentTime;
+                t = 0;
+                toggle();
+            } else {
+                //end position
+                t = 1;
+            }
         }
 
-        if(direction == BACKWARD) {
-            t = 1-t;
+        if (direction == BACKWARD) {
+            t = 1 - t;
         }
+
+        //apply time function
         float value = lerp(t);
+
         applyValue(value);
     }
 };
 
-extern std::vector<Anim*> anims;
+extern std::vector<Anim *> anims;
 
-
-
+/**
+ * Rectangle node class.
+ */
 class Rect : public AminoNode {
 public:
     float w;
@@ -340,21 +566,34 @@ public:
     float top;
     float bottom;
     int texid;
+
     Rect() {
-        w = 100; h = 100;
-        r = 0; g = 1; b = 0;
-        opacity = 1;
         type = RECT;
+
+        //size
+        w = 100;
+        h = 100;
+
+        //color (green)
+        r = 0;
+        g = 1;
+        b = 0;
+
+        opacity = 1;
         texid = INVALID;
         left = 0;
         bottom = 1;
         right = 1;
         top = 0;
     }
+
     virtual ~Rect() {
     }
 };
 
+/**
+ * Polygon node class.
+ */
 class PolyNode : public AminoNode {
 public:
     float r;
@@ -365,8 +604,20 @@ public:
     int filled;
 
     PolyNode() {
-        r = 0; g = 1; b = 0;
+        type = POLY;
+
+        //color: green
+        r = 0;
+        g = 1;
+        b = 0;
+
+        opacity = 1;
+
+        //not filled
         filled = 0;
+
+        //default: 2D triangle
+        dimension = 2;
         geometry = new std::vector<float>();
         geometry->push_back(0);
         geometry->push_back(0);
@@ -374,148 +625,364 @@ public:
         geometry->push_back(0);
         geometry->push_back(50);
         geometry->push_back(50);
-        opacity = 1;
-        type = POLY;
-        dimension = 2;
     }
+
     virtual ~PolyNode() {
+    }
+
+    void destroy() {
+        if (DEBUG_BASE) {
+            printf("PolyNode: destroy()\n");
+        }
+
+        AminoNode::destroy();
+
+        if (geometry) {
+            delete geometry;
+            geometry = NULL;
+        }
     }
 };
 
+/**
+ * Group node.
+ *
+ * Special: supports clipping
+ */
 class Group : public AminoNode {
 public:
-    std::vector<AminoNode*> children;
+    std::vector<AminoNode *> children;
     float w;
     float h;
     int cliprect;
+
     Group() {
+        type = GROUP;
+
+        //default size
         w = 50;
         h = 50;
+
+        //clipping: off
         cliprect = 0;
-        type = GROUP;
     }
+
     ~Group() {
     }
 };
 
+/**
+ * OpenGL node.
+ *
+ * Uses callback.
+ */
 class GLNode : public AminoNode {
 public:
     Persistent<Function> callback;
+
     GLNode() {
         type = GLNODE;
     }
+
     ~GLNode() {
     }
 };
 
+/**
+ * Updates for next animation cycle.
+ *
+ * Note: destroy() has to be called to free memory if parameters were not passed!
+ *
+ * TODO use better OOP way
+ */
 class Update {
 public:
     int type;
     int node;
     int property;
+
+    //values
     float value;
     std::wstring text;
-    std::vector<float>* arr;
-    Update(int Type, int Node, int Property, float Value, std::wstring Text, std::vector<float>* Arr) {
+    std::vector<float> *arr;
+    Nan::Callback *callback;
+
+    Update(int Type, int Node, int Property, float Value, std::wstring Text, std::vector<float> *Arr, Nan::Callback *Callback) {
         type = Type;
         node = Node;
         property = Property;
         value = Value;
         text = Text;
         arr = Arr;
+        callback = Callback;
     }
+
     ~Update() { }
+
+    /**
+     * Free memory if update() was not called.
+     */
+    void destroy() {
+        if (DEBUG_BASE) {
+            printf("Update: destroy()\n");
+        }
+
+        if (arr) {
+            delete[] arr;
+            arr = NULL;
+        }
+
+        if (callback) {
+            delete callback;
+            callback = NULL;
+        }
+    }
+
     void apply() {
-        if(type == ANIM) {
-            Anim* anim = anims[node];
-            if(property == LERP_PROP) {
-                anim->lerptype = value;
-            }
-            if(property == COUNT) {
-                anim->loopcount = value;
-            }
-            if(property == AUTOREVERSE) {
-                anim->autoreverse = value;
+        //animation
+        if (type == ANIM) {
+            Anim *anim = anims[node];
+
+            switch (property) {
+                case LERP_PROP:
+                    anim->lerptype = value;
+                    break;
+
+                case COUNT:
+                    anim->loopcount = value;
+                    break;
+
+                case AUTOREVERSE:
+                    anim->autoreverse = value;
+                    break;
+
+                case THEN:
+                    anim->then = callback;
+                    break;
+
+                default:
+                    printf("Unknown anim update: %i\n", property);
+                    break;
             }
             return;
         }
-        if(type == WINDOW) {
-            if(property == R) {
-                window_fill_red = value;
-            }
-            if(property == G) {
-                window_fill_green = value;
-            }
-            if(property == B) {
-                window_fill_blue = value;
-            }
-            if(property == OPACITY_PROP) {
-                window_opacity = value;
+
+        //window
+        if (type == WINDOW) {
+            switch (property) {
+                case R:
+                    window_fill_red = value;
+                    break;
+
+                case G:
+                    window_fill_green = value;
+                    break;
+
+                case B:
+                    window_fill_blue = value;
+                    break;
+
+                case OPACITY_PROP:
+                    window_opacity = value;
+                    break;
+
+                default:
+                    printf("Unknown anim window update: %i\n", property);
+                    break;
             }
             return;
         }
-        AminoNode* target = rects[node];
-        if(property == X_PROP) target->x = value;
-        if(property == Y_PROP) target->y = value;
-        if(property == SCALEX) target->scalex = value;
-        if(property == SCALEY) target->scaley = value;
-        if(property == ROTATEX) target->rotatex = value;
-        if(property == ROTATEY) target->rotatey = value;
-        if(property == ROTATEZ) target->rotatez = value;
-        if(property == VISIBLE) target->visible = value;
-        if(property == OPACITY_PROP) target->opacity = value;
 
-        if(target->type == RECT) {
-            Rect* rect = (Rect*)target;
-            if(property == R) rect->r = value;
-            if(property == G) rect->g = value;
-            if(property == B) rect->b = value;
-            if(property == W_PROP) rect->w = value;
-            if(property == H_PROP) rect->h = value;
-            if(property == TEXID) rect->texid = value;
-            if(property == TEXTURELEFT_PROP)   rect->left = value;
-            if(property == TEXTURERIGHT_PROP)  rect->right = value;
-            if(property == TEXTURETOP_PROP)    rect->top = value;
-            if(property == TEXTUREBOTTOM_PROP) rect->bottom = value;
+        //node
+        AminoNode *target = rects[node];
+
+        switch (property) {
+            //origin
+            case X_PROP:
+                target->x = value;
+                return;
+
+            case Y_PROP:
+                target->y = value;
+                return;
+
+            //scaling factor
+            case SCALEX:
+                target->scalex = value;
+                return;
+
+            case SCALEY:
+                target->scaley = value;
+                return;
+
+            //rotation
+            case ROTATEX:
+                target->rotatex = value;
+                return;
+
+            case ROTATEY:
+                target->rotatey = value;
+                return;
+
+            case ROTATEZ:
+                target->rotatez = value;
+                return;
+
+            //visibility
+            case VISIBLE:
+                target->visible = value;
+                return;
+
+            case OPACITY_PROP:
+                target->opacity = value;
+                return;
         }
 
-        if(target->type == GROUP) {
-            Group* group = (Group*)target;
-            if(property == W_PROP) group->w = value;
-            if(property == H_PROP) group->h = value;
-            if(property == CLIPRECT_PROP) group->cliprect = value;
-        }
+        if (target->type == RECT) {
+            //rect
+            Rect *rect = (Rect *)target;
 
-        if(target->type == TEXT) {
-            TextNode* textnode = (TextNode*)target;
-            if(property == R) textnode->r = value;
-            if(property == G) textnode->g = value;
-            if(property == B) textnode->b = value;
-            if(property == TEXT_PROP) textnode->text = text;
-            if(property == FONTSIZE_PROP) textnode->fontsize = value;
-            if(property == FONTID_PROP) textnode->fontid = value;
+            switch (property) {
+                case R:
+                    rect->r = value;
+                    break;
+
+                case G:
+                    rect->g = value;
+                    break;
+
+                case B:
+                    rect->b = value;
+                    break;
+
+                case W_PROP:
+                    rect->w = value;
+                    break;
+
+                case H_PROP:
+                    rect->h = value;
+                    break;
+
+                case TEXID:
+                    rect->texid = value;
+                    break;
+
+                case TEXTURELEFT_PROP:
+                    rect->left = value;
+                    break;
+
+                case TEXTURERIGHT_PROP:
+                    rect->right = value;
+                    break;
+
+                case TEXTURETOP_PROP:
+                    rect->top = value;
+                    break;
+
+                case TEXTUREBOTTOM_PROP:
+                    rect->bottom = value;
+                    break;
+
+                default:
+                    printf("Unknown anim rect update: %i\n", property);
+                    break;
+            }
+        } else if (target->type == GROUP) {
+            //group
+            Group *group = (Group *)target;
+
+            switch (property) {
+                case W_PROP:
+                    group->w = value;
+                    break;
+
+                case H_PROP:
+                    group->h = value;
+                    break;
+
+                case CLIPRECT_PROP:
+                    group->cliprect = value;
+                    break;
+
+                default:
+                    printf("Unknown anim group update: %i\n", property);
+                    break;
+            }
+        } else if (target->type == TEXT) {
+            //text
+            TextNode *textnode = (TextNode *)target;
+
+            switch (property) {
+                case R:
+                    textnode->r = value;
+                    break;
+
+                case G:
+                    textnode->g = value;
+                    break;
+
+                case B:
+                    textnode->b = value;
+                    break;
+
+                case TEXT_PROP:
+                    //FIME memory leak
+                    textnode->text = text;
+                    break;
+
+                case FONTSIZE_PROP:
+                    textnode->fontsize = value;
+                    break;
+
+                case FONTID_PROP:
+                    textnode->fontid = value;
+                    break;
+
+                default:
+                    printf("Unknown anim text update: %i\n", property);
+                    break;
+            }
+
             textnode->refreshText();
-        }
+        } else if (target->type == POLY) {
+            //poly
+            PolyNode *polynode = (PolyNode *)target;
 
-        if(target->type == POLY) {
-            PolyNode* polynode = (PolyNode*)target;
-            if(property == R) polynode->r = value;
-            if(property == G) polynode->g = value;
-            if(property == B) polynode->b = value;
-            if(property == GEOMETRY) {
-                polynode->geometry = arr;
-            }
-            if(property == DIMENSION) {
-                polynode->dimension = value;
-            }
-            if(property == FILLED) {
-                polynode->filled = value;
+            switch (property) {
+                case R:
+                    polynode->r = value;
+                    break;
+
+                case G:
+                    polynode->g = value;
+                    break;
+
+                case B:
+                    polynode->b = value;
+                    break;
+
+                case GEOMETRY:
+                    //FIXME memory leak
+                    polynode->geometry = arr;
+                    break;
+
+                case DIMENSION:
+                    polynode->dimension = value;
+                    break;
+
+                case FILLED:
+                    polynode->filled = value;
+                    break;
+
+                default:
+                    printf("Unknown anim poly update: %i\n", property);
+                    break;
             }
         }
     }
 };
 
-extern std::vector<Update*> updates;
+extern std::vector<Update *> updates;
 
 NAN_METHOD(createRect);
 NAN_METHOD(createPoly);
@@ -525,25 +992,43 @@ NAN_METHOD(createGLNode);
 NAN_METHOD(createAnim);
 NAN_METHOD(stopAnim);
 
-
+/**
+ * Get wstring from v8 string.
+ *
+ * Note: automatically free'd
+ */
 static std::wstring GetWString(v8::Handle<v8::String> str) {
     std::wstring wstr = L"";
-    uint16_t* buf = new uint16_t[str->Length()+1];
+    uint16_t *buf = new uint16_t[str->Length() + 1];
+
     str->Write(buf);
-    for(int i=0; i<str->Length()+1; i++) {
+
+    for (int i = 0; i < str->Length() + 1; i++) {
         wstr.push_back(buf[i]);
     }
+
+    delete[] buf;
+
     return wstr;
 }
 
+/**
+ * Convert v8 float array to float vector.
+ *
+ * Note: delete after use
+ */
 static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
     Handle<Array>  oarray = Handle<Array>::Cast(obj);
     std::vector<float>* carray = new std::vector<float>();
-    for(std::size_t i=0; i<oarray->Length(); i++) {
+
+    for (std::size_t i = 0; i < oarray->Length(); i++) {
         carray->push_back((float)(oarray->Get(i)->ToNumber()->NumberValue()));
     }
+
     return carray;
 }
+
+//JavaScript bindings
 
 NAN_METHOD(updateProperty);
 NAN_METHOD(updateWindowProperty);
@@ -579,9 +1064,7 @@ static void sendValidate() {
 }
 */
 
-
-
-
+//OpenGL JavaScript bindings
 
 NAN_METHOD(node_glCreateShader);
 NAN_METHOD(node_glShaderSource);
@@ -596,7 +1079,6 @@ NAN_METHOD(node_glLinkProgram);
 NAN_METHOD(node_glUseProgram);
 NAN_METHOD(node_glGetAttribLocation);
 NAN_METHOD(node_glGetUniformLocation);
-
 
 
 struct DebugEvent {

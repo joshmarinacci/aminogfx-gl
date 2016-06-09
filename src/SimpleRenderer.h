@@ -5,13 +5,14 @@
 
 class GLContext {
 public:
-    std::stack<void*> matrixStack;
+    std::stack<void *> matrixStack;
     GLfloat* globaltx;
     int shadercount;
     int shaderDupCount;
     int texDupCount;
     int prevProg;
     int prevtex;
+
     GLContext() {
         shadercount = 0;
         shaderDupCount = 0;
@@ -21,19 +22,24 @@ public:
         this->globaltx = new GLfloat[16];
         make_identity_matrix(this->globaltx);
     }
+
     virtual ~GLContext() {
         delete this->globaltx;
     }
+
     void dumpGlobalTransform() {
         print_matrix(this->globaltx);
     }
+
     void translate(double x, double y) {
         GLfloat tr[16];
         GLfloat trans2[16];
-        make_trans_matrix((float)x,(float)y,0,tr);
+
+        make_trans_matrix((float)x, (float)y, 0, tr);
         mul_matrix(trans2, this->globaltx, tr);
-        copy_matrix(this->globaltx,trans2);
+        copy_matrix(this->globaltx, trans2);
     }
+
     void rotate(double x, double y, double z) {
         GLfloat rot[16];
         GLfloat temp[16];
@@ -54,14 +60,16 @@ public:
     void scale(double x, double y){
         GLfloat scale[16];
         GLfloat temp[16];
-        make_scale_matrix((float)x,(float)y, 1.0, scale);
+
+        make_scale_matrix((float)x, (float)y, 1.0, scale);
         mul_matrix(temp, this->globaltx, scale);
-        copy_matrix(this->globaltx,temp);
+        copy_matrix(this->globaltx, temp);
     }
 
     void save() {
-        GLfloat* temp = new GLfloat[16];
-        copy_matrix(temp,this->globaltx);
+        GLfloat *temp = new GLfloat[16];
+
+        copy_matrix(temp, this->globaltx);
         this->matrixStack.push(this->globaltx);
         this->globaltx = temp;
     }
@@ -96,14 +104,15 @@ public:
 class SimpleRenderer {
 public:
     bool modelViewChanged;
+
     SimpleRenderer();
-    virtual void startRender(AminoNode* node);
-    virtual void render(GLContext* c, AminoNode* node);
-    virtual void drawGroup(GLContext* c, Group* group);
-    virtual void drawRect(GLContext* c, Rect* rect);
-    virtual void drawPoly(GLContext* c, PolyNode* poly);
-    virtual void drawText(GLContext* c, TextNode* text);
-    virtual void drawGLNode(GLContext* c, GLNode* glnode);
+    virtual void startRender(AminoNode *node);
+    virtual void render(GLContext *c, AminoNode *node);
+    virtual void drawGroup(GLContext *c, Group *group);
+    virtual void drawRect(GLContext *c, Rect *rect);
+    virtual void drawPoly(GLContext *c, PolyNode *poly);
+    virtual void drawText(GLContext *c, TextNode *text);
+    virtual void drawGLNode(GLContext *c, GLNode *glnode);
     virtual ~SimpleRenderer() { }
 };
 

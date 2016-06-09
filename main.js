@@ -7,7 +7,7 @@ if (DEBUG) {
 
 var binary = require('node-pre-gyp');
 var path = require('path');
-var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
+var binding_path = binary.find(path.resolve(path.join(__dirname, './package.json')));
 var sgtest = require(binding_path);
 
 //detect platform
@@ -103,12 +103,7 @@ var propsHash = {
     "lerpprop": 16,
     "lerpcubicinout": 17,
     "autoreverse": 35,
-
-    //time function
-    'linear':     13,
-    'cubicIn':    14,
-    'cubicOut':   15,
-    'cubicInOut': 17,
+    "then": 37,
 
     //geometry
     "geometry":  24,
@@ -124,6 +119,14 @@ var propsHash = {
 
     //clipping
     "cliprect": 34
+};
+
+var timeFuncsHash = {
+    //time function
+    'linear':     13,
+    'cubicIn':    14,
+    'cubicOut':   15,
+    'cubicInOut': 17,
 };
 
 /**
@@ -231,11 +234,13 @@ function JSPropAnim(target, name) {
     this.then  = function(fun) {  this._then_fun = fun;    return this;  }
     this.autoreverse = function(val) { this._autoreverse = val ? 1:0; return this;  }
     this.timeFunc = function (val) {
-        var tf = propsHash[val];
+        var tf = timeFuncsHash[val];
 
-        if (tf) {
-            this._lerpprop = tf;
+        if (!tf) {
+            throw new Error('unknown time function: ' + val);
         }
+
+        this._lerpprop = tf;
 
         return this;
     }
@@ -267,6 +272,7 @@ function JSPropAnim(target, name) {
             nat.updateAnimProperty(self.handle, 'count', self._loop);
             nat.updateAnimProperty(self.handle, 'autoreverse', self._autoreverse);
             nat.updateAnimProperty(self.handle, 'lerpprop', self._lerpprop);
+            nat.updateAnimProperty(self.handle, 'then', self._then_fun);
 
             //add
             core.anims.push(self);
@@ -275,15 +281,7 @@ function JSPropAnim(target, name) {
         return this;
     }
 
-    /**
-     * Call finish function.
-     */
-    this.finish = function () {
-        if (this._then_fun) {
-            this._then_fun();
-        }
-    }
-
+    //TODO more features from native
 
 }
 
@@ -343,10 +341,13 @@ var gl_native = {
 
         core.defaultFont = fontmap['source'];
 
+        //root
         this.rootWrapper = this.createGroup();
-        this.updateProperty(this.rootWrapper, 'scalex', core.DPIScale);
-        this.updateProperty(this.rootWrapper, 'scaley', core.DPIScale);
         sgtest.setRoot(this.rootWrapper);
+
+        //scale
+        this.updateProperty(this.rootWrapper, 'sx', core.DPIScale);
+        this.updateProperty(this.rootWrapper, 'sy', core.DPIScale);
     },
     getFont: function(name) { return fontmap[name]; },
     updateProperty: function(handle, name, value) {
@@ -356,7 +357,13 @@ var gl_native = {
 
         //console.log('setting', handle, name, propsHash[name], value, typeof value);
 
-        sgtest.updateProperty(handle, propsHash[name], value);
+        var hash = propsHash[name];
+
+        if (!hash) {
+            throw new Error('Unknown update property: ' + name);
+        }
+
+        sgtest.updateProperty(handle, hash, value);
     },
     setRoot: function (handle) { return  sgtest.addNodeToGroup(handle,this.rootWrapper);  },
     tick: function() {
@@ -481,20 +488,34 @@ var gl_native = {
         };
     },
     createAnim: function (handle, prop, start, end, dur) {
-        if (!propsHash[prop]) {
-            throw new Error('invalid native property name',prop);
-        }
+        var hash = propsHash[prop];
 
-        return sgtest.createAnim(handle, propsHash[prop], start, end, dur);
-    },
-    createPropAnim: function (obj, name) { return new JSPropAnim(obj,name); },
-    updateAnimProperty: function (handle, prop, type) { return  sgtest.updateAnimProperty(handle, propsHash[prop], type); },
-    updateWindowProperty:function (stage, prop, value){
-        if (!propsHash[prop]) {
+        if (!hash) {
             throw new Error('invalid native property name', prop);
         }
 
-        return sgtest.updateWindowProperty(-1, propsHash[prop], value);
+        return sgtest.createAnim(handle, hash, start, end, dur);
+    },
+    createPropAnim: function (obj, name) {
+        return new JSPropAnim(obj, name);
+    },
+    updateAnimProperty: function (handle, prop, type) {
+        var hash = propsHash[prop];
+
+        if (!hash) {
+            throw new Error('invalid animattion property: ' + prop);
+        }
+
+        sgtest.updateAnimProperty(handle, hash, type);
+    },
+    updateWindowProperty: function (stage, prop, value) {
+        var hash = propsHash[prop];
+
+        if (!hash) {
+            throw new Error('invalid native property name', prop);
+        }
+
+        return sgtest.updateWindowProperty(-1, hash, value);
     }
 }
 
