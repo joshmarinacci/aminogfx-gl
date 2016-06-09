@@ -281,6 +281,18 @@ function JSPropAnim(target, name) {
         return this;
     }
 
+    /**
+     * Call finish function.
+     */
+    this.finish = function () {
+        //FIXME check how this is used by core
+        /*
+        if (this._then_fun) {
+             this._then_fun();
+        }
+        */
+    }
+
     //TODO more features from native
 
 }
@@ -568,7 +580,7 @@ exports.start = function(cb) {
     core.start();
 };
 
-exports.makeProps = amino_core.makeProps;
+exports.makeProps = amino_core.makeProps; //FIXME undefined!
 
 exports.Rect      = amino_core.Rect;
 exports.Group     = amino_core.Group;
