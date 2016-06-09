@@ -715,8 +715,8 @@ NAN_METHOD(createGLNode) {
 NAN_METHOD(createAnim) {
     int rectHandle   = info[0]->Uint32Value();
     int property     = info[1]->Uint32Value();
-    float start      = info[2]->Uint32Value();
-    float end        = info[3]->Uint32Value();
+    float start      = info[2]->NumberValue();
+    float end        = info[3]->NumberValue();
     float duration   = info[4]->Uint32Value();
 
     Anim *anim = new Anim(rects[rectHandle], property, start, end, duration);

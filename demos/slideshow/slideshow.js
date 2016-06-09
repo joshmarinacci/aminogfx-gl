@@ -21,7 +21,8 @@ function CircularBuffer(arr) {
     this.arr = arr;
     this.index = -1;
     this.next = function() {
-        this.index = (this.index+1)%this.arr.length;
+        this.index = (this.index + 1) % this.arr.length;
+
         return this.arr[this.index];
     }
 }
@@ -40,8 +41,6 @@ amino.start(function (core, stage) {
 
     stage.setRoot(root);
 
-//FIXME    var sw = stage.getW();
-//FIXME    var sh = stage.getH();
     var sw = stage.w();
     var sh = stage.h();
 
@@ -74,7 +73,6 @@ amino.start(function (core, stage) {
     //animate out and in
     function swap() {
         //move left (out)
-        //FIXME not visible on Mac OS X!
         iv1.x.anim().delay(1000).from(0).to(-sw).dur(3000).start();
 
         //move left (in)

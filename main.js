@@ -290,9 +290,15 @@ function JSPropAnim(target, name) {
 var PNG_HEADER = new Buffer([ 137, 80, 78, 71, 13, 10, 26, 10 ]); //PNG Header
 
 var gl_native = {
-    createNativeFont: function (path) {  return sgtest.createNativeFont(path, __dirname+'/resources/shaders');  },
-    registerFont:function (args) { fontmap[args.name] = new JSFont(args); },
-    init: function (core) { return sgtest.init(); },
+    createNativeFont: function (path) {
+        return sgtest.createNativeFont(path, __dirname + '/resources/shaders');
+    },
+    registerFont:function (args) {
+        fontmap[args.name] = new JSFont(args);
+    },
+    init: function (core) {
+        return sgtest.init();
+    },
     startEventLoop: function () {
         if (DEBUG) {
             console.log('starting the event loop');
@@ -544,8 +550,9 @@ exports.start = function(cb) {
         gl_native.updateWindowProperty(stage, 'g', color.g);
         gl_native.updateWindowProperty(stage, 'b', color.b);
     });
+
     stage.opacity.watch(function () {
-        gl_native.updateWindowProperty(stage,'opacity',stage.opacity());
+        gl_native.updateWindowProperty(stage, 'opacity', stage.opacity());
     });
 
     //mirror fonts to PureImage
@@ -557,7 +564,7 @@ exports.start = function(cb) {
         Core._core.start();
     });
     */
-    cb(core,stage);
+    cb(core, stage);
     core.start();
 };
 

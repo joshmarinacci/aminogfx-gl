@@ -284,12 +284,17 @@ public:
     Anim(AminoNode *Target, int Property, float Start, float End,
             float Duration) {
         id = -1;
+
+        //properties
         target = Target;
+        property = Property;
+
         start = Start;
         end = End;
-        property = Property;
-        started = false;
         duration = Duration;
+
+        //state
+        started = false;
         loopcount = 1;
         autoreverse = false;
         direction = FORWARD;
