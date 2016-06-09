@@ -19,7 +19,7 @@
     "aminogfx": "^0.0.21",
     "moment": "^2.13.0",
     "nan": "^2.0.9",
-    "node-pre-gyp": "0.5.x",
+    "node-pre-gyp": "0.6.x",
     "wrench": "^1.5.8"
   },
   "author": {
