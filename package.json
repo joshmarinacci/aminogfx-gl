@@ -17,9 +17,12 @@
   },
   "dependencies": {
     "aminogfx": "^0.0.21",
+    "inputevents": "0.0.2",
     "moment": "^2.13.0",
     "nan": "^2.0.9",
     "node-pre-gyp": "0.6.x",
+    "pureimage": "0.0.13",
+    "richtext": "0.0.4",
     "wrench": "^1.5.8"
   },
   "author": {

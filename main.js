@@ -1,3 +1,5 @@
+'use strict';
+
 var DEBUG = false;
 var DEBUG_FPS = false;
 
@@ -20,7 +22,8 @@ if (process.platform == 'darwin') {
     OS ='MAC';
 }
 
-var amino_core = require('aminogfx');
+//var amino_core = require('aminogfx');
+var amino_core = require('./src/core/main'); //FIXME
 var Core = amino_core.Core;
 var Shaders = require('./src/shaders.js');
 var fs = require('fs');
@@ -396,14 +399,18 @@ var gl_native = {
         //console.log("got some stuff",arguments);
         cb(arguments[1]);
     });   },
-    createRect: function()  {          return sgtest.createRect();           },
-    createGroup: function() {          return sgtest.createGroup();          },
-    createPoly: function()  {          return sgtest.createPoly();           },
-    createText: function() {           return sgtest.createText();           },
-    createGLNode: function(cb)  {      return sgtest.createGLNode(cb);       },
-    addNodeToGroup: function(h1,h2) {  return sgtest.addNodeToGroup(h1,h2);  },
-    removeNodeFromGroup: function(h1, h2) { return sgtest.removeNodeFromGroup(h1, h2);  },
-    loadImage: function(src, cb) {
+    createRect: function ()  {          return sgtest.createRect();           },
+    createGroup: function () {          return sgtest.createGroup();          },
+    createPoly: function ()  {          return sgtest.createPoly();           },
+    createText: function () {           return sgtest.createText();           },
+    createGLNode: function (cb)  {      return sgtest.createGLNode(cb);       },
+    addNodeToGroup: function (h1,h2) {
+        return sgtest.addNodeToGroup(h1,h2);
+    },
+    removeNodeFromGroup: function (h1, h2) {
+        return sgtest.removeNodeFromGroup(h1, h2);
+    },
+    loadImage: function (src, cb) {
         var buffer;
         var type;
 
@@ -494,8 +501,12 @@ var gl_native = {
     },
     decodePngBuffer: function (fbuf, cb) {  return cb(sgtest.decodePngBuffer(fbuf));  },
     decodeJpegBuffer: function (fbuf, cb) { return cb(sgtest.decodeJpegBuffer(fbuf)); },
-    loadBufferToTexture: function (texid, w, h, bpp, buf, cb) { return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf)); },
-    setWindowSize: function (w, h) { sgtest.setWindowSize(w * Core.getCore().DPIScale, h * Core.getCore().DPIScale); },
+    loadBufferToTexture: function (texid, w, h, bpp, buf, cb) {
+        return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf));
+    },
+    setWindowSize: function (w, h) {
+        sgtest.setWindowSize(w * Core.getCore().DPIScale, h * Core.getCore().DPIScale);
+    },
     getWindowSize: function (w, h) {
         var dpi = Core.getCore().DPIScale;
         var size = sgtest.getWindowSize(w, h);

@@ -463,21 +463,6 @@ public:
 
         //deactivate
         active = false;
-
-/*
-     if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-
-     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
-     //Local<Object> event_obj = Object::New();
-     Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("animend").ToLocalChecked());
-     //event_obj->Set(String::NewSymbol("type"), String::New("animend"));
-     Nan::Set(event_obj, Nan::New("id").ToLocalChecked(), Nan::New(id));
-     //event_obj->Set(String::NewSymbol("id"), Number::New(id));
-
-     //Handle<Value> event_argv[] = {event_obj};
-     //NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-     info.GetReturnValue().Set(event_obj);
-*/
     }
 
     void update() {

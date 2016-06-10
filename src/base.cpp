@@ -366,13 +366,14 @@ NAN_METHOD(removeNodeFromGroup) {
     AminoNode *node = rects[rectHandle];
     int n = -1;
 
+    //TODO simplify
     for (std::size_t i = 0; i < group->children.size(); i++) {
         if (group->children[i] == node) {
             n = i;
         }
     }
 
-    group->children.erase(group->children.begin()+n);
+    group->children.erase(group->children.begin() + n);
 }
 
 NAN_METHOD(setRoot) {
@@ -475,10 +476,13 @@ NAN_METHOD(loadBufferToTexture) {
     int h     = info[2]->Uint32Value();
     // this is *bytes* per pixel. usually 3 or 4
     int bpp = info[3]->Uint32Value();
+
     //printf("got w %d h %d\n",w,h);
+
     Local<Object> bufferObj = info[4]->ToObject();
     char *bufferData = Buffer::Data(bufferObj);
     size_t bufferLength = Buffer::Length(bufferObj);
+
     //printf("buffer length = %d\n", bufferLength);
 
     assert(w * h * bpp == (int)bufferLength);
@@ -486,17 +490,22 @@ NAN_METHOD(loadBufferToTexture) {
     GLuint texture;
 
     if (texid >= 0) {
+        //use existing texture
 	    texture = texid;
     } else {
+        //create new texture
 	    glGenTextures(1, &texture);
     }
 
+    //FIXME glDeleteTextures(1, &texture) never called
     glBindTexture(GL_TEXTURE_2D, texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     if (bpp == 3) {
+        //RGB
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, bufferData);
     } else {
+        //RGBA
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, bufferData);
     }
 

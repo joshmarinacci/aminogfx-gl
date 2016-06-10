@@ -4,8 +4,9 @@ var Rect =  amino.Rect;
 var Text =  amino.Text;
 var Polygon = amino.Polygon;
 
+//FIXME shows only image on Mac OS X
+
 function Adsr() {
-    //FIXME not a function
     amino.makeProps(this, {
         a:100,
         d:200,
@@ -98,6 +99,7 @@ amino.start(function (core, stage) {
     core.on('press', A, function( e) {
         adsr.a(e.target.x());
     })
+
     core.on('drag', A, function (e) {
         adsr.a(adsr.a() + e.delta.x);
     });
@@ -124,8 +126,8 @@ amino.start(function (core, stage) {
     var R = new Rect();
 
     R.acceptsMouseEvents = true;
-    R.y.bindto(adsr.s,minus(10));
-    R.x.bindto(adsr.r,minus(10));
+    R.y.bindto(adsr.s, minus(10));
+    R.x.bindto(adsr.r, minus(10));
 
     core.on('press', R, function (e) {
         adsr.s(e.target.y());
@@ -136,7 +138,6 @@ amino.start(function (core, stage) {
         adsr.s(adsr.s() + e.delta.y);
         adsr.r(adsr.r() + e.delta.x);
     })
-
 
     //add and style the handles
     g.add(A, D, R);

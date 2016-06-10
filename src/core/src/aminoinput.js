@@ -73,7 +73,6 @@ var statusobjects = {
 
 var handlers = {
     validate: function() { },
-    animend: function(core,evt) { core.notifyAnimEnd(evt);  },
     mouseposition: function(core,evt) {
         var s = statusobjects.pointer;
         s.prevpt = s.pt;

@@ -189,16 +189,16 @@ function ImageView() {
         });
     })
 
-
-
     this.handle = amino.getCore().getNative().createRect();
+
     //when the image is loaded, update the texture id and dimensions
-    this.image.watch(function(image) {
+    this.image.watch(function (image) {
         self.w(image.w);
         self.h(image.h);
         amino.getCore().getNative().updateProperty(self.handle, 'texid', self.image().texid);
     });
-    mirrorAmino(this,{
+
+    mirrorAmino(this, {
         x:'x',
         y:'y',
         w:'w',
@@ -214,6 +214,7 @@ function ImageView() {
         textureBottom: 'textureBottom',
         opacity:'opacity'
     });
+
     this.contains = contains;
 }
 
