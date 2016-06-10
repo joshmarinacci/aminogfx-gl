@@ -187,7 +187,7 @@ static inline char *TO_CHAR(Handle<Value> val) {
  *
  * Note: any call to this should later be free'd
  */
-static wchar_t *GetWC(const char *c)
+static wchar_t* GetWC(const char *c)
 {
     const size_t cSize = strlen(c) + 1;
     wchar_t *wc = new wchar_t[cSize];
@@ -202,7 +202,7 @@ extern std::vector<AminoNode*> rects;
 /**
  * Display a warning and exit application.
  */
-static void warnAbort(char * str) {
+static void warnAbort(char const *str) {
     printf("%s\n", str);
     exit(-1);
 }

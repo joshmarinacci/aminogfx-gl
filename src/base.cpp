@@ -266,6 +266,13 @@ NAN_METHOD(updateProperty) {
         if (DEBUG_BASE) {
             printf("-> setting number %f on prop %d \n", value, property);
         }
+    } else if (info[2]->IsBoolean()) {
+        //convert boolean to 1 or 0
+        value = info[2]->BooleanValue() ? 1:0;
+
+        if (DEBUG_BASE) {
+            printf("-> setting boolean %f on prop %d \n", value, property);
+        }
     } else if (info[2]->IsString()) {
         wstr = GetWString(info[2]->ToString());
 
@@ -278,6 +285,8 @@ NAN_METHOD(updateProperty) {
         }
         //Note: has to be free'd
         arr = GetFloatArray(v8::Handle<v8::Array>::Cast(info[2]));
+    } else {
+        printf("unsupported property format: %i\n", property);
     }
 
     updates.push_back(new Update(RECT, rectHandle, property, value, wstr, arr, NULL));
@@ -317,6 +326,8 @@ NAN_METHOD(updateAnimProperty) {
         }
 
         callback = new Nan::Callback(info[2].As<v8::Function>());
+    } else {
+        printf("unsupported anim property format: %i\n", property);
     }
 
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL, callback));
@@ -343,6 +354,8 @@ NAN_METHOD(updateWindowProperty) {
 
         wstr = GetWC(cstr);
         free(cstr);
+    } else {
+        printf("unsupported window property format: %i\n", property);
     }
 
     updates.push_back(new Update(WINDOW, windowHandle, property, value, wstr, NULL, NULL));

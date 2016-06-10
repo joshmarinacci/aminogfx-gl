@@ -123,8 +123,8 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
         glStencilFunc(GL_ALWAYS, 0x1, 0xFF);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         glStencilMask(0xFF);
-        glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
-        glDepthMask( GL_FALSE );
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
         glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //draw the stencil
@@ -168,6 +168,7 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
     for (std::size_t i = 0; i < group->children.size(); i++) {
         this->render(c, group->children[i]);
     }
+
     if (group->cliprect == 1) {
         glDisable(GL_STENCIL_TEST);
     }
