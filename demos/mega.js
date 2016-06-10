@@ -46,9 +46,6 @@ exports.go = function(canvas) {
 		}
 		simpleTests();
 
-
-
-
 		//press drag release a rect
 		function pressDragReleaseTest() {
 			var g = new amino.Group();

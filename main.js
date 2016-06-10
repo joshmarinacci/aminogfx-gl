@@ -284,18 +284,6 @@ function JSPropAnim(target, name) {
         return this;
     }
 
-    /**
-     * Call finish function.
-     */
-    this.finish = function () {
-        //FIXME check how this is used by core
-        /*
-        if (this._then_fun) {
-             this._then_fun();
-        }
-        */
-    }
-
     //TODO more features from native
 
 }

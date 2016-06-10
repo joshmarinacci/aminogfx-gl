@@ -747,6 +747,7 @@ public:
                     break;
 
                 case THEN:
+                    //FIXME memory leak, old value
                     anim->then = callback;
                     break;
 
