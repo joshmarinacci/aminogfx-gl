@@ -109,7 +109,7 @@ static void init_ogl(PWindow *state) {
    int LAYER = 0;
    dispman_element = vc_dispmanx_element_add ( dispman_update, dispman_display,
       LAYER/*layer*/, &dst_rect, 0/*src*/,
-      &src_rect, DISPMANX_PROTECTION_NONE, 
+      &src_rect, DISPMANX_PROTECTION_NONE,
       &dispman_alpha  /*alpha*/,
       0/*clamp*/, (DISPMANX_TRANSFORM_T)0/*transform*/);
 
@@ -329,7 +329,7 @@ static void processInputs() {
 }
 
 NAN_METHOD(init) {
-	matrixStack = std::stack<void*>();
+	matrixStack = std::stack<void *>();
     bcm_host_init();
     // Clear application state
     memset( state, 0, sizeof( *state ) );
@@ -337,6 +337,7 @@ NAN_METHOD(init) {
     // Start OGLES
     init_ogl(state);
 
+    //get screen size
     width = state->screen_width;
     height = state->screen_height;
 
@@ -346,7 +347,9 @@ NAN_METHOD(init) {
 NAN_METHOD(createWindow) {
     int w  = info[0]->Uint32Value();
     int h  = info[1]->Uint32Value();
-    //window already allocated at this point.
+
+    //Window already allocated at this point.
+    //Values ignored.
 
     colorShader = new ColorShader();
     textureShader = new TextureShader();
@@ -359,23 +362,26 @@ NAN_METHOD(createWindow) {
     window_fill_blue = 0;
     window_opacity = 1;
 
-
-
     glViewport(0,0,width, height);
 }
 
 NAN_METHOD(setWindowSize) {
-    printf("pretending to set the window size to: %d %d\n",width,height);
+    //not supported
+    printf("pretending to set the window size to: %d %d\n", width, height);
 }
 
 NAN_METHOD(getWindowSize) {
     v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+
+    //window size (is screen size)
     Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(width));
     Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(height));
+
+    //screen size
+    a
+
     info.GetReturnValue().Set(obj);
 }
-
-
 
 void render() {
     DebugEvent de;
@@ -385,11 +391,6 @@ void render() {
     processInputs();
     double postinput = getTime();
     de.inputtime = postinput-starttime;
-
-    //send the validate event
-    //sendValidate();
-    double postvalidate = getTime();
-    de.validatetime = postvalidate-postinput;
 
     int updatecount = updates.size();
     //apply the processed updates
@@ -401,8 +402,10 @@ void render() {
     de.updatestime = postupdates-postvalidate;
 
     //apply the animations
+    double currentTime = getTime();
+
     for(int j=0; j<anims.size(); j++) {
-        anims[j]->update();
+        anims[j]->update(currentTime);
     }
     double postanim = getTime();
     de.animationstime = postanim-postupdates;
@@ -433,7 +436,7 @@ void render() {
     eglSwapBuffers(state->display, state->surface);
     double postswap = getTime();
     de.framewithsynctime = postswap-starttime;
-    //    printf("input = %.2f validate = %.2f update = %.2f update count %d ",  de.inputtime, de.validatetime, de.updatestime, updatecount);
+    //    printf("input = %.2f update = %.2f update count %d ",  de.inputtime, de.updatestime, updatecount);
     //    printf("animtime = %.2f render = %.2f frame = %.2f, full frame = %.2f\n", de.animationstime, de.rendertime, de.frametime, de.framewithsynctime);
 }
 
@@ -540,7 +543,7 @@ NAN_METHOD(setEventCallback) {
 
 
 NAN_MODULE_INIT(InitAll) {
-	
+
     Nan::Set(target, Nan::New("init").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(init)).ToLocalChecked());
     Nan::Set(target, Nan::New("createWindow").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createWindow)).ToLocalChecked());
     Nan::Set(target, Nan::New("setWindowSize").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(setWindowSize)).ToLocalChecked());
@@ -590,7 +593,7 @@ NAN_MODULE_INIT(InitAll) {
 	Nan::Set(target, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
 	Nan::Set(target, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
 	Nan::Set(target, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
-/*	
+/*
     exports->Set(String::NewSymbol("init"),             FunctionTemplate::New(init)->GetFunction());
     exports->Set(String::NewSymbol("createWindow"),     FunctionTemplate::New(createWindow)->GetFunction());
     exports->Set(String::NewSymbol("setWindowSize"),    FunctionTemplate::New(setWindowSize)->GetFunction());

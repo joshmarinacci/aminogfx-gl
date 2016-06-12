@@ -7,6 +7,7 @@ if (DEBUG) {
     console.log('inside of the aminogfx main.js');
 }
 
+//load native module
 var binary = require('node-pre-gyp');
 var path = require('path');
 var binding_path = binary.find(path.resolve(path.join(__dirname, './package.json')));
@@ -500,8 +501,8 @@ var gl_native = {
         var size = sgtest.getWindowSize(w, h);
 
         return {
-            w: size.w/dpi,
-            h: size.h/dpi
+            w: size.w / dpi,
+            h: size.h / dpi
         };
     },
     createAnim: function (handle, prop, start, end, dur) {

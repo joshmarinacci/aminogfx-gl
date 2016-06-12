@@ -21,9 +21,9 @@ static sp<android::Surface>               mAndroidSurface;
 
 void klaatu_init_graphics(int *width, int *height)
 {
-  
+
     android::DisplayInfo display_info;
-    
+
     printf("initting klaatu graphics\n");
 
 
@@ -40,10 +40,10 @@ void klaatu_init_graphics(int *width, int *height)
   int status = mSession->getDisplayInfo(0, &display_info);
   *width = display_info.w;
   *height = display_info.h;
-  
+
   mControl = mSession->createSurface(0,
       *width, *height, android::PIXEL_FORMAT_RGB_888, 0);
-  
+
   android::SurfaceComposerClient::openGlobalTransaction();
   mControl->setLayer(0x40000000);
   android::SurfaceComposerClient::closeGlobalTransaction();
@@ -67,13 +67,13 @@ void klaatu_init_graphics(int *width, int *height)
   ASSERT_NE(EGL_NO_CONTEXT, mEglContext);
   EXPECT_TRUE(eglMakeCurrent(mEglDisplay, mEglSurface, mEglSurface, mEglContext));
   ASSERT_EQ(EGL_SUCCESS, eglGetError());
-  
+
 }
 
 Handle<Value> init(const Arguments& args) {
 	matrixStack = std::stack<void*>();
     HandleScope scope;
-    
+
 
     EGLint egl_major, egl_minor;
     const char *s;
@@ -81,7 +81,7 @@ Handle<Value> init(const Arguments& args) {
     if (!mEglDisplay) {
         printf("Error: eglGetDisplay() failed\n");
     }
-    
+
     s = eglQueryString(mEglDisplay, EGL_VERSION);
     printf("EGL_VERSION = %s\n", s);
     s = eglQueryString(mEglDisplay, EGL_VENDOR);
@@ -95,8 +95,8 @@ Handle<Value> init(const Arguments& args) {
     printf("GL_VENDOR     = %s\n", (char *) glGetString(GL_VENDOR));
     printf("GL_EXTENSIONS = %s\n", (char *) glGetString(GL_EXTENSIONS));
     printf(" window size = %d %d\n",width,height);
-    
-    
+
+
     return scope.Close(Undefined());
 }
 
@@ -108,7 +108,7 @@ public:
     EVDispatcher() {
         down = false;
     }
-    virtual void touchStart(float rx, float ry, unsigned int tap_count=0, double time=0) { 
+    virtual void touchStart(float rx, float ry, unsigned int tap_count=0, double time=0) {
         if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
         if(down) {
             //printf("touch moving\n");
@@ -124,13 +124,13 @@ public:
             //printf("touch starting\n");
             Local<Object> event = Object::New();
             Handle<Value> argv[] = {event};
-            
+
             event->Set(String::NewSymbol("type"), String::New("mouseposition"));
             event->Set(String::NewSymbol("x"), Number::New(rx));
             event->Set(String::NewSymbol("y"), Number::New(ry));
             event->Set(String::NewSymbol("timestamp"), Number::New(time));
             NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, argv);
-            
+
             event = Object::New();
             argv[0] = event;
             event->Set(String::NewSymbol("type"), String::New("mousebutton"));
@@ -138,14 +138,14 @@ public:
             event->Set(String::NewSymbol("state"), Number::New(1));
             event->Set(String::NewSymbol("timestamp"), Number::New(time));
             NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, argv);
-            
+
         }
     }
-    virtual void touchMove(float rx, float ry, unsigned int tap_count=0) { 
+    virtual void touchMove(float rx, float ry, unsigned int tap_count=0) {
         if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
         //printf("touch moving\n");
     }
-    virtual void touchEnd(float rx, float ry, unsigned int tap_count=0) { 
+    virtual void touchEnd(float rx, float ry, unsigned int tap_count=0) {
         if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
         //printf("touch ending\n");
         Local<Object> event = Object::New();
@@ -160,17 +160,17 @@ public:
 
 Handle<Value> createWindow(const Arguments& args) {
     HandleScope scope;
-    
+
     colorShader = new ColorShader();
     textureShader = new TextureShader();
     eventSingleton = new EVDispatcher();
     printf("enabling touch with screen size %d %d\n",width,height);
     enable_touch(width,height);
-    
+
     modelView = new GLfloat[16];
     globaltx = new GLfloat[16];
     make_identity_matrix(globaltx);
-    
+
     //have to start the threadpool first or we will get no sound
     ProcessState::self()->startThreadPool();
     glViewport(0,0,width, height);
@@ -186,15 +186,17 @@ Handle<Value> setWindowSize(const Arguments& args) {
 
 Handle<Value> getWindowSize(const Arguments& args) {
     HandleScope scope;
+
     Local<Object> obj = Object::New();
+
     obj->Set(String::NewSymbol("w"), Number::New(width));
     obj->Set(String::NewSymbol("h"), Number::New(height));
+
     return scope.Close(obj);
 }
 
 struct DebugEvent {
     double inputtime;
-    double validatetime;
     double updatestime;
     double animationstime;
     double rendertime;
@@ -212,14 +214,9 @@ void render() {
         //((EVDispatcher*)eventSingleton)->cb = NODE_EVENT_CALLBACK;
         event_process();
     }
-    
+
     double postinput = getTime();
     de.inputtime = postinput-starttime;
-
-    sendValidate();
-    double postvalidate = getTime();
-    de.validatetime = postvalidate-postinput;
-    
 
     int updatecount = updates.size();
     for(int j=0; j<updates.size(); j++) {
@@ -229,20 +226,21 @@ void render() {
     double postupdates = getTime();
     de.updatestime = postupdates-postvalidate;
 
+    double currentTime = getTime();
 
     for(int j=0; j<anims.size(); j++) {
-        anims[j]->update();
+        anims[j]->update(currentTime);
     }
 
     double postanim = getTime();
     de.animationstime = postanim-postupdates;
-    
+
     GLfloat* scaleM = new GLfloat[16];
     make_scale_matrix(1,-1,1,scaleM);
     GLfloat* transM = new GLfloat[16];
     make_trans_matrix(-width/2,height/2,0,transM);
     GLfloat* m4 = new GLfloat[16];
-    mul_matrix(m4, transM, scaleM); 
+    mul_matrix(m4, transM, scaleM);
     GLfloat* pixelM = new GLfloat[16];
     loadPixelPerfect(pixelM, width, height, eye, near, far);
     mul_matrix(modelView,pixelM,m4);
@@ -252,7 +250,7 @@ void render() {
     glClearColor(1,1,1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
-    
+
     AminoNode* root = rects[rootHandle];
     SimpleRenderer* rend = new SimpleRenderer();
     double prerender = getTime();
@@ -270,7 +268,7 @@ void render() {
 
 Handle<Value> runTest(const Arguments& args) {
     HandleScope scope;
-    
+
     double startTime = getTime();
     int count = 100;
     Local<v8::Object> opts = args[0]->ToObject();
@@ -279,14 +277,14 @@ Handle<Value> runTest(const Arguments& args) {
         ->ToNumber()
         ->NumberValue()
         );
-    
-    
+
+
     bool sync = false;
     sync = opts
         ->Get(String::NewSymbol("sync"))
         ->ToBoolean()
         ->BooleanValue();
-        
+
     printf("rendering %d times, vsync = %d\n",count,sync);
 
     printf("applying updates first\n");
@@ -294,7 +292,7 @@ Handle<Value> runTest(const Arguments& args) {
         updates[j]->apply();
     }
     updates.clear();
-    
+
     printf("setting up the screen\n");
     GLfloat* scaleM = new GLfloat[16];
     make_scale_matrix(1,-1,1,scaleM);
@@ -303,9 +301,9 @@ Handle<Value> runTest(const Arguments& args) {
     make_trans_matrix(-width/2,height/2,0,transM);
     //make_trans_matrix(10,10,0,transM);
     //make_trans_matrix(0,0,0,transM);
-    
+
     GLfloat* m4 = new GLfloat[16];
-    mul_matrix(m4, transM, scaleM); 
+    mul_matrix(m4, transM, scaleM);
 
 
     GLfloat* pixelM = new GLfloat[16];
@@ -313,10 +311,10 @@ Handle<Value> runTest(const Arguments& args) {
     loadPixelPerfect(pixelM, width, height, eye, near, far);
     //printf("eye = %f\n",eye);
     //loadPerspectiveMatrix(pixelM, 45, 1, 10, -100);
-    
+
 //    GLfloat* m5 = new GLfloat[16];
     //transpose(m5,pixelM);
-    
+
     mul_matrix(modelView,pixelM,m4);
     make_identity_matrix(globaltx);
     glViewport(0,0,width, height);
@@ -335,7 +333,7 @@ Handle<Value> runTest(const Arguments& args) {
             eglSwapBuffers(mEglDisplay, mEglSurface);
         }
     }
-    
+
     double endTime = getTime();
     Local<Object> ret = Object::New();
     ret->Set(String::NewSymbol("count"),Number::New(count));
@@ -384,7 +382,7 @@ void InitAll(Handle<Object> exports, Handle<Object> module) {
     exports->Set(String::NewSymbol("selfDrive"),        FunctionTemplate::New(selfDrive)->GetFunction());
     exports->Set(String::NewSymbol("setEventCallback"), FunctionTemplate::New(setEventCallback)->GetFunction());
     exports->Set(String::NewSymbol("setRoot"),          FunctionTemplate::New(setRoot)->GetFunction());
-    exports->Set(String::NewSymbol("loadPngToTexture"), FunctionTemplate::New(loadPngToTexture)->GetFunction());   
+    exports->Set(String::NewSymbol("loadPngToTexture"), FunctionTemplate::New(loadPngToTexture)->GetFunction());
     exports->Set(String::NewSymbol("loadJpegToTexture"),FunctionTemplate::New(loadJpegToTexture)->GetFunction());
     exports->Set(String::NewSymbol("createNativeFont"), FunctionTemplate::New(createNativeFont)->GetFunction());
     exports->Set(String::NewSymbol("getCharWidth"),     FunctionTemplate::New(getCharWidth)->GetFunction());

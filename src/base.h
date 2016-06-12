@@ -465,7 +465,7 @@ public:
         active = false;
     }
 
-    void update() {
+    void update(double currentTime) {
         //check active
     	if (!active) {
             return;
@@ -479,14 +479,12 @@ public:
         //handle first start
         if (!started) {
             started = true;
-            startTime = getTime();
-            lastTime = startTime;
+            startTime = currentTime;
+            lastTime = currentTime;
             pauseTime = 0;
         }
 
         //validate time
-        double currentTime = getTime();
-
         if (currentTime < startTime) {
             //smooth animation
             startTime = currentTime - (lastTime - startTime);
@@ -1044,17 +1042,6 @@ typedef struct {
     float r, g, b, a; // color
 } vertex_t;
 
-
-/*
-static void sendValidate() {
-    if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-    Local<Object> event_obj = Object::New();
-    event_obj->Set(String::NewSymbol("type"), String::New("validate"));
-    Handle<Value> event_argv[] = {event_obj};
-    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-}
-*/
-
 //OpenGL JavaScript bindings
 
 NAN_METHOD(node_glCreateShader);
@@ -1074,7 +1061,6 @@ NAN_METHOD(node_glGetUniformLocation);
 
 struct DebugEvent {
     double inputtime;
-    double validatetime;
     double updatestime;
     double animationstime;
     double rendertime;

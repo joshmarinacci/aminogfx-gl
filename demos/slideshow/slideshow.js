@@ -31,7 +31,6 @@ function CircularBuffer(arr) {
 var files = new CircularBuffer(filelist);
 
 amino.start(function (core, stage) {
-//FIXME    stage.setSize(800, 600);
     //setup size
     stage.w(800);
     stage.h(600);

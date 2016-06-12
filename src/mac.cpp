@@ -3,9 +3,16 @@
 #include "base.h"
 #include "SimpleRenderer.h"
 
+#define DEBUG_GLFW true
+#define DEBUG_RENDER false
+
 // ========== Event Callbacks ===========
 
 static bool windowSizeChanged = true;
+
+/**
+ * Window size has changed.
+ */
 static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth, int newHeight) {
 	width = newWidth;
 	height = newHeight;
@@ -14,6 +21,9 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
     }
+
+    //debug
+    printf("window size: %ix%i\n", newWidth, newHeight); //FIXME
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -27,6 +37,11 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
 
+/**
+ * Window close event.
+ *
+ * Note: window stays open.
+ */
 static void GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(GLFWwindow * window) {
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
@@ -46,10 +61,16 @@ static float near = 150;
 static float far = -300;
 static float eye = 600;
 
+/**
+ * Key event.
+ */
 static void GLFW_KEY_CALLBACK_FUNCTION(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
     }
+
+    //debug
+    //printf("key event: %i\n", key);
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -67,10 +88,16 @@ static void GLFW_KEY_CALLBACK_FUNCTION(GLFWwindow* window, int key, int scancode
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
 
+/**
+ * Mouse moved.
+ */
 static void GLFW_MOUSE_POS_CALLBACK_FUNCTION(GLFWwindow *window, double x, double y) {
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
     }
+
+    //debug
+    //printf("mouse moved event: %f %f\n", x, y);
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -84,11 +111,18 @@ static void GLFW_MOUSE_POS_CALLBACK_FUNCTION(GLFWwindow *window, double x, doubl
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
 
+/**
+ * Mouse click event.
+ */
 static void GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(GLFWwindow *window, int button, int action, int mods) {
     if (!eventCallbackSet) {
         warnAbort("ERROR. Event callback not set");
     }
 
+    //debug
+    printf("mouse clicked event: %i %i\n", button, action); //FIXME
+
+    //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
     Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousebutton").ToLocalChecked());
@@ -100,11 +134,15 @@ static void GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(GLFWwindow *window, int button, 
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
 
+/**
+ * Mouse wheel event.
+ */
 static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(GLFWwindow *window, double xoff, double yoff) {
     if (!eventCallbackSet) {
         warnAbort("ERROR. Event callback not set");
     }
 
+    //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
     Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousewheelv").ToLocalChecked());
@@ -116,6 +154,9 @@ static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(GLFWwindow *window, double xoff, 
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
 
+/**
+ * Initialize the native module.
+ */
 NAN_METHOD(init) {
 	matrixStack = std::stack<void *>();
 
@@ -130,18 +171,15 @@ NAN_METHOD(init) {
 GLFWwindow *window;
 
 NAN_METHOD(createWindow) {
+    //wanted size
     int w  = info[0]->Uint32Value();
     int h  = info[1]->Uint32Value();
 
     width = w;
     height = h;
 
-//    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 2);
-//    glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 1);
-
-    //glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwOpenWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    window = glfwCreateWindow(width, height, "simple window", NULL, NULL);
+    //create window
+    window = glfwCreateWindow(width, height, "AminoGfx OpenGL Output", NULL, NULL);
 
     if (!window) {
         printf("couldn't open a window. quitting\n");
@@ -150,6 +188,29 @@ NAN_METHOD(createWindow) {
         exit(EXIT_FAILURE);
     }
 
+    //check window size
+    if (DEBUG_GLFW) {
+        int windowW;
+        int windowH;
+
+        glfwGetWindowSize(window, &windowW, &windowH);
+
+        printf("window size: requested=%ix%i, got=%ix%i\n", w, h, windowW, windowH);
+    }
+
+    /*
+     *check screen size (see http://www.glfw.org/docs/latest/monitor_guide.html#monitor_object)
+     *
+     * Note: returns virtual size on retina screens.
+     */
+    if (DEBUG_GLFW) {
+        GLFWmonitor *primary = glfwGetPrimaryMonitor();
+        const GLFWvidmode *vidmode = glfwGetVideoMode(primary);
+
+        printf("screen size: %ix%i refresh=%i\n", vidmode->width, vidmode->height, vidmode->refreshRate);
+    }
+
+    //set bindings
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, GLFW_KEY_CALLBACK_FUNCTION);
     glfwSetCursorPosCallback(window, GLFW_MOUSE_POS_CALLBACK_FUNCTION);
@@ -158,6 +219,7 @@ NAN_METHOD(createWindow) {
     glfwSetWindowSizeCallback(window, GLFW_WINDOW_SIZE_CALLBACK_FUNCTION);
     glfwSetWindowCloseCallback(window, GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION);
 
+    //init valus
 	colorShader = new ColorShader();
 	textureShader = new TextureShader();
     modelView = new GLfloat[16];
@@ -172,9 +234,14 @@ NAN_METHOD(createWindow) {
     glViewport(0, 0, width, height);
 }
 
+//TODO glfwDestroyWindow
+
 NAN_METHOD(setWindowSize) {
     int w  = info[0]->Uint32Value();
     int h  = info[1]->Uint32Value();
+
+    //debug
+    printf("setWindowSize(): %ix%i\n", w, h); //FIXME not called on stage resize
 
     width = w;
     height = h;
@@ -186,7 +253,7 @@ NAN_METHOD(getWindowSize) {
     //create object
     v8::Local<v8::Object> obj = Nan::New<v8::Object>();
 
-    //TODO add screen size & window size
+    //window size
     Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(width));
     Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(height));
 
@@ -200,20 +267,17 @@ static int currentFrame = 0;
 
 void render() {
     DebugEvent de;
-    double starttime = getTime();
-    //input updates happen at any time
-    double postinput = getTime();
+    double starttime;
 
-    de.inputtime = postinput - starttime;
+    if (DEBUG_RENDER) {
+        starttime = getTime();
 
-    //send the validate event
+        //input updates happen at any time
+        double postinput = getTime();
 
-//    sendValidate();
-    double postvalidate = getTime();
+        de.inputtime = postinput - starttime;
+    }
 
-    de.validatetime = postvalidate - postinput;
-
-    //std::size_t updatecount = updates.size();
     //apply processed updates
     for (std::size_t j = 0; j < updates.size(); j++) {
         updates[j]->apply();
@@ -221,33 +285,41 @@ void render() {
 
     updates.clear();
 
-    double postupdates = getTime();
+    double postupdates;
 
-    de.updatestime = postupdates - postvalidate;
+    if (DEBUG_RENDER) {
+        double postupdates = getTime();
 
-    //apply animations
-    for (std::size_t j = 0; j < anims.size(); j++) {
-        anims[j]->update();
+        de.updatestime = postupdates - starttime;
     }
 
-    double postanim = getTime();
+    //apply animations
+    double currentTime = getTime();
 
-    de.animationstime = postanim-postupdates;
+    for (std::size_t j = 0; j < anims.size(); j++) {
+        anims[j]->update(currentTime);
+    }
+
+    if (DEBUG_RENDER) {
+        double postanim = getTime();
+
+        de.animationstime = postanim - postupdates;
+    }
 
     //set up the viewport
-    GLfloat* scaleM = new GLfloat[16];
+    GLfloat *scaleM = new GLfloat[16];
 
     make_scale_matrix(1, -1, 1, scaleM);
 
-    GLfloat* transM = new GLfloat[16];
+    GLfloat *transM = new GLfloat[16];
 
     make_trans_matrix(-((float)width) / 2,((float)height) / 2, 0, transM);
 
-    GLfloat* m4 = new GLfloat[16];
+    GLfloat *m4 = new GLfloat[16];
 
     mul_matrix(m4, transM, scaleM);
 
-    GLfloat* pixelM = new GLfloat[16];
+    GLfloat *pixelM = new GLfloat[16];
 
     loadPixelPerfect(pixelM, width, height, eye, near, far);
     mul_matrix(modelView, pixelM, m4);
@@ -260,116 +332,59 @@ void render() {
     //draw
     AminoNode *root = rects[rootHandle];
     SimpleRenderer* rend = new SimpleRenderer();
-    double prerender = getTime();
+    double prerender;
+
+    if (DEBUG_RENDER) {
+        prerender = getTime();
+    }
 
     rend->modelViewChanged = windowSizeChanged;
     windowSizeChanged = false;
     rend->startRender(root);
     delete rend;
 
-    double postrender = getTime();
+    if (DEBUG_RENDER) {
+        double postrender = getTime();
 
-    de.rendertime = postrender - prerender;
-    de.frametime = postrender - starttime;
+        de.rendertime = postrender - prerender;
+        de.frametime = postrender - starttime;
+    }
 
     //swap
     glfwSwapBuffers(window);
 
-    double postswap = getTime();
+    if (DEBUG_RENDER) {
+        double postswap = getTime();
 
-    de.framewithsynctime = postswap-starttime;
-    frametimes[currentFrame] = de.framewithsynctime;
+        de.framewithsynctime = postswap - starttime;
+        frametimes[currentFrame] = de.framewithsynctime;
 
-    if (currentFrame == FPS_LEN - 1) {
-        double total = 0;
+        if (currentFrame == FPS_LEN - 1) {
+            double total = 0;
 
-        for (int i = 0; i < FPS_LEN; i++) {
-            total += frametimes[i];
+            for (int i = 0; i < FPS_LEN; i++) {
+                total += frametimes[i];
+            }
+
+            //printf("avg frame len = %f \n",(total/FPS_LEN));
+            avg_frametime = total / FPS_LEN;
         }
 
-        //printf("avg frame len = %f \n",(total/FPS_LEN));
-        avg_frametime = total/FPS_LEN;
+        currentFrame = (currentFrame + 1) % FPS_LEN;
     }
 
-    currentFrame = (currentFrame + 1) % FPS_LEN;
-
+    //handle events
     glfwPollEvents();
-//    printf("input = %.2f validate = %.2f update = %.2f update count %d ",  de.inputtime, de.validatetime, de.updatestime, updatecount);
-//    printf("animtime = %.2f render = %.2f frame = %.2f, full frame = %.2f\n", de.animationstime, de.rendertime, de.frametime, de.framewithsynctime);
+
+    if (DEBUG_RENDER) {
+        printf("input = %.2f update = %.2f ",  de.inputtime, de.updatestime);
+        printf("animtime = %.2f render = %.2f frame = %.2f, full frame = %.2f\n", de.animationstime, de.rendertime, de.frametime, de.framewithsynctime);
+    }
 }
 
 NAN_METHOD(tick) {
     render();
 }
-
-//Handle<Value> selfDrive(const Arguments& args) {
-//    HandleScope scope;
-//    for(int i =0; i<100; i++) {
-//        render();
-//    }
-//    return scope.Close(Undefined());
-//}
-//
-//Handle<Value> runTest(const Arguments& args) {
-//    HandleScope scope;
-//
-//    double startTime = getTime();
-//    int count = 100;
-//    Local<v8::Object> opts = args[0]->ToObject();
-//    count = (int)(opts
-//        ->Get(String::NewSymbol("count"))
-//        ->ToNumber()
-//        ->NumberValue()
-//        );
-//
-//
-//    bool sync = false;
-//    sync = opts
-//        ->Get(String::NewSymbol("sync"))
-//        ->ToBoolean()
-//        ->BooleanValue();
-//
-//    printf("rendering %d times, vsync = %d\n",count,sync);
-//
-//    printf("applying updates first\n");
-//    for(std::size_t j=0; j<updates.size(); j++) {
-//        updates[j]->apply();
-//    }
-//    updates.clear();
-//
-//    printf("setting up the screen\n");
-//    GLfloat* scaleM = new GLfloat[16];
-//    make_scale_matrix(1,-1,1,scaleM);
-//    GLfloat* transM = new GLfloat[16];
-//    make_trans_matrix(-width/2,height/2,0,transM);
-//    GLfloat* m4 = new GLfloat[16];
-//    mul_matrix(m4, transM, scaleM);
-//    GLfloat* pixelM = new GLfloat[16];
-//    loadPixelPerfect(pixelM, width, height, eye, near, far);
-//    mul_matrix(modelView,pixelM,m4);
-//    make_identity_matrix(globaltx);
-//    glViewport(0,0,width, height);
-//    glClearColor(1,1,1,1);
-//    glDisable(GL_DEPTH_TEST);
-//    printf("running %d times\n",count);
-//    for(int i=0; i<count; i++) {
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        AminoNode* root = rects[rootHandle];
-//        SimpleRenderer* rend = new SimpleRenderer();
-//        rend->startRender(root);
-//        delete rend;
-//        if(sync) {
-//            glfwSwapBuffers();
-//        }
-//    }
-//
-//    double endTime = getTime();
-//    Local<Object> ret = Object::New();
-//    ret->Set(String::NewSymbol("count").ToLocalChecked(),Number::New(count));
-//    ret->Set(String::NewSymbol("totalTime").ToLocalChecked(),Number::New(endTime-startTime));
-//    return scope.Close(ret);
-//}
-
 
 NAN_METHOD(setEventCallback) {
     eventCallbackSet = true;
@@ -429,4 +444,5 @@ NAN_MODULE_INIT(InitAll) {
 
 }
 
+//entry point
 NODE_MODULE(aminonative, InitAll)

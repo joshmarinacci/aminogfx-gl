@@ -304,12 +304,13 @@ void SimpleRenderer::drawText(GLContext* c, TextNode* text) {
     AminoFont *font = fontmap[text->fontid];
 
     c->save();
+
     //flip the y axis
-    c->scale(1,-1);
+    c->scale(1, -1);
     glActiveTexture(GL_TEXTURE0);
-    c->bindTexture(font->atlas->id );
-    glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    c->bindTexture(font->atlas->id);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     c->useProgram(font->shader);
 
     {
