@@ -71,7 +71,7 @@ var defaultFonts = {
             }
         }
     }
-}
+};
 
 var propsHash = {
 
@@ -176,7 +176,7 @@ function JSFont(desc) {
         console.log('ERROR. COULDN\'T find the native for ' + size + ' ' + weight + ' ' + style);
 
         return this.weights[400];
-    }
+    };
 
     /**
      * @func calcStringWidth(string, size)
@@ -186,7 +186,7 @@ function JSFont(desc) {
     this.calcStringWidth = function(str, size, weight, style) {
         amino.GETCHARWIDTHCOUNT++;
         return amino.sgtest.getCharWidth(str, size, this.getNative(size, weight, style));
-    }
+    };
 
     /**
      * Get font height.
@@ -199,7 +199,7 @@ function JSFont(desc) {
         }
 
         return amino.sgtest.getFontHeight(size, this.getNative(size, weight, style));
-    }
+    };
 
     /**
      * Get font height metrics.
@@ -213,7 +213,7 @@ function JSFont(desc) {
             ascender: amino.sgtest.getFontAscender(size, this.getNative(size, weight, style)),
             descender: amino.sgtest.getFontDescender(size, this.getNative(size, weight, style))
         };
-    }
+    };
 }
 
 /**
@@ -230,13 +230,13 @@ function JSPropAnim(target, name) {
     this._then_fun = null;
 
     //setters
-    this.from  = function(val) {  this._from = val;        return this;  }
-    this.to    = function(val) {  this._to = val;          return this;  }
-    this.dur   = function(val) {  this._duration = val;    return this;  }
-    this.delay = function(val) {  this._delay = val;       return this;  }
-    this.loop  = function(val) {  this._loop = val;        return this;  }
-    this.then  = function(fun) {  this._then_fun = fun;    return this;  }
-    this.autoreverse = function(val) { this._autoreverse = val ? 1:0; return this;  }
+    this.from  = function(val) {  this._from = val;        return this;  };
+    this.to    = function(val) {  this._to = val;          return this;  };
+    this.dur   = function(val) {  this._duration = val;    return this;  };
+    this.delay = function(val) {  this._delay = val;       return this;  };
+    this.loop  = function(val) {  this._loop = val;        return this;  };
+    this.then  = function(fun) {  this._then_fun = fun;    return this;  };
+    this.autoreverse = function(val) { this._autoreverse = val ? 1:0; return this;  };
     this.timeFunc = function (val) {
         var tf = timeFuncsHash[val];
 
@@ -247,7 +247,7 @@ function JSPropAnim(target, name) {
         this._lerpprop = tf;
 
         return this;
-    }
+    };
 
     //start the animation
     this.start = function () {
@@ -283,7 +283,7 @@ function JSPropAnim(target, name) {
         }, this._delay);
 
         return this;
-    }
+    };
 
     //TODO more features from native
 
@@ -535,7 +535,7 @@ var gl_native = {
 
         return sgtest.updateWindowProperty(-1, hash, value);
     }
-}
+};
 
 exports.input = amino_core.input;
 exports.start = function(cb) {
