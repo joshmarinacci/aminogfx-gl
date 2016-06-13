@@ -44,7 +44,7 @@ function ParseRGBString(Fill) {
             r: Fill[0],
             g: Fill[1],
             b: Fill[2]
-        }
+        };
     }
 
     return Fill;
@@ -78,7 +78,7 @@ var setters = [];
 .forEach(function (name) {
     setters[name] = function (val, prop, obj) {
         amino.getCore().getNative().updateProperty(obj.handle, name, val);
-    }
+    };
 });
 setters['fill'] = setFill;
 
@@ -86,14 +86,19 @@ function mirrorProp(obj, old, native) {
     obj[old].watch(setters[native]);
 }
 
+/**
+ * Check if a given point is inside this node.
+ *
+ * Note: has to be used in object.
+ *
+ * @param pt coordinate relative to origin of node
+ */
 function contains(pt) {
-    if (pt.x >= 0 && pt.x <= this.w()) {
-        if (pt.y >= 0 && pt.y <= this.h()) {
-            return true;
-        }
-    }
+    var x = this.x();
+    var y = this.y();
 
-    return false;
+    return pt.x >= 0 && pt.x < this.w() &&
+           pt.y >= 0 && pt.y < this.h();
 }
 
 /**
@@ -180,15 +185,17 @@ function Text() {
 
             amino.getCore().getNative().updateProperty(self.handle, 'fontId', id);
         }
-    }
-    this.calcWidth = function() {
-        return this.font.calcStringWidth(this.text(), this.fontSize(), this.fontWeight(), 'normal');
-    }
-    this.calcHeight = function() {
-        return this.font.getHeight(this.fontSize(), this.fontWeight(), 'normal');
-    }
+    };
 
-    if(amino.getCore()) {
+    this.calcWidth = function () {
+        return this.font.calcStringWidth(this.text(), this.fontSize(), this.fontWeight(), 'normal');
+    };
+
+    this.calcHeight = function () {
+        return this.font.getHeight(this.fontSize(), this.fontWeight(), 'normal');
+    };
+
+    if (amino.getCore()) {
         this.font = amino.getCore().defaultFont;
         this.updateFont();
     }
@@ -228,7 +235,7 @@ function ImageView() {
         amino.getCore().getNative().loadImage(src, function (imageref) {
             self.image(imageref);
         });
-    })
+    });
 
     this.handle = amino.getCore().getNative().createRect();
 
@@ -315,14 +322,14 @@ function Group() {
         core.getNative().addNodeToGroup(node.handle, this.handle);
 
         return this;
-    }
+    };
     this.add = function () {
         for(var i = 0; i < arguments.length; i++) {
             this.addSingle(arguments[i]);
         }
 
         return this;
-    }
+    };
     this.remove = function (child) {
         var n = this.children.indexOf(child);
 
@@ -332,7 +339,7 @@ function Group() {
         }
 
         return this;
-    }
+    };
     this.clear = function () {
         for(var i = 0; i < this.children.length; i++) {
             core.getNative().removeNodeFromGroup(this.children[i].handle, this.handle);
@@ -341,10 +348,10 @@ function Group() {
         this.children = [];
 
         return this;
-    }
+    };
     this.isParent = function() {
         return true;
-    }
+    };
 
     this.raiseToTop = function (node) {
         if (node == undefined) {
@@ -391,7 +398,7 @@ function Group() {
         }
 
         return results;
-    }
+    };
 }
 
 function FindResults() {
@@ -406,7 +413,7 @@ function FindResults() {
             });
 
             return this;
-        }
+        };
     }
 
     makefindprop(this, 'visible');
@@ -417,9 +424,9 @@ function FindResults() {
     makefindprop(this, 'w');
     makefindprop(this, 'h');
 
-    this.length = function() {
+    this.length = function () {
         return this.children.length;
-    }
+    };
 }
 
 /**
@@ -501,7 +508,10 @@ function Polygon() {
         opacity: 'opacity'
     });
 
-    this.contains = function() { return false };
+    this.contains = function () {
+        //TODO check polygon
+        return false;
+    };
     this.dimension(2);
 
     return this;
@@ -511,6 +521,7 @@ function Polygon() {
  * Circle object.
  */
 function Circle() {
+    //get polygon properties
     Polygon.call(this);
 
     amino.makeProps(this, {
@@ -520,6 +531,9 @@ function Circle() {
 
     var self = this;
 
+    /**
+     * Monitor radius updates.
+     */
     this.radius.watch(function () {
         var r = self.radius();
         var points = [];
@@ -533,7 +547,17 @@ function Circle() {
         }
 
         self.geometry(points);
-    })
+    });
+
+    /**
+     * Special case for circle.
+     */
+    this.contains = function (pt) {
+        var radius = this.radius();
+        var dist = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
+
+        return dist < radius;
+    };
 }
 
 //exports
@@ -631,7 +655,7 @@ exports.PixelView = function() {
 	        texid = image.texid;
             amino.native.updateProperty(self.handle, 'texid', image.texid);
         });
-    }
+    };
     this.setPixel = function(x, y, r, g, b, a) {
         var w = self.pw();
         var i = (x + y * w)*4;
@@ -640,19 +664,19 @@ exports.PixelView = function() {
         self.buf[i + 1] = g;
         self.buf[i + 2] = b;
         self.buf[i + 3] = a;
-    }
+    };
     this.setPixeli32 = function(x, y, int) {
         var w = self.pw();
         var i = (x + y * w) * 4;
 
         self.buf.writeUInt32BE(int, i);
-    }
+    };
 
     this.pw.watch(rebuildBuffer);
     this.ph.watch(rebuildBuffer);
 
     rebuildBuffer();
-}
+};
 
 exports.PureImageView = function() {
     var piv = new exports.PixelView();
@@ -663,7 +687,7 @@ exports.PureImageView = function() {
 
     piv.getContext = function() {
         return ctx;
-    }
+    };
     piv.sync = function() {
         //copy pixels
         for(var i = 0; i < img.width; i++) {
@@ -682,10 +706,10 @@ exports.PureImageView = function() {
         }
 
         this.updateTexture();
-    }
+    };
 
     return piv;
-}
+};
 
 exports.RichTextView = function () {
     var piv = new exports.PureImageView().pw(100).w(100).ph(100).h(100);
@@ -719,7 +743,7 @@ exports.RichTextView = function () {
                 redraw();
                 piv.sync();
             }
-        }
+        };
 
         var rte = comp.makeRichTextView(config);
 
@@ -730,7 +754,7 @@ exports.RichTextView = function () {
         amino.getCore().on('keypress', piv, function (e) {
             rte.processKeyEvent(e);
         });
-    }
+    };
 
     return piv;
-}
+};

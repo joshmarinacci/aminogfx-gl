@@ -1,5 +1,8 @@
+'use strict';
+
 var moment = require('moment');
 var amino = require('../main.js');
+
 exports.go = function(canvas) {
 	//amino.setCanvas(canvas);
 	amino.start(function(core,stage){
@@ -135,19 +138,16 @@ exports.go = function(canvas) {
 		stage.setRoot(root);
 
 
-		setTimeout(function(){
+		setTimeout(function (){
 			stage.fill("#ff0000");
-		},2000)
+		}, 2000);
 
-		setTimeout(function() {
+		setTimeout(function () {
             stage.opacity(0.1);
 			//stage.transparent(true);
-		},4000);
+		}, 4000);
 
 	});
-}
-
-
-
+};
 
 exports.go();

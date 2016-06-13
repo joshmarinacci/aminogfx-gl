@@ -24,6 +24,7 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
 
     //debug
     printf("window size: %ix%i\n", newWidth, newHeight); //FIXME
+    //FIXME framebuffer size has changed!
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -56,10 +57,6 @@ static void GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(GLFWwindow * window) {
 
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
-
-static float near = 150;
-static float far = -300;
-static float eye = 600;
 
 /**
  * Key event.
@@ -169,6 +166,8 @@ NAN_METHOD(init) {
 }
 
 GLFWwindow *window;
+int fbWidth;
+int fbHeight;
 
 NAN_METHOD(createWindow) {
     //wanted size
@@ -199,7 +198,7 @@ NAN_METHOD(createWindow) {
     }
 
     /*
-     *check screen size (see http://www.glfw.org/docs/latest/monitor_guide.html#monitor_object)
+     * Check screen size (see http://www.glfw.org/docs/latest/monitor_guide.html#monitor_object)
      *
      * Note: returns virtual size on retina screens.
      */
@@ -208,6 +207,14 @@ NAN_METHOD(createWindow) {
         const GLFWvidmode *vidmode = glfwGetVideoMode(primary);
 
         printf("screen size: %ix%i refresh=%i\n", vidmode->width, vidmode->height, vidmode->refreshRate);
+    }
+
+    //get framebuffer size
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+    //check framebuffer size
+    if (DEBUG_GLFW) {
+        printf("framebuffer size: %ix%i\n", fbWidth, fbHeight);
     }
 
     //set bindings
@@ -222,16 +229,15 @@ NAN_METHOD(createWindow) {
     //init valus
 	colorShader = new ColorShader();
 	textureShader = new TextureShader();
-    modelView = new GLfloat[16];
 
+    modelView = new GLfloat[16];
     globaltx = new GLfloat[16];
+    make_identity_matrix(globaltx);
+
     window_fill_red = 0;
     window_fill_green = 0;
     window_fill_blue = 0;
     window_opacity = 1;
-    make_identity_matrix(globaltx);
-
-    glViewport(0, 0, width, height);
 }
 
 //TODO glfwDestroyWindow
@@ -247,6 +253,7 @@ NAN_METHOD(setWindowSize) {
     height = h;
 
     glfwSetWindowSize(window, width, height);
+    //FIXME framebuffer size
 }
 
 NAN_METHOD(getWindowSize) {
@@ -260,11 +267,18 @@ NAN_METHOD(getWindowSize) {
     info.GetReturnValue().Set(obj);
 }
 
+static float near = 150;
+static float far = -300;
+static float eye = 600;
+
 static int FPS_LEN = 100;
 static double frametimes[100];
 static double avg_frametime = 0;
 static int currentFrame = 0;
 
+/**
+ * Render the current scene.
+ */
 void render() {
     DebugEvent de;
     double starttime;
@@ -306,32 +320,42 @@ void render() {
         de.animationstime = postanim - postupdates;
     }
 
-    //set up the viewport
+    //set up the viewport (y-inversion, top-left origin)
+
+    //scale
     GLfloat *scaleM = new GLfloat[16];
 
     make_scale_matrix(1, -1, 1, scaleM);
 
+    //translate
     GLfloat *transM = new GLfloat[16];
 
-    make_trans_matrix(-((float)width) / 2,((float)height) / 2, 0, transM);
+    make_trans_matrix(-((float)width) / 2, ((float)height) / 2, 0, transM);
 
+    //combine
     GLfloat *m4 = new GLfloat[16];
 
     mul_matrix(m4, transM, scaleM);
 
+    //3D perspective
     GLfloat *pixelM = new GLfloat[16];
 
     loadPixelPerfect(pixelM, width, height, eye, near, far);
     mul_matrix(modelView, pixelM, m4);
+
+    delete[] m4;
+    delete[] pixelM;
     make_identity_matrix(globaltx);
-    glViewport(0, 0, width, height);
+
+    //prepare
+    glViewport(0, 0, fbWidth, fbHeight);
     glClearColor(window_fill_red, window_fill_green, window_fill_blue, window_opacity);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 
     //draw
     AminoNode *root = rects[rootHandle];
-    SimpleRenderer* rend = new SimpleRenderer();
+    SimpleRenderer *rend = new SimpleRenderer();
     double prerender;
 
     if (DEBUG_RENDER) {

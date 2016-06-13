@@ -353,16 +353,15 @@ NAN_METHOD(createWindow) {
 
     colorShader = new ColorShader();
     textureShader = new TextureShader();
-    modelView = new GLfloat[16];
 
+    modelView = new GLfloat[16];
     globaltx = new GLfloat[16];
     make_identity_matrix(globaltx);
+
     window_fill_red = 0;
     window_fill_green = 0;
     window_fill_blue = 0;
     window_opacity = 1;
-
-    glViewport(0,0,width, height);
 }
 
 NAN_METHOD(setWindowSize) {
@@ -376,9 +375,6 @@ NAN_METHOD(getWindowSize) {
     //window size (is screen size)
     Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(width));
     Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(height));
-
-    //screen size
-    a
 
     info.GetReturnValue().Set(obj);
 }
@@ -425,11 +421,14 @@ void render() {
     glClearColor(window_fill_red,window_fill_green,window_fill_blue,window_opacity);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
-    AminoNode* root = rects[rootHandle];
-    SimpleRenderer* rend = new SimpleRenderer();
+
+    AminoNode *root = rects[rootHandle];
+    SimpleRenderer *rend = new SimpleRenderer();
     double prerender = getTime();
+
     rend->startRender(root);
     delete rend;
+
     double postrender = getTime();
     de.rendertime = postrender-prerender;
     de.frametime = postrender-starttime;

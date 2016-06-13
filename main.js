@@ -538,7 +538,7 @@ var gl_native = {
 };
 
 exports.input = amino_core.input;
-exports.start = function(cb) {
+exports.start = function (cb) {
     if (!cb) {
         throw new Error('CB parameter missing to start app');
     }
@@ -580,7 +580,7 @@ exports.start = function(cb) {
     core.start();
 };
 
-exports.makeProps = amino_core.makeProps; //FIXME undefined!
+exports.makeProps = amino_core.makeProps;
 
 exports.Rect      = amino_core.Rect;
 exports.Group     = amino_core.Group;
@@ -589,6 +589,7 @@ exports.Polygon   = amino_core.Polygon;
 exports.Text      = amino_core.Text;
 exports.ImageView = amino_core.ImageView;
 
+//initialize input handler
 exports.input.init(OS);
 
 //exports.PureImageView = amino.primitives.PureImageView;

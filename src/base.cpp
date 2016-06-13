@@ -689,9 +689,8 @@ NAN_METHOD(initTextureShader) {
     textureShader->u_trans     = info[2]->Uint32Value();
     textureShader->u_opacity   = info[3]->Uint32Value();
 
-    textureShader->attr_pos    = info[4]->Uint32Value();
-    textureShader->attr_texcoords  = info[5]->Uint32Value();
-    textureShader->attr_tex    = info[6]->Uint32Value();
+    textureShader->attr_pos       = info[4]->Uint32Value();
+    textureShader->attr_texcoords = info[5]->Uint32Value();
 }
 
 NAN_METHOD(createRect) {

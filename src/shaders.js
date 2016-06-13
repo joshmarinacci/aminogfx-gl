@@ -115,7 +115,7 @@ var Shader = {
         }
     }
 
-}
+};
 
 /**
  * Load shader code from file system.
@@ -175,9 +175,9 @@ exports.init = function (sgtest, OS) {
     tshader.locateUniform('modelviewProjection');
     tshader.locateUniform('trans');
     tshader.locateUniform('opacity');
+
     tshader.locateAttrib('pos');
     tshader.locateAttrib('texcoords');
-    tshader.locateAttrib('tex');
 
     sgtest.initTextureShader(tshader.prog,
         tshader.uniforms.modelviewProjection,
@@ -186,4 +186,4 @@ exports.init = function (sgtest, OS) {
         tshader.attribs.pos,
         tshader.attribs.texcoords,
         tshader.attribs.tex);
-}
+};

@@ -133,7 +133,7 @@ var Core = function () {
     /**
      * Find a node at a certain position with a filter callback.
      */
-    this.findNodesAtXYFiltered = function(pt, filter) {
+    this.findNodesAtXYFiltered = function (pt, filter) {
         return findNodesAtXY_helper(this.root, pt, filter, '');
     };
 
@@ -154,7 +154,7 @@ var Core = function () {
         //handle children first, then the parent/root
         var res = [];
 
-        if (filter != null) {
+        if (filter) {
             if (!filter(root)) {
                 return res;
             }
@@ -278,7 +278,7 @@ var Core = function () {
         );
     };
 
-    this.localToGlobal = function(pt, node) {
+    this.localToGlobal = function (pt, node) {
         pt = {
             x: pt.x + node.x() * node.sx(),
             y: pt.y + node.y() * node.sx()
@@ -291,9 +291,9 @@ var Core = function () {
         }
     };
 
-    this.on = function(name, target, listener) {
+    this.on = function (name, target, listener) {
         exports.input.on(name, target, listener);
-    }
+    };
 };
 
 /**
@@ -333,6 +333,9 @@ function Stage (core) {
         smooth: true,
         fill: "#000000"
     });
+
+    //FIXME stage size cannot be changed -> watch w/h
+    //TODO are x and y used?
 
     var self = this;
 
@@ -384,7 +387,7 @@ function Stage (core) {
         return null;
     };
 
-    core.on('windowsize', this,function (e) {
+    core.on('windowsize', this, function (e) {
         var root = self.getRoot();
 
         if (root.setW) {

@@ -93,7 +93,6 @@ void textureShaderApply(GLContext *ctx, TextureShader* shader, GLfloat modelView
 
     glUniformMatrix4fv(shader->u_matrix, 1, GL_FALSE, modelView);
     glUniformMatrix4fv(shader->u_trans,  1, GL_FALSE, ctx->globaltx);
-    glUniform1i(shader->attr_tex, 0);
     glUniform1f(shader->u_opacity, opacity);
 
     glVertexAttribPointer(shader->attr_texcoords, 2, GL_FLOAT, GL_FALSE, 0, texcoords);

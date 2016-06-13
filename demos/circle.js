@@ -4,22 +4,30 @@ var path = require('path');
 var amino = require('../main.js');
 
 amino.start(function (core, stage) {
-    //gree background
-    stage.fill("#00ff00");
+    //green background
+    stage.fill('#00ff00');
 
     //setup root
     var root = new amino.Group();
 
     stage.setRoot(root);
 
-    //blue rectangle
+    //blue rectangle (at 0/0)
     var rect = new amino.Rect().w(200).h(250).x(0).y(0).fill("#0000ff");
 
     root.add(rect);
     rect.acceptsMouseEvents = true;
     rect.acceptsKeyboardEvents = true;
 
-    //circle
+    core.on('keypress', rect, function (e) {
+        console.log('key was pressed', e.keycode, e.printable, e.char);
+    });
+
+    core.on('click', rect, function () {
+        console.log('clicked on the rect');
+    });
+
+    //circle (at 100/100)
     var circle = new amino.Circle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(100).y(100);
@@ -28,14 +36,6 @@ amino.start(function (core, stage) {
 
     core.on('click', circle, function () {
         console.log('clicked on the circle');
-    });
-
-    core.on('keypress', rect, function (e) {
-        console.log('key was pressed', e.keycode, e.printable, e.char);
-    });
-
-    core.on('click', rect, function () {
-        console.log("clicked on the rect");
     });
 
     root.add(circle);
