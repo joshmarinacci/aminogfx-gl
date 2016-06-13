@@ -41,12 +41,15 @@ amino.start(function (core, stage) {
     root.add(circle);
 
     //images
+
+    //tree at 0/0
     var iv = new amino.ImageView();
 
     iv.src(path.join(__dirname, '/images/tree.png'));
     iv.sx(4).sy(4);
     root.add(iv);
 
+    //yosemite animated
     var iv2 = new amino.ImageView();
 
     iv2.src(path.join(__dirname, '/images/yose.jpg'));
@@ -54,6 +57,7 @@ amino.start(function (core, stage) {
     iv2.x(300);
     root.add(iv2);
 
+    //jumps from 300 to 0 before animation starts
     iv2.x.anim().delay(1000).from(0).to(1000).dur(3000).start();
 
 });

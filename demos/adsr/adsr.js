@@ -84,9 +84,9 @@ amino.start(function (core, stage) {
 
     //util function
     function minus(coeff) {
-        return function(val) {
+        return function (val) {
             return val - coeff;
-        }
+        };
     };
 
     //make a handle bound to the adsr.a value
@@ -98,7 +98,7 @@ amino.start(function (core, stage) {
 
     core.on('press', A, function( e) {
         adsr.a(e.target.x());
-    })
+    });
 
     core.on('drag', A, function (e) {
         adsr.a(adsr.a() + e.delta.x);
@@ -114,7 +114,7 @@ amino.start(function (core, stage) {
     core.on('press', D, function (e) {
         adsr.d(e.target.x());
         adsr.s(e.target.y());
-    })
+    });
 
     core.on('drag', D, function (e) {
         adsr.d(adsr.d() + e.delta.x);
@@ -137,7 +137,7 @@ amino.start(function (core, stage) {
     core.on('drag', R, function (e) {
         adsr.s(adsr.s() + e.delta.y);
         adsr.r(adsr.r() + e.delta.x);
-    })
+    });
 
     //add and style the handles
     g.add(A, D, R);
@@ -147,7 +147,7 @@ amino.start(function (core, stage) {
     function format(str) {
         return function(v) {
             return str.replace("%", v);
-        }
+        };
     }
 
     //make 4 text labels, each bound to an adsr value

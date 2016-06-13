@@ -187,7 +187,9 @@ exports.on = function (name, target, listener) {
  * Set pointer focus on node.
  */
 function setupPointerFocus(core, pt) {
-    console.log('setupPointerFocus()'); //FIXME
+    if (DEBUG) {
+        console.log('setupPointerFocus()');
+    }
 
     var nodes = core.findNodesAtXYFiltered(pt, function (node) {
         if (node.children && typeof node.acceptsMouseEvents !== 'undefined' && node.acceptsMouseEvents === false) {
@@ -239,7 +241,7 @@ function stopPointerFocus() {
 
 function sendPressEvent(core, e) {
     var node = focusobjects.pointer.target;
-console.log('sendPressEvent() ' + node);//FIXME
+
     if (node == null) {
         return;
     }
