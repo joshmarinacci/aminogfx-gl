@@ -3,7 +3,7 @@
 #include "base.h"
 #include "SimpleRenderer.h"
 
-#define DEBUG_GLFW true
+#define DEBUG_GLFW false
 #define DEBUG_RENDER false
 
 // ========== Event Callbacks ===========
@@ -259,7 +259,9 @@ NAN_METHOD(setWindowSize) {
     int h  = info[1]->Uint32Value();
 
     //debug
-    printf("setWindowSize(): %ix%i\n", w, h); //FIXME not called on stage resize
+    if (DEBUG_GLFW) {
+        printf("setWindowSize(): %ix%i\n", w, h);
+    }
 
     width = w;
     height = h;

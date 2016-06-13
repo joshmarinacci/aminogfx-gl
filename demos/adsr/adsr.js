@@ -4,8 +4,6 @@ var Rect =  amino.Rect;
 var Text =  amino.Text;
 var Polygon = amino.Polygon;
 
-//FIXME shows only image on Mac OS X
-
 function Adsr() {
     amino.makeProps(this, {
         a:100,
@@ -101,6 +99,7 @@ amino.start(function (core, stage) {
     });
 
     core.on('drag', A, function (e) {
+        //FIXME rect jumps
         adsr.a(adsr.a() + e.delta.x);
     });
 
@@ -163,7 +162,7 @@ amino.start(function (core, stage) {
 
     label3.text.bindto(adsr.s, format("S: %"));
 
-    var label4 = new Text().y(50*4);
+    var label4 = new Text().y(50 * 4);
 
     label4.text.bindto(adsr.r, format("R: %"));
 

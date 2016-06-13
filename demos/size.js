@@ -1,6 +1,12 @@
 var amino = require('../main.js');
 
 amino.start(function (core, stage) {
+    //size (100x100)
+    stage.w(100);
+    stage.h(100);
+
+    //see opacity.js
+
     //root
     var root = new amino.Group();
 

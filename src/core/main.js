@@ -387,6 +387,9 @@ function Stage (core) {
         return null;
     };
 
+    /**
+     * Update size on window resizing.
+     */
     core.on('windowsize', this, function (e) {
         var root = self.getRoot();
 
@@ -398,6 +401,16 @@ function Stage (core) {
             root.setH(self.getH());
         }
     });
+
+    /**
+     * Resize window on property change.
+     */
+    function resizeScreen() {
+        core.getNative().setWindowSize(self.w(), self.h());
+    }
+
+    this.w.watch(resizeScreen);
+    this.h.watch(resizeScreen);
 }
 
 exports.makeProps = amino.makeProps;
