@@ -10,6 +10,9 @@
 
 static bool windowSizeChanged = true;
 
+int fbWidth;
+int fbHeight;
+
 /**
  * Window size has changed.
  */
@@ -23,8 +26,17 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
     }
 
     //debug
-    printf("window size: %ix%i\n", newWidth, newHeight); //FIXME
-    //FIXME framebuffer size has changed!
+    if (DEBUG_GLFW) {
+        printf("window size: %ix%i\n", newWidth, newHeight);
+    }
+
+    //get framebuffer size
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+    //check framebuffer size
+    if (DEBUG_GLFW) {
+        printf("framebuffer size: %ix%i\n", fbWidth, fbHeight);
+    }
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -117,7 +129,9 @@ static void GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(GLFWwindow *window, int button, 
     }
 
     //debug
-    printf("mouse clicked event: %i %i\n", button, action); //FIXME
+    if (DEBUG_GLFW) {
+        printf("mouse clicked event: %i %i\n", button, action);
+    }
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
@@ -166,8 +180,6 @@ NAN_METHOD(init) {
 }
 
 GLFWwindow *window;
-int fbWidth;
-int fbHeight;
 
 NAN_METHOD(createWindow) {
     //wanted size
@@ -253,7 +265,7 @@ NAN_METHOD(setWindowSize) {
     height = h;
 
     glfwSetWindowSize(window, width, height);
-    //FIXME framebuffer size
+    //TODO check framebuffer size
 }
 
 NAN_METHOD(getWindowSize) {
