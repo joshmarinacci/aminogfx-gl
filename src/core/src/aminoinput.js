@@ -26,7 +26,7 @@ windowsizing event
 
 var IE = require('inputevents');
 
-function makePoint (x,y) {
+function makePoint(x, y) {
     return {
         x: x,
         y: y,
@@ -44,7 +44,7 @@ function makePoint (x,y) {
             }
         },
         divide: function (x, y) {
-            return makePoint(this.x / x,this.y / y);
+            return makePoint(this.x / x, this.y / y);
         }
     };
 }
@@ -86,6 +86,7 @@ var statusobjects = {
 
 var handlers = {
     validate: function () { },
+
     mouseposition: function (core, evt) {
         var s = statusobjects.pointer;
 
@@ -158,25 +159,52 @@ var handlers = {
     },
 
     windowsize: function (core, evt) {
+        //send event to core
         core.handleWindowSizeEvent(evt);
+
+        //handle callbacks
+        sendWindowSizeEvent(core, evt);
     }
 };
 
+/**
+ * Process a event.
+ */
 exports.processEvent = function (core, evt) {
+    if (DEBUG) {
+        console.log('processEvent() ' + JSON.stringify(evt));
+    }
+
     if (typeof handlers[evt.type] !== 'undefined') {
-        return handlers[evt.type](core,evt);
+        return handlers[evt.type](core, evt);
     }
 
     console.log('unhandled event', evt);
 };
 
+/**
+ * Register event handler.
+ */
 exports.on = function (name, target, listener) {
+    //name
+    if (!name) {
+        throw new Error('missing name');
+    }
+
     name = name.toLowerCase();
 
     if (!listeners[name]) {
         listeners[name] = [];
     }
 
+    //special case (e.g. windowsize handler)
+    if (!listener) {
+        //two parameters set
+        listener = target;
+        target = null;
+    }
+
+    //add
     listeners[name].push({
         target: target,
         func: listener
@@ -210,7 +238,7 @@ function setupPointerFocus(core, pt) {
     var keyboardnodes = nodes.filter(function (n) { return n.acceptsKeyboardEvents === true; });
 
     if (keyboardnodes.length > 0) {
-        if (focusobjects.keyboard.target !== null) {
+        if (focusobjects.keyboard.target) {
             fireEventAtTarget(focusobjects.keyboard.target, {
                 type: 'focuslose',
                 target: focusobjects.keyboard.target,
@@ -219,13 +247,13 @@ function setupPointerFocus(core, pt) {
 
         focusobjects.keyboard.target = keyboardnodes[0];
         fireEventAtTarget(focusobjects.keyboard.target, {
-            type:'focusgain',
+            type: 'focusgain',
             target: focusobjects.keyboard.target,
         });
     } else {
-        if (focusobjects.keyboard.target !== null) {
+        if (focusobjects.keyboard.target) {
             fireEventAtTarget(focusobjects.keyboard.target, {
-                type:'focuslose',
+                type: 'focuslose',
                 target: focusobjects.keyboard.target,
             });
         }
@@ -249,7 +277,7 @@ function sendPressEvent(core, e) {
     var pt = core.globalToLocal(statusobjects.pointer.pt, node);
 
     fireEventAtTarget(node, {
-        type: "press",
+        type: 'press',
         button: e.button,
         point: pt,
         target: node
@@ -267,7 +295,7 @@ function sendReleaseEvent(core, e) {
     var pt = core.globalToLocal(statusobjects.pointer.pt, node);
 
     fireEventAtTarget(node, {
-        type: "release",
+        type: 'release',
         button: e.button,
         point: pt,
         target: node,
@@ -275,7 +303,7 @@ function sendReleaseEvent(core, e) {
 
     if (node.contains(pt)) {
         fireEventAtTarget(node, {
-            type: "click",
+            type: 'click',
             button: e.button,
             point: pt,
             target: node,
@@ -295,7 +323,7 @@ function sendDragEvent(core, e) {
     var localprev = core.globalToLocal(s.prevpt, node);
 
     fireEventAtTarget(node, {
-        type: "drag",
+        type: 'drag',
         button: e.button,
         point: localpt,
         delta: localpt.minus(localprev),
@@ -329,7 +357,7 @@ function sendScrollEvent(core, e) {
 }
 
 function sendKeyboardPressEvent(core, event) {
-    if( focusobjects.keyboard.target === null) {
+    if (focusobjects.keyboard.target === null) {
         return;
     }
 
@@ -338,7 +366,7 @@ function sendKeyboardPressEvent(core, event) {
     fireEventAtTarget(event.target, event);
 }
 
-function sendKeyboardReleaseEvent(core,event) {
+function sendKeyboardReleaseEvent(core, event) {
     if (focusobjects.keyboard.target === null) {
         return;
     }
@@ -348,17 +376,23 @@ function sendKeyboardReleaseEvent(core,event) {
     fireEventAtTarget(event.target, event);
 }
 
+function sendWindowSizeEvent(core, event) {
+    fireEventAtTarget(null, event);
+}
+
 function fireEventAtTarget(target, event) {
     if (DEBUG) {
-        console.log('firing an event at target:', event.type, target.id());
+        console.log('firing an event at target:', event.type, target ? target.id():'');
     }
 
     if (!event.type) {
         console.log('WARNING. Event has no type!');
     }
 
-    if (listeners[event.type]) {
-        listeners[event.type].forEach(function (l) {
+    var funcs = listeners[event.type];
+
+    if (funcs) {
+        funcs.forEach(function (l) {
             if (l.target == target) {
                 l.func(event);
             }

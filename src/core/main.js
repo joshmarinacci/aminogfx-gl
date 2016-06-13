@@ -3,6 +3,8 @@
 var amino = require('./src/amino.js');
 var input = require('./src/aminoinput.js');
 
+var DEBUG = false;
+
 exports.input = input;
 
 /**
@@ -13,7 +15,7 @@ var Core = function () {
     this.anims = [];
     this.root = null;
     this.native = null;
-    this.DPIScale = 1.0;
+    this.DPIScale = 1.0; //TODO is this being used?
 
     var self = this;
 
@@ -29,12 +31,12 @@ var Core = function () {
     /**
      * Initialize.
      */
-    this.init = function() {
+    this.init = function () {
         this.native.init(this);
 
         this.native.setEventCallback(function (e) {
             if (!e || e == null) {
-                console.log("ERROR. null event");
+                console.log('ERROR. null event');
                 return;
             }
 
@@ -51,7 +53,7 @@ var Core = function () {
                 e.y /= self.DPIScale;
             }
 
-            if (e.type == "windowsize") {
+            if (e.type == 'windowsize') {
                 e.width /= self.DPIScale;
                 e.height /= self.DPIScale;
             }
@@ -71,8 +73,11 @@ var Core = function () {
      * Windows was resized.
      */
     this.handleWindowSizeEvent = function (evt) {
-        //FIXME
-        console.log("doing nothing with the resize");
+        //ignored
+
+        if (DEBUG) {
+            console.log('doing nothing with the resize');
+        }
     };
 
     /**
@@ -86,13 +91,13 @@ var Core = function () {
         this.stage.height = size.h;
 
         input.processEvent(this, {
-            type: "windowsize",
+            type: 'windowsize',
             width: size.w,
             height: size.h
         });
 
         if (!this.root) {
-            throw new Error("ERROR. No root set on stage");
+            throw new Error('ERROR. No root set on stage');
         }
 
         this.native.startEventLoop();
@@ -390,16 +395,9 @@ function Stage (core) {
     /**
      * Update size on window resizing.
      */
-    core.on('windowsize', this, function (e) {
-        var root = self.getRoot();
-
-        if (root.setW) {
-            root.setW(self.getW());
-        }
-
-        if (root.setH) {
-            root.setH(self.getH());
-        }
+    core.on('windowsize', function (e) {
+        self.w.value = e.width;
+        self.h.value = e.height;
     });
 
     /**

@@ -13,12 +13,21 @@ static bool windowSizeChanged = true;
 int fbWidth;
 int fbHeight;
 
+void render(bool resizing);
+
 /**
  * Window size has changed.
  */
 static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth, int newHeight) {
-	width = newWidth;
+	//check size
+    if (width == newWidth && height == newHeight) {
+        return;
+    }
+
+    //update
+    width = newWidth;
 	height = newHeight;
+
 	windowSizeChanged = true;
 
     if (!eventCallbackSet) {
@@ -48,6 +57,9 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
     Local<Value> argv[] = { Nan::Null(), event_obj };
 
     NODE_EVENT_CALLBACK->Call(2, argv);
+
+    //render
+    render(true);
 }
 
 /**
@@ -293,7 +305,7 @@ static int currentFrame = 0;
 /**
  * Render the current scene.
  */
-void render() {
+void render(bool resizing = false) {
     DebugEvent de;
     double starttime;
 
@@ -412,7 +424,9 @@ void render() {
     }
 
     //handle events
-    glfwPollEvents();
+    if (!resizing) {
+        glfwPollEvents();
+    }
 
     if (DEBUG_RENDER) {
         printf("input = %.2f update = %.2f ",  de.inputtime, de.updatestime);

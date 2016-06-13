@@ -39,4 +39,15 @@ amino.start(function (core, stage) {
 
     //TODO click handlers
 
+    //resize
+    core.on('windowsize', function () {
+        //move corners
+        rectTR.x(stage.w() - rectW);
+        rectBL.y(stage.h() - rectH);
+        rectBR.x(stage.w() - rectW).y(stage.h() - rectH);
+
+        //debug
+        //console.log('resized ' + stage.w() + '/' + stage.h());
+    });
+
 });

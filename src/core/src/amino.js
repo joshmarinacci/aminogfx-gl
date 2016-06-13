@@ -7,14 +7,20 @@ var prims = require('./primitives');
 exports.input = input;
 exports.primitives = prims;
 
+/**
+ * Create properties.
+ */
 amino.makeProps = function (obj, props) {
     for (var name in props) {
         amino.makeProp(obj, name, props[name]);
     }
 
     return obj;
-}
+};
 
+/**
+ * Create property handlers.
+ */
 amino.makeProp = function (obj, name, val) {
     var prop = function (v) {
         if (v != undefined) {
@@ -47,7 +53,7 @@ amino.makeProp = function (obj, name, val) {
 
         this.value = v;
 
-        for(var i = 0; i < this.listeners.length; i++) {
+        for (var i = 0; i < this.listeners.length; i++) {
             this.listeners[i](this.value, this,obj);
         }
 
@@ -71,19 +77,19 @@ amino.makeProp = function (obj, name, val) {
     };
 
     obj[name] = prop;
-}
+};
 
 amino.GETCHARWIDTHCOUNT = 0;
 amino.GETCHARHEIGHTCOUNT = 0;
 
 //String extension
 if (typeof String.prototype.endsWith !== 'function') {
-    String.prototype.endsWith = function(suffix) {
+    String.prototype.endsWith = function (suffix) {
         return this.indexOf(suffix, this.length - suffix.length) !== -1;
     };
 }
 
-amino.getCore = function() {
+amino.getCore = function () {
     return Core._core;
 };
 
