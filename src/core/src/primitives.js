@@ -7,13 +7,6 @@ var comp = require('richtext');
 var events = require('inputevents');
 
 /**
- * Get amino instance.
- */
-function getAmino() {
-    return amino;
-}
-
-/**
  * Convert RGB expression to object.
  *
  * Supports:
@@ -50,12 +43,6 @@ function ParseRGBString(Fill) {
     return Fill;
 }
 
-function mirrorAmino(me, mirrorprops) {
-    for (var name in mirrorprops) {
-        mirrorProp(me, name, mirrorprops[name]);
-    }
-}
-
 /**
  * Fill value has changed.
  */
@@ -68,22 +55,30 @@ function setFill(val, prop, obj) {
     n.updateProperty(obj.handle, 'b', color.b);
 }
 
-var setters = [];
+//native async updates
+var setters = {};
 
-['visible', 'x','y','w','h','sx','sy','id',
-    'opacity','text','fontSize', 'filled',
-    'rx','ry','rz','geometry','dimension','cliprect',
-    'textureLeft','textureRight','textureTop','textureBottom',
-    ]
-.forEach(function (name) {
+['visible', 'x', 'y', 'w', 'h', 'sx', 'sy',
+    'opacity', 'text', 'fontSize', 'filled',
+    'rx', 'ry', 'rz', 'geometry', 'dimension', 'cliprect',
+    'textureLeft', 'textureRight', 'textureTop', 'textureBottom'
+].forEach(function (name) {
     setters[name] = function (val, prop, obj) {
         amino.getCore().getNative().updateProperty(obj.handle, name, val);
     };
 });
+
 setters['fill'] = setFill;
 
-function mirrorProp(obj, old, native) {
-    obj[old].watch(setters[native]);
+/**
+ * Add native setters.
+ */
+function applyNativeBinding(me) {
+    for (var name in setters) {
+        if (me.hasOwnProperty(name)) {
+            me[name].watch(setters[name]);
+        }
+    }
 }
 
 /**
@@ -105,8 +100,9 @@ function contains(pt) {
  * Rect object.
  */
 function Rect() {
-    getAmino().makeProps(this, {
-        id: 'unknown id',
+    //properties
+    amino.makeProps(this, {
+        id: 'unknown id', //TODO better default
         visible: true,
         x: 0,
         y: 0,
@@ -119,20 +115,10 @@ function Rect() {
         fill: '#ffffff'
     });
 
+    //native handle (int)
     this.handle = amino.getCore().getNative().createRect();
 
-    mirrorAmino(this, {
-        x: 'x',
-        y: 'y',
-        w: 'w',
-        h: 'h',
-        visible: 'visible',
-        sx: 'sx',
-        sy: 'sy',
-        fill: 'fill',
-        id: 'id',
-        opacity: 'opacity'
-    });
+    applyNativeBinding(this);
 
     this.contains = contains;
     this.acceptsMouseEvents = false;
@@ -142,10 +128,8 @@ function Rect() {
  * Text object.
  */
 function Text() {
-    var amino = getAmino();
-
     amino.makeProps(this, {
-        id: 'unknown id',
+        id: 'unknown id', //TODO bad choice
         visible: true,
         x: 0,
         y: 0,
@@ -160,21 +144,12 @@ function Text() {
         fill: '#ffffff'
     });
 
+    //native
     this.handle = amino.getCore().getNative().createText();
 
-    mirrorAmino(this, {
-        x: 'x',
-        y: 'y',
-        visible: 'visible',
-        sx: 'sx',
-        sy: 'sy',
-        fill: 'fill',
-        text: 'text',
-        fontSize: 'fontSize',
-        opacity: 'opacity',
-        id: 'id'
-    });
+    applyNativeBinding(this);
 
+    //methods
     var self = this;
 
     this.updateFont = function () {
@@ -237,30 +212,16 @@ function ImageView() {
         });
     });
 
+    //native
     this.handle = amino.getCore().getNative().createRect();
+
+    applyNativeBinding(this);
 
     //when the image is loaded, update the texture id and dimensions
     this.image.watch(function (image) {
         self.w(image.w);
         self.h(image.h);
         amino.getCore().getNative().updateProperty(self.handle, 'texid', self.image().texid);
-    });
-
-    mirrorAmino(this, {
-        x: 'x',
-        y: 'y',
-        w: 'w',
-        h: 'h',
-        visible: 'visible',
-        sx: 'sx',
-        sy: 'sy',
-        fill: 'fill',
-        id: 'id',
-        textureLeft: 'textureLeft',
-        textureRight: 'textureRight',
-        textureTop: 'textureTop',
-        textureBottom: 'textureBottom',
-        opacity: 'opacity'
     });
 
     this.contains = contains;
@@ -287,22 +248,12 @@ function Group() {
         cliprect:0
     });
 
+    //native
     this.handle = core.getNative().createGroup();
-    mirrorAmino(this, {
-        x: 'x',
-        y: 'y',
-        sx: 'sx',
-        sy: 'sy',
-        rx: 'rx',
-        ry: 'ry',
-        rz: 'rz',
-        visible: 'visible',
-        id: 'id',
-        w: 'w',
-        h: 'h',
-        cliprect: 'cliprect'
-    });
 
+    applyNativeBinding(this);
+
+    //methods
     this.children = [];
     this.addSingle = function (node) {
         if (node == undefined) {
@@ -492,27 +443,16 @@ function Polygon() {
         geometry: [0,0, 50,0, 0,0]
     });
 
+    //native
     this.handle = amino.getCore().getNative().createPoly();
 
-    mirrorAmino(this, {
-        x: 'x',
-        y: 'y',
-        visible: 'visible',
-        sx: 'sx',
-        sy: 'sy',
-        fill: 'fill',
-        id: 'id',
-        filled: 'filled',
-        geometry: 'geometry',
-        dimension: 'dimension',
-        opacity: 'opacity'
-    });
+    applyNativeBinding(this);
 
+    //methods
     this.contains = function () {
         //TODO check polygon
         return false;
     };
-    this.dimension(2);
 
     return this;
 }
@@ -565,7 +505,6 @@ exports.Group = Group;
 exports.Rect = Rect;
 exports.Text = Text;
 exports.Button = Button;
-exports.mirrorAmino = mirrorAmino;
 exports.Polygon = Polygon;
 exports.Circle = Circle;
 exports.ImageView = ImageView;
@@ -596,25 +535,12 @@ exports.PixelView = function () {
 
     var self = this;
 
+    //native
     this.handle = amino.getCore().getNative().createRect();
 
-    mirrorAmino(this, {
-        x: 'x',
-        y: 'y',
-        w: 'w',
-        h: 'h',
-        visible: 'visible',
-        sx: 'sx',
-        sy: 'sy',
-        fill: 'fill',
-        id: 'id',
-        opacity: 'opacity',
-        textureLeft: 'textureLeft',
-        textureRight: 'textureRight',
-        textureTop: 'textureTop',
-        textureBottom: 'textureBottom',
-    });
+    applyNativeBinding(this);
 
+    //methods
     this.contains = contains;
 
     function rebuildBuffer() {

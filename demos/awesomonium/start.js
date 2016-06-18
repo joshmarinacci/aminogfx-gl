@@ -35,8 +35,8 @@ amino.start(function(core, stage) {
     buildGlobe(group);
 
     //lower left bar charts
-    root.add(createBar1(200,50,15, '#3333ff').x(5).y(500));
-    root.add(createBar1(200,50,15, '#ffff33').x(5).y(700).sy(-1));
+    root.add(createBar1(200, 50, 15, '#3333ff').x(5).y(500));
+    root.add(createBar1(200, 50, 15, '#ffff33').x(5).y(700).sy(-1));
 
     makeHeader(root);
 
@@ -92,71 +92,73 @@ function buildDashboard() {
 
     {
         var x = 0;
-        addLine("ENDO SYS OS / MAKR PROC",x,0);
-        addSmallLine("RDOZ - 25889",x,30);
-        addSmallLine("ZODR - 48639",x,50);
-        addSmallLine("FEEA - 92651",x,70);
-        addSmallLine("DEAD - 02833",x,90);
+        addLine("ENDO SYS OS / MAKR PROC", x, 0);
+        addSmallLine("RDOZ - 25889", x, 30);
+        addSmallLine("ZODR - 48639", x, 50);
+        addSmallLine("FEEA - 92651", x, 70);
+        addSmallLine("DEAD - 02833", x, 90);
     }
 
     {
         var x = 0;
         var y = 130;
-        addLine("FOO_MAR.TCX",x,y+0,'\uf071');
-        addSmallLine("analysis - 48%",x,y+30);
-        addSmallLine("actualizing - 99%",x,y+50);
-        addSmallLine("rentrance - 0.02%",x,y+70);
+        addLine("FOO_MAR.TCX", x, y + 0, '\uf071');
+        addSmallLine("analysis - 48%", x, y + 30);
+        addSmallLine("actualizing - 99%", x, y + 50);
+        addSmallLine("rentrance - 0.02%", x, y + 70);
     }
 
     {
-        var x = w-200-10;
+        var x = w - 200 - 10;
         var y = 0;
-        addLine("Core Extraction",x,y+0,'\uf0e4');
-        addSmallLine("pulverton - 143.888",x,y+30);
-        addSmallLine("minotaur - 105%",x,y+50);
-        addSmallLine("gravitation 26.8%",x,y+70);
+        addLine("Core Extraction", x, y + 0, '\uf0e4');
+        addSmallLine("pulverton - 143.888", x, y + 30);
+        addSmallLine("minotaur - 105%", x, y + 50);
+        addSmallLine("gravitation 26.8%", x, y + 70);
     }
 
     {
-        var x = w-200-10;
+        var x = w - 200 - 10;
         var y = 120;
-        addLine("FEED CR55X \\ Analysis",x,y+0);
-        addSmallLine("reconst - 48%",x,y+30);
-        addSmallLine("fargonite - 99%",x,y+50);
-        addSmallLine("sleestack - 0.02%",x,y+70);
+        addLine("FEED CR55X \\ Analysis", x, y + 0);
+        addSmallLine("reconst - 48%", x, y + 30);
+        addSmallLine("fargonite - 99%", x, y + 50);
+        addSmallLine("sleestack - 0.02%", x, y + 70);
 
     }
     {
-        var x = w-200-10;
+        var x = w - 200 - 10;
         var y = 250;
-        addLine("$SHIP_CAM$.FXD",x,y+0,'\uf06d');
-        addSmallLine("fracturizing - 128%",x,y+30);
-        addSmallLine("detox - 43%",x,y+50);
-        addSmallLine("xantos 45% 8%",x,y+70);
+        addLine("$SHIP_CAM$.FXD", x, y + 0, '\uf06d');
+        addSmallLine("fracturizing - 128%", x, y + 30);
+        addSmallLine("detox - 43%", x, y + 50);
+        addSmallLine("xantos 45% 8%", x, y + 70);
     }
     {
-        var x = w-200-10;
+        var x = w - 200 - 10;
         var y = 350;
-        addLine("XenoPhage",x,y+0,'\uf126');
-        addSmallLine("scent analysis - 128%",x,y+30);
-        addSmallLine("oxygenize - 43%",x,y+50);
-        addSmallLine("heliotrop **",x,y+70);
+        addLine("XenoPhage", x, y + 0, '\uf126');
+        addSmallLine("scent analysis - 128%", x, y + 30);
+        addSmallLine("oxygenize - 43%", x, y + 50);
+        addSmallLine("heliotrop **", x, y + 70);
     }
 
     return group;
 }
 
 function makeFooterSymbols(root) {
-    for(var i=0; i<7; i++)  {
-        var sun = new amino.Group().x(w/2-300 + i*100).y(h-50).rz(30);
+    for(var i  =0; i < 7; i++)  {
+        var sun = new amino.Group().x(w / 2 - 300 + i * 100).y(h - 50).rz(30);
+
         sun.add(new amino.Text()
             .fontName('awesome').fontSize(80).text('\uf0d8')
-            .x(-25).y(25).fill("#fcfbcf")
+            .x(-25).y(25).fill('#fcfbcf')
         );
-        var start = Math.random()*90-45;
-        var len = Math.random()*5000+5000;
 
-        sun.rz.anim().from(start).to(start+90).dur(len).loop(-1).autoreverse(true).start();
+        var start = Math.random() * 90 - 45;
+        var len = Math.random() * 5000 + 5000;
+
+        sun.rz.anim().from(start).to(start + 90).dur(len).loop(-1).autoreverse(true).start();
         root.add(sun);
     }
 
@@ -170,7 +172,7 @@ function makeHeader(root) {
         .fontName('mech')
         .x(20)
         .y(70)
-        .fill("#fcfbcf")
+        .fill('#fcfbcf')
     );
     root.add(createBar1(50,100,5, '#fcfbcf').x(500).y(75).rz(-90));
     root.add(new amino.Text()
@@ -179,13 +181,13 @@ function makeHeader(root) {
         .fontName('mech')
         .x(w-320)
         .y(70)
-        .fill("#fcfbcf")
+        .fill('#fcfbcf')
     );
 
     //beaker symbol
     root.add(new amino.Text()
         .fontName('awesome').text('\uf0c3').fontSize(80)
-        .x(w-85).y(70).fill("#fcfbcf")
+        .x(w - 85).y(70).fill('#fcfbcf')
     );
 }
 
@@ -196,8 +198,8 @@ function buildGlobe(group) {
     var PI = Math.PI;
 
     function latlon2xyz(lat,lon, rad) {
-        var el = lat/180.0*PI;
-        var az = lon/180.0*PI;
+        var el = lat / 180.0 * PI;
+        var az = lon / 180.0 * PI;
         var x = rad * cos(el) * sin(az);
         var y = rad * cos(el) * cos(az);
         var z = rad * sin(el);
@@ -207,37 +209,38 @@ function buildGlobe(group) {
 
     function addCountry(nz) {
         //make the geometry
-        for(var i=0; i<nz.borders.length; i++) {
+        for (var i = 0; i < nz.borders.length; i++) {
             var border = nz.borders[i];
             var points = [];
             var poly = new amino.Polygon();
 
-            for (var j=0; j<border.length; j++) {
+            for (var j = 0; j < border.length; j++) {
                 var point = border[j];
-                var pts = latlon2xyz(point.lat,point.lng,radius);
+                var pts = latlon2xyz(point.lat, point.lng, radius);
 
                 points.push(pts[0]);
                 points.push(pts[1]);
                 points.push(pts[2]);
             }
-            poly.fill("#80ff80");
+
+            poly.fill('#80ff80');
             poly.geometry(points);
             poly.dimension(3);
             group.add(poly);
         }
     }
 
-    for(var i=0; i<data.countries.length; i++) {
+    for (var i = 0; i < data.countries.length; i++) {
         addCountry(data.countries[i]);
     }
 
     // NOTE: on Raspberry pi we can't just make a line.
     // A polygon needs at least two segments.
-    function addLine(lat,lon,el, color) {
+    function addLine(lat, lon, el, color) {
         var poly = new amino.Polygon();
-        var pt1 = latlon2xyz(lat,lon,radius);
-        var pt2 = latlon2xyz(lat,lon,radius+el);
-        var pt3 = latlon2xyz(lat,lon,radius);
+        var pt1 = latlon2xyz(lat, lon, radius);
+        var pt2 = latlon2xyz(lat, lon, radius + el);
+        var pt3 = latlon2xyz(lat, lon, radius);
         var points = pt1.concat(pt2).concat(pt3);
 
         poly.fill(color);
@@ -247,58 +250,59 @@ function buildGlobe(group) {
     }
 
     //add a line at portland
-    cities.features.forEach(function(city) {
+    cities.features.forEach(function (city) {
         var color = '#ff00ff';
         var hue = city.properties.city.length / 20;
 
         addLine(city.geometry.coordinates[1],
                 city.geometry.coordinates[0],
-                100*hue,
+                100 * hue,
                 onecolor('red').hue(hue).hex());
     });
 
     // center
-    group.x(w/2).y(h/2);
+    group.x(w / 2).y(h / 2);
+
     //turn earth upright
     group.rx(90);
     group.ry(0);
     group.rz(0);
 
     // spin it forever
-    group.rz.anim().from(0).to(360).dur(60*1000).loop(-1).start();
+    group.rz.anim().from(0).to(360).dur(60 * 1000).loop(-1).start();
     //core.createPropAnim(group,"rotateZ",0,-360,60*1000).setCount(-1);
 
 }
 
-function createBar1(w,h,count,color) {
+function createBar1(w, h, count, color) {
     var gr = new amino.Group();
     var rects = [];
-    var barw = w/count;
+    var barw = w / count;
 
-    for(var i=0; i<count; i++) {
+    for(var i = 0; i < count; i++) {
         var rect = new amino.Rect()
-            .x(i*barw).y(0)
-            .w(barw-5)
+            .x(i * barw).y(0)
+            .w(barw - 5)
             .h(30)
-            .fill(color)
-            ;
+            .fill(color);
+
         rects.push(rect);
         gr.add(rect);
     }
 
     function update() {
-        rects.forEach(function(rect) {
-            rect.h(20+Math.random()*(h-20));
+        rects.forEach(function (rect) {
+            rect.h(20 + Math.random() * (h - 20));
         });
     }
 
-    setInterval(update,100);
+    setInterval(update, 100);
 
     return gr;
 }
 
-function frand(min,max) {
-    return Math.random()*(max-min) + min;
+function frand(min, max) {
+    return Math.random() * (max - min) + min;
 }
 
 function setupFont(core) {

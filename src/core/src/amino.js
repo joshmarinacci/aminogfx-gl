@@ -35,8 +35,7 @@ amino.makeProp = function (obj, name, val) {
     prop.listeners = [];
     prop.watch = function (fun) {
         if (fun === undefined) {
-            console.log('function undefined for property ' + name + ' on object with value ' + val);
-            new Error().printStackTrace();
+            throw new Error('function undefined for property ' + name + ' on object with value ' + val);
         }
 
         this.listeners.push(function (v, v2, v3) {
