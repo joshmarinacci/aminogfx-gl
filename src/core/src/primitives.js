@@ -155,23 +155,32 @@ function Text() {
     this.updateFont = function () {
         self.font = amino.getCore().getNative().getFont(self.fontName());
 
+        if (!self.font) {
+            self.font = amino.getCore().defaultFont;
+        }
+
         if (self.font) {
-            var id = self.font.getNative(self.fontSize(), self.fontWeight(), 'normal');
+            var id = self.font.getNative(self.fontSize(), self.fontWeight(), self.fontStyle());
 
             amino.getCore().getNative().updateProperty(self.handle, 'fontId', id);
         }
     };
 
+    /**
+     * Calc text width.
+     */
     this.calcWidth = function () {
-        return this.font.calcStringWidth(this.text(), this.fontSize(), this.fontWeight(), 'normal');
+        return this.font.calcStringWidth(this.text(), this.fontSize(), this.fontWeight(), this.fontStyle());
     };
 
+    /**
+     * Calc text height.
+     */
     this.calcHeight = function () {
-        return this.font.getHeight(this.fontSize(), this.fontWeight(), 'normal');
+        return this.font.getHeight(this.fontSize(), this.fontWeight(), this.fontStyle());
     };
 
     if (amino.getCore()) {
-        this.font = amino.getCore().defaultFont;
         this.updateFont();
     }
 

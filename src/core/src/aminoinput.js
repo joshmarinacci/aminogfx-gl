@@ -24,7 +24,7 @@ windowclose event
 windowsizing event
 */
 
-var IE = require('inputevents');
+var IE = require('./inputevents');
 
 function makePoint(x, y) {
     return {
@@ -135,8 +135,8 @@ var handlers = {
     mousewheelv: function (core, evt) {
         var pts = statusobjects.pointer;
 
-        setupScrollFocus(core,pts.pt);
-        sendScrollEvent(core,evt);
+        setupScrollFocus(core, pts.pt);
+        sendScrollEvent(core, evt);
     },
 
     keypress: function (core, evt) {
@@ -150,7 +150,7 @@ var handlers = {
             evt2 = IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state);
         }
 
-        sendKeyboardPressEvent(core,evt2);
+        sendKeyboardPressEvent(core, evt2);
     },
 
     keyrelease: function (core, evt) {

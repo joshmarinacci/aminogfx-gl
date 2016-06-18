@@ -10,7 +10,7 @@ if (DEBUG) {
 //load native module
 var binary = require('node-pre-gyp');
 var path = require('path');
-var binding_path = binary.find(path.resolve(path.join(__dirname, './package.json')));
+var binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
 var sgtest = require(binding_path);
 
 //detect platform
@@ -145,18 +145,14 @@ function JSFont(desc) {
     this.weights = {};
     this.filepaths = {};
 
-    var dir = process.cwd();
-
-    process.chdir(__dirname + '/..'); // chdir such that fonts (and internal shaders) may be found
-
-    var aminodir = __dirname + '/resources/';
+    var aminodir = path.join(__dirname, 'resources/');
 
     if (desc.path) {
         aminodir = desc.path;
     }
 
     for (var weight in desc.weights) {
-        var filepath = aminodir + desc.weights[weight].normal;
+        var filepath = path.join(aminodir, desc.weights[weight].normal);
 
         if (!fs.existsSync(filepath)) {
             throw new Error('WARNING. File not found: ' + filepath);
@@ -165,8 +161,6 @@ function JSFont(desc) {
         this.weights[weight] = Core.getCore().getNative().createNativeFont(filepath);
         this.filepaths[weight] = filepath;
     }
-
-    process.chdir(dir);
 
     this.getNative = function (size, weight, style) {
         if (this.weights[weight] != undefined) {
@@ -183,35 +177,34 @@ function JSFont(desc) {
      *
      * returns the width of the specified string rendered at the specified size
      */
-    this.calcStringWidth = function(str, size, weight, style) {
-        amino.GETCHARWIDTHCOUNT++;
-        return amino.sgtest.getCharWidth(str, size, this.getNative(size, weight, style));
+    this.calcStringWidth = function (str, size, weight, style) {
+        return sgtest.getCharWidth(str, size, this.getNative(size, weight, style));
     };
 
     /**
      * Get font height.
      */
-    this.getHeight = function(size, weight, style) {
-        amino.GETCHARHEIGHTCOUNT++;
-
+    this.getHeight = function (size, weight, style) {
         if (size == undefined) {
-            throw new Error("SIZE IS UNDEFINED");
+            throw new Error('SIZE IS UNDEFINED');
         }
 
-        return amino.sgtest.getFontHeight(size, this.getNative(size, weight, style));
+        return sgtest.getFontHeight(size, this.getNative(size, weight, style));
     };
 
     /**
      * Get font height metrics.
+     *
+     * Returns ascender & descender values.
      */
-    this.getHeightMetrics = function(size, weight, style) {
+    this.getHeightMetrics = function (size, weight, style) {
         if (size == undefined) {
-            throw new Error("SIZE IS UNDEFINED");
+            throw new Error('SIZE IS UNDEFINED');
         }
 
         return {
-            ascender: amino.sgtest.getFontAscender(size, this.getNative(size, weight, style)),
-            descender: amino.sgtest.getFontDescender(size, this.getNative(size, weight, style))
+            ascender: sgtest.getFontAscender(size, this.getNative(size, weight, style)),
+            descender: sgtest.getFontDescender(size, this.getNative(size, weight, style))
         };
     };
 }

@@ -78,9 +78,6 @@ amino.makeProp = function (obj, name, val) {
     obj[name] = prop;
 };
 
-amino.GETCHARWIDTHCOUNT = 0;
-amino.GETCHARHEIGHTCOUNT = 0;
-
 //String extension
 if (typeof String.prototype.endsWith !== 'function') {
     String.prototype.endsWith = function (suffix) {

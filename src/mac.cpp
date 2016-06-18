@@ -67,7 +67,7 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
  *
  * Note: window stays open.
  */
-static void GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(GLFWwindow * window) {
+static void GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(GLFWwindow *window) {
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
     }
@@ -85,29 +85,34 @@ static void GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION(GLFWwindow * window) {
 /**
  * Key event.
  */
-static void GLFW_KEY_CALLBACK_FUNCTION(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void GLFW_KEY_CALLBACK_FUNCTION(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
     }
 
     //debug
-    //printf("key event: %i\n", key);
+    //printf("key event: key=%i scancode=%i\n", key, scancode);
 
     //create object
     v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-    if (action == 0) {
+    if (action == GLFW_RELEASE) {
         Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("keyrelease").ToLocalChecked());
-    } else if (action == 1) {
+    } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("keypress").ToLocalChecked());
     }
 
+    //key codes
     Nan::Set(event_obj, Nan::New("keycode").ToLocalChecked(),     Nan::New(key));
+    Nan::Set(event_obj, Nan::New("scancode").ToLocalChecked(),    Nan::New(scancode));
 
+    //send event
     Local<Value> argv[] = { Nan::Null(), event_obj };
 
     NODE_EVENT_CALLBACK->Call(2, argv);
 }
+
+//TODO Unicode chars: http://www.glfw.org/docs/latest/group__input.html#gabf24451c7ceb1952bc02b17a0d5c3e5f
 
 /**
  * Mouse moved.
