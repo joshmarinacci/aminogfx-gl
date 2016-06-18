@@ -42,7 +42,7 @@ function Task(fn, dep, name) {
         } else {
             this.runthis(cb);
         }
-    }
+    };
 }
 
 function rundeps(dep, cb) {
@@ -86,7 +86,7 @@ copyAllTo = function(path, dir) {
         console.log('copying ' + filename + ' to ' + outpath);
         fs.writeFileSync(outpath,temp);
     });
-}
+};
 
 function desktop(cb) {
     var out = outdir + "/desktop";
@@ -154,7 +154,7 @@ function androidjs(cb) {
     copyFileTo("tests/runit.sh",out);
     jb.copyAllTo("tests/phone",out);
     var shaders = out + "/shaders";
-    mkdir(shaders)
+    mkdir(shaders);
     jb.copyAllTo("shaders/",shaders);
     var fonts = out + "/fonts";
     mkdir(fonts);
@@ -218,7 +218,7 @@ tasks = {
     androidnative: new Task(androidnative,  [],          "Amino for headless Android Device"),
     androidjs:     new Task(androidjs,      [],          "Amino for headless Android Device"),
     android:   new Task(android,            ["androidnative", "androidjs"],          "Amino for headless Android Device"),
-}
+};
 
 if(!command) {
     command = "help";
