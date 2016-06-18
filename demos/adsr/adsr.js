@@ -30,16 +30,16 @@ amino.start(function (core, stage) {
     root.add(g);
 
     //4 polygons, each a different color
-    var aPoly = new amino.Polygon().fill("#00eecc");
-    var dPoly = new Polygon().fill("#00cccc");
-    var sPoly = new Polygon().fill("#00aacc");
-    var rPoly = new Polygon().fill("#0088aa");
+    var aPoly = new amino.Polygon().fill('#00eecc');
+    var dPoly = new Polygon().fill('#00cccc');
+    var sPoly = new Polygon().fill('#00aacc');
+    var rPoly = new Polygon().fill('#0088aa');
 
     g.add(aPoly, dPoly, sPoly, rPoly);
     g.find('Polygon').filled(true);
 
     //5th polygon for the border, not filled
-    var border = new Polygon().fill("#ffffff").filled(false);
+    var border = new Polygon().fill('#ffffff').filled(false);
 
     g.add(border);
 
@@ -95,11 +95,10 @@ amino.start(function (core, stage) {
     A.x.bindto(adsr.a, minus(10));
 
     core.on('press', A, function( e) {
-        adsr.a(e.target.x());
+        //adsr.a(e.target.x());
     });
 
     core.on('drag', A, function (e) {
-        //FIXME rect jumps
         adsr.a(adsr.a() + e.delta.x);
     });
 
@@ -107,12 +106,12 @@ amino.start(function (core, stage) {
     var D = new Rect();
 
     D.acceptsMouseEvents = true;
-    D.x.bindto(adsr.d,minus(10));
-    D.y.bindto(adsr.s,minus(10));
+    D.x.bindto(adsr.d, minus(10));
+    D.y.bindto(adsr.s, minus(10));
 
     core.on('press', D, function (e) {
-        adsr.d(e.target.x());
-        adsr.s(e.target.y());
+        //adsr.d(e.target.x());
+        //adsr.s(e.target.y());
     });
 
     core.on('drag', D, function (e) {
@@ -129,8 +128,8 @@ amino.start(function (core, stage) {
     R.x.bindto(adsr.r, minus(10));
 
     core.on('press', R, function (e) {
-        adsr.s(e.target.y());
-        adsr.r(e.target.x());
+        //adsr.s(e.target.y());
+        //adsr.r(e.target.x());
     });
 
     core.on('drag', R, function (e) {
@@ -140,11 +139,11 @@ amino.start(function (core, stage) {
 
     //add and style the handles
     g.add(A, D, R);
-    g.find('Rect').fill("#00ffff").w(20).h(20);
+    g.find('Rect').fill('#00ffff').w(20).h(20);
 
     //util function for formatted strings
     function format(str) {
-        return function(v) {
+        return function (v) {
             return str.replace("%", v);
         };
     }
@@ -152,23 +151,23 @@ amino.start(function (core, stage) {
     //make 4 text labels, each bound to an adsr value
     var label1 = new Text().y(50 * 1);
 
-    label1.text.bindto(adsr.a, format("A: %"));
+    label1.text.bindto(adsr.a, format('A: %'));
 
     var label2 = new Text().y(50 * 2);
 
-    label2.text.bindto(adsr.d, format("D: %"));
+    label2.text.bindto(adsr.d, format('D: %'));
 
     var label3 = new Text().y(50 * 3);
 
-    label3.text.bindto(adsr.s, format("S: %"));
+    label3.text.bindto(adsr.s, format('S: %'));
 
     var label4 = new Text().y(50 * 4);
 
-    label4.text.bindto(adsr.r, format("R: %"));
+    label4.text.bindto(adsr.r, format('R: %'));
 
     //add them all and style them
     root.add(label1, label2, label3, label4);
-    root.find('Text').x(10).fill("#ffffff");
+    root.find('Text').x(10).fill('#ffffff');
 
     //move the whole thing 200px right
     g.x(200).y(0);
