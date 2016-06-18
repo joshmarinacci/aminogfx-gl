@@ -284,7 +284,6 @@ NAN_METHOD(setWindowSize) {
     height = h;
 
     glfwSetWindowSize(window, width, height);
-    //TODO check framebuffer size
 }
 
 NAN_METHOD(getWindowSize) {

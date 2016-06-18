@@ -42,7 +42,6 @@ amino.start(function (core, stage) {
             cursor.x(50 + label.calcWidth());
         }
 
-        //FIXME special keys on macOS
         if (e.key == 'BACK_DELETE') {
             var text = label.text();
 

@@ -23,8 +23,8 @@ if (process.platform == 'darwin') {
     OS ='MAC';
 }
 
-//var amino_core = require('aminogfx');
-var amino_core = require('./src/core/main'); //FIXME
+//var amino_core = require('aminogfx'); //NPM module
+var amino_core = require('./src/core/main'); //modified code
 var Core = amino_core.Core;
 var Shaders = require('./src/shaders.js');
 var fs = require('fs');
@@ -328,12 +328,12 @@ var gl_native = {
             self.setImmediate(immediateLoop);
         }
 
-        //1 ms interval
+        //1 ms
         setTimeout(immediateLoop, 1);
     },
     createWindow: function (core, w, h) {
         //create window
-        sgtest.createWindow(w * core.DPIScale, h * core.DPIScale);
+        sgtest.createWindow(w, h);
 
         //init shaders
         Shaders.init(sgtest, OS);
@@ -344,16 +344,14 @@ var gl_native = {
 
         core.defaultFont = fontmap['source'];
 
-        //root
+        //root wrapper
         this.rootWrapper = this.createGroup();
         sgtest.setRoot(this.rootWrapper);
-
-        //scale
-        this.updateProperty(this.rootWrapper, 'sx', core.DPIScale);
-        this.updateProperty(this.rootWrapper, 'sy', core.DPIScale);
     },
-    getFont: function(name) { return fontmap[name]; },
-    updateProperty: function(handle, name, value) {
+    getFont: function (name) {
+        return fontmap[name];
+    },
+    updateProperty: function (handle, name, value) {
         if (handle == undefined) {
             throw new Error('Can\'t set a property on an undefined handle!!');
         }
@@ -368,7 +366,9 @@ var gl_native = {
 
         sgtest.updateProperty(handle, hash, value);
     },
-    setRoot: function (handle) { return  sgtest.addNodeToGroup(handle,this.rootWrapper);  },
+    setRoot: function (handle) {
+        return  sgtest.addNodeToGroup(handle, this.rootWrapper);
+    },
     tick: function() {
         sgtest.tick();
     },
@@ -487,16 +487,10 @@ var gl_native = {
         return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf));
     },
     setWindowSize: function (w, h) {
-        sgtest.setWindowSize(w * Core.getCore().DPIScale, h * Core.getCore().DPIScale);
+        sgtest.setWindowSize(w, h);
     },
     getWindowSize: function (w, h) {
-        var dpi = Core.getCore().DPIScale;
-        var size = sgtest.getWindowSize(w, h);
-
-        return {
-            w: size.w / dpi,
-            h: size.h / dpi
-        };
+        return sgtest.getWindowSize(w, h);
     },
     createAnim: function (handle, prop, start, end, dur) {
         var hash = propsHash[prop];

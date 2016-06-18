@@ -10,7 +10,7 @@ var w = 1280;//1920;
 var h = 768;//1080;
 var radius = w / 6;
 
-amino.start(function(core, stage) {
+amino.start(function (core, stage) {
     //setup
     if (stage.w() > 100) {
 	    w = stage.w();

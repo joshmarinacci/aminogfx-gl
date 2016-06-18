@@ -15,7 +15,6 @@ var Core = function () {
     this.anims = [];
     this.root = null;
     this.native = null;
-    this.DPIScale = 1.0; //TODO is this being used?
 
     var self = this;
 
@@ -43,20 +42,6 @@ var Core = function () {
             //console.log("event type is", e.type);
 
             e.time = new Date().getTime();
-
-            //DPI scaling
-            if (e.x) {
-                e.x /= self.DPIScale;
-            }
-
-            if (e.y) {
-                e.y /= self.DPIScale;
-            }
-
-            if (e.type == 'windowsize') {
-                e.width /= self.DPIScale;
-                e.height /= self.DPIScale;
-            }
 
             input.processEvent(self,e);
         });
