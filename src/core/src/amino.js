@@ -93,9 +93,13 @@ amino.getCore = function () {
     return Core._core;
 };
 
+//basic
 amino.Group = prims.Group;
 amino.Rect = prims.Rect;
 amino.Text = prims.Text;
 amino.Polygon = prims.Polygon;
 amino.ImageView = prims.ImageView;
 amino.Circle = prims.Circle;
+
+//extended
+amino.PixelView = prims.PixelView;

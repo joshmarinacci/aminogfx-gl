@@ -582,12 +582,16 @@ exports.start = function (cb) {
 
 exports.makeProps = amino_core.makeProps;
 
+//basic
 exports.Rect      = amino_core.Rect;
 exports.Group     = amino_core.Group;
 exports.Circle    = amino_core.Circle;
 exports.Polygon   = amino_core.Polygon;
 exports.Text      = amino_core.Text;
 exports.ImageView = amino_core.ImageView;
+
+//extended
+exports.PixelView = amino_core.PixelView;
 
 //initialize input handler
 exports.input.init(OS);

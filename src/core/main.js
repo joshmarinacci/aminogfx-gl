@@ -419,3 +419,5 @@ exports.Polygon = amino.Polygon;
 exports.Circle = amino.Circle;
 exports.ImageView = amino.ImageView;
 exports.ParseRGBString = amino.primitives.ParseRGBString;
+
+exports.PixelView = amino.PixelView;

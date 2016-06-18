@@ -574,7 +574,7 @@ exports.ParseRGBString = ParseRGBString;
 /**
  * PixelView object.
  */
-exports.PixelView = function() {
+exports.PixelView = function () {
     amino.makeProps(this, {
         id: 'unknown id',
         visible: true,
@@ -591,13 +591,13 @@ exports.PixelView = function() {
         textureLeft: 0,
         textureRight: 1,
         textureTop:  0,
-        textureBottom: 1,
-        //image:null,
+        textureBottom: 1
     });
 
     var self = this;
 
-    this.handle = amino.native.createRect();
+    this.handle = amino.getCore().getNative().createRect();
+
     mirrorAmino(this, {
         x: 'x',
         y: 'y',
@@ -651,9 +651,9 @@ exports.PixelView = function() {
 
     this.updateTexture = function () {
         //when the image is loaded, update the texture id and dimensions
-        var img = amino.native.loadBufferToTexture(texid,self.pw(),self.ph(), 4, self.buf, function (image) {
+        var img = amino.getCore().getNative().loadBufferToTexture(texid, self.pw(), self.ph(), 4, self.buf, function (image) {
 	        texid = image.texid;
-            amino.native.updateProperty(self.handle, 'texid', image.texid);
+            amino.getCore().getNative().updateProperty(self.handle, 'texid', image.texid);
         });
     };
     this.setPixel = function(x, y, r, g, b, a) {
@@ -685,19 +685,17 @@ exports.PureImageView = function() {
 
     ctx.fillStyle = '#00FF00';
 
-    piv.getContext = function() {
+    piv.getContext = function () {
         return ctx;
     };
-    piv.sync = function() {
+
+    piv.sync = function () {
         //copy pixels
-        for(var i = 0; i < img.width; i++) {
-            for(var j = 0; j < img.height; j++) {
+        for (var i = 0; i < img.width; i++) {
+            for (var j = 0; j < img.height; j++) {
                 var pixel = ctx.getPixeli32(i, j);
 
-                if (i >= this.pw()) {
-                    continue;
-                }
-                if (j >= this.ph()) {
+                if (i >= this.pw() || j >= this.ph()) {
                     continue;
                 }
 
@@ -711,12 +709,15 @@ exports.PureImageView = function() {
     return piv;
 };
 
+/**
+ * Rich text view.
+ */
 exports.RichTextView = function () {
     var piv = new exports.PureImageView().pw(100).w(100).ph(100).h(100);
 
     amino.makeProps(piv, {
         multiline: true,
-        enterAction: null,
+        enterAction: null
     });
 
     piv.acceptsKeyboardEvents = true;
