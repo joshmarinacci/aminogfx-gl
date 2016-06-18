@@ -23,7 +23,7 @@ function getAmino() {
  *  - objects: r, g, b (0..1)
  */
 function ParseRGBString(Fill) {
-    if (typeof Fill == "string") {
+    if (typeof Fill == 'string') {
         //strip off any leading #
         if (Fill.substring(0, 1) == '#') {
             Fill = Fill.substring(1);

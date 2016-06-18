@@ -420,4 +420,5 @@ exports.Circle = amino.Circle;
 exports.ImageView = amino.ImageView;
 exports.ParseRGBString = amino.primitives.ParseRGBString;
 
-exports.PixelView = amino.PixelView;
+exports.PixelView    = amino.PixelView;
+exports.RichTextView = amino.RichTextView;

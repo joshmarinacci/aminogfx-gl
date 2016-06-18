@@ -102,4 +102,5 @@ amino.ImageView = prims.ImageView;
 amino.Circle = prims.Circle;
 
 //extended
-amino.PixelView = prims.PixelView;
+amino.PixelView    = prims.PixelView;
+amino.RichTextView = prims.RichTextView;

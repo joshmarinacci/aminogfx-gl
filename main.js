@@ -297,7 +297,7 @@ var gl_native = {
     createNativeFont: function (path) {
         return sgtest.createNativeFont(path, __dirname + '/resources/shaders');
     },
-    registerFont:function (args) {
+    registerFont: function (args) {
         fontmap[args.name] = new JSFont(args);
     },
     init: function (core) {
@@ -317,7 +317,7 @@ var gl_native = {
                 //report
                 console.log(ex);
                 console.log(ex.stack);
-                console.log("EXCEPTION. QUITTING!");
+                console.log('EXCEPTION. QUITTING!');
                 return;
             }
 
@@ -568,6 +568,7 @@ exports.start = function (cb) {
     });
 
     //mirror fonts to PureImage
+    //FIXME rich text view broken
     /*
     var source_font = exports.getRegisteredFonts().source;
     var fnt = PImage.registerFont(source_font.filepaths[400],source_font.name);
@@ -576,6 +577,7 @@ exports.start = function (cb) {
         Core._core.start();
     });
     */
+
     cb(core, stage);
     core.start();
 };
@@ -591,7 +593,8 @@ exports.Text      = amino_core.Text;
 exports.ImageView = amino_core.ImageView;
 
 //extended
-exports.PixelView = amino_core.PixelView;
+exports.PixelView    = amino_core.PixelView;
+exports.RichTextView = amino_core.RichTextView;
 
 //initialize input handler
 exports.input.init(OS);
