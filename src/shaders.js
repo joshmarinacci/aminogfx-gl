@@ -7,6 +7,7 @@
 var DEBUG = false;
 
 var fs = require('fs');
+var path = require('path');
 
 var Shader = {
     /**
@@ -144,8 +145,8 @@ exports.init = function (sgtest, OS) {
     }
 
     //color shader
-    cshader.vertText = loadShaderCode(__dirname + '/shaders/color.vert', OS);
-    cshader.fragText = loadShaderCode(__dirname + '/shaders/color.frag', OS);
+    cshader.vertText = loadShaderCode(path.join(__dirname, '/shaders/color.vert'), OS);
+    cshader.fragText = loadShaderCode(path.join(__dirname, '/shaders/color.frag'), OS);
     cshader.build();
 
     cshader.useProgram();
@@ -166,8 +167,8 @@ exports.init = function (sgtest, OS) {
     var tshader = Object.create(Shader);
 
     tshader.GL = sgtest;
-    tshader.vertText = loadShaderCode(__dirname + '/shaders/texture.vert');
-    tshader.fragText = loadShaderCode(__dirname + '/shaders/texture.frag');
+    tshader.vertText = loadShaderCode(path.join(__dirname, '/shaders/texture.vert'), OS);
+    tshader.fragText = loadShaderCode(path.join(__dirname, '/shaders/texture.frag'), OS);
     tshader.build();
 
     tshader.useProgram();

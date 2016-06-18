@@ -35,23 +35,23 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
     //draw
     switch (root->type) {
         case GROUP:
-            this->drawGroup(c,(Group*)root);
+            this->drawGroup(c, (Group *)root);
             break;
 
         case RECT:
-            this->drawRect(c,(Rect*)root);
+            this->drawRect(c, (Rect *)root);
             break;
 
         case POLY:
-            this->drawPoly(c,(PolyNode*)root);
+            this->drawPoly(c, (PolyNode *)root);
             break;
 
         case TEXT:
-            this->drawText(c,(TextNode*)root);
+            this->drawText(c, (TextNode *)root);
             break;
 
         case GLNODE:
-            this->drawGLNode(c, (GLNode*)root);
+            this->drawGLNode(c, (GLNode *)root);
             break;
     }
 
@@ -81,16 +81,16 @@ void colorShaderApply(GLContext *ctx, ColorShader* shader, GLfloat modelView[16]
     glDisableVertexAttribArray(shader->attr_color);
 }
 
-void textureShaderApply(GLContext *ctx, TextureShader* shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], int texid, GLfloat opacity) {
-    //void TextureShader::apply(GLfloat modelView[16], GLfloat trans[16], GLfloat verts[][2], GLfloat texcoords[][2], int texid) {
-    //        textureShaderApply(c,textureShader, modelView, verts, texcoords, rect->texid);
-
+void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], int texid, GLfloat opacity) {
     //printf("doing texture shader apply %d opacity = %f\n",texid, opacity);
 
     ctx->useProgram(shader->prog);
+
+    //blend
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    //shader values
     glUniformMatrix4fv(shader->u_matrix, 1, GL_FALSE, modelView);
     glUniformMatrix4fv(shader->u_trans,  1, GL_FALSE, ctx->globaltx);
     glUniform1f(shader->u_opacity, opacity);
@@ -98,12 +98,12 @@ void textureShaderApply(GLContext *ctx, TextureShader* shader, GLfloat modelView
     glVertexAttribPointer(shader->attr_texcoords, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
     glEnableVertexAttribArray(shader->attr_texcoords);
 
-    glVertexAttribPointer(shader->attr_pos,   2, GL_FLOAT, GL_FALSE, 0, verts);
+    glVertexAttribPointer(shader->attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
     glEnableVertexAttribArray(shader->attr_pos);
     glActiveTexture(GL_TEXTURE0);
 
-    ctx->bindTexture(texid );
-    //glBindTexture(GL_TEXTURE_2D, texid);
+    //render
+    ctx->bindTexture(texid);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glDisableVertexAttribArray(shader->attr_pos);
@@ -227,7 +227,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
     glDisableVertexAttribArray(colorShader->attr_color);
 }
 
-void SimpleRenderer::drawRect(GLContext* c, Rect* rect) {
+void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     c->save();
 
     float x =  0;
@@ -254,9 +254,10 @@ void SimpleRenderer::drawRect(GLContext* c, Rect* rect) {
     GLfloat colors[6][3];
 
     for (int i = 0; i < 6; i++) {
-        for(int j = 0; j < 3; j++) {
+        for (int j = 0; j < 3; j++) {
             colors[i][j] = 0.5;
-            if(j==0) {
+
+            if (j==0) {
                 colors[i][j] = rect->r;
             } else if (j==1) {
                 colors[i][j] = rect->g;
@@ -267,6 +268,7 @@ void SimpleRenderer::drawRect(GLContext* c, Rect* rect) {
     }
 
     if (rect->texid != INVALID) {
+        //texture
         GLfloat texcoords[6][2];
         float tx  = rect->left;
         float ty2 = rect->bottom;//1;
@@ -281,9 +283,10 @@ void SimpleRenderer::drawRect(GLContext* c, Rect* rect) {
         texcoords[4][0] = tx;    texcoords[4][1] = ty2;
         texcoords[5][0] = tx;    texcoords[5][1] = ty;
 
-        textureShaderApply(c,textureShader, modelView, verts, texcoords, rect->texid, rect->opacity);
+        textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->texid, rect->opacity);
     } else {
-        colorShaderApply(c,colorShader, modelView, verts, colors, rect->opacity);
+        //color
+        colorShaderApply(c, colorShader, modelView, verts, colors, rect->opacity);
     }
 
     c->restore();
@@ -291,7 +294,7 @@ void SimpleRenderer::drawRect(GLContext* c, Rect* rect) {
 
 int te = 0;
 
-void SimpleRenderer::drawText(GLContext* c, TextNode* text) {
+void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     if (fontmap.size() < 1) {
         return;
     }

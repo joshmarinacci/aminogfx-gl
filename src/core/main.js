@@ -329,18 +329,17 @@ function Stage (core) {
 	this.core = core;
 
     amino.makeProps(this, {
-        x: 0,
-        y: 0,
         w: 100,
         h: 100,
         opacity: 1.0,
         transparent: false,
-        smooth: true,
-        fill: "#000000"
-    });
+        fill: '#000000',
 
-    //FIXME stage size cannot be changed -> watch w/h
-    //TODO are x and y used?
+        //not used
+        x: 0,
+        y: 0,
+        smooth: true
+    });
 
     var self = this;
 

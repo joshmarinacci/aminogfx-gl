@@ -128,6 +128,7 @@ void TextNode::refreshText() {
 
     vec2 pen = {{5,400}};
     vec4 black = {{0,1,0,1}};
+
     pen.x = 0;
     pen.y = 0;
     black.r = r;
@@ -647,8 +648,8 @@ NAN_METHOD(createNativeFont) {
     char *shader_base = TO_CHAR(info[1]);
 
     if (DEBUG_BASE) {
-        printf("loading font file %s\n",afont->filename);
-        printf("shader base = %s\n",shader_base);
+        printf("loading font file %s\n", afont->filename);
+        printf("shader base = %s\n", shader_base);
     }
 
     std::string str ("");
@@ -664,6 +665,9 @@ NAN_METHOD(createNativeFont) {
     info.GetReturnValue().Set(id);
 }
 
+/**
+ * Set color shader bindings.
+ */
 NAN_METHOD(initColorShader) {
     if (info.Length() < 5) {
         printf("initColorShader: not enough args\n");
@@ -674,10 +678,14 @@ NAN_METHOD(initColorShader) {
     colorShader->u_matrix    = info[1]->Uint32Value();
     colorShader->u_trans     = info[2]->Uint32Value();
     colorShader->u_opacity   = info[3]->Uint32Value();
+
     colorShader->attr_pos    = info[4]->Uint32Value();
     colorShader->attr_color  = info[5]->Uint32Value();
 }
 
+/**
+ * Set texture shader bindings.
+ */
 NAN_METHOD(initTextureShader) {
     if (info.Length() < 6) {
         printf("initTextureShader: not enough args\n");

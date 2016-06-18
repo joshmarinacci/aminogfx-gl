@@ -7,13 +7,13 @@ amino.start(function (core, stage) {
     stage.setRoot(root);
 
     //rect
-    var rect = new amino.Rect().fill("#00ff00").opacity(1.0);
+    var rect = new amino.Rect().fill('#00ff00').opacity(1.0);
 
     root.add(rect);
     rect.opacity.anim().from(1.0).to(0.0).dur(1000).loop(-1).start();
 
     //text
-    var text = new amino.Text().fill("#ff0000").opacity(1.0).x(100).y(200);
+    var text = new amino.Text().fill('#ff0000').opacity(1.0).x(100).y(200);
 
     text.text('Sample Text');
     text.opacity.anim().from(0.0).to(1.0).dur(1000).loop(-1).start();
