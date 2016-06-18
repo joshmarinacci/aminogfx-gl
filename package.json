@@ -21,6 +21,7 @@
     "moment": "^2.13.0",
     "nan": "^2.0.9",
     "node-pre-gyp": "0.6.x",
+    "onecolor": "^3.0.4",
     "pureimage": "0.0.13",
     "richtext": "0.0.4",
     "wrench": "^1.5.8"
