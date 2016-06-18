@@ -4,17 +4,18 @@
 
 var amino = require('../../main.js');
 var fs = require('fs');
+var path = require('path');
 var Group = amino.Group;
 var ImageView = amino.ImageView;
 
 if (process.argv.length < 3) {
-    console.log("you must provide a directory to use");
+    console.log('you must provide a directory to use');
     return;
 }
 
 var dir = process.argv[2];
-var filelist = fs.readdirSync(dir).map(function(file) {
-    return dir+'/'+file;
+var filelist = fs.readdirSync(dir).map(function (file) {
+    return path.join(dir, file);
 });
 
 function CircularBuffer(arr) {
