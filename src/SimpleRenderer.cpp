@@ -174,24 +174,25 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
 }
 
 void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
-    int len = poly->geometry->size();
+    std::vector<float> *geometry = poly->getGeometry();
+    int len = geometry->size();
     int dim = poly->dimension;
     GLfloat verts[len][dim];// = malloc(sizeof(GLfloat[2])*len);
 
     for (int i = 0; i < len / dim; i++) {
-        verts[i][0] = poly->geometry->at(i * dim);
+        verts[i][0] = geometry->at(i * dim);
 
         if (dim >=2) {
-            verts[i][1] = poly->geometry->at(i * dim + 1);
+            verts[i][1] = geometry->at(i * dim + 1);
         }
         if (dim >=3) {
-            verts[i][2] = poly->geometry->at(i * dim + 2);
+            verts[i][2] = geometry->at(i * dim + 2);
         }
     }
 
     GLfloat colors[len][3];
 
-    for(int i = 0; i < len / dim; i++) {
+    for (int i = 0; i < len / dim; i++) {
         colors[i][0] = poly->r;
         colors[i][1] = poly->g;
         colors[i][2] = poly->b;
@@ -218,9 +219,9 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
     glEnableVertexAttribArray(colorShader->attr_color);
 
     if (poly->filled == 1) {
-        glDrawArrays(GL_TRIANGLE_FAN, 0, len/dim);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, len / dim);
     } else {
-        glDrawArrays(GL_LINE_LOOP, 0, len/dim);
+        glDrawArrays(GL_LINE_LOOP, 0, len / dim);
     }
 
     glDisableVertexAttribArray(colorShader->attr_pos);

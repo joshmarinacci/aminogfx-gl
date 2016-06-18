@@ -260,6 +260,8 @@ public:
  * Animation class.
  */
 class Anim {
+private:
+    Nan::Callback *then;
 public:
     AminoNode *target;
     float start;
@@ -275,7 +277,6 @@ public:
     float duration;
     bool autoreverse;
     int direction;
-    Nan::Callback *then;
     int lerptype;
 
     static const int FORWARD = 1;
@@ -311,6 +312,21 @@ public:
         if (then) {
             delete then;
         }
+    }
+
+    /**
+     * Set then callback value.
+     */
+    void setThen(Nan::Callback *then) {
+        if (this->then == then) {
+            return;
+        }
+
+        if (then) {
+            delete then;
+        }
+
+        this->then = then;
     }
 
     /**
@@ -583,11 +599,12 @@ public:
  * Polygon node class.
  */
 class PolyNode : public AminoNode {
+private:
+    std::vector<float> *geometry;
 public:
     float r;
     float g;
     float b;
-    std::vector<float>* geometry;
     int dimension;
     int filled;
 
@@ -604,27 +621,48 @@ public:
         //not filled
         filled = 0;
 
-        //default: 2D triangle
+        //default: 2D, empty
         dimension = 2;
         geometry = new std::vector<float>();
-        geometry->push_back(0);
-        geometry->push_back(0);
-        geometry->push_back(50);
-        geometry->push_back(0);
-        geometry->push_back(50);
-        geometry->push_back(50);
     }
 
     virtual ~PolyNode() {
     }
 
+    /**
+     * Set list of coordinates.
+     */
+    void setGeometry(std::vector<float> *arr) {
+        if (geometry == arr) {
+            return;
+        }
+
+        if (geometry) {
+            delete geometry;
+        }
+
+        geometry = arr;
+    }
+
+    /**
+     * Get list of coordinates.
+     */
+    std::vector<float>* getGeometry() {
+        return geometry;
+    }
+
+    /**
+     * Free memory.
+     */
     void destroy() {
         if (DEBUG_BASE) {
             printf("PolyNode: destroy()\n");
         }
 
+        //super
         AminoNode::destroy();
 
+        //this
         if (geometry) {
             delete geometry;
             geometry = NULL;
@@ -745,8 +783,7 @@ public:
                     break;
 
                 case THEN:
-                    //FIXME memory leak, old value
-                    anim->then = callback;
+                    anim->setThen(callback);
                     break;
 
                 default:
@@ -951,8 +988,7 @@ public:
                     break;
 
                 case GEOMETRY:
-                    //FIXME memory leak
-                    polynode->geometry = arr;
+                    polynode->setGeometry(arr);
                     break;
 
                 case DIMENSION:
