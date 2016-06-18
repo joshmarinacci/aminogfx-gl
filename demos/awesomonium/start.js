@@ -201,7 +201,8 @@ function buildGlobe(group) {
         var x = rad * cos(el) * sin(az);
         var y = rad * cos(el) * cos(az);
         var z = rad * sin(el);
-        return [x,y,z];
+
+        return [x, y, z];
     }
 
     function addCountry(nz) {
@@ -210,9 +211,11 @@ function buildGlobe(group) {
             var border = nz.borders[i];
             var points = [];
             var poly = new amino.Polygon();
-            for(var j=0; j<border.length; j++) {
+
+            for (var j=0; j<border.length; j++) {
                 var point = border[j];
                 var pts = latlon2xyz(point.lat,point.lng,radius);
+
                 points.push(pts[0]);
                 points.push(pts[1]);
                 points.push(pts[2]);
