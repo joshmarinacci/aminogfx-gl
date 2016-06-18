@@ -278,7 +278,7 @@ NAN_METHOD(updateProperty) {
         wstr = GetWString(info[2]->ToString());
 
         if (DEBUG_BASE) {
-            printf("-> string '%s' on prop %d\n", wstr.c_str(), property);
+            printf("-> string '%S' on prop %d\n", wstr.c_str(), property);
         }
     } else if (info[2]->IsArray()) {
         if (DEBUG_BASE) {

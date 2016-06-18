@@ -163,7 +163,7 @@ texture_glyph_delete( texture_glyph_t *self )
 }
 
 // ---------------------------------------------- texture_glyph_get_kerning ---
-float 
+float
 texture_glyph_get_kerning( const texture_glyph_t * self,
                            const wchar_t charcode )
 {
@@ -192,7 +192,7 @@ texture_font_generate_kerning( texture_font_t *self )
     FT_UInt glyph_index, prev_index;
     texture_glyph_t *glyph, *prev_glyph;
     FT_Vector kerning;
-    
+
     assert( self );
 
     /* Load font */
@@ -241,7 +241,7 @@ texture_font_new( texture_atlas_t * atlas,
     FT_Library library;
     FT_Face face;
     FT_Size_Metrics metrics;
-    
+
     assert( filename );
     assert( size );
 
@@ -294,7 +294,7 @@ texture_font_new( texture_atlas_t * atlas,
         self->underline_thickness = 1.0;
     }
 
-    metrics = face->size->metrics; 
+    metrics = face->size->metrics;
     self->ascender = (metrics.ascender >> 6) / 100.0;
     self->descender = (metrics.descender >> 6) / 100.0;
     self->height = (metrics.height >> 6) / 100.0;
@@ -478,8 +478,8 @@ texture_font_load_glyphs( texture_font_t * self,
                 FT_Done_FreeType( library );
                 return 0;
             }
-          
-            printf("depth = %d\n");
+
+            printf("depth = %d\n", (int)depth);
             if( depth == 1)
             {
                 error = FT_Glyph_To_Bitmap( &ft_glyph, FT_RENDER_MODE_NORMAL, 0, 1);
@@ -548,7 +548,7 @@ texture_font_load_glyphs( texture_font_t * self,
         glyph->t0       = y/(float)height;
         glyph->s1       = (x + glyph->width)/(float)width;
         glyph->t1       = (y + glyph->height)/(float)height;
-        
+
 
         // Discard hinting to get advance
         FT_Load_Glyph( face, glyph_index, FT_LOAD_RENDER | FT_LOAD_NO_HINTING);
@@ -592,7 +592,7 @@ texture_font_get_glyph( texture_font_t * self,
         glyph = *(texture_glyph_t **) vector_get( self->glyphs, i );
         // If charcode is -1, we don't care about outline type or thickness
         if( (glyph->charcode == charcode) &&
-            ((charcode == (wchar_t)(-1) ) || 
+            ((charcode == (wchar_t)(-1) ) ||
              ((glyph->outline_type == self->outline_type) &&
               (glyph->outline_thickness == self->outline_thickness)) ))
         {

@@ -1,5 +1,6 @@
 #ifndef AMINOGFX
 #define AMINOGFX
+
 #include "freetype-gl.h"
 #include "vertex-buffer.h"
 #include <nan.h>
@@ -12,8 +13,11 @@
 //return the current time in msec
 static double getTime(void) {
     timeval time;
+
     gettimeofday(&time, NULL);
+
     double millis = (time.tv_sec * 1000.0) + (time.tv_usec / 1000.0);
+
     return millis;
 }
 
@@ -39,8 +43,11 @@ static double getTime(void) {
 //return the current time in msec
 static double getTime(void) {
     timeval time;
+
     gettimeofday(&time, NULL);
+
     double millis = (time.tv_sec * 1000.0) + (time.tv_usec / 1000.0);
+
     return millis;
 }
 #endif
