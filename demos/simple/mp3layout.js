@@ -1,19 +1,25 @@
+'use strict';
+
 var gfx = require('../../main.js');
 var cs = require('../../src/core/srcConstraintSolver').getGlobal(); //FIXME broken
 
-var Lbuild = function() {
+var Lbuild = function () {
     var text  = new gfx.Text();
+
     gfx.makeProps(text,{w:10,h:10,});
+
     function recalc() {
         text.w(text.calcWidth());
         text.h(text.calcHeight());
     }
+
     text.text.watch(recalc);
     text.fontSize.watch(recalc);
+
     return text;
 };
 
-gfx.start(function(core, stage) {
+gfx.start(function (core, stage) {
     var root = new gfx.Group();
 
     var window = new gfx.Group();

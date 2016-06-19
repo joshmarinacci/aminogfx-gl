@@ -90,18 +90,18 @@ static bool eventCallbackSet = false;
 extern int width;
 extern int height;
 
-extern ColorShader* colorShader;
-extern TextureShader* textureShader;
-extern GLfloat* modelView;
-extern GLfloat* globaltx;
+extern ColorShader *colorShader;
+extern TextureShader *textureShader;
+extern GLfloat *modelView;
+extern GLfloat *globaltx;
 extern float window_fill_red;
 extern float window_fill_green;
 extern float window_fill_blue;
 extern float window_opacity;
 
-extern std::stack<void*> matrixStack;
+extern std::stack<void *> matrixStack;
 extern int rootHandle;
-extern std::map<int,AminoFont*> fontmap;
+extern std::map<int, AminoFont *> fontmap;
 extern Nan::Callback *NODE_EVENT_CALLBACK;
 
 /**

@@ -139,19 +139,25 @@ var timeFuncsHash = {
 function JSFont(desc) {
     this.name = desc.name;
 
+    //regular
     var reg = desc.weights[400];
 
+    //properties
     this.desc = desc;
     this.weights = {};
     this.filepaths = {};
 
+    //path
     var aminodir = path.join(__dirname, 'resources/');
 
     if (desc.path) {
         aminodir = desc.path;
     }
 
+    //iterate weights
     for (var weight in desc.weights) {
+        //load normal style
+        //FIXME style not used
         var filepath = path.join(aminodir, desc.weights[weight].normal);
 
         if (!fs.existsSync(filepath)) {
@@ -163,12 +169,14 @@ function JSFont(desc) {
     }
 
     this.getNative = function (size, weight, style) {
-        if (this.weights[weight] != undefined) {
+        //FIXME style not used
+        if (this.weights[weight]) {
             return this.weights[weight];
         }
 
         console.log('ERROR. COULDN\'T find the native for ' + size + ' ' + weight + ' ' + style);
 
+        //return regular
         return this.weights[400];
     };
 
@@ -292,6 +300,9 @@ var gl_native = {
     },
     registerFont: function (args) {
         fontmap[args.name] = new JSFont(args);
+    },
+    getRegisteredFonts: function () {
+        return fontmap;
     },
     init: function (core) {
         return sgtest.init();
@@ -553,17 +564,6 @@ exports.start = function (cb) {
     stage.opacity.watch(function () {
         gl_native.updateWindowProperty(stage, 'opacity', stage.opacity());
     });
-
-    //mirror fonts to PureImage
-    //FIXME rich text view broken
-    /*
-    var source_font = exports.getRegisteredFonts().source;
-    var fnt = PImage.registerFont(source_font.filepaths[400],source_font.name);
-    fnt.load(function() {
-        cb(Core._core,stage);
-        Core._core.start();
-    });
-    */
 
     cb(core, stage);
     core.start();

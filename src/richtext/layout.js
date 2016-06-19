@@ -88,7 +88,10 @@ exports.generateRenderTree = function(frame, viewport, fctx) {
                 var font_family = lookupStyle(span,'font-family');
                 var font_weight = lookupStyle(span,'font-weight');
                 var font_style = lookupStyle(span,'font-style');
+                var lastwidth = 0;
+
                 len += fctx.charWidth(char, font_size, font_family, font_weight, font_style);
+
                 if(char == ' ') {
                     lastwidth = len;
                     sincelastspace = 0;

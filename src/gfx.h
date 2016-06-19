@@ -70,12 +70,13 @@ class AminoFont {
 public:
     int id;
     texture_atlas_t *atlas;
-    std::map<int,texture_font_t*> fonts;
-    const char* filename;
+    std::map<int, texture_font_t *> fonts;
+    const char *filename;
     GLuint shader;
     GLint texuni;
     GLint mvpuni;
     GLint transuni;
+
     AminoFont() {
         texuni = -1;
     }

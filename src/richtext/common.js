@@ -2,7 +2,8 @@
 
 exports.DEFAULT_STYLE = {
     'color': '#000000',
-    'font': '20px sans-serif',
+    //'font': '20px sans-serif',
+    'font': '20px source',
     'font-family': 'monospace',
     'font-size': 20,
     'font-weight': 'normal',

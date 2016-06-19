@@ -1,10 +1,11 @@
 'use strict';
 
-var amino = require('./amino');
 var fs = require('fs');
-var PImage = require('pureimage');
-var comp = require('richtext');
-var events = require('inputevents');
+var async = require('async');
+
+var amino = require('./amino');
+var PImage = require('../../pureimage/pureimage');
+var comp = require('../../richtext/component');
 
 /**
  * Convert RGB expression to object.
@@ -613,7 +614,7 @@ exports.PixelView = function () {
     rebuildBuffer();
 };
 
-exports.PureImageView = function() {
+exports.PureImageView = function () {
     var piv = new exports.PixelView();
     var img = PImage.make(800, 600);
     var ctx = img.getContext('2d');
@@ -644,6 +645,8 @@ exports.PureImageView = function() {
     return piv;
 };
 
+var pureimageFontsRegistered = false;
+
 /**
  * Rich text view.
  */
@@ -666,13 +669,14 @@ exports.RichTextView = function () {
             height: piv.ph(),
             multiline: piv.multiline(),
             enterAction: piv.enterAction(),
-            charWidth : function (ch,
+            charWidth: function (ch,
                 font_size,
                 font_family,
                 font_weight,
                 font_style
             ) {
                 ctx.setFont(font_family, font_size);
+
                 return ctx.measureText(ch).width;
             },
             requestAnimationFrame: function (redraw) {
@@ -681,15 +685,57 @@ exports.RichTextView = function () {
             }
         };
 
-        var rte = comp.makeRichTextView(config);
+        //register fonts
+        if (!pureimageFontsRegistered) {
+            pureimageFontsRegistered = true;
 
-        piv.editor = rte;
-        rte.relayout();
-        rte.redraw();
+            var fonts = amino.getCore().getNative().getRegisteredFonts();
+            var regFonts = [];
 
-        amino.getCore().on('keypress', piv, function (e) {
-            rte.processKeyEvent(e);
-        });
+            for (var name in fonts) {
+                var font = fonts[name];
+
+                //iterate weights
+                for (var weight in font.weights) {
+                    var binary = font.filepaths[weight];
+                    var family = font.desc.name;
+                    var style = 'normal';
+                    var variant = null;
+
+                    //debug
+                    //FIXME style handling
+                    //console.log('font: ' + binary + ' ' + family + ' ' + style);
+
+                    var regFont = PImage.registerFont(binary, family, weight, style, variant);
+
+                    if (regFont) {
+                        regFonts.push(regFont);
+                    }
+                }
+            }
+
+            //load
+            async.each(regFonts, function(font, done) {
+                font.load(done);
+            }, function (err) {
+                ready();
+            });
+        } else {
+            ready();
+        }
+
+        //create view
+        function ready() {
+            var rte = comp.makeRichTextView(config);
+
+            piv.editor = rte;
+            rte.relayout();
+            rte.redraw();
+
+            amino.getCore().on('keypress', piv, function (e) {
+                rte.processKeyEvent(e);
+            });
+        }
     };
 
     return piv;

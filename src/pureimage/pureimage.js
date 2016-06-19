@@ -220,6 +220,7 @@ function Bitmap4BBPContext(bitmap) {
             }
         }
     };
+
     this.stroke = function() {
         var lines = pathToLines(this.path);
         var ctx = this;
@@ -237,9 +238,15 @@ function Bitmap4BBPContext(bitmap) {
         ctx.closePath();
     }
 
-    this.fillRect   = function(x,y,w,h) {  makeRectPath(this,x,y,w,h);   this.fill();    };
+    this.fillRect   = function(x,y,w,h) {
+        makeRectPath(this,x,y,w,h);
+        this.fill();
+    };
 
-    this.strokeRect = function(x,y,w,h) {  makeRectPath(this,x,y,w,h);   this.stroke();  };
+    this.strokeRect = function(x,y,w,h) {
+        makeRectPath(this,x,y,w,h);
+        this.stroke();
+    };
 
     this.clearRect  = function(x,y,w,h) {
       for(var i=x; i<x+w; i++) {
@@ -249,19 +256,19 @@ function Bitmap4BBPContext(bitmap) {
       }
     };
 
-
-
     // ================  Fonts and Text Drawing
 
-    this.setFont = function(family, size) {
+    this.setFont = function (family, size) {
         this._settings.font.family = family;
-        if(!_fonts[family]) {
-            console.log("WARNING. MISSING FONT FAMILY",family);
+
+        if (!_fonts[family]) {
+            console.log("WARNING. MISSING FONT FAMILY", family);
+
             this._settings.font.family = DEFAULT_FONT_FAMILY;
         }
+
         this._settings.font.size = size;
     };
-
 
     function renderGlyphToBitmap(font, ch, size) {
         var ysize = (font.font.ascender - font.font.descender)/font.font.unitsPerEm*size;
@@ -360,18 +367,23 @@ function Bitmap4BBPContext(bitmap) {
     this.fillText   = function(text, x, y) {  processTextPath(this, text, x,y, true);  };
     this.strokeText = function(text, x, y) {  processTextPath(this, text, x,y, false); };
 
-    this.measureText = function(text) {
+    this.measureText = function (text) {
         var font = _fonts[this._settings.font.family];
-        if(!font) console.log("WARNING. Can't find font family ", this._settings.font.family);
+
+        if (!font) {
+            console.log("WARNING. Can't find font family ", this._settings.font.family);
+        }
+
         var fsize = this._settings.font.size;
         var glyphs = font.font.stringToGlyphs(text);
         var advance = 0;
+
         glyphs.forEach(function(g) { advance += g.advanceWidth; });
 
         return {
-            width: advance/font.font.unitsPerEm*fsize,
-            emHeightAscent: font.font.ascender/font.font.unitsPerEm*fsize,
-            emHeightDescent: font.font.descender/font.font.unitsPerEm*fsize,
+            width: advance / font.font.unitsPerEm*fsize,
+            emHeightAscent: font.font.ascender / font.font.unitsPerEm*fsize,
+            emHeightDescent: font.font.descender / font.font.unitsPerEm*fsize,
         };
     };
 
@@ -435,7 +447,8 @@ exports.decodePNG = function(instream, cb) {
 
 var _fonts = { };
 
-exports.registerFont = function(binary, family, weight, style, variant) {
+exports.registerFont = function (binary, family, weight, style, variant) {
+    //FIXME only uses family, does not store other values!
     _fonts[family] = {
         binary: binary,
         family: family,
@@ -444,26 +457,38 @@ exports.registerFont = function(binary, family, weight, style, variant) {
         variant: variant,
         loaded: false,
         font: null,
-        load: function(cb) {
-            console.log("PureImage loading", family,weight,style,variant);
-            if(this.loaded) {
-                if(cb)cb();
+        load: function (cb) {
+            console.log('PureImage loading', family, weight, style, variant);
+
+            if (this.loaded) {
+                if (cb) {
+                    cb();
+                }
+
                 return;
             }
+
             var self = this;
+
             opentype.load(binary, function (err, font) {
-                if (err) throw new Error('Could not load font: ' + err);
+                if (err) {
+                    throw new Error('Could not load font: ' + err);
+                }
+
                 self.loaded = true;
                 self.font = font;
-                if(cb)cb();
+
+                if (cb) {
+                    cb();
+                }
             });
         }
     };
+
     return _fonts[family];
 };
+
 exports.debug_list_of_fonts = _fonts;
-
-
 
 // =============== Utility functions
 

@@ -1,99 +1,103 @@
 'use strict';
 
 var amino = require('../../main.js');
-var events = require('inputevents');
-var comp = require('richtext');
+var comp = require('../../src/richtext/component');
 var Document = comp.Document;
 
 function makeStyledJSDoc() {
     var frame = Document.makeFrame();
 
+    //styles
     frame.styles = {
-        'bold': {
+        bold: {
             'font-style': 'normal',
-            'font-family': "source",
-            'font-weight': '700',
+            'font-family': 'source',
+            'font-weight': '700'
         },
-        'italic': {
+        italic: {
             'font-style': 'italic',
-            'font-family': "source",
+            'font-family': 'source'
         },
-        'code': {
-            'color': '#000000',
-            'font-family': "source",
-            'background-color': '#ccffee',
+        code: {
+            color: '#000000',
+            'font-family': 'source',
+            'background-color': '#ccffee'
         },
-
-        'paragraph': {
-            'color': '#000000',
+        paragraph: {
+            color: '#000000',
             'font-size': 15,
-            'font-family': "source",
+            'font-family': 'source',
             'font-style': 'normal',
             'background-color': '#ffffff',
             'font-weight': '400',
             'block-padding': 15,
-            'border-color': '#000000',
+            'border-color': '#000000'
         },
-        'header': {
+        header: {
             'font-size': 30,
-            'font-family': "source",
-            'block-padding': 10,
+            'font-family': 'source',
+            'block-padding': 10
         },
-        'subheader': {
+        subheader: {
             'font-size': 20,
-            'font-family': "source",
-            'block-padding': 10,
+            'font-family': 'source',
+            'block-padding': 10
         },
-        'left': {
+        left: {
             'font-size': 25,
-            'font-family': "source",
+            'font-family': 'source',
             'block-padding': 10,
-            'text-align': 'left',
+            'text-align': 'left'
         },
-        'center': {
+        center: {
             'font-size': 25,
-            'font-family': "source",
+            'font-family': 'source',
             'block-padding': 10,
-            'text-align': 'center',
+            'text-align': 'center'
         },
-        'right': {
+        right: {
             'font-size': 25,
-            'font-family': "source",
+            'font-family': 'source',
             'block-padding': 10,
-            'text-align': 'right',
-        },
+            'text-align': 'right'
+        }
     };
 
+    //first block
     var blk = frame.insertBlock();
 
     blk.stylename = 'paragraph';
-    blk.insertSpan("This is some plain text");
-    blk.insertSpan(" italic,").stylename = 'italic';
-    blk.insertSpan(" bold,").stylename = 'bold';
-    blk.insertSpan(" and code,").stylename = 'code';
-    blk.insertSpan(" yet again.");
-    blk.insertSpan(" And now for a really long span that will have to be wrapped."
-    +" It really is pretty long, don't you think?");
+    blk.insertSpan('This is some plain text');
+    blk.insertSpan(' italic,').stylename = 'italic';
+    blk.insertSpan(' bold,').stylename = 'bold';
+    blk.insertSpan(' and code,').stylename = 'code';
+    blk.insertSpan(' yet again.');
+    blk.insertSpan(' And now for a really long span that will have to be wrapped.' +
+        ' It really is pretty long, don\'t you think?');
 
+    //second block
     var blk = frame.insertBlock();
 
     blk.stylename = 'header';
-    blk.insertSpan("This is a header");
+    blk.insertSpan('This is a header');
 
+    //third block
     var blk = frame.insertBlock();
 
     blk.stylename = 'subheader';
-    blk.insertSpan("This is a sub header");
+    blk.insertSpan('This is a sub header');
 
+    //fourth block
     var blk = frame.insertBlock();
 
     blk.stylename = 'paragraph';
-    blk.insertSpan("Another paragraph of text is here. I think this is pretty cool. Don't you think so? Let's type some more so that the text will wrap.");
+    blk.insertSpan('Another paragraph of text is here. I think this is pretty cool. Don\'t you think so? Let\'s type some more so that the text will wrap.');
 
+    //fifth block
     var blk = frame.insertBlock();
 
     blk.stylename = 'paragraph';
-    blk.insertSpan("Another paragraph of text is here. I think this is pretty cool. Don't you think so? Let's type some more so that the text will wrap.");
+    blk.insertSpan('Another paragraph of text is here. I think this is pretty cool. Don\'t you think so? Let\'s type some more so that the text will wrap.');
 
     return frame;
 }
@@ -113,6 +117,4 @@ amino.start(function (core, stage) {
     pv.sync();
 });
 
-//FIXME TypeError: Cannot read property 'font' of undefined
-//-> node_modules/pureimage/src/pureimage.js:364:26
-//=> pureimage.registerFont() not called for 'source' font
+//FIXME no output on screen

@@ -106,14 +106,17 @@ function drawLine(c,line, currentLine, frame) {
         c.fillStyle = LINE_HIGHLIGHT_COLOR;
         c.fillRect(0,0,line.w,line.h);
     }
-    line.runs.forEach(function(run) {
+
+    line.runs.forEach(function (run) {
         c.save();
         //c.fillStyle = 'black';
-        var font_family = 'sans-serif';
+        //var font_family = 'sans-serif';
+        var font_family = 'source';
         var font_size = 20;
         var font_weight = 'normal';
         var font_style = 'normal';
         //c.font = '20px sans-serif';
+
         if(run.style['font-size']) {
             font_size = run.style['font-size'];
         }
@@ -126,7 +129,9 @@ function drawLine(c,line, currentLine, frame) {
         if(run.style['font-style']) {
             font_style = run.style['font-style'];
         }
+
         var fstring = font_style + ' ' + font_weight + ' ' + font_size + 'px ' + font_family;
+
         c.font = fstring;
         if(c.setFont) c.setFont(font_family,font_size);
 
