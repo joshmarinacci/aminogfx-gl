@@ -11,18 +11,20 @@ var config = null;
 function requestAnimationFrame(arg) {
     config.requestAnimationFrame(arg);
 }
+
 var Viewport = {
-    makeViewport: function(w,h) {
+    makeViewport: function (w, h) {
         return {
-            type:"viewport",
+            type: 'viewport',
             w:w,
-            h:h,
+            h:h
         };
     }
 };
 
-exports.applyBlockStyle = function(doc, stylename) {
+exports.applyBlockStyle = function (doc, stylename) {
     var path = doc.cursor.getCurrentSpot();
+
     path.block.stylename = stylename;
     doc.relayout();
     requestAnimationFrame(doc.redraw);
@@ -284,7 +286,7 @@ var keyevent_to_actions =  {
     'forward_delete':'delete-forward',
 
     'control-f':'cursor-right',
-    'control-b':'cursor-left',
+    //'control-b':'cursor-left', //FIXME duplicate
     'control-n':'cursor-down',
     'control-p':'cursor-up',
 
@@ -389,6 +391,7 @@ exports.makeRichTextView = function(conf) {
 
     function tryAction(str) {
         var actname = keyevent_to_actions[str];
+
         if(actname) {
             var action = key_actions[actname];
             if(action) {
@@ -457,10 +460,13 @@ exports.makeRichTextView = function(conf) {
         });
     }
 
-    if(config.document) config.document.addEventListener('keydown', function(e) {
-        var evt = keyboard.cookKeyboardEvent(e);
-        processKeyEvent(evt,e);
-    });
+    if (config.document) {
+        config.document.addEventListener('keydown', function(e) {
+           var evt = keyboard.cookKeyboardEvent(e);
+
+            processKeyEvent(evt,e);
+        });
+    }
 
     function processKeyEvent(evt,e) {
         if(!evt.recognized)   return;

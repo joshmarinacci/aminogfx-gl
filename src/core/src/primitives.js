@@ -660,7 +660,10 @@ exports.RichTextView = function () {
 
     piv.acceptsKeyboardEvents = true;
 
-    piv.build = function (frame) {
+    /**
+     * Build the document.
+     */
+    piv.build = function (frame, done) {
         var ctx = piv.getContext();
         var config = {
             context: ctx,
@@ -735,6 +738,9 @@ exports.RichTextView = function () {
             amino.getCore().on('keypress', piv, function (e) {
                 rte.processKeyEvent(e);
             });
+
+            //ready
+            done();
         }
     };
 

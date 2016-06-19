@@ -1,9 +1,9 @@
+'use strict';
+
 function cookKeyboardEvent(e) {
     //console.log(e);
 
-
     var KEYS = {
-        BACK_DELETE:"BACK_DELETE",
         RIGHT:"RIGHT",
         LEFT:"LEFT",
         DOWN:'DOWN',
@@ -97,6 +97,5 @@ function cookKeyboardEvent(e) {
         recognized:false,
     };
 }
-
 
 exports.cookKeyboardEvent = cookKeyboardEvent;

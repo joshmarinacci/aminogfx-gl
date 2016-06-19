@@ -112,9 +112,13 @@ amino.start(function (core, stage) {
 
     var pv = new amino.RichTextView();
 
-    root.add(pv);
-    pv.build(makeStyledJSDoc());
-    pv.sync();
-});
+    //FIXME size
+    pv.w(600).h(600);
 
-//FIXME no output on screen
+    //FIXME no content displayed
+
+    root.add(pv);
+    pv.build(makeStyledJSDoc(), function () {
+        pv.sync();
+    });
+});
