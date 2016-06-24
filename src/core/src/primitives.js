@@ -56,6 +56,24 @@ function setFill(val, prop, obj) {
     n.updateProperty(obj.handle, 'b', color.b);
 }
 
+/**
+ * Set text vertical alignment.
+ */
+function setVAlign(val, prop, obj) {
+    var n = amino.getCore().getNative();
+
+    n.updateProperty(obj.handle, 'vAlign', n.textVAlignHash[val]);
+}
+
+/**
+ * Set text wrapping mode.
+ */
+function setWrap(val, prop, obj) {
+    var n = amino.getCore().getNative();
+
+    n.updateProperty(obj.handle, 'wrap', n.textWrapHash[val]);
+}
+
 //native async updates
 var setters = {};
 
@@ -70,6 +88,8 @@ var setters = {};
 });
 
 setters['fill'] = setFill;
+setters['vAlign'] = setVAlign;
+setters['wrap'] = setWrap;
 
 /**
  * Add native setters.
@@ -134,6 +154,8 @@ function Text() {
         visible: true,
         x: 0,
         y: 0,
+        w: 0,
+        h: 0,
         sx: 1,
         sy: 1,
         text: '',
@@ -142,7 +164,9 @@ function Text() {
         fontWeight: 400,
         fontStyle: 'normal',
         opacity: 1.0,
-        fill: '#ffffff'
+        fill: '#ffffff',
+        vAlign: 'baseline',
+        wrap: 'none'
     });
 
     //native
@@ -154,6 +178,7 @@ function Text() {
     var self = this;
 
     this.updateFont = function () {
+        //get font
         self.font = amino.getCore().getNative().getFont(self.fontName());
 
         if (!self.font) {
@@ -161,6 +186,7 @@ function Text() {
         }
 
         if (self.font) {
+            //get native font
             var id = self.font.getNative(self.fontSize(), self.fontWeight(), self.fontStyle());
 
             amino.getCore().getNative().updateProperty(self.handle, 'fontId', id);
@@ -651,6 +677,7 @@ var pureimageFontsRegistered = false;
  * Rich text view.
  */
 exports.RichTextView = function () {
+    //default view size
     var piv = new exports.PureImageView().pw(100).w(100).ph(100).h(100);
 
     amino.makeProps(piv, {

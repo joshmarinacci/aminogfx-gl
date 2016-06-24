@@ -1,6 +1,9 @@
 #ifndef AMINOGFX
 #define AMINOGFX
 
+//FIXME
+#define DEBUG_RESOURCES true
+
 #include "freetype-gl.h"
 #include "vertex-buffer.h"
 #include <nan.h>
@@ -70,7 +73,7 @@ class AminoFont {
 public:
     int id;
     texture_atlas_t *atlas;
-    std::map<int, texture_font_t *> fonts;
+    std::map<int, texture_font_t *> fonts; //by font size
     const char *filename;
     GLuint shader;
     GLint texuni;
@@ -79,6 +82,37 @@ public:
 
     AminoFont() {
         texuni = -1;
+    }
+
+    virtual ~AminoFont() {
+        //destroy (if not called before)
+        destroy();
+    }
+
+    /**
+     * Free all resources.
+     */
+    virtual void destroy() {
+        //textures
+        for (std::map<int, texture_font_t *>::iterator it = fonts.begin(); it != fonts.end(); it++) {
+            if (DEBUG_RESOURCES) {
+                printf("freeing font texture\n");
+            }
+
+            texture_font_delete(it->second);
+        }
+
+        fonts.clear();
+
+        //atlas
+        if (atlas) {
+            if (DEBUG_RESOURCES) {
+                printf("freeing font\n");
+            }
+
+            texture_atlas_delete(atlas);
+            atlas = NULL;
+        }
     }
 };
 

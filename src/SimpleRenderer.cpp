@@ -10,6 +10,7 @@ void SimpleRenderer::startRender(AminoNode *root) {
 
     this->render(c, root);
     delete c;
+
 //    printf("shader count = %d\n",c->shadercount);
 //    printf("shader dupe count = %d\n",c->shaderDupCount);
 //    printf("texture dupe count = %d\n",c->texDupCount);
@@ -295,6 +296,9 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
 
 int te = 0;
 
+/**
+ * Render text.
+ */
 void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     if (fontmap.size() < 1) {
         return;
@@ -310,31 +314,62 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
 
     //flip the y axis
     c->scale(1, -1);
+
+    //baseline at top/left
+    texture_font_t *tf = font->fonts[text->fontsize];
+
+    //debub
+    //sprintf("font: size=%f height=%f ascender=%f descender=%f\n", tf->size, tf->height, tf->ascender, tf->descender);
+
+    switch (text->vAlign) {
+        case VALIGN_TOP:
+            c->translate(0, -tf->ascender);
+            break;
+
+        case VALIGN_BOTTOM:
+            c->translate(0, text->h + tf->descender);
+            break;
+
+        case VALIGN_MIDDLE:
+            c->translate(0, (text->h + tf->descender) / 2);
+            break;
+
+        case VALIGN_BASELINE:
+        default:
+            break;
+    }
+
+    //use texture
     glActiveTexture(GL_TEXTURE0);
     c->bindTexture(font->atlas->id);
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     c->useProgram(font->shader);
 
-    {
-        //by only doing this init work once we save almost 80% of the time for drawing text
-        if (font->texuni == -1) {
-            font->texuni   = glGetUniformLocation( font->shader, "texture" );
-            font->mvpuni   = glGetUniformLocation( font->shader, "mvp" );
-            font->transuni = glGetUniformLocation( font->shader, "trans" );
-        }
-
-        glUniform1i(font->texuni,0 );
-
-        if (modelViewChanged) {
-            //            glUniformMatrix4fv(font->mvpuni,         1, 0,  modelView  );
-        }
-
-        glUniformMatrix4fv(font->mvpuni,         1, 0,  modelView  );
-        //only the global transform will change each time
-        glUniformMatrix4fv(font->transuni,        1, 0,  c->globaltx );
-        vertex_buffer_render(text->buffer, GL_TRIANGLES );
+    //by only doing this init work once we save almost 80% of the time for drawing text
+    if (font->texuni == -1) {
+        font->texuni   = glGetUniformLocation(font->shader, "texture");
+        font->mvpuni   = glGetUniformLocation(font->shader, "mvp");
+        font->transuni = glGetUniformLocation(font->shader, "trans");
     }
+
+    glUniform1i(font->texuni, 0);
+
+    /*
+    if (modelViewChanged) {
+        glUniformMatrix4fv(font->mvpuni,         1, 0,  modelView  );
+    }
+    */
+
+    glUniformMatrix4fv(font->mvpuni, 1, 0, modelView);
+
+    //only the global transform will change each time
+    glUniformMatrix4fv(font->transuni, 1, 0, c->globaltx);
+
+    //render
+    vertex_buffer_render(text->buffer, GL_TRIANGLES);
 
     c->restore();
 }

@@ -75,20 +75,27 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                wchar_t *text, vec4 *color, vec2 *pen )
 {
     size_t i;
-    float r = color->red, g = color->green, b = color->blue, a = color->alpha;
+    float r = color->red;
+    float g = color->green;
+    float b = color->blue;
+    float a = color->alpha;
+    size_t len = wcslen(text);
 
-    for (i = 0; i < wcslen(text); ++i) {
+    //add glyphs
+    for (i = 0; i < len; ++i) {
         texture_glyph_t *glyph = texture_font_get_glyph(font, text[i]);
 
         if (glyph != NULL) {
+            //kerning
             int kerning = 0;
 
             if (i > 0) {
-                kerning = texture_glyph_get_kerning(glyph, text[i-1]);
+                kerning = texture_glyph_get_kerning(glyph, text[i - 1]);
             }
 
             pen->x += kerning;
 
+            //glyph position
             float x0  = ( pen->x + glyph->offset_x );
             float y0  = ( pen->y + glyph->offset_y );
             float x1  = ( x0 + glyph->width );
@@ -103,7 +110,10 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                                      { x1,y1,0,  s1,t1,  r,g,b,a },
                                      { x1,y0,0,  s1,t0,  r,g,b,a } };
 
+            //append
             vertex_buffer_push_back( buffer, vertices, 4, indices, 6 );
+
+            //next
             pen->x += glyph->advance_x;
         }
     }
@@ -114,6 +124,7 @@ void TextNode::refreshText() {
         return;
     }
 
+    //get font with size
     AminoFont *font = fontmap[fontid];
     std::map<int, texture_font_t *>::iterator it = font->fonts.find(fontsize);
 
@@ -122,19 +133,25 @@ void TextNode::refreshText() {
             printf("loading size %d for font %s\n", fontsize, font->filename);
         }
 
+        //add new size
         font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
+
+        if (DEBUG_RESOURCES) {
+            printf("created font texture (name=%s, size=%i)\n", font->filename, fontsize);
+        }
     }
 
-
-    vec2 pen = {{5,400}};
-    vec4 black = {{0,1,0,1}};
+    //render text
+    vec2 pen;
+    vec4 color;
 
     pen.x = 0;
     pen.y = 0;
-    black.r = r;
-    black.g = g;
-    black.b = b;
-    black.a = opacity;
+
+    color.r = r;
+    color.g = g;
+    color.b = b;
+    color.a = opacity;
 
     wchar_t *t2 = const_cast<wchar_t *>(text.c_str());
 
@@ -144,8 +161,7 @@ void TextNode::refreshText() {
     texture_font_t *f = font->fonts[fontsize];
 
     assert(f);
-    add_text(buffer, font->fonts[fontsize], t2, &black, &pen);
-//    texture_font_delete(afont->font);
+    add_text(buffer, font->fonts[fontsize], t2, &color, &pen);
 }
 
 NAN_METHOD(node_glCreateShader) {
@@ -549,28 +565,50 @@ NAN_METHOD(loadBufferToTexture) {
     info.GetReturnValue().Set(obj);
 }
 
+/**
+ * Get font texture.
+ *
+ * Note: creates font size if it did not exist before.
+ */
+texture_font_t* getFontTexture(int index, int size) {
+    AminoFont *font = fontmap[index];
+
+    assert(font);
+
+    std::map<int, texture_font_t *>::iterator it = font->fonts.find(size);
+
+    if (it == font->fonts.end()) {
+        //create font size
+        if (DEBUG_RESOURCES) {
+            printf("Font is missing glyphs for size %d\n", size);
+            printf("loading size %d for font %s\n", size, font->filename);
+        }
+
+        font->fonts[size] = texture_font_new(font->atlas, font->filename, size);
+    }
+
+    return font->fonts[size];
+}
+
+/**
+ * Get the font height.
+ */
 NAN_METHOD(getFontHeight) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
-    AminoFont *font = fontmap[fontindex];
-    texture_font_t *tf = font->fonts[fontsize];
 
-    info.GetReturnValue().Set(tf->ascender-tf->descender);
+    //get font
+    texture_font_t *tf = getFontTexture(fontindex, fontsize);
+
+    info.GetReturnValue().Set(tf->ascender - tf->descender);
 }
 
 NAN_METHOD(getFontAscender) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
-    AminoFont *font = fontmap[fontindex];
-    std::map<int, texture_font_t *>::iterator it = font->fonts.find(fontsize);
 
-    if (it == font->fonts.end()) {
-        printf("Font is missing glyphs for size %d\n",fontsize);
-        printf("loading size %d for font %s\n",fontsize,font->filename);
-        font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
-    }
-
-    texture_font_t *tf = font->fonts[fontsize];
+    //get font
+    texture_font_t *tf = getFontTexture(fontindex, fontsize);
 
     info.GetReturnValue().Set(tf->ascender);
 }
@@ -578,16 +616,9 @@ NAN_METHOD(getFontAscender) {
 NAN_METHOD(getFontDescender) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
-    AminoFont *font = fontmap[fontindex];
-    std::map<int, texture_font_t *>::iterator it = font->fonts.find(fontsize);
 
-    if (it == font->fonts.end()) {
-        printf("Font is missing glyphs for size %d\n",fontsize);
-        printf("loading size %d for font %s\n",fontsize,font->filename);
-        font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
-    }
-
-    texture_font_t *tf = font->fonts[fontsize];
+    //get font
+    texture_font_t *tf = getFontTexture(fontindex, fontsize);
 
     info.GetReturnValue().Set(tf->descender);
 }
@@ -596,26 +627,15 @@ NAN_METHOD(getCharWidth) {
     std::wstring wstr = GetWString(info[0]->ToString());
     int fontsize  = info[1]->Uint32Value();
     int fontindex = info[2]->Uint32Value();
-    AminoFont *font = fontmap[fontindex];
 
-    assert(font);
-
-    std::map<int,texture_font_t*>::iterator it = font->fonts.find(fontsize);
-
-    if (it == font->fonts.end()) {
-        printf("Font is missing glyphs for size %d\n",fontsize);
-        printf("loading size %d for font %s\n",fontsize,font->filename);
-        font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
-    }
-
-    texture_font_t *tf = font->fonts[fontsize];
-
-    assert(tf);
-
+    //get font
+    texture_font_t *tf = getFontTexture(fontindex, fontsize);
     float w = 0;
 
     //length seems to include the null string
-    for (std::size_t i = 0; i < wstr.length(); i++) {
+    std::size_t len = wstr.length();
+
+    for (std::size_t i = 0; i < len; i++) {
         wchar_t ch  = wstr.c_str()[i];
 
         //skip null terminators
@@ -635,16 +655,25 @@ NAN_METHOD(getCharWidth) {
     info.GetReturnValue().Set(w);
 }
 
+/**
+ * Create native font and shader.
+ */
 NAN_METHOD(createNativeFont) {
     if (DEBUG_BASE) {
         printf("createNativeFont()\n");
     }
 
+    //create font object
     AminoFont *afont = new AminoFont();
+
+    //store
     int id = fontmap.size();
+
     fontmap[id] = afont;
 
+    //load font & shader
     afont->filename = TO_CHAR(info[0]);
+
     char *shader_base = TO_CHAR(info[1]);
 
     if (DEBUG_BASE) {
@@ -659,8 +688,15 @@ NAN_METHOD(createNativeFont) {
 
     free(shader_base);
 
-    afont->atlas = texture_atlas_new(512,512,1);
-    afont->shader = shader_load(vert.c_str(),frag.c_str());
+    afont->atlas = texture_atlas_new(512, 512, 1);
+    afont->shader = shader_load(vert.c_str(), frag.c_str());
+
+    if (DEBUG_RESOURCES) {
+        printf("created font shader\n");
+    }
+
+    //TODO reuse shader
+    //TODO glDeleteProgram
 
     info.GetReturnValue().Set(id);
 }

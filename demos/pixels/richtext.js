@@ -66,6 +66,7 @@ function makeStyledJSDoc() {
     //first block
     var blk = frame.insertBlock();
 
+    //FIXME not visible
     blk.stylename = 'paragraph';
     blk.insertSpan('This is some plain text');
     blk.insertSpan(' italic,').stylename = 'italic';
@@ -90,12 +91,14 @@ function makeStyledJSDoc() {
     //fourth block
     var blk = frame.insertBlock();
 
+    //FIXME not visible
     blk.stylename = 'paragraph';
     blk.insertSpan('Another paragraph of text is here. I think this is pretty cool. Don\'t you think so? Let\'s type some more so that the text will wrap.');
 
     //fifth block
     var blk = frame.insertBlock();
 
+    //FIXME not visible
     blk.stylename = 'paragraph';
     blk.insertSpan('Another paragraph of text is here. I think this is pretty cool. Don\'t you think so? Let\'s type some more so that the text will wrap.');
 
@@ -113,7 +116,7 @@ amino.start(function (core, stage) {
     var pv = new amino.RichTextView();
 
     //FIXME size
-    pv.w(600).h(600);
+    pv.w(600).h(600).pw(600).ph(600);
 
     //FIXME no content displayed
 

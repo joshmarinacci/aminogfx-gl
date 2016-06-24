@@ -42,37 +42,36 @@ const int INVALID = -1;
 const int WINDOW = 7;
 
 static const int FOREVER = -1;
-static const int SCALEX = 2;
-static const int SCALEY = 3;
-static const int ROTATEZ = 4;
-static const int R = 5;
-static const int G = 6;
-static const int B = 7;
-static const int TEXID = 8;
-static const int TEXT_PROP = 9;
-static const int W_PROP = 10;
-static const int H_PROP = 11;
+
+//properties
+
+static const int SCALE_X_PROP  =  2;
+static const int SCALE_Y_PROP  =  3;
+static const int ROTATE_Z_PROP =  4;
+static const int R_PROP        =  5;
+static const int G_PROP        =  6;
+static const int B_PROP        =  7;
+static const int TEXID_PROP    =  8;
+static const int TEXT_PROP     =  9;
+static const int W_PROP        = 10;
+static const int H_PROP        = 11;
 static const int FONTSIZE_PROP = 12;
 
-static const int LERP_LINEAR = 13;
-static const int LERP_CUBIC_IN = 14;
-static const int LERP_CUBIC_OUT = 15;
 static const int LERP_PROP = 16;
-static const int LERP_CUBIC_IN_OUT = 17;
 
-static const int VISIBLE = 18;
-static const int ROTATEX = 19;
-static const int ROTATEY = 20;
+static const int VISIBLE_PROP = 18;
+static const int ROTATE_X_PROP = 19;
+static const int ROTATE_Y_PROP = 20;
 
 static const int X_PROP = 21;
 static const int Y_PROP = 22;
-static const int GEOMETRY = 24;
-static const int FILLED = 25;
+static const int GEOMETRY_PROP = 24;
+static const int FILLED_PROP = 25;
 
 static const int OPACITY_PROP = 27;
 static const int FONTID_PROP = 28;
 
-static const int COUNT = 29;
+static const int COUNT_PROP = 29;
 
 static const int TEXTURELEFT_PROP   = 30;
 static const int TEXTURERIGHT_PROP  = 31;
@@ -80,9 +79,28 @@ static const int TEXTURETOP_PROP    = 32;
 static const int TEXTUREBOTTOM_PROP = 33;
 
 static const int CLIPRECT_PROP = 34;
-static const int AUTOREVERSE = 35;
-static const int DIMENSION = 36;
-static const int THEN = 37;
+static const int AUTOREVERSE_PROP = 35;
+static const int DIMENSION_PROP = 36;
+static const int THEN_PROP = 37;
+
+static const int TEXT_VALIGN_PROP = 40;
+static const int TEXT_WRAP_PROP   = 41;
+
+//property values
+
+static const int LERP_LINEAR       = 0x0;
+static const int LERP_CUBIC_IN     = 0x1;
+static const int LERP_CUBIC_OUT    = 0x2;
+static const int LERP_CUBIC_IN_OUT = 0x3;
+
+static const int VALIGN_BASELINE = 0x0;
+static const int VALIGN_TOP      = 0x1;
+static const int VALIGN_MIDDLE   = 0x2;
+static const int VALIGN_BOTTOM   = 0x3;
+
+static const int WRAP_NONE = 0x0;
+static const int WRAP_END  = 0x1;
+static const int WRAP_WORD = 0x2;
 
 using namespace v8;
 
@@ -212,26 +230,45 @@ static void warnAbort(char const *str) {
  */
 class TextNode : public AminoNode {
 public:
+    //text
+    std::wstring text;
+
+    //color
     float r;
     float g;
     float b;
+
+    //box TODO wrap text
+    float w;
+    float h;
+    int wrap;
+
+    //font
     int fontid;
     int fontsize;
-    std::wstring text;
     vertex_buffer_t *buffer;
+    int vAlign;
 
     TextNode() {
         type = TEXT;
 
         //white color
-        r = 1.0; g = 1.0; b = 1.0;
+        r = 1.0;
+        g = 1.0;
+        b = 1.0;
         opacity = 1;
+
+        //box
+        w = 0;
+        h = 0;
+        wrap = WRAP_NONE;
 
         //properties
         text = L"";
         fontsize = 40;
         fontid = INVALID;
         buffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+        vAlign = VALIGN_BASELINE;
     }
 
     virtual ~TextNode() {
@@ -302,10 +339,14 @@ public:
         lerptype = LERP_LINEAR;
         then = NULL;
         active = true;
+
+        if (DEBUG_RESOURCES) {
+            printf("created animation\n");
+        }
     }
 
     virtual ~Anim() {
-        if (DEBUG_BASE) {
+        if (DEBUG_BASE || DEBUG_RESOURCES) {
             printf("Anim: destructor()\n");
         }
 
@@ -399,6 +440,11 @@ public:
         }
     }
 
+    /**
+     * Apply animation value.
+     *
+     * @param value current property value.
+     */
     void applyValue(float value) {
         switch (property) {
             //translation
@@ -411,24 +457,24 @@ public:
                 break;
 
             //zoom
-            case SCALEX:
+            case SCALE_X_PROP:
                 target->scalex = value;
                 break;
 
-            case SCALEY:
+            case SCALE_Y_PROP:
                 target->scaley = value;
                 break;
 
             //rotation
-            case ROTATEX:
+            case ROTATE_X_PROP:
                 target->rotatex = value;
                 break;
 
-            case ROTATEY:
+            case ROTATE_Y_PROP:
                 target->rotatey = value;
                 break;
 
-            case ROTATEZ:
+            case ROTATE_Z_PROP:
                 target->rotatez = value;
                 break;
 
@@ -774,15 +820,15 @@ public:
                     anim->lerptype = value;
                     break;
 
-                case COUNT:
+                case COUNT_PROP:
                     anim->loopcount = value;
                     break;
 
-                case AUTOREVERSE:
+                case AUTOREVERSE_PROP:
                     anim->autoreverse = value;
                     break;
 
-                case THEN:
+                case THEN_PROP:
                     anim->setThen(callback);
                     break;
 
@@ -796,15 +842,15 @@ public:
         //window
         if (type == WINDOW) {
             switch (property) {
-                case R:
+                case R_PROP:
                     window_fill_red = value;
                     break;
 
-                case G:
+                case G_PROP:
                     window_fill_green = value;
                     break;
 
-                case B:
+                case B_PROP:
                     window_fill_blue = value;
                     break;
 
@@ -833,29 +879,29 @@ public:
                 return;
 
             //scaling factor
-            case SCALEX:
+            case SCALE_X_PROP:
                 target->scalex = value;
                 return;
 
-            case SCALEY:
+            case SCALE_Y_PROP:
                 target->scaley = value;
                 return;
 
             //rotation
-            case ROTATEX:
+            case ROTATE_X_PROP:
                 target->rotatex = value;
                 return;
 
-            case ROTATEY:
+            case ROTATE_Y_PROP:
                 target->rotatey = value;
                 return;
 
-            case ROTATEZ:
+            case ROTATE_Z_PROP:
                 target->rotatez = value;
                 return;
 
             //visibility
-            case VISIBLE:
+            case VISIBLE_PROP:
                 target->visible = value;
                 return;
 
@@ -869,15 +915,15 @@ public:
             Rect *rect = (Rect *)target;
 
             switch (property) {
-                case R:
+                case R_PROP:
                     rect->r = value;
                     break;
 
-                case G:
+                case G_PROP:
                     rect->g = value;
                     break;
 
-                case B:
+                case B_PROP:
                     rect->b = value;
                     break;
 
@@ -889,7 +935,7 @@ public:
                     rect->h = value;
                     break;
 
-                case TEXID:
+                case TEXID_PROP:
                     rect->texid = value;
                     break;
 
@@ -939,16 +985,24 @@ public:
             TextNode *textnode = (TextNode *)target;
 
             switch (property) {
-                case R:
+                case R_PROP:
                     textnode->r = value;
                     break;
 
-                case G:
+                case G_PROP:
                     textnode->g = value;
                     break;
 
-                case B:
+                case B_PROP:
                     textnode->b = value;
+                    break;
+
+                case W_PROP:
+                    textnode->w = value;
+                    break;
+
+                case H_PROP:
+                    textnode->h = value;
                     break;
 
                 case TEXT_PROP:
@@ -964,6 +1018,14 @@ public:
                     textnode->fontid = value;
                     break;
 
+                case TEXT_VALIGN_PROP:
+                    textnode->vAlign = (int)value;
+                    break;
+
+                case TEXT_WRAP_PROP:
+                    textnode->wrap = (int)value;
+                    break;
+
                 default:
                     printf("Unknown anim text update: %i\n", property);
                     break;
@@ -975,27 +1037,27 @@ public:
             PolyNode *polynode = (PolyNode *)target;
 
             switch (property) {
-                case R:
+                case R_PROP:
                     polynode->r = value;
                     break;
 
-                case G:
+                case G_PROP:
                     polynode->g = value;
                     break;
 
-                case B:
+                case B_PROP:
                     polynode->b = value;
                     break;
 
-                case GEOMETRY:
+                case GEOMETRY_PROP:
                     polynode->setGeometry(arr);
                     break;
 
-                case DIMENSION:
+                case DIMENSION_PROP:
                     polynode->dimension = value;
                     break;
 
-                case FILLED:
+                case FILLED_PROP:
                     polynode->filled = value;
                     break;
 

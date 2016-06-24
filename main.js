@@ -73,64 +73,89 @@ var defaultFonts = {
     }
 };
 
+/**
+ * Native property ids.
+ *
+ * Note: value has to match native code value
+ */
 var propsHash = {
 
     //general
-    "visible": 18,
-    "opacity": 27,
-    "r": 5,
-    "g": 6,
-    "b": 7,
-    "texid": 8,
-    "w": 10,
-    "h": 11,
-    "x": 21,
-    "y": 22,
+    visible: 18,
+    opacity: 27,
+    r: 5,
+    g: 6,
+    b: 7,
+    texid: 8,
+    w: 10,
+    h: 11,
+    x: 21,
+    y: 22,
 
     //transforms  (use x and y for translate in X and Y)
-    "sx": 2,
-    "sy": 3,
-    "rz": 4,
-    "rx": 19,
-    "ry": 20,
+    sx: 2,
+    sy: 3,
+    rz: 4,
+    rx: 19,
+    ry: 20,
 
     //text
-    "text": 9,
-    "fontSize": 12,
-    "fontId": 28,
+    text: 9,
+    fontSize: 12,
+    fontId: 28,
+    vAlign: 40,
+    wrap: 41,
 
     //animation
-    "count": 29,
-    "lerplinear": 13,
-    "lerpcubicin": 14,
-    "lerpcubicout": 15,
-    "lerpprop": 16,
-    "lerpcubicinout": 17,
-    "autoreverse": 35,
-    "then": 37,
+    count: 29,
+    lerpprop: 16,
+    autoreverse: 35,
+    then: 37,
 
     //geometry
-    "geometry":  24,
-    "filled":    25,
-    "closed":    26,
-    "dimension": 36,
+    geometry:  24,
+    filled:    25,
+    closed:    26,
+    dimension: 36,
 
     //rectangle texture
-    "textureLeft":   30,
-    "textureRight":  31,
-    "textureTop":    32,
-    "textureBottom": 33,
+    textureLeft:   30,
+    textureRight:  31,
+    textureTop:    32,
+    textureBottom: 33,
 
     //clipping
-    "cliprect": 34
+    cliprect: 34
 };
 
+/**
+ * Time function native property values.
+ */
 var timeFuncsHash = {
     //time function
-    'linear':     13,
-    'cubicIn':    14,
-    'cubicOut':   15,
-    'cubicInOut': 17,
+    linear:     0x0,
+    cubicIn:    0x1,
+    cubicOut:   0x2,
+    cubicInOut: 0x3
+};
+
+/**
+ * Vertial text alignment property values.
+ */
+var textVAlignHash = {
+    baseline: 0x0,
+    top:      0x1,
+    middle:   0x2,
+    bottom:   0x3
+};
+
+/**
+ * Text wrapping property values.
+ */
+var textWrapHash = {
+    none: 0x0,
+    end:  0x1,
+    word: 0x2
 };
 
 /**
@@ -227,7 +252,7 @@ function JSPropAnim(target, name) {
     this._loop = 1;
     this._delay = 0;
     this._autoreverse = 0;
-    this._lerpprop = 17; //cubicInOut
+    this._lerpprop = timeFuncsHash.cubicInOut;
     this._then_fun = null;
 
     //setters
@@ -362,6 +387,8 @@ var gl_native = {
     getFont: function (name) {
         return fontmap[name];
     },
+    textVAlignHash: textVAlignHash,
+    textWrapHash: textWrapHash,
     updateProperty: function (handle, name, value) {
         if (handle == undefined) {
             throw new Error('Can\'t set a property on an undefined handle!!');
