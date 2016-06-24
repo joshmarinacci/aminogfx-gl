@@ -39,7 +39,7 @@ amino.start(function (core, stage) {
         .text('Oswald Regular')
         .fontSize(80)
         .fontWeight(200)
-        .x(50).y(150) //baseline position FIXME
+        .x(50).y(150) //baseline position
         .fill('#ffff00');
 
     root.add(text);

@@ -1006,7 +1006,6 @@ public:
                     break;
 
                 case TEXT_PROP:
-                    //FIME memory leak
                     textnode->text = text;
                     break;
 
