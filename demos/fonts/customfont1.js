@@ -25,7 +25,6 @@ amino.start(function (core, stage) {
 
     stage.w(600);
     stage.h(800);
-stage.h(600); //FIXME 800 fails on MacBook (larger than max window size)
 
     stage.setRoot(root);
 

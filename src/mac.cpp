@@ -283,7 +283,17 @@ NAN_METHOD(setWindowSize) {
     width = w;
     height = h;
 
+    //Note: not getting size changed event
     glfwSetWindowSize(window, width, height);
+
+    //get framebuffer size
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+    //check framebuffer size
+    if (DEBUG_GLFW) {
+        printf("framebuffer size: %ix%i\n", fbWidth, fbHeight);
+    }
+
 }
 
 NAN_METHOD(getWindowSize) {
