@@ -106,7 +106,51 @@ texture_font_load_face( FT_Library * library,
         return 0;
     }
 
+    /*
+     * Find exact pixel size.
+     *
+     * Addition to Freetype GL.
+     *
+     */
+     float sizePx = size;
+     float currSize = size;
+
+     while (1) {
+         error = FT_Set_Pixel_Sizes(*face, (int)(currSize * 64), (int)currSize);
+
+         if (error) {
+            fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
+                 __LINE__, FT_Errors[error].code, FT_Errors[error].message );
+
+            FT_Done_Face( *face );
+            FT_Done_FreeType( *library );
+
+            return 0;
+        }
+
+        //check size
+        FT_Size_Metrics metrics = (*face)->size->metrics;
+        float ascender = metrics.ascender >> 6;
+        float descender = metrics.descender >> 6;
+        float height = ascender - descender;
+
+        //printf("wanted=%f got=%f\n", sizePx, height);
+
+        if (height <= sizePx) {
+            break;
+        }
+
+        //smaller font size
+        currSize--;
+
+        if (currSize <= 0) {
+            //keep smallest size
+            break;
+        }
+     }
+
     /* Set char size */
+    /*
     error = FT_Set_Char_Size( *face, (int)(size*64), 0, 72*hres, 72 );
     if( error )
     {
@@ -116,6 +160,7 @@ texture_font_load_face( FT_Library * library,
         FT_Done_FreeType( *library );
         return 0;
     }
+    */
 
     /* Set transform matrix */
     FT_Set_Transform( *face, &matrix, NULL );
