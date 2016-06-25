@@ -30,40 +30,27 @@ amino.start(function (core, stage) {
     stage.setRoot(root);
 
     //rects
-    var rect = new amino.Rect().x(50).y(150).w(600).h(80);
-    var rect2 = new amino.Rect().x(0).y(0).w(600).h(60);
+    var rect = new amino.Rect().x(0).y(0).w(600).h(80).fill('#ffffff');
+    var rect2 = new amino.Rect().x(0).y(80).w(600).h(80).fill('#dddddd');
 
     root.add(rect, rect2);
 
     //text
     var text = new amino.Text().fontName('Oswald')
-        .text('Oswald Regular')
+        .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
+        //.text('Aaaaaaaaa_ Bbbbbbbbb_ Ccccccccc_ Ddddddddd_ Eeeeeeeee_ Fffffffff_')
         .fontSize(80)
         .fontWeight(200)
-        .x(50).y(150) //baseline position
+        .x(0).y(0)
+        .vAlign('top')
+        //.vAlign('bottom') //FIXME too high
+        //.vAlign('middle') //FIXME too high
+        .w(600)
+        .h(160)
+        //.wrap('end')
+        .wrap('word')
         .fill('#ffff00');
 
     root.add(text);
-
-    //text 2
-    var text2 = new amino.Text().fontName('Oswald')
-        .text('Oswald Regular')
-        .fontSize(60)
-        .fontWeight(200)
-        .x(0).y(0) //baseline position
-        .h(60)
-        .vAlign('top')
-        .fill('#ffff00');
-
-    root.add(text2);
-
-    //text 3
-    var text3 = new amino.Text().fontName('awesome')
-        .text('\uf241 \uf140')
-        .fontSize(40)
-        .x(10).y(300)
-        .fill('#0000ff');
-
-    root.add(text3);
 
 });

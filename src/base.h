@@ -248,6 +248,7 @@ public:
     int fontsize;
     vertex_buffer_t *buffer;
     int vAlign;
+    int lineNr;
 
     TextNode() {
         type = TEXT;

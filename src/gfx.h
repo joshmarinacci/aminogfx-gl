@@ -67,8 +67,11 @@ static double getTime(void) {
 }
 #endif
 
-
 #include <map>
+
+/**
+ * Font class.
+ */
 class AminoFont {
 public:
     int id;

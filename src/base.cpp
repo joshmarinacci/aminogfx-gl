@@ -72,25 +72,131 @@ void restore() {
 
 // --------------------------------------------------------------- add_text ---
 static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
-               wchar_t *text, vec4 *color, vec2 *pen )
+               wchar_t *text, vec4 *color, vec2 *pen, int wrap, int width, int *lineNr )
 {
-    size_t i;
     float r = color->red;
     float g = color->green;
     float b = color->blue;
     float a = color->alpha;
     size_t len = wcslen(text);
 
-    //add glyphs
-    for (i = 0; i < len; ++i) {
-        texture_glyph_t *glyph = texture_font_get_glyph(font, text[i]);
+    *lineNr = 0;
 
-        if (glyph != NULL) {
+    size_t lineStart = 0;
+    size_t linePos = 0;
+
+    //debug
+    //printf("add_text: wrap=%i width=%i\n", wrap, width);
+
+    //add glyphs
+    for (size_t i = 0; i < len; ++i) {
+        wchar_t ch = text[i];
+        texture_glyph_t *glyph = texture_font_get_glyph(font, ch);
+
+        if (glyph) {
             //kerning
             int kerning = 0;
 
-            if (i > 0) {
+            if (linePos > 0) {
                 kerning = texture_glyph_get_kerning(glyph, text[i - 1]);
+            }
+
+            //wrap
+            if (wrap != WRAP_NONE) {
+                bool newLine = false;
+                bool skip = false;
+                bool wordWrap = false;
+
+                //check new line
+                if (ch == '\n') {
+                    //next line
+                    newLine = true;
+                    skip = true;
+                } else if (pen->x + kerning + glyph->offset_x + glyph->width > width) {
+                    //have to wrap
+
+                    //next line
+                    newLine = true;
+                    wordWrap = wrap == WRAP_WORD;
+                }
+
+                //check white space
+                if (!skip && (newLine || lineStart == i) && isspace(ch)) {
+                    skip = true;
+                }
+
+                //process
+                if (newLine) {
+                    pen->x = 0;
+                    linePos = 0;
+
+                    //check word wrapping
+                    if (wordWrap && !skip) {
+                        //find white space
+                        int wrapPos = -1;
+
+                        for (size_t j = i - 1; j > lineStart; j--) {
+                            if (isspace(text[j])) {
+                                wrapPos = j;
+                                break;
+                            }
+                        }
+
+                        if (wrapPos != -1) {
+                            //calc vertex buffer offset
+                            size_t count = vertex_buffer_size(buffer);
+                            size_t start = count - (i - wrapPos);
+
+                            //printf("remove %i of %i\n", (int)start, (int)count);
+
+                            //remove white space
+                            vertex_buffer_erase(buffer, start);
+                            count--;
+
+                            //update existing glyphs
+                            float xOffset;
+                            float xLast;
+
+                            for (size_t j = start; j < count; j++) {
+                                ivec4 *item = (ivec4 *)vector_get(buffer->items, j);
+                                size_t vstart = item->x;
+                                size_t vcount = item->y;
+
+                                //values
+                                vertex_t *vertices = (vertex_t *)vector_get(buffer->vertices, vstart);
+
+                                if (j == start) {
+                                    xOffset = vertices->x;
+
+                                    //Note: kerning ignored
+                                }
+
+                                for (size_t k = 0; k < vcount; k++) {
+                                    vertices->x -= xOffset;
+                                    vertices->y -= font->height; //inverse coordinates
+
+                                    vertices++;
+                                }
+
+                                xLast = vertices->x;
+                                linePos++;
+                            }
+
+                            pen->x = xLast - xOffset;
+                            skip = false;
+                        }
+                    }
+
+                    (*lineNr)++;
+                    lineStart = i;
+                    kerning = 0;
+                    pen->y -= font->height; //inverse coordinates
+                }
+
+                if (skip) {
+                    lineStart++;
+                    continue;
+                }
             }
 
             pen->x += kerning;
@@ -111,7 +217,8 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                                      { x1,y0,0,  s1,t0,  r,g,b,a } };
 
             //append
-            vertex_buffer_push_back( buffer, vertices, 4, indices, 6 );
+            vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
+            linePos++;
 
             //next
             pen->x += glyph->advance_x;
@@ -161,7 +268,7 @@ void TextNode::refreshText() {
     texture_font_t *f = font->fonts[fontsize];
 
     assert(f);
-    add_text(buffer, font->fonts[fontsize], t2, &color, &pen);
+    add_text(buffer, f, t2, &color, &pen, wrap, width, &lineNr);
 }
 
 NAN_METHOD(node_glCreateShader) {
