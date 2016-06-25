@@ -43,8 +43,8 @@ amino.start(function (core, stage) {
         .fontWeight(200)
         .x(0).y(0)
         .vAlign('top')
-        //.vAlign('bottom') //FIXME too high
-        //.vAlign('middle') //FIXME too high
+        //.vAlign('bottom')
+        //.vAlign('middle')
         .w(600)
         .h(160)
         //.wrap('end')

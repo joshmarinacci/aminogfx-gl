@@ -327,11 +327,11 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
             break;
 
         case VALIGN_BOTTOM:
-            c->translate(0, text->h + tf->descender + (text->lineNr - 1) * tf->height);
+            c->translate(0,  - text->h - tf->descender + (text->lineNr - 1) * tf->height);
             break;
 
         case VALIGN_MIDDLE:
-            c->translate(0, (text->h + tf->descender + (text->lineNr - 1) * tf->height) / 2);
+            c->translate(0, - tf->ascender - (text->h - text->lineNr * tf->height) / 2);
             break;
 
         case VALIGN_BASELINE:

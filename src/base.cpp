@@ -80,7 +80,7 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
     float a = color->alpha;
     size_t len = wcslen(text);
 
-    *lineNr = 0;
+    *lineNr = 1;
 
     size_t lineStart = 0;
     size_t linePos = 0;
