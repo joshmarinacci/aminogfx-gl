@@ -123,6 +123,63 @@ extern std::map<int, AminoFont *> fontmap;
 extern Nan::Callback *NODE_EVENT_CALLBACK;
 
 /**
+ * Amino main class to call from JavaScript.
+ */
+class AminoGfx : public Nan::ObjectWrap {
+public:
+    static NAN_MODULE_INIT(Init) {
+        printf("AminoGfx init\n");
+
+        //initialize template
+        v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+
+        tpl->SetClassName(Nan::New("AminoGfx").ToLocalChecked());
+        tpl->InstanceTemplate()->SetInternalFieldCount(1);
+
+        //prototype methods
+        //TODO SetPrototypeMethod(tpl, "getValue", GetValue);
+
+        constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
+        Nan::Set(target, Nan::New("AminoGfx").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+    }
+
+private:
+    AminoGfx() {
+        printf("AminoGfx constructor\n"); //FIXME
+    }
+
+    virtual ~AminoGfx() {
+        printf("AminoGfx destructor\n"); //FIXME
+    }
+
+    static NAN_METHOD(New) {
+        if (info.IsConstructCall()) {
+            //new AminoGfx()
+
+            //create new instance
+            AminoGfx *obj = new AminoGfx();
+
+            obj->Wrap(info.This());
+
+            info.GetReturnValue().Set(info.This());
+        } else {
+            //direct AminoGfx() call
+            const int argc = 0;
+            v8::Local<v8::Value> argv[argc] = {};
+            v8::Local<v8::Function> cons = Nan::New(constructor());
+
+            info.GetReturnValue().Set(cons->NewInstance(argc, argv));
+        }
+    }
+
+    static inline Nan::Persistent<v8::Function> & constructor() {
+        static Nan::Persistent<v8::Function> my_constructor;
+
+        return my_constructor;
+    }
+};
+
+/**
  * Base class for all rendering nodes.
  */
 class AminoNode {

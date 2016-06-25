@@ -458,6 +458,10 @@ NAN_METHOD(setEventCallback) {
 }
 
 NAN_MODULE_INIT(InitAll) {
+    //main class
+    AminoGfx::Init(target);
+
+    //TODO cleanup
     Nan::Set(target, Nan::New("init").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(init)).ToLocalChecked());
     Nan::Set(target, Nan::New("createWindow").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createWindow)).ToLocalChecked());
     Nan::Set(target, Nan::New("setWindowSize").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(setWindowSize)).ToLocalChecked());
