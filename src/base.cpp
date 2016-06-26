@@ -583,22 +583,25 @@ NAN_METHOD(decodePngBuffer) {
     Local<Object> bufferObj = info[0]->ToObject();
     char *bufferin = Buffer::Data(bufferObj);
     size_t bufferLength = Buffer::Length(bufferObj);
-    //    printf("the size of the buffer is %d\n",bufferLength);
+
+    //printf("the size of the buffer is %d\n", bufferLength);
 
     char *image;
     upng_t *upng = upng_new_from_bytes((const unsigned char *)bufferin, bufferLength);
 
     if (upng == NULL) {
-        printf("error decoding png file");
+        printf("error decoding png file\n");
         return;
     }
 
     upng_decode(upng);
+
     //    printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
     //    printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
 
     image = (char *)upng_get_buffer(upng);
     int lengthout = upng_get_size(upng);
+
     //    printf("length of uncompressed buffer = %d\n", lengthout);
 
     MaybeLocal<Object> buff = Nan::CopyBuffer(image, lengthout);
@@ -609,7 +612,7 @@ NAN_METHOD(decodePngBuffer) {
     Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(upng_get_width(upng)));
     Nan::Set(obj, Nan::New("h").ToLocalChecked(),      Nan::New(upng_get_height(upng)));
     Nan::Set(obj, Nan::New("alpha").ToLocalChecked(),  Nan::New(true));
-    Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(4));
+    Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(upng_get_bpp(upng) / 8));
     Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff.ToLocalChecked());
 
     info.GetReturnValue().Set(obj);
@@ -625,7 +628,7 @@ NAN_METHOD(loadBufferToTexture) {
     // this is *bytes* per pixel. usually 3 or 4
     int bpp = info[3]->Uint32Value();
 
-    //printf("got w %d h %d\n",w,h);
+    //printf("got w=%d h=%d bpp=%d\n", w, h, bpp);
 
     Local<Object> bufferObj = info[4]->ToObject();
     char *bufferData = Buffer::Data(bufferObj);
@@ -650,11 +653,17 @@ NAN_METHOD(loadBufferToTexture) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     if (bpp == 3) {
-        //RGB
+        //RGB (24-bit)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, bufferData);
-    } else {
-        //RGBA
+    } else if (bpp == 4) {
+        //RGBA (32-bit)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, bufferData);
+    } else if (bpp == 1) {
+        //grayscale (8-bit)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, bufferData);
+    } else {
+        //unsupported
+        printf("unsupported texture format: bpp=%d\n", bpp);
     }
 
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

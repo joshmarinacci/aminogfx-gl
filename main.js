@@ -505,6 +505,9 @@ var gl_native = {
                 return;
             }
 
+            //debug
+            //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
+
             //load texture
             nat.loadBufferToTexture(-1, ibuf.w, ibuf.h, ibuf.bpp, ibuf.buffer, function (texture) {
                 cb(texture);

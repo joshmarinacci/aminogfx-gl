@@ -618,6 +618,7 @@ exports.PixelView = function () {
             amino.getCore().getNative().updateProperty(self.handle, 'texid', image.texid);
         });
     };
+
     this.setPixel = function(x, y, r, g, b, a) {
         var w = self.pw();
         var i = (x + y * w)*4;
@@ -627,6 +628,7 @@ exports.PixelView = function () {
         self.buf[i + 2] = b;
         self.buf[i + 3] = a;
     };
+
     this.setPixeli32 = function(x, y, int) {
         var w = self.pw();
         var i = (x + y * w) * 4;
