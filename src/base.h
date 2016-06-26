@@ -73,10 +73,10 @@ static const int FONTID_PROP = 28;
 
 static const int COUNT_PROP = 29;
 
-static const int TEXTURELEFT_PROP   = 30;
-static const int TEXTURERIGHT_PROP  = 31;
-static const int TEXTURETOP_PROP    = 32;
-static const int TEXTUREBOTTOM_PROP = 33;
+static const int TEXTURE_LEFT_PROP   = 30;
+static const int TEXTURE_RIGHT_PROP  = 31;
+static const int TEXTURE_TOP_PROP    = 32;
+static const int TEXTURE_BOTTOM_PROP = 33;
 
 static const int CLIPRECT_PROP = 34;
 static const int AUTOREVERSE_PROP = 35;
@@ -664,31 +664,45 @@ extern std::vector<Anim *> anims;
  */
 class Rect : public AminoNode {
 public:
+    //size
     float w;
     float h;
+
+    //color
     float r;
     float g;
     float b;
+
+    //offset
     float left;
     float right;
     float top;
     float bottom;
+
+    //image
+    bool hasImage;
     int texid;
 
-    Rect() {
+    Rect(bool hasImage) {
         type = RECT;
 
         //size
         w = 100;
         h = 100;
 
-        //color (green)
-        r = 0;
+        //color (white; rect only)
+        r = 1;
         g = 1;
-        b = 0;
+        b = 1;
 
+        //opacity
         opacity = 1;
+
+        //image
         texid = INVALID;
+        this->hasImage = hasImage;
+
+        //offset (world coordinates: 0..1)
         left = 0;
         bottom = 1;
         right = 1;
@@ -997,19 +1011,19 @@ public:
                     rect->texid = value;
                     break;
 
-                case TEXTURELEFT_PROP:
+                case TEXTURE_LEFT_PROP:
                     rect->left = value;
                     break;
 
-                case TEXTURERIGHT_PROP:
+                case TEXTURE_RIGHT_PROP:
                     rect->right = value;
                     break;
 
-                case TEXTURETOP_PROP:
+                case TEXTURE_TOP_PROP:
                     rect->top = value;
                     break;
 
-                case TEXTUREBOTTOM_PROP:
+                case TEXTURE_BOTTOM_PROP:
                     rect->bottom = value;
                     break;
 

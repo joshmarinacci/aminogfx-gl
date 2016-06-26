@@ -422,7 +422,9 @@ var gl_native = {
         //console.log("got some stuff",arguments);
         cb(arguments[1]);
     });   },
-    createRect: function ()  {          return sgtest.createRect();           },
+    createRect: function (hasImage) {
+        return sgtest.createRect(hasImage);
+    },
     createGroup: function () {          return sgtest.createGroup();          },
     createPoly: function ()  {          return sgtest.createPoly();           },
     createText: function () {           return sgtest.createText();           },
@@ -434,6 +436,11 @@ var gl_native = {
         return sgtest.removeNodeFromGroup(h1, h2);
     },
     loadImage: function (src, cb) {
+        if (!src) {
+            cb();
+            return;
+        }
+
         var buffer;
         var type;
 

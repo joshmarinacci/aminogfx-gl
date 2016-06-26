@@ -1,3 +1,7 @@
+'use strict';
+
+//launch: node --expose-gc demos/tests/gc.js
+
 var amino = require('../../main.js');
 
 //GC test

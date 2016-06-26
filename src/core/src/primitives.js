@@ -123,21 +123,24 @@ function contains(pt) {
 function Rect() {
     //properties
     amino.makeProps(this, {
-        id: 'unknown id', //TODO better default
+        id: '',
         visible: true,
         x: 0,
         y: 0,
         sx: 1,
         sy: 1,
 
-        w: 50,
-        h: 50,
-        opacity: 1.0,
-        fill: '#ffffff'
+        //size
+        w: 100,
+        h: 100,
+
+        //white
+        fill: '#ffffff',
+        opacity: 1.0
     });
 
     //native handle (int)
-    this.handle = amino.getCore().getNative().createRect();
+    this.handle = amino.getCore().getNative().createRect(false);
 
     applyNativeBinding(this);
 
@@ -150,7 +153,7 @@ function Rect() {
  */
 function Text() {
     amino.makeProps(this, {
-        id: 'unknown id', //TODO bad choice
+        id: '',
         visible: true,
         x: 0,
         y: 0,
@@ -221,22 +224,27 @@ function Text() {
  */
 function ImageView() {
     amino.makeProps(this, {
-        id: 'unknown id',
+        id: '',
         visible: true,
         x: 0,
         y: 0,
         sx: 1,
         sy: 1,
+
+        //size
         w: 100,
         h: 100,
-        opacity: 1.0,
-        fill: '#ffffff',
-        src: null,
-        textureLeft: 0,
-        textureRight: 1,
-        textureTop:  0,
+
+        //texture offset
+        textureLeft:   0,
+        textureRight:  1,
+        textureTop:    0,
         textureBottom: 1,
-        image: null
+
+        //image
+        src: null,
+        image: null,
+        opacity: 1.0
     });
 
     var self = this;
@@ -249,15 +257,24 @@ function ImageView() {
     });
 
     //native
-    this.handle = amino.getCore().getNative().createRect();
+    this.handle = amino.getCore().getNative().createRect(true);
 
     applyNativeBinding(this);
 
     //when the image is loaded, update the texture id and dimensions
     this.image.watch(function (image) {
-        self.w(image.w);
-        self.h(image.h);
-        amino.getCore().getNative().updateProperty(self.handle, 'texid', self.image().texid);
+        var texid;
+
+        if (image) {
+            self.w(image.w);
+            self.h(image.h);
+
+            texid = image.texid;
+        } else {
+            textid = -1;
+        }
+
+        amino.getCore().getNative().updateProperty(self.handle, 'texid', texid);
     });
 
     this.contains = contains;
@@ -270,7 +287,7 @@ function Group() {
     var core = amino.getCore();
 
     amino.makeProps(this, {
-        id: 'unknown id',
+        id: '',
         visible:true,
         x:0,
         y:0,
@@ -551,7 +568,7 @@ exports.ParseRGBString = ParseRGBString;
  */
 exports.PixelView = function () {
     amino.makeProps(this, {
-        id: 'unknown id',
+        id: '',
         visible: true,
         x: 0,
         y: 0,
@@ -572,7 +589,7 @@ exports.PixelView = function () {
     var self = this;
 
     //native
-    this.handle = amino.getCore().getNative().createRect();
+    this.handle = amino.getCore().getNative().createRect(true);
 
     applyNativeBinding(this);
 

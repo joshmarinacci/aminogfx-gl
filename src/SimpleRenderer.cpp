@@ -232,6 +232,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
 void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     c->save();
 
+    //two triangles
     float x =  0;
     float y =  0;
     float x2 = rect->w;
@@ -253,29 +254,15 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     verts[5][0] = x;
     verts[5][1] = y;
 
-    GLfloat colors[6][3];
-
-    for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 3; j++) {
-            colors[i][j] = 0.5;
-
-            if (j==0) {
-                colors[i][j] = rect->r;
-            } else if (j==1) {
-                colors[i][j] = rect->g;
-            } else if (j==2) {
-                colors[i][j] = rect->b;
-            }
-        }
-    }
-
     if (rect->texid != INVALID) {
         //texture
+
+        //image coordinates (fractional world coordinates)
         GLfloat texcoords[6][2];
-        float tx  = rect->left;
-        float ty2 = rect->bottom;//1;
-        float tx2 = rect->right;//1;
-        float ty  = rect->top;//0;
+        float tx  = rect->left;   //0
+        float ty2 = rect->bottom; //1;
+        float tx2 = rect->right;  //1;
+        float ty  = rect->top;    //0;
 
         texcoords[0][0] = tx;    texcoords[0][1] = ty;
         texcoords[1][0] = tx2;   texcoords[1][1] = ty;
@@ -286,8 +273,24 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
         texcoords[5][0] = tx;    texcoords[5][1] = ty;
 
         textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->texid, rect->opacity);
-    } else {
+    } else if (!rect->hasImage) {
         //color
+        GLfloat colors[6][3];
+
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 3; j++) {
+                colors[i][j] = 0.5;
+
+                if (j==0) {
+                    colors[i][j] = rect->r;
+                } else if (j==1) {
+                    colors[i][j] = rect->g;
+                } else if (j==2) {
+                    colors[i][j] = rect->b;
+                }
+            }
+        }
+
         colorShaderApply(c, colorShader, modelView, verts, colors, rect->opacity);
     }
 

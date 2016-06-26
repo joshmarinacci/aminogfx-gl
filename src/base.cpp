@@ -854,7 +854,7 @@ NAN_METHOD(initTextureShader) {
 }
 
 NAN_METHOD(createRect) {
-    Rect *rect = new Rect();
+    Rect *rect = new Rect(info[0]->BooleanValue());
 
     rects.push_back(rect);
 
