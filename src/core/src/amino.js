@@ -33,6 +33,7 @@ amino.makeProp = function (obj, name, val) {
     prop.value = val;
     prop.propname = name;
     prop.listeners = [];
+
     prop.watch = function (fun) {
         if (fun === undefined) {
             throw new Error('function undefined for property ' + name + ' on object with value ' + val);
@@ -44,23 +45,31 @@ amino.makeProp = function (obj, name, val) {
 
         return this;
     };
+
     prop.get = function (v) {
         return this.value;
     };
-    prop.set = function (v, obj) {
-        amino.SETCOUNT++;
 
+    prop.set = function (v, obj) {
+        //check if modified
+        if (v === this.value) {
+            return obj;
+        }
+
+        //update & fire listeners
         this.value = v;
 
         for (var i = 0; i < this.listeners.length; i++) {
-            this.listeners[i](this.value, this,obj);
+            this.listeners[i](this.value, this, obj);
         }
 
         return obj;
     };
+
     prop.anim = function () {
         return amino.getCore().getNative().createPropAnim(obj, name);
     };
+
     prop.bindto = function (prop, fun) {
         var set = this;
 
