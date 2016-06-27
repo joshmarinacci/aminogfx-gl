@@ -380,8 +380,8 @@ function Stage (core) {
      * Update size on window resizing.
      */
     core.on('windowsize', function (e) {
-        self.w.value = e.width;
-        self.h.value = e.height;
+        self.w(e.width);
+        self.h(e.height);
     });
 
     /**
