@@ -82,8 +82,9 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
 
     *lineNr = 1;
 
-    size_t lineStart = 0;
-    size_t linePos = 0;
+    size_t lineStart = 0; //start of current line
+    size_t linePos = 0; //character pos current line
+    float penXStart = pen->x;
 
     //debug
     //printf("add_text: wrap=%i width=%i\n", wrap, width);
@@ -127,7 +128,6 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
 
                 //process
                 if (newLine) {
-                    pen->x = 0;
                     linePos = 0;
 
                     //check word wrapping
@@ -148,27 +148,31 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                             size_t start = count - (i - wrapPos);
 
                             //printf("remove %i of %i\n", (int)start, (int)count);
+                            //printf("wrapping char=%lc count=%d\n", ch, count);
 
                             //remove white space
                             vertex_buffer_erase(buffer, start);
                             count--;
 
                             //update existing glyphs
-                            float xOffset;
-                            float xLast;
+                            float xOffset = 0;
+                            float xLast = 0;
 
                             for (size_t j = start; j < count; j++) {
+                                //glyph info
                                 ivec4 *item = (ivec4 *)vector_get(buffer->items, j);
                                 size_t vstart = item->x;
                                 size_t vcount = item->y;
+
+                                assert(vcount == 4);
 
                                 //values
                                 vertex_t *vertices = (vertex_t *)vector_get(buffer->vertices, vstart);
 
                                 if (j == start) {
-                                    xOffset = vertices->x;
+                                    xOffset = vertices->x - penXStart;
 
-                                    //Note: kerning ignored
+                                    //Note: kerning ignored (after space)
                                 }
 
                                 for (size_t k = 0; k < vcount; k++) {
@@ -182,14 +186,17 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                                 linePos++;
                             }
 
-                            pen->x = xLast - xOffset;
+                            pen->x -= xOffset;
+                            lineStart = i - count;
                             skip = false;
                         }
+                    } else {
+                        pen->x = penXStart;
+                        kerning = 0;
+                        lineStart = i;
                     }
 
                     (*lineNr)++;
-                    lineStart = i;
-                    kerning = 0;
                     pen->y -= font->height; //inverse coordinates
                 }
 
@@ -752,13 +759,14 @@ NAN_METHOD(getCharWidth) {
     std::size_t len = wstr.length();
 
     for (std::size_t i = 0; i < len; i++) {
-        wchar_t ch  = wstr.c_str()[i];
+        wchar_t ch  = wstr.c_str()[i]; //TODO cache
 
         //skip null terminators
         if (ch == '\0') {
             continue;
         }
 
+        //FIXME kerning
         texture_glyph_t *glyph = texture_font_get_glyph(tf, wstr.c_str()[i]);
 
         if (glyph == 0) {
