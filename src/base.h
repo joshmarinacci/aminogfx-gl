@@ -410,6 +410,7 @@ public:
 
         if (then) {
             delete then;
+            then = NULL;
         }
     }
 
@@ -421,8 +422,8 @@ public:
             return;
         }
 
-        if (then) {
-            delete then;
+        if (this->then) {
+            delete this->then;
         }
 
         this->then = then;
