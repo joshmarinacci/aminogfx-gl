@@ -114,6 +114,7 @@ var propsHash = {
     lerpprop: 16,
     autoreverse: 35,
     then: 37,
+    stop: 38,
 
     //geometry
     geometry:  24,
@@ -278,7 +279,9 @@ function JSPropAnim(target, name) {
         return this;
     };
 
-    //start the animation
+    /*
+     * Start the animation.
+     */
     this.start = function () {
         if (DEBUG) {
             console.log('startin anim');
@@ -312,6 +315,13 @@ function JSPropAnim(target, name) {
         }, this._delay);
 
         return this;
+    };
+
+    /**
+     * Stop the animation.
+     */
+    this.stop = function () {
+        Core.getCore().getNative().updateAnimProperty(this.handle, 'stop', true);
     };
 
     //TODO more features from native

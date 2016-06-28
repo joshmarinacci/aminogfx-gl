@@ -82,6 +82,7 @@ static const int CLIPRECT_PROP = 34;
 static const int AUTOREVERSE_PROP = 35;
 static const int DIMENSION_PROP = 36;
 static const int THEN_PROP = 37;
+static const int STOP_PROP = 38;
 
 static const int TEXT_VALIGN_PROP = 40;
 static const int TEXT_WRAP_PROP   = 41;
@@ -560,8 +561,11 @@ public:
 
     //TODO pause
     //TODO resume
-    //TODO stop (set active)
     //TODO reset (start from beginning)
+
+    void stop() {
+        active = false;
+    }
 
     void endAnimation() {
         if (DEBUG_BASE) {
@@ -903,6 +907,10 @@ public:
 
                 case THEN_PROP:
                     anim->setThen(callback);
+                    break;
+
+                case STOP_PROP:
+                    anim->stop();
                     break;
 
                 default:
