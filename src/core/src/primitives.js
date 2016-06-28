@@ -180,6 +180,9 @@ function Text() {
     //methods
     var self = this;
 
+    /**
+     * Load the font.
+     */
     this.updateFont = function () {
         //get font
         self.font = amino.getCore().getNative().getFont(self.fontName());
@@ -195,6 +198,28 @@ function Text() {
             amino.getCore().getNative().updateProperty(self.handle, 'fontId', id);
         }
     };
+
+    /**
+     * Number of lines.
+     *
+     * FIXME async handling
+     */
+    Object.defineProperty(this, 'lines', {
+        get: function () {
+            return amino.getCore().getNative().getTextLineCount(self.handle);
+        }
+    });
+
+    /**
+     * Text height in pixels.
+     *
+     * FIXME async handling
+     */
+    Object.defineProperty(this, 'textHeight', {
+        get: function () {
+            return amino.getCore().getNative().getTextHeight(self.handle);
+        }
+    });
 
     /**
      * Calc text width.
@@ -288,17 +313,18 @@ function Group() {
 
     amino.makeProps(this, {
         id: '',
-        visible:true,
-        x:0,
-        y:0,
-        sx:1,
-        sy:1,
-        rx:0,
-        ry:0,
-        rz:0,
-        w:100,
-        h:100,
-        cliprect:0
+        visible: true,
+        //TODO group opacity
+        x: 0,
+        y: 0,
+        sx: 1,
+        sy: 1,
+        rx: 0,
+        ry: 0,
+        rz: 0,
+        w: 100,
+        h: 100,
+        cliprect: 0
     });
 
     //native

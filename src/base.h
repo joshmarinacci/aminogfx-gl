@@ -1202,6 +1202,8 @@ NAN_METHOD(getFontAscender);
 NAN_METHOD(getFontDescender);
 NAN_METHOD(getCharWidth);
 NAN_METHOD(createNativeFont);
+NAN_METHOD(getTextLineCount);
+NAN_METHOD(getTextHeight);
 NAN_METHOD(initColorShader);
 NAN_METHOD(initTextureShader);
 

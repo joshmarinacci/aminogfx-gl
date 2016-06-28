@@ -392,6 +392,20 @@ var gl_native = {
     },
     textVAlignHash: textVAlignHash,
     textWrapHash: textWrapHash,
+    getTextLineCount: function (handle) {
+        if (handle == undefined) {
+            throw new Error('Can\'t set a property on an undefined handle!!');
+        }
+
+        return sgtest.getTextLineCount(handle);
+    },
+    getTextHeight: function (handle) {
+        if (handle == undefined) {
+            throw new Error('Can\'t set a property on an undefined handle!!');
+        }
+
+        return sgtest.getTextHeight(handle);
+    },
     updateProperty: function (handle, name, value) {
         if (handle == undefined) {
             throw new Error('Can\'t set a property on an undefined handle!!');

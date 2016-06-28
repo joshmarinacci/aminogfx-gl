@@ -278,6 +278,22 @@ void TextNode::refreshText() {
     add_text(buffer, f, t2, &color, &pen, wrap, width, &lineNr);
 }
 
+NAN_METHOD(getTextLineCount) {
+    int textHandle = info[0]->Uint32Value();
+    TextNode *node = (TextNode *)rects[textHandle];
+
+    info.GetReturnValue().Set(node->lineNr);
+}
+
+NAN_METHOD(getTextHeight) {
+    int textHandle = info[0]->Uint32Value();
+    TextNode *node = (TextNode *)rects[textHandle];
+    AminoFont *font = fontmap[node->fontid];
+    texture_font_t *texture = font->fonts[node->fontsize];
+
+    info.GetReturnValue().Set(node->lineNr * texture->height);
+}
+
 NAN_METHOD(node_glCreateShader) {
   int type   = info[0]->Uint32Value();
   int shader = glCreateShader(type);
@@ -508,7 +524,7 @@ NAN_METHOD(addNodeToGroup) {
     int groupHandle  = info[1]->Uint32Value();
 
     //update group
-    Group *group = (Group*)rects[groupHandle];
+    Group *group = (Group *)rects[groupHandle];
     AminoNode *node = rects[rectHandle];
 
     group->children.push_back(node);
