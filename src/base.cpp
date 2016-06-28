@@ -480,7 +480,7 @@ NAN_METHOD(updateAnimProperty) {
         }
 
         callback = new Nan::Callback(info[2].As<v8::Function>());
-    } else if (info[2]->IsNull()) {
+    } else if (info[2]->IsNull() || info[2]->IsUndefined()) {
         if (DEBUG_BASE) {
             printf("-> callback (null)\n");
         }
