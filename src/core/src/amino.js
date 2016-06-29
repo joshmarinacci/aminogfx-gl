@@ -70,12 +70,15 @@ amino.makeProp = function (obj, name, val) {
      */
     prop.set = function (v, obj) {
         //check if modified
+        //FIXME add again after fixing the animation JS value
+        /*
         if (v === this.value) {
             //debug
             //console.log('not changed: ' + name);
 
             return obj;
         }
+        */
 
         //update & fire listeners
         this.value = v;

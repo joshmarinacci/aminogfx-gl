@@ -557,6 +557,8 @@ public:
                 printf("Unknown animation property: %i\n", property);
                 break;
         }
+
+        //FIXME JS value not updated and therefore bindto callbacks not fired!
     }
 
     //TODO pause
