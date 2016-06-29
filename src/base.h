@@ -324,7 +324,7 @@ public:
 
         //properties
         text = L"";
-        fontsize = 40;
+        fontsize = 20;
         fontid = INVALID;
         buffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
         vAlign = VALIGN_BASELINE;
@@ -708,10 +708,10 @@ public:
         this->hasImage = hasImage;
 
         //offset (world coordinates: 0..1)
-        left = 0;
+        left   = 0;
         bottom = 1;
-        right = 1;
-        top = 0;
+        right  = 1;
+        top    = 0;
     }
 
     virtual ~Rect() {

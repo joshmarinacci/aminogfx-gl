@@ -97,7 +97,13 @@ setters['wrap'] = setWrap;
 function applyNativeBinding(me) {
     for (var name in setters) {
         if (me.hasOwnProperty(name)) {
-            me[name].watch(setters[name]);
+            var func = setters[name];
+            var prop = me[name];
+
+            prop.watch(func);
+
+            //send default value to native side
+            setters[name](prop(), prop, me);
         }
     }
 }
@@ -155,21 +161,29 @@ function Text() {
     amino.makeProps(this, {
         id: '',
         visible: true,
+
+        //position
         x: 0,
         y: 0,
+
+        //size
         w: 0,
         h: 0,
+
+        //scaling
         sx: 1,
         sy: 1,
-        text: '',
-        fontSize: 20,
-        fontName: 'source',
+
+        //font
+        text:       '',
+        fontSize:   20,
+        fontName:   'source',
         fontWeight: 400,
-        fontStyle: 'normal',
-        opacity: 1.0,
-        fill: '#ffffff',
-        vAlign: 'baseline',
-        wrap: 'none'
+        fontStyle:  'normal',
+        opacity:    1.0,
+        fill:       '#ffffff',
+        vAlign:     'baseline',
+        wrap:       'none'
     });
 
     //native
@@ -251,14 +265,18 @@ function ImageView() {
     amino.makeProps(this, {
         id: '',
         visible: true,
+
+        //positon
         x: 0,
         y: 0,
-        sx: 1,
-        sy: 1,
 
         //size
         w: 100,
         h: 100,
+
+        //scaling
+        sx: 1,
+        sy: 1,
 
         //texture offset
         textureLeft:   0,
@@ -314,16 +332,27 @@ function Group() {
     amino.makeProps(this, {
         id: '',
         visible: true,
+
         //TODO group opacity
+
+        //position
         x: 0,
         y: 0,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //scaling
         sx: 1,
         sy: 1,
+
+        //rotation
         rx: 0,
         ry: 0,
         rz: 0,
-        w: 100,
-        h: 100,
+
+        //clipping
         cliprect: 0
     });
 
@@ -510,16 +539,22 @@ function Polygon() {
     amino.makeProps(this, {
         id: 'polygon',
         visible: true,
+
+        //position
         x: 0,
         y: 0,
+
+        //scaling
         sx: 1,
         sy: 1,
+
+        //properties
         closed: true,
         filled: true,
         fill: '#ff0000',
-        opacity: 1.0,
-        dimension: 2,
-        geometry: [0,0, 50,0, 0,0]
+        opacity: 1.,
+        dimension: 2, //2D
+        geometry: []
     });
 
     //native

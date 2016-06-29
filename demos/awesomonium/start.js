@@ -147,7 +147,7 @@ function buildDashboard() {
 }
 
 function makeFooterSymbols(root) {
-    for(var i  =0; i < 7; i++)  {
+    for(var i = 0; i < 7; i++)  {
         var sun = new amino.Group().x(w / 2 - 300 + i * 100).y(h - 50).rz(30);
 
         sun.add(new amino.Text()

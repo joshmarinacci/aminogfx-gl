@@ -20,8 +20,17 @@ amino.makeProps = function (obj, props) {
 
 /**
  * Create property handlers.
+ *
+ * @param obj object reference.
+ * @param name property name.
+ * @param val default value.
  */
 amino.makeProp = function (obj, name, val) {
+    /**
+     * Property function.
+     *
+     * Getter and setter.
+     */
     var prop = function (v) {
         if (v != undefined) {
             return prop.set(v, obj);
@@ -34,25 +43,37 @@ amino.makeProp = function (obj, name, val) {
     prop.propname = name;
     prop.listeners = [];
 
+    /**
+     * Add watch callback.
+     *
+     * Callback: (value, property, object)
+     */
     prop.watch = function (fun) {
         if (fun === undefined) {
             throw new Error('function undefined for property ' + name + ' on object with value ' + val);
         }
 
-        this.listeners.push(function (v, v2, v3) {
-            fun(v, v2, v3);
-        });
+        this.listeners.push(fun);
 
         return this;
     };
 
-    prop.get = function (v) {
+    /**
+     * Getter function.
+     */
+    prop.get = function () {
         return this.value;
     };
 
+    /**
+     * Setter function.
+     */
     prop.set = function (v, obj) {
         //check if modified
         if (v === this.value) {
+            //debug
+            //console.log('not changed: ' + name);
+
             return obj;
         }
 
@@ -66,10 +87,18 @@ amino.makeProp = function (obj, name, val) {
         return obj;
     };
 
+    /**
+     * Create animation.
+     */
     prop.anim = function () {
         return amino.getCore().getNative().createPropAnim(obj, name);
     };
 
+    /**
+     * Bind to other property.
+     *
+     * Optional: callback to modify value.
+     */
     prop.bindto = function (prop, fun) {
         var set = this;
 
@@ -84,10 +113,11 @@ amino.makeProp = function (obj, name, val) {
         return this;
     };
 
+    //attach
     obj[name] = prop;
 };
 
-//String extension
+//String extension (polyfill for < ES 6)
 if (typeof String.prototype.endsWith !== 'function') {
     String.prototype.endsWith = function (suffix) {
         return this.indexOf(suffix, this.length - suffix.length) !== -1;

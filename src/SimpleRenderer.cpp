@@ -150,8 +150,8 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
 
         GLfloat colors[6][3];
 
-        for (int i = 0; i  <6; i++) {
-            for(int j = 0; j < 3; j++) {
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 3; j++) {
                 colors[i][j] = 1.0;
             }
         }
@@ -161,10 +161,11 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
         //set function to draw pixels where the buffer is equal to 1
         glStencilFunc(GL_EQUAL, 0x1, 0xFF);
         glStencilMask(0x00);
+
         //turn color buffer drawing back on
         glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
-
     }
+
     for (std::size_t i = 0; i < group->children.size(); i++) {
         this->render(c, group->children[i]);
     }
@@ -321,7 +322,7 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     //baseline at top/left
     texture_font_t *tf = font->fonts[text->fontsize];
 
-    //debub
+    //debug
     //sprintf("font: size=%f height=%f ascender=%f descender=%f\n", tf->size, tf->height, tf->ascender, tf->descender);
 
     switch (text->vAlign) {
