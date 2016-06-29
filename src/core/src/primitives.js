@@ -353,7 +353,7 @@ function Group() {
         rz: 0,
 
         //clipping
-        cliprect: 0
+        cliprect: false
     });
 
     //native

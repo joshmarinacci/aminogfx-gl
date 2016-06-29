@@ -190,7 +190,7 @@ var Core = function () {
 
         //console.log(tab + "   xy="+tx+","+ty);
 
-        if (root.cliprect && root.cliprect() == 1) {
+        if (root.cliprect && root.cliprect()) {
             if (tx < 0) {
                 return false;
             }
