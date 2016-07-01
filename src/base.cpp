@@ -119,6 +119,11 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                     //next line
                     newLine = true;
                     wordWrap = wrap == WRAP_WORD;
+
+                    //check space
+                    if (iswspace(ch)) {
+                        skip = true;
+                    }
                 }
 
                 //check white space
@@ -131,12 +136,14 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                     linePos = 0;
 
                     //check word wrapping
+                    bool wrapped = false;
+
                     if (wordWrap && !skip) {
                         //find white space
                         int wrapPos = -1;
 
                         for (size_t j = i - 1; j > lineStart; j--) {
-                            if (isspace(text[j])) {
+                            if (iswspace(text[j])) {
                                 wrapPos = j;
                                 break;
                             }
@@ -148,14 +155,14 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                             size_t start = count - (i - wrapPos);
 
                             //printf("remove %i of %i\n", (int)start, (int)count);
-                            //printf("wrapping char=%lc count=%d\n", ch, count);
+                            //printf("wrapping pos=%d char=%lc start=%d count=%d\n", i, ch, start, count);
 
                             //remove white space
                             vertex_buffer_erase(buffer, start);
                             count--;
 
                             //update existing glyphs
-                            float xOffset = 0;
+                            float xOffset = pen->x; //case: space before
                             float xLast = 0;
 
                             for (size_t j = start; j < count; j++) {
@@ -187,14 +194,22 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                             }
 
                             pen->x -= xOffset;
-                            lineStart = i - count;
+                            lineStart = i - linePos;
                             skip = false;
+
+                            wrapped = true;
                         }
-                    } else {
+                    }
+
+                    //wrap new character
+                    if (!wrapped) {
                         pen->x = penXStart;
                         kerning = 0;
                         lineStart = i;
                     }
+
+                    //debug
+                    //printf("pen.x=%f lineStart=%lc\n", pen->x, text[lineStart]);
 
                     (*lineNr)++;
                     pen->y -= font->height; //inverse coordinates
@@ -217,6 +232,16 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
             float t0 = glyph->t0;
             float s1 = glyph->s1;
             float t1 = glyph->t1;
+            float advance = glyph->advance_x;
+
+            //skip special characters
+            if (ch == 0x9d) {
+                //hide
+                x1 = x0;
+                y1 = y0;
+                advance = 0;
+            }
+
             GLushort indices[6] = {0,1,2, 0,2,3};
             vertex_t vertices[4] = { { x0,y0,0,  s0,t0,  r,g,b,a },
                                      { x0,y1,0,  s0,t1,  r,g,b,a },
@@ -228,11 +253,17 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
             linePos++;
 
             //next
-            pen->x += glyph->advance_x;
+            pen->x += advance;
+        } else {
+            //debug
+            //printf("not a glyph: %lc\n", ch);
         }
     }
 }
 
+/**
+ * Update the rendered text.
+ */
 void TextNode::refreshText() {
     if (fontid == INVALID) {
         return;
@@ -275,7 +306,7 @@ void TextNode::refreshText() {
     texture_font_t *f = font->fonts[fontsize];
 
     assert(f);
-    add_text(buffer, f, t2, &color, &pen, wrap, width, &lineNr);
+    add_text(buffer, f, t2, &color, &pen, wrap, w, &lineNr);
 }
 
 NAN_METHOD(getTextLineCount) {

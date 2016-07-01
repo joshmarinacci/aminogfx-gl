@@ -296,7 +296,7 @@ public:
     float g;
     float b;
 
-    //box TODO wrap text
+    //box
     float w;
     float h;
     int wrap;
