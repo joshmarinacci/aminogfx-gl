@@ -1,7 +1,7 @@
 {
     "targets": [
         {
-            "target_name":"aminonative",
+            "target_name": "aminonative",
             "sources":[
                 "src/base.cc",
                 "src/fonts/vector.c",
@@ -22,6 +22,7 @@
                 "src/",
                 "src/fonts/",
             ],
+            "cflags": [ "-Wall" ],
 
             'conditions': [
                 ['OS=="mac"', {
@@ -86,15 +87,10 @@
 		                        "/usr/include/freetype2",
 		                        "<!@(freetype-config --cflags)"
 		                    ]
-
 		                }]
 		            ]
-
                 }]
-
             ]
-
-
         },
   {
       "target_name": "action_after_build",
