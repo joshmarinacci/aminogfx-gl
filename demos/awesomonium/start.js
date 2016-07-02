@@ -1,3 +1,5 @@
+'use strict';
+
 var amino = require('../../main.js');
 var data = require('./countries.js');
 var onecolor = require('onecolor');
@@ -147,9 +149,10 @@ function buildDashboard() {
 }
 
 function makeFooterSymbols(root) {
-    for(var i = 0; i < 7; i++)  {
-        var sun = new amino.Group().x(w / 2 - 300 + i * 100).y(h - 50).rz(30);
+    for (var i = 0; i < 7; i++)  {
+        var sun = new amino.Group().x(w / 2 - 300 + i * 100).y(h - 25).rz(30);
 
+        //see http://fontawesome.io/icon/caret-up/
         sun.add(new amino.Text()
             .fontName('awesome').fontSize(80).text('\uf0d8')
             .x(-25).y(25).fill('#fcfbcf')
@@ -165,24 +168,28 @@ function makeFooterSymbols(root) {
 }
 
 function makeHeader(root) {
+    var fontH = 70;
+
     root.add(new amino.Rect().fill('#ff0000').w(w).h(100).opacity(0.5));
     root.add(new amino.Text()
         .text('Awesomonium Levels')
-        .fontSize(80)
+        .fontSize(fontH)
         .fontName('mech')
         .x(20)
         .y(70)
         .fill('#fcfbcf')
     );
-    root.add(createBar1(50,100,5, '#fcfbcf').x(500).y(75).rz(-90));
+    root.add(createBar1(50, 100, 5, '#fcfbcf').x(400).y(75).rz(-90));
+    /*
     root.add(new amino.Text()
         .text('Atomization')
-        .fontSize(80)
+        .fontSize(fontH)
         .fontName('mech')
-        .x(w-320)
+        .x(w - 320)
         .y(70)
         .fill('#fcfbcf')
     );
+    */
 
     //beaker symbol
     root.add(new amino.Text()
@@ -192,7 +199,6 @@ function makeHeader(root) {
 }
 
 function buildGlobe(group) {
-
     var cos = Math.cos;
     var sin = Math.sin;
     var PI = Math.PI;
