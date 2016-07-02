@@ -43,9 +43,7 @@ varying vec4 frontcolor;
 
 void main()
 {
-    // gl_TexCoord[0].xy = tex_coord.xy;
     uv = tex_coord;
-    //gl_FrontColor     = color;
     frontcolor = color;
-    gl_Position       = mvp * (trans * vec4(vertex, 1.0));
+    gl_Position = mvp * (trans * vec4(vertex, 1.0));
 }

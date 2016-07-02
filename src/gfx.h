@@ -89,6 +89,7 @@ public:
     GLint texuni;
     GLint mvpuni;
     GLint transuni;
+    GLint coloruni;
 
     AminoFont() {
         texuni = -1;

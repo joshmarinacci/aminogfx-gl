@@ -373,11 +373,15 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
         font->texuni   = glGetUniformLocation(font->shader, "texture");
         font->mvpuni   = glGetUniformLocation(font->shader, "mvp");
         font->transuni = glGetUniformLocation(font->shader, "trans");
+        font->coloruni = glGetUniformLocation(font->shader, "color");
     }
 
-    //FIXME group opacity not supported
+    //color & opacity
+    GLfloat color[4] = {text->r, text->g, text->b, c->opacity * text->opacity};
 
-    glUniform1i(font->texuni, 0);
+    glUniform4fv(font->coloruni, 1, color);
+
+    glUniform1i(font->texuni, 0); //GL_TEXTURE0
 
     /*
     if (modelViewChanged) {

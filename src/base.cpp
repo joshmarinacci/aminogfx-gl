@@ -72,12 +72,8 @@ void restore() {
 
 // --------------------------------------------------------------- add_text ---
 static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
-               wchar_t *text, vec4 *color, vec2 *pen, int wrap, int width, int *lineNr )
+               wchar_t *text, vec2 *pen, int wrap, int width, int *lineNr )
 {
-    float r = color->red;
-    float g = color->green;
-    float b = color->blue;
-    float a = color->alpha;
     size_t len = wcslen(text);
 
     *lineNr = 1;
@@ -243,10 +239,10 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
             }
 
             GLushort indices[6] = {0,1,2, 0,2,3};
-            vertex_t vertices[4] = { { x0,y0,0,  s0,t0,  r,g,b,a },
-                                     { x0,y1,0,  s0,t1,  r,g,b,a },
-                                     { x1,y1,0,  s1,t1,  r,g,b,a },
-                                     { x1,y0,0,  s1,t0,  r,g,b,a } };
+            vertex_t vertices[4] = { { x0,y0,0,  s0,t0 },
+                                     { x0,y1,0,  s0,t1 },
+                                     { x1,y1,0,  s1,t1 },
+                                     { x1,y0,0,  s1,t0 } };
 
             //append
             vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
@@ -288,25 +284,22 @@ void TextNode::refreshText() {
 
     //render text
     vec2 pen;
-    vec4 color;
 
     pen.x = 0;
     pen.y = 0;
 
-    color.r = r;
-    color.g = g;
-    color.b = b;
-    color.a = opacity;
-
     wchar_t *t2 = const_cast<wchar_t *>(text.c_str());
 
-    vertex_buffer_delete(buffer);
-    buffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+    if (buffer) {
+        vertex_buffer_clear(buffer);
+    } else {
+        buffer = vertex_buffer_new("vertex:3f,tex_coord:2f");
+    }
 
     texture_font_t *f = font->fonts[fontsize];
 
     assert(f);
-    add_text(buffer, f, t2, &color, &pen, wrap, w, &lineNr);
+    add_text(buffer, f, t2, &pen, wrap, w, &lineNr);
 }
 
 NAN_METHOD(getTextLineCount) {
@@ -371,7 +364,7 @@ NAN_METHOD(node_glGetShaderInfoLog) {
   int shader   = info[0]->Uint32Value();
   char buffer[513];
 
-  glGetShaderInfoLog(shader,512,NULL,buffer);
+  glGetShaderInfoLog(shader, 512, NULL, buffer);
 
   info.GetReturnValue().Set(Nan::New(buffer, strlen(buffer)).ToLocalChecked());
 }
@@ -854,8 +847,10 @@ NAN_METHOD(createNativeFont) {
 
     std::string str ("");
     std::string str2 = str + shader_base;
-    std::string vert = str2 + "/v3f-t2f-c4f.vert";
-    std::string frag = str2 + "/v3f-t2f-c4f.frag";
+    std::string vert = str2 + "/v3f-t2f.vert";
+    std::string frag = str2 + "/v3f-t2f.frag";
+
+    //printf("shader: vertex=%s fragment=%s\n", vert.c_str(), frag.c_str());
 
     free(shader_base);
 

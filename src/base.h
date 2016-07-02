@@ -326,7 +326,7 @@ public:
         text = L"";
         fontsize = 20;
         fontid = INVALID;
-        buffer = vertex_buffer_new("vertex:3f,tex_coord:2f,color:4f");
+        buffer = NULL;
         vAlign = VALIGN_BASELINE;
     }
 
@@ -1221,7 +1221,6 @@ NAN_METHOD(initTextureShader);
 typedef struct {
     float x, y, z;    // position
     float s, t;       // texture
-    float r, g, b, a; // color
 } vertex_t;
 
 //OpenGL JavaScript bindings
