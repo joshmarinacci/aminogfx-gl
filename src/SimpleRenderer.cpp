@@ -320,7 +320,7 @@ int te = 0;
  * Render text.
  */
 void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
-    if (fontmap.size() < 1) {
+    if (fontmap.empty()) {
         return;
     }
 

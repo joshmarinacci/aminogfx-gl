@@ -10,13 +10,13 @@ amino.start(function (core, stage) {
         path: path.join(__dirname, 'resources/oswald/'),
         weights: {
             200: {
-                normal: 'Oswald-Light.ttf',
+                normal: 'Oswald-Light.ttf'
             },
             400: {
-                normal: 'Oswald-Regular.ttf',
+                normal: 'Oswald-Regular.ttf'
             },
             800: {
-                normal: 'Oswald-Bold.ttf',
+                normal: 'Oswald-Bold.ttf'
             }
         }
     });

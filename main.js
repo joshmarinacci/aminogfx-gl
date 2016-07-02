@@ -198,7 +198,7 @@ function JSFont(desc) {
     }
 
     this.getNative = function (size, weight, style) {
-        //FIXME style not used
+        //FIXME style not used; size not used
         if (this.weights[weight]) {
             return this.weights[weight];
         }
@@ -210,7 +210,7 @@ function JSFont(desc) {
     };
 
     /**
-     * @func calcStringWidth(string, size)
+     * @func calcStringWidth(string, size, weight, style)
      *
      * returns the width of the specified string rendered at the specified size
      */
@@ -222,7 +222,7 @@ function JSFont(desc) {
      * Get font height.
      */
     this.getHeight = function (size, weight, style) {
-        if (size == undefined) {
+        if (!size) {
             throw new Error('SIZE IS UNDEFINED');
         }
 
@@ -235,7 +235,7 @@ function JSFont(desc) {
      * Returns ascender & descender values.
      */
     this.getHeightMetrics = function (size, weight, style) {
-        if (size == undefined) {
+        if (!size) {
             throw new Error('SIZE IS UNDEFINED');
         }
 
@@ -333,8 +333,8 @@ function JSPropAnim(target, name) {
 var PNG_HEADER = new Buffer([ 137, 80, 78, 71, 13, 10, 26, 10 ]); //PNG Header
 
 var gl_native = {
-    createNativeFont: function (path) {
-        return sgtest.createNativeFont(path, __dirname + '/resources/shaders');
+    createNativeFont: function (filename) {
+        return sgtest.createNativeFont(filename, path.join(__dirname, '/resources/shaders'));
     },
     registerFont: function (args) {
         fontmap[args.name] = new JSFont(args);

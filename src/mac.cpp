@@ -247,7 +247,7 @@ NAN_METHOD(createWindow) {
     }
 
     //set bindings
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window); //TODO call in loop (multi-window support)
     glfwSetKeyCallback(window, GLFW_KEY_CALLBACK_FUNCTION);
     glfwSetCursorPosCallback(window, GLFW_MOUSE_POS_CALLBACK_FUNCTION);
     glfwSetMouseButtonCallback(window, GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION);

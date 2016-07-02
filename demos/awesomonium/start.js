@@ -312,7 +312,7 @@ function setupFont(core) {
         weights: {
             400: {
                 normal: 'MechEffects1BB_reg.ttf',
-                italic: 'MechEffects1BB_ital.ttf',
+                italic: 'MechEffects1BB_ital.ttf'
             },
         }
     });
