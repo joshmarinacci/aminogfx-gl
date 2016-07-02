@@ -544,7 +544,7 @@ public:
 
                 //handle text opacity
                 if (target->type == TEXT) {
-                    //TODO use fragment shader with opacity value
+                    //TODO use fragment shader with opacity value (much faster)
                     TextNode *textnode = (TextNode *)target;
 
                     textnode->refreshText();

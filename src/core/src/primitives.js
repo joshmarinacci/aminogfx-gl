@@ -331,9 +331,10 @@ function Group() {
 
     amino.makeProps(this, {
         id: '',
-        visible: true,
 
-        //TODO group opacity
+        //visibility
+        visible: true,
+        opacity: 1,
 
         //position
         x: 0,

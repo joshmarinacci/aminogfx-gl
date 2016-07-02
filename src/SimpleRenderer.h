@@ -6,7 +6,8 @@
 class GLContext {
 public:
     std::stack<void *> matrixStack;
-    GLfloat* globaltx;
+    GLfloat *globaltx;
+    GLfloat opacity;
     int shadercount;
     int shaderDupCount;
     int texDupCount;
@@ -19,6 +20,10 @@ public:
         texDupCount = 0;
         prevProg = -1;
         prevtex = -1;
+
+        opacity = 1;
+
+        //matrix
         this->globaltx = new GLfloat[16];
         make_identity_matrix(this->globaltx);
     }
@@ -57,7 +62,7 @@ public:
         copy_matrix(this->globaltx,temp);
     }
 
-    void scale(double x, double y){
+    void scale(double x, double y) {
         GLfloat scale[16];
         GLfloat temp[16];
 
@@ -66,7 +71,30 @@ public:
         copy_matrix(this->globaltx, temp);
     }
 
+    GLfloat applyOpacity(GLfloat opacity) {
+        this->opacity *= opacity;
+
+        return this->opacity;
+    }
+
+    void saveOpacity() {
+        GLfloat *temp = new GLfloat[1];
+
+        temp[0] = opacity;
+        this->matrixStack.push(temp);
+    }
+
+    void restoreOpacity() {
+        GLfloat *temp = (GLfloat *)this->matrixStack.top();
+
+        this->matrixStack.pop();
+
+        opacity = temp[0];
+        delete temp;
+    }
+
     void save() {
+        //matrix
         GLfloat *temp = new GLfloat[16];
 
         copy_matrix(temp, this->globaltx);
@@ -75,8 +103,9 @@ public:
     }
 
     void restore() {
+        //matrix
         delete this->globaltx;
-        this->globaltx = (GLfloat*)this->matrixStack.top();
+        this->globaltx = (GLfloat *)this->matrixStack.top();
         this->matrixStack.pop();
     }
 

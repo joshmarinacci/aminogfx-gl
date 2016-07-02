@@ -56,15 +56,18 @@ static double getTime(void) {
 #endif
 
 #ifdef RPI
+
 #include "GLES/gl.h"
 #include "GLES2/gl2.h"
 #include "GLES2/gl2ext.h"
+
 //return the current time in msec
 static double getTime(void) {
     struct timespec res;
     clock_gettime(CLOCK_REALTIME, &res);
     return 1000.0 * res.tv_sec + ((double) res.tv_nsec / 1e6);
 }
+
 #endif
 
 #include <map>
@@ -75,9 +78,13 @@ static double getTime(void) {
 class AminoFont {
 public:
     int id;
+
+    //font
     texture_atlas_t *atlas;
     std::map<int, texture_font_t *> fonts; //by font size
     const char *filename;
+
+    //shader
     GLuint shader;
     GLint texuni;
     GLint mvpuni;

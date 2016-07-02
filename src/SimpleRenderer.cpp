@@ -105,7 +105,7 @@ void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView
 
     //render
     ctx->bindTexture(texid);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 6); //contains colors
 
     glDisableVertexAttribArray(shader->attr_pos);
     glDisableVertexAttribArray(shader->attr_texcoords);
@@ -166,9 +166,17 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
         glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
     }
 
+    //group opacity
+    c->saveOpacity();
+    c->applyOpacity(group->opacity);
+
+    //render items
     for (std::size_t i = 0; i < group->children.size(); i++) {
         this->render(c, group->children[i]);
     }
+
+    //restore opacity
+    c->restoreOpacity();
 
     if (group->cliprect == 1) {
         glDisable(GL_STENCIL_TEST);
@@ -205,7 +213,9 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
     glUniformMatrix4fv(colorShader->u_trans,  1, GL_FALSE, ctx->globaltx);
     glUniform1f(colorShader->u_opacity, poly->opacity);
 
-    if (poly->opacity != 1.0) {
+    GLfloat opacity = poly->opacity * ctx->opacity;
+
+    if (opacity != 1.0) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
@@ -228,6 +238,10 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
 
     glDisableVertexAttribArray(colorShader->attr_pos);
     glDisableVertexAttribArray(colorShader->attr_color);
+
+    if (opacity != 1.0) {
+        glDisable(GL_BLEND);
+    }
 }
 
 void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
@@ -255,6 +269,8 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     verts[5][0] = x;
     verts[5][1] = y;
 
+    GLfloat opacity = rect->opacity * c->opacity;
+
     if (rect->texid != INVALID) {
         //texture
 
@@ -273,7 +289,7 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
         texcoords[4][0] = tx;    texcoords[4][1] = ty2;
         texcoords[5][0] = tx;    texcoords[5][1] = ty;
 
-        textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->texid, rect->opacity);
+        textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->texid, opacity);
     } else if (!rect->hasImage) {
         //color
         GLfloat colors[6][3];
@@ -292,7 +308,7 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
             }
         }
 
-        colorShaderApply(c, colorShader, modelView, verts, colors, rect->opacity);
+        colorShaderApply(c, colorShader, modelView, verts, colors, opacity);
     }
 
     c->restore();
@@ -358,6 +374,8 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
         font->mvpuni   = glGetUniformLocation(font->shader, "mvp");
         font->transuni = glGetUniformLocation(font->shader, "trans");
     }
+
+    //FIXME group opacity not supported
 
     glUniform1i(font->texuni, 0);
 

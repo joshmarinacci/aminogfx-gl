@@ -37,13 +37,15 @@ uniform mat4 trans;
 attribute vec3 vertex;
 attribute vec2 tex_coord;
 attribute vec4 color;
+
 varying vec2 uv;
 varying vec4 frontcolor;
+
 void main()
 {
     // gl_TexCoord[0].xy = tex_coord.xy;
     uv = tex_coord;
     //gl_FrontColor     = color;
     frontcolor = color;
-    gl_Position       = mvp*(trans*vec4(vertex,1.0));
+    gl_Position       = mvp * (trans * vec4(vertex, 1.0));
 }
