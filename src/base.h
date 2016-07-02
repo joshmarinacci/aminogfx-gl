@@ -541,14 +541,6 @@ public:
             //opacity
             case OPACITY_PROP:
                 target->opacity = value;
-
-                //handle text opacity
-                if (target->type == TEXT) {
-                    //TODO use fragment shader with opacity value (much faster)
-                    TextNode *textnode = (TextNode *)target;
-
-                    textnode->refreshText();
-                };
                 break;
 
             //TODO js callback
@@ -1066,6 +1058,7 @@ public:
         } else if (target->type == TEXT) {
             //text
             TextNode *textnode = (TextNode *)target;
+            bool refresh = false;
 
             switch (property) {
                 case R_PROP:
@@ -1082,6 +1075,7 @@ public:
 
                 case W_PROP:
                     textnode->w = value;
+                    refresh = true;
                     break;
 
                 case H_PROP:
@@ -1090,14 +1084,17 @@ public:
 
                 case TEXT_PROP:
                     textnode->text = text;
+                    refresh = true;
                     break;
 
                 case FONTSIZE_PROP:
                     textnode->fontsize = value;
+                    refresh = true;
                     break;
 
                 case FONTID_PROP:
                     textnode->fontid = value;
+                    refresh = true;
                     break;
 
                 case TEXT_VALIGN_PROP:
@@ -1106,6 +1103,7 @@ public:
 
                 case TEXT_WRAP_PROP:
                     textnode->wrap = (int)value;
+                    refresh = true;
                     break;
 
                 default:
@@ -1113,7 +1111,9 @@ public:
                     break;
             }
 
-            textnode->refreshText();
+            if (refresh) {
+                textnode->refreshText();
+            }
         } else if (target->type == POLY) {
             //poly
             PolyNode *polynode = (PolyNode *)target;
