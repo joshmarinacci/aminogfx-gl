@@ -482,6 +482,7 @@ var gl_native = {
             }
         } else if (typeof src === 'string') {
             //load file (blocking)
+            //TODO use async version
             var buffer = fs.readFileSync(src);
 
             if (!buffer) {

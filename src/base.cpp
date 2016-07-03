@@ -672,11 +672,11 @@ NAN_METHOD(loadBufferToTexture) {
     int texid = info[0]->Uint32Value();
     int w     = info[1]->Uint32Value();
     int h     = info[2]->Uint32Value();
-    // this is *bytes* per pixel. usually 3 or 4
-    int bpp = info[3]->Uint32Value();
+    int bpp   = info[3]->Uint32Value(); // this is *bytes* per pixel. usually 3 or 4
 
     //printf("got w=%d h=%d bpp=%d\n", w, h, bpp);
 
+    //buffer
     Local<Object> bufferObj = info[4]->ToObject();
     char *bufferData = Buffer::Data(bufferObj);
     size_t bufferLength = Buffer::Length(bufferObj);
@@ -861,8 +861,8 @@ NAN_METHOD(createNativeFont) {
         printf("created font shader\n");
     }
 
-    //TODO reuse shader
-    //TODO glDeleteProgram
+    //TODO reuse shader (create only once)
+    //TODO glDeleteProgram (on destroy)
 
     info.GetReturnValue().Set(id);
 }

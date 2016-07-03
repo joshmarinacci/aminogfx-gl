@@ -206,6 +206,9 @@ NAN_METHOD(createWindow) {
     width = w;
     height = h;
 
+    //settings
+    //-> use OpenGL 2.x
+
     //create window
     window = glfwCreateWindow(width, height, "AminoGfx OpenGL Output", NULL, NULL);
 
@@ -247,13 +250,26 @@ NAN_METHOD(createWindow) {
     }
 
     //set bindings
-    glfwMakeContextCurrent(window); //TODO call in loop (multi-window support)
+    glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, GLFW_KEY_CALLBACK_FUNCTION);
     glfwSetCursorPosCallback(window, GLFW_MOUSE_POS_CALLBACK_FUNCTION);
     glfwSetMouseButtonCallback(window, GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION);
     glfwSetScrollCallback(window, GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION);
     glfwSetWindowSizeCallback(window, GLFW_WINDOW_SIZE_CALLBACK_FUNCTION);
     glfwSetWindowCloseCallback(window, GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION);
+
+    //OpenGL properties
+    //TODO return as runtime property
+    printf("GL_RENDERER   = %s\n", (char *)glGetString(GL_RENDERER));
+    printf("GL_VERSION    = %s\n", (char *)glGetString(GL_VERSION));
+    printf("GL_VENDOR     = %s\n", (char *)glGetString(GL_VENDOR));
+
+    GLint maxTextureSize;
+
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    printf("GL_MAX_TEXTURE_SIZE = %d\n", maxTextureSize);
+
+    printf("GLFW_VERSION = %s\n", glfwGetVersionString());
 
     //init valus
 	colorShader = new ColorShader();
@@ -318,8 +334,14 @@ static int currentFrame = 0;
 
 /**
  * Render the current scene.
+ *
+ * Thread safety: http://www.glfw.org/docs/latest/intro.html#thread_safety
  */
 void render(bool resizing = false) {
+    //bind OpenGL context
+    glfwMakeContextCurrent(window);
+
+    //init
     DebugEvent de;
     double starttime;
 
