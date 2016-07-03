@@ -207,7 +207,14 @@ NAN_METHOD(createWindow) {
     height = h;
 
     //settings
-    //-> use OpenGL 2.x
+
+    /*
+     * use OpenGL 2.x
+     *
+     * OpenGL 3.2 changes:
+     *
+     *   - https://developer.apple.com/library/mac/documentation/GraphicsImaging/Conceptual/OpenGL-MacProgGuide/UpdatinganApplicationtoSupportOpenGL3/UpdatinganApplicationtoSupportOpenGL3.html#//apple_ref/doc/uid/TP40001987-CH3-SW1
+     */
 
     //create window
     window = glfwCreateWindow(width, height, "AminoGfx OpenGL Output", NULL, NULL);
