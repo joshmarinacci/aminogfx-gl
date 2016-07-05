@@ -128,14 +128,17 @@ extern Nan::Callback *NODE_EVENT_CALLBACK;
  */
 class AminoGfx : public Nan::ObjectWrap {
 public:
+    /**
+     * Add class template to module exports.
+     */
     static NAN_MODULE_INIT(Init) {
         printf("AminoGfx init\n"); //FIXME
 
-        //initialize template
+        //initialize template (bound to New method)
         v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
 
         tpl->SetClassName(Nan::New("AminoGfx").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1); //object reference
+        tpl->InstanceTemplate()->SetInternalFieldCount(1); //object reference only stored
 
         //prototype methods
         Nan::SetPrototypeMethod(tpl, "test", test);
@@ -215,6 +218,9 @@ private:
 
     //TODO replace test
     void callJSMethod() {
+        //create scope
+		Nan::HandleScope scope;
+
         v8::Local<v8::Object> jsObj = handle();
 
         //get method
