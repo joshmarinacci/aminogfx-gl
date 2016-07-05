@@ -34,6 +34,13 @@
     "email": "joshua@marinacci.org",
     "url": "http://joshondesign.com/"
   },
+  "contributors": [
+    {
+      "name": "Christoph Bratschi",
+      "email": "bratschi@appamics.com",
+      "url": "https://appamics.com/"
+    }
+  ],
   "license": "MIT",
   "gypfile": true,
   "bugs": {
