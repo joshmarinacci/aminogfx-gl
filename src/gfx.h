@@ -1,14 +1,24 @@
 #ifndef _AMINOGFX_H
 #define _AMINOGFX_H
 
+/**
+ * Basic AmingoGfx definitions.
+ */
+
 //FIXME
 #define DEBUG_RESOURCES true
 
-#include "freetype-gl.h"
-#include "vertex-buffer.h"
 #include <nan.h>
 
+/*
+ * Platform specific headers.
+ *
+ * Current time in milliseconds.
+ */
+
 #ifdef MAC
+
+//macOS
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -27,6 +37,7 @@ static double getTime(void) {
 #endif
 
 #ifdef KLAATU
+
 #include <ui/DisplayInfo.h>
 #include <ui/FramebufferNativeWindow.h>
 #include <gui/SurfaceComposerClient.h>
@@ -37,12 +48,15 @@ static double getTime(void) {
     clock_gettime(CLOCK_REALTIME, &res);
     return 1000.0 * res.tv_sec + ((double) res.tv_nsec / 1e6);
 }
+
 #endif
 
 #ifdef LINUX
+
 #include <GL/glfw.h>
 #include <GL/glext.h>
 #include <sys/time.h>
+
 //return the current time in msec
 static double getTime(void) {
     timeval time;
@@ -53,6 +67,7 @@ static double getTime(void) {
 
     return millis;
 }
+
 #endif
 
 #ifdef RPI
@@ -69,62 +84,5 @@ static double getTime(void) {
 }
 
 #endif
-
-#include <map>
-
-/**
- * Font class.
- */
-class AminoFont {
-public:
-    int id;
-
-    //font
-    texture_atlas_t *atlas;
-    std::map<int, texture_font_t *> fonts; //by font size
-    const char *filename;
-
-    //shader
-    GLuint shader;
-    GLint texuni;
-    GLint mvpuni;
-    GLint transuni;
-    GLint coloruni;
-
-    AminoFont() {
-        texuni = -1;
-    }
-
-    virtual ~AminoFont() {
-        //destroy (if not called before)
-        destroy();
-    }
-
-    /**
-     * Free all resources.
-     */
-    virtual void destroy() {
-        //textures
-        for (std::map<int, texture_font_t *>::iterator it = fonts.begin(); it != fonts.end(); it++) {
-            if (DEBUG_RESOURCES) {
-                printf("freeing font texture\n");
-            }
-
-            texture_font_delete(it->second);
-        }
-
-        fonts.clear();
-
-        //atlas
-        if (atlas) {
-            if (DEBUG_RESOURCES) {
-                printf("freeing font\n");
-            }
-
-            texture_atlas_delete(atlas);
-            atlas = NULL;
-        }
-    }
-};
 
 #endif

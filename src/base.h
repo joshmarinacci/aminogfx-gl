@@ -2,6 +2,7 @@
 #define _AMINOBASE_H
 
 #include "gfx.h"
+#include "fonts.h"
 
 #include <node.h>
 #include <node_buffer.h>
