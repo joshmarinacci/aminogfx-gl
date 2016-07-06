@@ -3,7 +3,8 @@
         {
             "target_name": "aminonative",
             "sources":[
-                "src/base.cc",
+                "src/base.cpp",
+
                 "src/fonts/vector.c",
                 "src/fonts/vertex-buffer.c",
                 "src/fonts/vertex-attribute.c",
@@ -12,9 +13,10 @@
                 "src/fonts/shader.c",
                 "src/fonts/mat4.c",
 
+                "src/images/nanojpeg.c",
+                "src/images/upng.c",
+
                 "src/shaders.cpp",
-                "src/nanojpeg.c",
-                "src/upng.c",
                 "src/SimpleRenderer.cpp",
                 "src/mathutils.cpp"
             ],
@@ -22,6 +24,7 @@
                 "<!(node -e \"require('nan')\")",
                 "src/",
                 "src/fonts/",
+                "src/images/"
             ],
             "cflags": [ "-Wall" ],
 
