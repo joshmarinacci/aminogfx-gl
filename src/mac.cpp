@@ -409,7 +409,7 @@ void render(bool resizing = false) {
     //3D perspective
     GLfloat *pixelM = new GLfloat[16];
 
-    loadPixelPerfect(pixelM, width, height, eye, near, far);
+    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
     mul_matrix(modelView, pixelM, m4);
 
     delete[] m4;

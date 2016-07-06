@@ -15,7 +15,8 @@
                 "src/shaders.cpp",
                 "src/nanojpeg.c",
                 "src/upng.c",
-                "src/SimpleRenderer.cpp"
+                "src/SimpleRenderer.cpp",
+                "src/mathutils.cpp"
             ],
             "include_dirs": [
                 "<!(node -e \"require('nan')\")",

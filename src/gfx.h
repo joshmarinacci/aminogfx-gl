@@ -1,5 +1,5 @@
-#ifndef AMINOGFX
-#define AMINOGFX
+#ifndef _AMINOGFX_H
+#define _AMINOGFX_H
 
 //FIXME
 #define DEBUG_RESOURCES true

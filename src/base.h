@@ -1,5 +1,5 @@
-#ifndef AMINOBASE
-#define AMINOBASE
+#ifndef _AMINOBASE_H
+#define _AMINOBASE_H
 
 #include "gfx.h"
 

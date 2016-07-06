@@ -1,6 +1,6 @@
-//#include "AbstractRenderer.h"
-#ifndef SIMPLE_RENDERER
-#define SIMPLE_RENDERER
+#ifndef _SIMPLE_RENDERER_H
+#define _SIMPLE_RENDERER_H
+
 #include "base.h"
 
 class GLContext {

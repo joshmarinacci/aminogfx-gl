@@ -242,7 +242,7 @@ void render() {
     GLfloat* m4 = new GLfloat[16];
     mul_matrix(m4, transM, scaleM);
     GLfloat* pixelM = new GLfloat[16];
-    loadPixelPerfect(pixelM, width, height, eye, near, far);
+    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
     mul_matrix(modelView,pixelM,m4);
     make_identity_matrix(globaltx);
     glViewport(0,0,width, height);
@@ -307,8 +307,8 @@ Handle<Value> runTest(const Arguments& args) {
 
 
     GLfloat* pixelM = new GLfloat[16];
-//    loadPixelPerfect(pixelM, width, height, 600, 100, -150);
-    loadPixelPerfect(pixelM, width, height, eye, near, far);
+//    loadPixelPerfectMatrix(pixelM, width, height, 600, 100, -150);
+    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
     //printf("eye = %f\n",eye);
     //loadPerspectiveMatrix(pixelM, 45, 1, 10, -100);
 

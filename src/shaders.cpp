@@ -4,7 +4,13 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include "shaders.h"
 
-ColorShader::ColorShader() {}
-TextureShader::TextureShader() {}
+ColorShader::ColorShader() {
+    //empty
+}
+
+TextureShader::TextureShader() {
+    //empty
+}
