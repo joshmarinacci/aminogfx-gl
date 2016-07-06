@@ -490,6 +490,9 @@ NAN_MODULE_INIT(InitAll) {
     //main class
     AminoGfx::Init(target);
 
+    //image class
+    AminoImage::Init(target);
+
     //TODO cleanup
     Nan::Set(target, Nan::New("init").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(init)).ToLocalChecked());
     Nan::Set(target, Nan::New("createWindow").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createWindow)).ToLocalChecked());
@@ -511,8 +514,6 @@ NAN_MODULE_INIT(InitAll) {
 //    Nan::Set(target, Nan::New("selfDrive").ToLocalChecked(),        Nan::GetFunction(Nan::New<FunctionTemplate>(selfDrive)).ToLocalChecked());
 	Nan::Set(target, Nan::New("setEventCallback").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(setEventCallback)).ToLocalChecked());
     Nan::Set(target, Nan::New("setRoot").ToLocalChecked(),          Nan::GetFunction(Nan::New<FunctionTemplate>(setRoot)).ToLocalChecked());
-    Nan::Set(target, Nan::New("decodePngBuffer").ToLocalChecked(),   Nan::GetFunction(Nan::New<FunctionTemplate>(decodePngBuffer)).ToLocalChecked());
-    Nan::Set(target, Nan::New("decodeJpegBuffer").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(decodeJpegBuffer)).ToLocalChecked());
     Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(getCharWidth)).ToLocalChecked());

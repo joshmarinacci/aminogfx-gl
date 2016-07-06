@@ -1,6 +1,6 @@
 var amino = require('../main.js');
 
-amino.start(function(core, stage) {
+amino.start(function (core, stage) {
     //root
     var root = new amino.Group();
 

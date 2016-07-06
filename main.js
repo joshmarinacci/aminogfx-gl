@@ -16,6 +16,55 @@ var sgtest = require(binding_path);
 //entry point
 exports.AminoGfx = sgtest.AminoGfx;
 
+//TODO AminoGfx bindings
+
+//AminoImage
+var AminoImage = sgtest.AminoImage;
+
+Object.defineProperty(AminoImage.prototype, 'src', {
+    set: function (src) {
+        //check file
+        if (typeof src == 'string') {
+            var self = this;
+
+            fs.readFile(src, function (err, data) {
+                //check error
+                if (err) {
+                    if (self.onload) {
+                        self.onload(err);
+                    }
+
+                    return;
+                }
+
+                //get image
+                self.loadImage(data, function (err, img) {
+                    //call onload
+                    if (self.onload) {
+                        self.onload(err, img);
+                    }
+                });
+            });
+
+            return;
+        }
+
+        //convert buffer
+        if (!Buffer.isBuffer(src)) {
+            if (this.onload) {
+                this.onload(new Exception('buffer expected!'));
+            }
+
+            return;
+        }
+
+        //native call
+        this.loadImage(src, this.onload);
+    }
+});
+
+exports.AminoImage = AminoImage;
+
 //detect platform
 var OS = 'KLAATU';
 
@@ -460,77 +509,12 @@ var gl_native = {
         return sgtest.removeNodeFromGroup(h1, h2);
     },
     loadImage: function (src, cb) {
-        if (!src) {
-            cb();
-            return;
-        }
+        var img = new AminoImage();
 
-        var buffer;
-        var type;
-
-        //check buffer
-        if (Buffer.isBuffer(src)) {
-            buffer = src;
-
-            //check PNG
-            if (buffer.slice(0, 8).equals(PNG_HEADER)) {
-                //PNG
-                type = 'png';
-            } else {
-                //JPEG
-                type = 'jpg';
-            }
-        } else if (typeof src === 'string') {
-            //load file (blocking)
-            //TODO use async version
-            var buffer = fs.readFileSync(src);
-
-            if (!buffer) {
+        img.onload = function (err) {
+            if (err) {
                 if (DEBUG) {
-                    console.log('File not found: ' + src);
-                }
-
-                cb();
-                return;
-            }
-
-            //check file name
-            var name = src.toLowerCase();
-
-            if (name.endsWith('.png')) {
-                type = 'png';
-            } else if (name.endsWith(".jpg")) {
-                type = 'jpg';
-            } else {
-                if (DEBUG) {
-                    console.log('Unsupported file format: ' + src);
-                }
-
-                cb();
-                return;
-            }
-        } else {
-            if (DEBUG) {
-                console.log('Invalid src format!');
-            }
-
-            cb();
-            return;
-        }
-
-        //debug
-        if (DEBUG) {
-            console.log('loadImage() type=' + type + ' length=' + buffer.length);
-        }
-
-        //decode
-        var nat = Core.getCore().getNative();
-
-        function bufferToTexture(ibuf) {
-            //check error
-            if (!ibuf) {
-                if (DEBUG) {
-                    console.log('could not load image: type='  + type);
+                    console.log('could not load image');
                 }
 
                 cb();
@@ -541,24 +525,16 @@ var gl_native = {
             //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
 
             //load texture
-            nat.loadBufferToTexture(-1, ibuf.w, ibuf.h, ibuf.bpp, ibuf.buffer, function (texture) {
+            var nat = Core.getCore().getNative();
+
+            //TODO refactor (async, must be called in OpenGL loop)
+            nat.loadBufferToTexture(-1, img.w, img.h, img.bpp, img.buffer, function (texture) {
                 cb(texture);
             });
-        }
+        };
 
-        switch (type) {
-            case 'png':
-                nat.decodePngBuffer(buffer, bufferToTexture);
-                break;
-
-            case 'jpg':
-                nat.decodeJpegBuffer(buffer, bufferToTexture);
-                break;
-        }
-
+        img.src = src;
     },
-    decodePngBuffer: function (fbuf, cb) {  return cb(sgtest.decodePngBuffer(fbuf));  },
-    decodeJpegBuffer: function (fbuf, cb) { return cb(sgtest.decodeJpegBuffer(fbuf)); },
     loadBufferToTexture: function (texid, w, h, bpp, buf, cb) {
         return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf));
     },

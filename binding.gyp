@@ -15,6 +15,7 @@
 
                 "src/images/nanojpeg.c",
                 "src/images/upng.c",
+                "src/images.cpp",
 
                 "src/shaders.cpp",
                 "src/SimpleRenderer.cpp",

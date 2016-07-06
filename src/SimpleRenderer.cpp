@@ -574,7 +574,7 @@ NAN_METHOD(node_glVertexAttribPointer) {
   int size2  = sizeof(float)*(int)(info[4]->Uint32Value());
   int offset = sizeof(float)*(int)(info[5]->Uint32Value());
 
-  glVertexAttribPointer(loc, count, size, other, size2, (void *)offset);
+  glVertexAttribPointer(loc, count, size, other, size2, (void *)(uintptr_t)offset);
 }
 
 NAN_METHOD(node_glUniform1f) {

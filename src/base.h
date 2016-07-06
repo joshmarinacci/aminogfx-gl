@@ -3,6 +3,7 @@
 
 #include "gfx.h"
 #include "fonts.h"
+#include "images.h"
 
 #include <node.h>
 #include <node_buffer.h>
@@ -195,7 +196,7 @@ private:
 
     //TODO replace test
     static NAN_METHOD(test) {
-        AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+        //AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
 
         //call JS method
         Nan::MaybeLocal<v8::Value> method = Nan::Get(info.This(), Nan::New<String>("method").ToLocalChecked());
@@ -1278,8 +1279,6 @@ NAN_METHOD(addNodeToGroup);
 NAN_METHOD(removeNodeFromGroup);
 NAN_METHOD(setRoot);
 NAN_METHOD(loadBufferToTexture);
-NAN_METHOD(decodeJpegBuffer);
-NAN_METHOD(decodePngBuffer);
 NAN_METHOD(getFontHeight);
 NAN_METHOD(getFontAscender);
 NAN_METHOD(getFontDescender);
