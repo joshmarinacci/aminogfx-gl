@@ -4,7 +4,7 @@ const amino = require('../../main.js');
 const path = require('path');
 
 //basic image tests
-let img = new amino.AminoImage();
+const img = new amino.AminoImage();
 
 img.onload = function (err, img) {
     if (err) {
@@ -16,3 +16,15 @@ img.onload = function (err, img) {
 };
 
 img.src = path.join(__dirname, '../slideshow/images/iTermScreenSnapz001.png');
+
+
+//GC test
+/*
+for (var i = 0; i < 10000; i++) {
+    const img = new amino.AminoImage();
+
+    img.src = path.join(__dirname, '../slideshow/images/iTermScreenSnapz001.png');
+}
+*/
+
+//setTimeout(() => {}, 10 * 1000);
