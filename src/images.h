@@ -20,6 +20,7 @@ public:
 
     //init
     static NAN_MODULE_INIT(Init);
+
 private:
     //JS constructor
     static NAN_METHOD(New);

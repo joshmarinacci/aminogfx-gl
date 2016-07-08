@@ -1,10 +1,148 @@
-
-
-#include "base.h"
-#include "SimpleRenderer.h"
+#include "mac.h"
 
 #define DEBUG_GLFW false
 #define DEBUG_RENDER false
+
+/**
+ * Mac AminoGfx implementation.
+ */
+class AminoGfxMac : public AminoGfx {
+public:
+    AminoGfxMac(): AminoGfx(getFactory()->name) {
+        //empty
+    }
+
+    /**
+     * Get factory instance.
+     */
+    static AminoGfxMacFactory* getFactory() {
+        static AminoGfxMacFactory *instance;
+
+        if (!instance) {
+            instance = new AminoGfxMacFactory(New);
+        }
+
+        return instance;
+    }
+
+    /**
+     * Add class template to module exports.
+     */
+    static NAN_MODULE_INIT(Init) {
+        AminoGfxMacFactory *factory = getFactory();
+
+        AminoGfx::Init(target, factory);
+    }
+
+private:
+    static bool glfwInitialized;
+    static int instanceCount;
+    GLFWwindow *window;
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
+    }
+
+    /**
+     * Setup JS instance.
+     */
+    void setup() {
+        if (DEBUG_GLFW) {
+            printf("AminoGfxMac.setup()\n");
+        }
+
+        //init GLFW
+        if (!glfwInitialized) {
+            if (!glfwInit()) {
+                printf("error. quitting\n");
+
+                glfwTerminate();
+                exit(EXIT_FAILURE);
+            }
+
+            glfwInitialized = true;
+        }
+
+        instanceCount++;
+
+        //base class
+        AminoGfx::setup();
+    }
+
+    /**
+     * Destroy GLFW instance.
+     */
+    void destroy() {
+        if (destroyed) {
+            return;
+        }
+
+        AminoGfx::destroy();
+
+        //GLFW
+        glfwDestroyWindow(window);
+
+        instanceCount--;
+
+        if (instanceCount == 0) {
+            glfwTerminate();
+        }
+    }
+
+    /**
+     * Get default monitor resolution.
+     */
+    bool getScreenInfo(int &w, int &h, int &refreshRate) {
+        //debug
+        //printf("getScreenInfo\n");
+
+        //get monitor properties
+        GLFWmonitor *primary = glfwGetPrimaryMonitor();
+        const GLFWvidmode *vidmode = glfwGetVideoMode(primary);
+
+        w = vidmode->width;
+        h = vidmode->height;
+        refreshRate = vidmode->refreshRate;
+
+        return true;
+    }
+
+    /**
+     * Add GLFW properties.
+     */
+    void populateRuntimeProperties(v8::Local<v8::Object> &obj) {
+        //debug
+        //printf("populateRuntimeProperties\n");
+
+        Nan::Set(obj, Nan::New("glfwVersion").ToLocalChecked(), Nan::New(std::string(glfwGetVersionString())).ToLocalChecked());
+    }
+
+    //TODO create window, start
+};
+
+int AminoGfxMac::instanceCount;
+bool AminoGfxMac::glfwInitialized;
+
+//
+// AminoGfxMacFactory
+//
+
+/**
+ * Create AminoGfx factory.
+ */
+AminoGfxMacFactory::AminoGfxMacFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoGfx", callback) {
+    //empty
+}
+
+/**
+ * Create AminoGfx instance.
+ */
+AminoJSObject* AminoGfxMacFactory::create() {
+    return new AminoGfxMac();
+}
 
 // ========== Event Callbacks ===========
 
@@ -266,7 +404,6 @@ NAN_METHOD(createWindow) {
     glfwSetWindowCloseCallback(window, GLFW_WINDOW_CLOSE_CALLBACK_FUNCTION);
 
     //OpenGL properties
-    //TODO return as runtime property
     printf("GL_RENDERER   = %s\n", (char *)glGetString(GL_RENDERER));
     printf("GL_VERSION    = %s\n", (char *)glGetString(GL_VERSION));
     printf("GL_VENDOR     = %s\n", (char *)glGetString(GL_VENDOR));
@@ -291,8 +428,6 @@ NAN_METHOD(createWindow) {
     window_fill_blue = 0;
     window_opacity = 1;
 }
-
-//TODO glfwDestroyWindow
 
 NAN_METHOD(setWindowSize) {
     int w  = info[0]->Uint32Value();
@@ -488,7 +623,7 @@ NAN_METHOD(setEventCallback) {
 
 NAN_MODULE_INIT(InitAll) {
     //main class
-    AminoGfx::Init(target);
+    AminoGfxMac::Init(target);
 
     //image class
     AminoImage::Init(target);

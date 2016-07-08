@@ -122,34 +122,48 @@ extern int rootHandle;
 extern std::map<int, AminoFont *> fontmap;
 extern Nan::Callback *NODE_EVENT_CALLBACK;
 
-class AminoGfxFactory;
-
 /**
  * Amino main class to call from JavaScript.
+ *
+ * Note: abstract
  */
 class AminoGfx : public AminoJSObject {
 public:
-    AminoGfx();
+    AminoGfx(std::string name);
+    virtual ~AminoGfx();
 
-    //factory§
-    static AminoGfxFactory* getFactory();
+protected:
+    bool started = false;
+    bool destroyed = false;
+    Nan::Callback *startCallback = NULL;
 
-    //init
-    static NAN_MODULE_INIT(Init);
+    //properties
+    int w;
+    int h;
+
+    //creation
+    static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
+
+    void setup();
+
+    //abstract methods
+    virtual void start();
+    void ready();
+    virtual void populateRuntimeProperties(v8::Local<v8::Object> &obj) {};
+    virtual void destroy();
+
+    virtual bool getScreenInfo(int &w, int &h, int &refreshRate) { return false; };
+    virtual void requestW(int w) {}
+    virtual void requestH(int w) {}
+    void updateSize(int w, int h);
 
 private:
-    //constructor
-    static NAN_METHOD(New);
-};
+    //JS methods
+    static NAN_METHOD(Start);
+    static NAN_METHOD(Destroy);
 
-/**
- * Amino class factory.
- */
-class AminoGfxFactory : public AminoJSObjectFactory {
-public:
-    AminoGfxFactory(Nan::FunctionCallback callback);
-
-    AminoJSObject* create();
+    static NAN_METHOD(SetW);
+    static NAN_METHOD(SetH);
 };
 
 /**

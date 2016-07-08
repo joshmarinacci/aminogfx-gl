@@ -25,60 +25,182 @@ std::vector<Update *> updates;
 //  AminoGfx
 //
 
-AminoGfx::AminoGfx(): AminoJSObject(getFactory()->name) {
+AminoGfx::AminoGfx(std::string name): AminoJSObject(name) {
     //empty
 }
 
-/**
- * Get factory instance.
- */
-AminoGfxFactory* AminoGfx::getFactory() {
-    static AminoGfxFactory *aminoGfxFactory;
-
-    if (!aminoGfxFactory) {
-        aminoGfxFactory = new AminoGfxFactory(New);
+AminoGfx::~AminoGfx() {
+    if (startCallback) {
+        delete startCallback;
     }
 
-    return aminoGfxFactory;
+    if (!destroyed) {
+        destroy();
+    }
 }
 
 /**
- * Add class template to module exports.
+ * Initialize AminoGfx template.
  */
-NAN_MODULE_INIT(AminoGfx::Init) {
-    AminoGfxFactory *factory = getFactory();
+void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory) {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(factory);
 
     //prototype methods
-    //TODO
+    Nan::SetPrototypeMethod(tpl, "start", Start);
+    Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
 
     //global template instance
     Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
 /**
- * JS object construction.
+ * JS object was initalized.
  */
-NAN_METHOD(AminoGfx::New) {
-    AminoJSObject::createInstance(info, getFactory());
+void AminoGfx::setup() {
+    //register native properties
+    addPropertyWatcher("w", SetW);
+    addPropertyWatcher("h", SetH);
+
+    //screen size
+    int w, h, refreshRate;
+
+    if (getScreenInfo(w, h, refreshRate)) {
+        v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+
+        //add screen property
+        Nan::Set(handle(), Nan::New("screen").ToLocalChecked(), obj);
+
+        //properties
+        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+
+        if (refreshRate > 0) {
+            Nan::Set(obj, Nan::New("refreshRate").ToLocalChecked(), Nan::New(refreshRate));
+        }
+    } else {
+        //QHD
+        w = 640;
+        h = 360;
+    }
+
+    //default size
+    updateSize(w, h);
+
+    //OpenGL information
+    /* FIXME move to OpenGL init code
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+
+    Nan::Set(handle(), Nan::New("runtime").ToLocalChecked(), obj);
+
+    // 1) OpenGL version
+    Nan::Set(obj, Nan::New("renderer").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_RENDERER))).ToLocalChecked());
+    Nan::Set(obj, Nan::New("version").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VERSION))).ToLocalChecked());
+    Nan::Set(obj, Nan::New("vendor").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VENDOR))).ToLocalChecked());
+
+    // 2) texture size
+    GLint maxTextureSize;
+
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    Nan::Set(obj, Nan::New("maxTextureSize").ToLocalChecked(), Nan::New(maxTextureSize));
+
+    // 3) platform specific
+    populateRuntimeProperties(obj);
+    */
 }
 
-//
-//  AminoGfxFactory
-//
-
 /**
- * Create AminoGfx factory.
+ * Initialize the renderer.
  */
-AminoGfxFactory::AminoGfxFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoGfx", callback) {
-    //empty
+NAN_METHOD(AminoGfx::Start) {
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    //validate state
+    if (obj->startCallback || obj->started) {
+        Nan::ThrowTypeError("already started");
+        return;
+    }
+
+    //get callback
+    Nan::Callback *callback = new Nan::Callback(info[0].As<v8::Function>());
+
+    obj->startCallback = callback;
+
+    //start (must call ready())
+    obj->start();
+}
+
+void AminoGfx::start() {
+    //overwrite
+}
+
+void AminoGfx::ready() {
+    //create scope
+    Nan::HandleScope scope;
+
+    started = true;
+
+    //call callback
+    if (startCallback && !startCallback->IsEmpty()) {
+        v8::Local<v8::Value> argv[] = { Nan::Null(), handle() };
+
+        startCallback->Call(2, argv);
+        delete startCallback;
+        startCallback = NULL;
+    }
 }
 
 /**
- * Create AminoGfx instance.
+ * Stop rendering and free resources.
  */
-AminoJSObject* AminoGfxFactory::create() {
-    return new AminoGfx();
+NAN_METHOD(AminoGfx::Destroy) {
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    if (obj->started) {
+        obj->destroy();
+    }
+}
+
+/**
+ * Stop rendering and free resources.
+ */
+void AminoGfx::destroy() {
+    //to be overwritten
+    destroyed = true;
+}
+
+/**
+ * JS wants to change width.
+ */
+NAN_METHOD(AminoGfx::SetW) {
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    obj->requestW(info[0]->IntegerValue());
+}
+
+/**
+ * JS wants to change height.
+ */
+NAN_METHOD(AminoGfx::SetH) {
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    obj->requestH(info[0]->IntegerValue());
+}
+
+/**
+ * Size has changed, update internal and JS properties.
+ */
+void AminoGfx::updateSize(int w, int h) {
+    if (this->w != w) {
+        this->w = w;
+
+        updateProperty("w", w);
+    }
+
+    if (this->h != h) {
+        this->h = h;
+
+        updateProperty("h", h);
+    }
 }
 
 

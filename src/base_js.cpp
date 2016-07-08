@@ -79,7 +79,8 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
 
     //check constructor call
     if (!info.IsConstructCall()) {
-        return Nan::ThrowTypeError("please use new() instead of function call");
+        Nan::ThrowTypeError("please use new() instead of function call");
+        return;
     }
 
     //new AminoObj()
@@ -111,3 +112,135 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
 
     info.GetReturnValue().Set(info.This());
 }
+
+/**
+ * Watch JS property changes.
+ */
+bool AminoJSObject::addPropertyWatcher(std::string name, Nan::FunctionCallback callback) {
+    if (DEBUG_BASE) {
+        printf("addPropertyWatcher()\n", name.c_str());
+    }
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //get property object
+    Nan::MaybeLocal<v8::Value> prop = Nan::Get(handle(), Nan::New<v8::String>(name).ToLocalChecked());
+
+    if (prop.IsEmpty()) {
+        if (DEBUG_BASE) {
+            printf("property not defined: %s\n", name.c_str());
+        }
+
+        return false;
+    }
+
+    v8::Local<v8::Value> propLocal = prop.ToLocalChecked();
+
+    if (!propLocal->IsObject()) {
+        if (DEBUG_BASE) {
+            printf("property not an object: %s\n", name.c_str());
+        }
+
+        return false;
+    }
+
+    v8::Local<v8::Object> obj = propLocal.As<v8::Object>();
+
+    //get watch function
+    Nan::MaybeLocal<v8::Value> propWatch = Nan::Get(obj, Nan::New<v8::String>("watch").ToLocalChecked());
+
+    if (propWatch.IsEmpty()) {
+        if (DEBUG_BASE) {
+            printf("watch property not found: %s\n", name.c_str());
+        }
+
+        return false;
+    }
+
+    v8::Local<v8::Value> propWatchLocal = propWatch.ToLocalChecked();
+
+    if (!propWatchLocal->IsFunction()) {
+        if (DEBUG_BASE) {
+            printf("watch property not a function: %s\n", name.c_str());
+        }
+
+        return false;
+    }
+
+    v8::Local<v8::Function> watchFunc = propWatchLocal.As<v8::Function>();
+
+    //call to add watcher
+    int argc = 1;
+    //FIXME wrong -> trap in later execution: Assertion failed: (object->InternalFieldCount() > 0), function Unwrap, file ../node_modules/nan/nan_object_wrap.h, line 33.
+    v8::Local<v8::Value> argv[] = { Nan::GetFunction(Nan::New<v8::FunctionTemplate>(callback)).ToLocalChecked() };
+
+    watchFunc->Call(obj, argc, argv);
+
+    if (DEBUG_BASE) {
+        printf("added property watcher: %s\n", name.c_str());
+    }
+
+    //TODO return default value
+
+    return true;
+}
+
+/**
+ * Update JS property value.
+ */
+void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value) {
+    if (DEBUG_BASE) {
+        printf("updateProperty()\n", name.c_str());
+    }
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //get property function
+    v8::Local<v8::Object> obj = handle();
+    Nan::MaybeLocal<v8::Value> prop = Nan::Get(obj, Nan::New<v8::String>(name).ToLocalChecked());
+
+    if (prop.IsEmpty()) {
+        if (DEBUG_BASE) {
+            printf("property not defined: %s\n", name.c_str());
+        }
+
+        return;
+    }
+
+    v8::Local<v8::Value> propLocal = prop.ToLocalChecked();
+
+    if (!propLocal->IsFunction()) {
+        if (DEBUG_BASE) {
+            printf("property not a function: %s\n", name.c_str());
+        }
+
+        return;
+    }
+
+    v8::Local<v8::Function> updateFunc = propLocal.As<v8::Function>();
+
+    //call
+    int argc = 1;
+    v8::Local<v8::Value> argv[] = { value };
+
+    updateFunc->Call(obj, argc, argv);
+
+    if (DEBUG_BASE) {
+        printf("updated property: %s\n", name.c_str());
+    }
+}
+
+/**
+ * Update JS property value.
+ */
+void AminoJSObject::updateProperty(std::string name, int value) {
+    //create scope
+    Nan::HandleScope scope;
+
+    updateProperty(name, Nan::New(value));
+}
+
+//TODO getProperty(std::string name, Nan::Persistent<v8::Object> &persistent)
+//TODO updateProperty(Nan::Persistent<v8::Object> &persistent, v8::Local<v8::Value> value)

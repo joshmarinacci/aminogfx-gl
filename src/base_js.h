@@ -38,6 +38,11 @@ protected:
 
     virtual void setup();
 
+    //properties
+    bool addPropertyWatcher(std::string name, Nan::FunctionCallback callback);
+    void updateProperty(std::string name, v8::Local<v8::Value> value);
+    void updateProperty(std::string name, int value);
+
     //static methods
     static v8::Local<v8::FunctionTemplate> createTemplate(AminoJSObjectFactory* factory);
     static void createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObjectFactory* factory);

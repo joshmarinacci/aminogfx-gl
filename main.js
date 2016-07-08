@@ -7,6 +7,9 @@ if (DEBUG) {
     console.log('inside of the aminogfx main.js');
 }
 
+//var amino_core = require('aminogfx'); //NPM module
+var amino_core = require('./src/core/main'); //modified code
+
 //load native module
 var binary = require('node-pre-gyp');
 var path = require('path');
@@ -21,7 +24,14 @@ AminoGfx.prototype.init = function () {
         console.log('AminoGfx.init()');
     }
 
-    //TODO initialize bindings
+    //initialize bindings
+    amino_core.makeProps(this, {
+        //QHD
+        w: 640,
+        h: 360
+    });
+
+    //TODO more
 };
 
 exports.AminoGfx = AminoGfx;
@@ -83,8 +93,6 @@ if (process.platform == 'darwin') {
     OS ='MAC';
 }
 
-//var amino_core = require('aminogfx'); //NPM module
-var amino_core = require('./src/core/main'); //modified code
 var Core = amino_core.Core;
 var Shaders = require('./src/shaders.js');
 var fs = require('fs');
