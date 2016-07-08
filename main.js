@@ -13,10 +13,18 @@ var path = require('path');
 var binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
 var sgtest = require(binding_path);
 
-//entry point
-exports.AminoGfx = sgtest.AminoGfx;
+//AminoGfx
+var AminoGfx = sgtest.AminoGfx;
 
-//TODO AminoGfx bindings
+AminoGfx.prototype.init = function () {
+    if (DEBUG) {
+        console.log('AminoGfx.init()');
+    }
+
+    //TODO initialize bindings
+};
+
+exports.AminoGfx = AminoGfx;
 
 //AminoImage
 var AminoImage = sgtest.AminoImage;

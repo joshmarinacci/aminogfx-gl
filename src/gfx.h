@@ -8,8 +8,6 @@
 //FIXME
 #define DEBUG_RESOURCES true
 
-#include <nan.h>
-
 /*
  * Platform specific headers.
  *

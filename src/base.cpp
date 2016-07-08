@@ -21,6 +21,69 @@ std::vector<AminoNode *> rects;
 std::vector<Anim *> anims;
 std::vector<Update *> updates;
 
+//
+//  AminoGfx
+//
+
+AminoGfx::AminoGfx(): AminoJSObject(getFactory()->name) {
+    //empty
+}
+
+/**
+ * Get factory instance.
+ */
+AminoGfxFactory* AminoGfx::getFactory() {
+    static AminoGfxFactory *aminoGfxFactory;
+
+    if (!aminoGfxFactory) {
+        aminoGfxFactory = new AminoGfxFactory();
+    }
+
+    return aminoGfxFactory;
+}
+
+/**
+ * Add class template to module exports.
+ */
+NAN_MODULE_INIT(AminoGfx::Init) {
+    AminoGfxFactory *factory = getFactory();
+    v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(factory);
+
+    //prototype methods
+    //TODO
+
+    //global template instance
+    Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+}
+
+/**
+ * JS object construction.
+ */
+NAN_METHOD(AminoGfx::New) {
+    AminoJSObject::createInstance(info, getFactory());
+}
+
+//
+//  AminoGfxFactory
+//
+
+/**
+ * Create AminoGfx factory.
+ */
+AminoGfxFactory::AminoGfxFactory(): AminoJSObjectFactory("AminoGfx", AminoGfx::New) {
+    //empty
+}
+
+/**
+ * Create AminoGfx instance.
+ */
+AminoJSObject* AminoGfxFactory::create() {
+    return new AminoGfx();
+}
+
+
+
+
 void scale(double x, double y) {
     GLfloat scale[16];
     GLfloat temp[16];

@@ -2,11 +2,10 @@
 #define _AMINOBASE_H
 
 #include "gfx.h"
+#include "base_js.h"
 #include "fonts.h"
 #include "images.h"
 
-#include <node.h>
-#include <node_buffer.h>
 using namespace node;
 
 #include <uv.h>
@@ -31,8 +30,6 @@ extern "C" {
     #include "nanojpeg.h"
     #include "upng.h"
 }
-
-#define DEBUG_BASE false
 
 const int GROUP = 1;
 const int RECT = 2;
@@ -125,132 +122,29 @@ extern int rootHandle;
 extern std::map<int, AminoFont *> fontmap;
 extern Nan::Callback *NODE_EVENT_CALLBACK;
 
+class AminoGfxFactory;
+
 /**
  * Amino main class to call from JavaScript.
  */
-class AminoGfx : public Nan::ObjectWrap {
+class AminoGfx : public AminoJSObject {
 public:
-    /**
-     * Add class template to module exports.
-     */
-    static NAN_MODULE_INIT(Init) {
-        printf("AminoGfx init\n"); //FIXME
+    AminoGfx();
 
-        //initialize template (bound to New method)
-        v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+    static AminoGfxFactory* getFactory();
 
-        tpl->SetClassName(Nan::New("AminoGfx").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1); //object reference only stored
+    static NAN_MODULE_INIT(Init);
+    static NAN_METHOD(New);
+};
 
-        //prototype methods
-        Nan::SetPrototypeMethod(tpl, "test", test);
-        Nan::SetPrototypeMethod(tpl, "test2", test2);
+/**
+ * Amino class factory.
+ */
+class AminoGfxFactory : public AminoJSObjectFactory {
+public:
+    AminoGfxFactory();
 
-        //constructor
-        constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
-
-        //global template instance
-        Nan::Set(target, Nan::New("AminoGfx").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
-    }
-
-private:
-    AminoGfx() {
-        printf("AminoGfx constructor\n"); //FIXME
-    }
-
-    virtual ~AminoGfx() {
-        printf("AminoGfx destructor\n"); //FIXME
-    }
-
-    /**
-     * JS object construction.
-     */
-    static NAN_METHOD(New) {
-        if (info.IsConstructCall()) {
-            //new AminoGfx()
-
-            //create new instance
-            AminoGfx *obj = new AminoGfx();
-
-            obj->Wrap(info.This());
-
-            info.GetReturnValue().Set(info.This());
-        } else {
-            //direct AminoGfx() call
-            const int argc = 0;
-            v8::Local<v8::Value> argv[argc] = {};
-            v8::Local<v8::Function> cons = Nan::New(constructor());
-
-            info.GetReturnValue().Set(cons->NewInstance(argc, argv));
-        }
-    }
-
-    /**
-     * Constructor function.
-     */
-    static inline Nan::Persistent<v8::Function> & constructor() {
-        static Nan::Persistent<v8::Function> my_constructor;
-
-        return my_constructor;
-    }
-
-    //TODO replace test
-    static NAN_METHOD(test) {
-        //AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-        //call JS method
-        Nan::MaybeLocal<v8::Value> method = Nan::Get(info.This(), Nan::New<String>("method").ToLocalChecked());
-
-        if (!method.IsEmpty()) {
-            v8::Local<v8::Value> local = method.ToLocalChecked();
-
-            if (local->IsFunction()) {
-                v8::Local<v8::Function> func = local.As<v8::Function>();
-
-                //call
-                int argc = 0;
-                v8::Local<v8::Value> argv[0];
-
-                func->Call(info.This(), argc, argv);
-            }
-        }
-
-        info.GetReturnValue().Set(99);
-    }
-
-    //TODO replace test
-    void callJSMethod() {
-        //create scope
-		Nan::HandleScope scope;
-
-        v8::Local<v8::Object> jsObj = handle();
-
-        //get method
-        Nan::MaybeLocal<v8::Value> method = Nan::Get(jsObj, Nan::New<String>("method").ToLocalChecked());
-
-        if (!method.IsEmpty()) {
-            v8::Local<v8::Value> local = method.ToLocalChecked();
-
-            if (local->IsFunction()) {
-                v8::Local<v8::Function> func = local.As<v8::Function>();
-
-                //call
-                int argc = 0;
-                v8::Local<v8::Value> argv[0];
-
-                func->Call(jsObj, argc, argv);
-            }
-        }
-    }
-
-    //TODO replace test
-    static NAN_METHOD(test2) {
-        AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-        obj-> callJSMethod();
-    }
-
-    //TODO property handling
+    AminoJSObject* create();
 };
 
 /**

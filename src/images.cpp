@@ -8,6 +8,10 @@ extern "C" {
 #define DEBUG_IMAGES false
 #define DEBUG_IMAGES_CONSOLE true
 
+//
+// AsyncImageWorker
+//
+
 /**
  * Asynchronous image loader.
  */
@@ -197,10 +201,14 @@ public:
     }
 };
 
+//
+// AminoImage
+//
+
 /**
  * Constructor.
  */
-AminoImage::AminoImage() {
+AminoImage::AminoImage(): AminoJSObject(getFactory()->name) {
     if (DEBUG_IMAGES) {
         printf("AminoImage constructor\n");
     }
@@ -209,61 +217,48 @@ AminoImage::AminoImage() {
 /**
  * Destructor.
  */
-AminoImage::~AminoImage() {
+AminoImage::~AminoImage()  {
     if (DEBUG_IMAGES || DEBUG_RESOURCES) {
         printf("AminoImage destructor\n");
     }
 }
 
-Nan::Persistent<v8::Function> AminoImage::constructor;
+/**
+ * Get factory instance.
+ */
+AminoImageFactory* AminoImage::getFactory() {
+    static AminoImageFactory *aminoImageFactory;
+
+    if (!aminoImageFactory) {
+        aminoImageFactory = new AminoImageFactory();
+    }
+
+    return aminoImageFactory;
+}
 
 /**
  * Add class template to module exports.
- *
- * Note: static
  */
 NAN_MODULE_INIT(AminoImage::Init) {
     if (DEBUG_IMAGES) {
         printf("AminoImage init\n");
     }
 
-    //initialize template (bound to New method)
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
-
-    tpl->SetClassName(Nan::New("AminoImage").ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1); //object reference only stored
+    AminoImageFactory *factory = getFactory();
+    v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(factory);
 
     //prototype methods
     Nan::SetPrototypeMethod(tpl, "loadImage", loadImage);
 
-    //constructor
-    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-
     //global template instance
-    Nan::Set(target, Nan::New("AminoImage").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+    Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
 /**
  * JS object construction.
  */
 NAN_METHOD(AminoImage::New) {
-    if (info.IsConstructCall()) {
-        //new AminoImage()
-
-        //create new instance
-        AminoImage *obj = new AminoImage();
-
-        obj->Wrap(info.This());
-
-        info.GetReturnValue().Set(info.This());
-    } else {
-        //direct AminoImage() call
-        const int argc = 0;
-        v8::Local<v8::Value> argv[argc] = {};
-        v8::Local<v8::Function> cons = Nan::New(constructor);
-
-        info.GetReturnValue().Set(cons->NewInstance(argc, argv));
-    }
+    AminoJSObject::createInstance(info, getFactory());
 }
 
 /**
@@ -276,4 +271,22 @@ NAN_METHOD(AminoImage::loadImage) {
 
     //async loading
     AsyncQueueWorker(new AsyncImageWorker(callback, obj, bufferObj));
+}
+
+//
+//  AminoImageFactory
+//
+
+/**
+ * Create AminoImage factory.
+ */
+AminoImageFactory::AminoImageFactory(): AminoJSObjectFactory("AminoImage", AminoImage::New) {
+    //empty
+}
+
+/**
+ * Create AminoGfx instance.
+ */
+AminoJSObject* AminoImageFactory::create() {
+    return new AminoImage();
 }
