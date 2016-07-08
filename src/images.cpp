@@ -230,7 +230,7 @@ AminoImageFactory* AminoImage::getFactory() {
     static AminoImageFactory *aminoImageFactory;
 
     if (!aminoImageFactory) {
-        aminoImageFactory = new AminoImageFactory();
+        aminoImageFactory = new AminoImageFactory(New);
     }
 
     return aminoImageFactory;
@@ -280,7 +280,7 @@ NAN_METHOD(AminoImage::loadImage) {
 /**
  * Create AminoImage factory.
  */
-AminoImageFactory::AminoImageFactory(): AminoJSObjectFactory("AminoImage", AminoImage::New) {
+AminoImageFactory::AminoImageFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoImage", callback) {
     //empty
 }
 

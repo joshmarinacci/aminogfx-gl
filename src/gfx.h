@@ -1,13 +1,6 @@
 #ifndef _AMINOGFX_H
 #define _AMINOGFX_H
 
-/**
- * Basic AmingoGfx definitions.
- */
-
-//FIXME
-#define DEBUG_RESOURCES true
-
 /*
  * Platform specific headers.
  *

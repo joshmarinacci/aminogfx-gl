@@ -7,6 +7,7 @@
 
 //FIXME
 #define DEBUG_BASE true
+#define DEBUG_RESOURCES true
 
 class AminoJSObject;
 

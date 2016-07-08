@@ -1,7 +1,6 @@
 #ifndef _AMINOIMAGES_H
 #define _AMINOIMAGES_H
 
-#include "gfx.h"
 #include "base_js.h"
 
 class AminoImageFactory;
@@ -19,10 +18,12 @@ public:
     //creation
     static AminoImageFactory* getFactory();
 
+    //init
     static NAN_MODULE_INIT(Init);
+private:
+    //JS constructor
     static NAN_METHOD(New);
 
-private:
     //JS methods
     static NAN_METHOD(loadImage);
 };
@@ -32,7 +33,7 @@ private:
  */
 class AminoImageFactory : public AminoJSObjectFactory {
 public:
-    AminoImageFactory();
+    AminoImageFactory(Nan::FunctionCallback callback);
 
     AminoJSObject* create();
 };
