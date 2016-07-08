@@ -131,9 +131,14 @@ class AminoGfx : public AminoJSObject {
 public:
     AminoGfx();
 
+    //factory§
     static AminoGfxFactory* getFactory();
 
+    //init
     static NAN_MODULE_INIT(Init);
+
+private:
+    //constructor
     static NAN_METHOD(New);
 };
 
@@ -142,7 +147,7 @@ public:
  */
 class AminoGfxFactory : public AminoJSObjectFactory {
 public:
-    AminoGfxFactory();
+    AminoGfxFactory(Nan::FunctionCallback callback);
 
     AminoJSObject* create();
 };

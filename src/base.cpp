@@ -36,7 +36,7 @@ AminoGfxFactory* AminoGfx::getFactory() {
     static AminoGfxFactory *aminoGfxFactory;
 
     if (!aminoGfxFactory) {
-        aminoGfxFactory = new AminoGfxFactory();
+        aminoGfxFactory = new AminoGfxFactory(New);
     }
 
     return aminoGfxFactory;
@@ -70,7 +70,7 @@ NAN_METHOD(AminoGfx::New) {
 /**
  * Create AminoGfx factory.
  */
-AminoGfxFactory::AminoGfxFactory(): AminoJSObjectFactory("AminoGfx", AminoGfx::New) {
+AminoGfxFactory::AminoGfxFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoGfx", callback) {
     //empty
 }
 
