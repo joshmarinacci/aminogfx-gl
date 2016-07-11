@@ -17,7 +17,7 @@ console.log('screen: ' + JSON.stringify(gfx.screen));
 console.log('default size: ' + gfx.w() + 'x' + gfx.h());
 
 //start
-gfx.start((err) => {
+gfx.start(function (err) {
     if (err) {
         console.log('Amino error: ' + err.message);
         return;
@@ -28,5 +28,9 @@ gfx.start((err) => {
     //runtime
     console.log('runtime: ' + JSON.stringify(gfx.runtime));
 
-    //TODO
+    //modify size
+    this.w(200);
+    this.h(200);
+
+    //TODO more
 });

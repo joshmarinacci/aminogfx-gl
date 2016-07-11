@@ -95,7 +95,7 @@ private:
     /**
      * Get default monitor resolution.
      */
-    bool getScreenInfo(int &w, int &h, int &refreshRate) {
+    bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) {
         //debug
         //printf("getScreenInfo\n");
 
@@ -106,6 +106,7 @@ private:
         w = vidmode->width;
         h = vidmode->height;
         refreshRate = vidmode->refreshRate;
+        fullscreen = false;
 
         return true;
     }
@@ -120,7 +121,10 @@ private:
         Nan::Set(obj, Nan::New("glfwVersion").ToLocalChecked(), Nan::New(std::string(glfwGetVersionString())).ToLocalChecked());
     }
 
-    //TODO create window, start
+    void start() {
+        //TODO create window, ...
+        ready();
+    }
 };
 
 int AminoGfxMac::instanceCount;

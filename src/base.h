@@ -138,8 +138,8 @@ protected:
     Nan::Callback *startCallback = NULL;
 
     //properties
-    int w;
-    int h;
+    FloatProperty *propW;
+    FloatProperty *propH;
 
     //creation
     static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
@@ -152,9 +152,7 @@ protected:
     virtual void populateRuntimeProperties(v8::Local<v8::Object> &obj) {};
     virtual void destroy();
 
-    virtual bool getScreenInfo(int &w, int &h, int &refreshRate) { return false; };
-    virtual void requestW(int w) {}
-    virtual void requestH(int w) {}
+    virtual bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) { return false; };
     void updateSize(int w, int h);
 
 private:
@@ -235,7 +233,7 @@ public:
  * Note: Any call to this should later be free'd. Never returns null.
  */
 static inline char *TO_CHAR(Handle<Value> val) {
-    String::Utf8Value utf8(val->ToString());
+    String::Utf8Value utf8(val);
     int len = utf8.length() + 1;
     char *str = (char *)calloc(sizeof(char), len);
 
@@ -249,8 +247,7 @@ static inline char *TO_CHAR(Handle<Value> val) {
  *
  * Note: any call to this should later be free'd
  */
-static wchar_t* GetWC(const char *c)
-{
+static wchar_t* GetWC(const char *c) {
     const size_t cSize = strlen(c) + 1;
     wchar_t *wc = new wchar_t[cSize];
 
@@ -259,7 +256,7 @@ static wchar_t* GetWC(const char *c)
     return wc;
 }
 
-extern std::vector<AminoNode*> rects;
+extern std::vector<AminoNode *> rects;
 
 /**
  * Display a warning and exit application.
@@ -561,6 +558,7 @@ public:
                 printf("-> callback used\n");
             }
 
+            //TODO set this
             then->Call(0, NULL);
         }
 
@@ -1154,11 +1152,12 @@ NAN_METHOD(stopAnim);
  */
 static std::wstring GetWString(v8::Handle<v8::String> str) {
     std::wstring wstr = L"";
-    uint16_t *buf = new uint16_t[str->Length() + 1];
+    int len = str->Length();
+    uint16_t *buf = new uint16_t[len + 1];
 
     str->Write(buf);
 
-    for (int i = 0; i < str->Length() + 1; i++) {
+    for (int i = 0; i < len + 1; i++) {
         wstr.push_back(buf[i]);
     }
 

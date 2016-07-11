@@ -19,6 +19,9 @@ var sgtest = require(binding_path);
 //AminoGfx
 var AminoGfx = sgtest.AminoGfx;
 
+/**
+ * Initialize AminoGfx instance.
+ */
 AminoGfx.prototype.init = function () {
     if (DEBUG) {
         console.log('AminoGfx.init()');

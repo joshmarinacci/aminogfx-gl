@@ -31,16 +31,18 @@ amino.makeProp = function (obj, name, val) {
      *
      * Getter and setter.
      */
-    var prop = function (v) {
+    var prop = function (v, nativeCall) {
         if (v != undefined) {
-            return prop.set(v, obj);
+            return prop.set(v, obj, nativeCall);
         } else {
             return prop.get();
         }
     };
 
     prop.value = val;
-    prop.propname = name;
+    prop.propName = name;
+    prop.readonly = false;
+    prop.nativeListener = null;
     prop.listeners = [];
 
     /**
@@ -68,7 +70,13 @@ amino.makeProp = function (obj, name, val) {
     /**
      * Setter function.
      */
-    prop.set = function (v, obj) {
+    prop.set = function (v, obj, nativeCall) {
+        //check readonly
+        if (this.readonly) {
+            //ignore any changes
+            return obj;
+        }
+
         //check if modified
         //FIXME add again after fixing the animation JS value
         /*
@@ -80,9 +88,16 @@ amino.makeProp = function (obj, name, val) {
         }
         */
 
-        //update & fire listeners
+        //update
         this.value = v;
 
+        //native listener
+        if (this.nativeListener && !nativeCall) {
+            //prevent recursion in case of updates from native side
+            this.nativeListener(this.value, this.propId, obj);
+        }
+
+        //fire listeners
         for (var i = 0; i < this.listeners.length; i++) {
             this.listeners[i](this.value, this, obj);
         }

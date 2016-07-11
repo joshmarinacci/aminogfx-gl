@@ -103,6 +103,7 @@ function applyNativeBinding(me) {
             prop.watch(func);
 
             //send default value to native side
+            //TODO replace later
             setters[name](prop(), prop, me);
         }
     }

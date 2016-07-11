@@ -34,6 +34,8 @@ AminoGfx::~AminoGfx() {
         delete startCallback;
     }
 
+    //Note: properties are deleted by base class destructor
+
     if (!destroyed) {
         destroy();
     }
@@ -58,13 +60,14 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
  */
 void AminoGfx::setup() {
     //register native properties
-    addPropertyWatcher("w", SetW);
-    addPropertyWatcher("h", SetH);
+    propW = createFloatProperty("w");
+    propH = createFloatProperty("h");
 
     //screen size
     int w, h, refreshRate;
+    bool fullscreen;
 
-    if (getScreenInfo(w, h, refreshRate)) {
+    if (getScreenInfo(w, h, refreshRate, fullscreen)) {
         v8::Local<v8::Object> obj = Nan::New<v8::Object>();
 
         //add screen property
@@ -77,6 +80,8 @@ void AminoGfx::setup() {
         if (refreshRate > 0) {
             Nan::Set(obj, Nan::New("refreshRate").ToLocalChecked(), Nan::New(refreshRate));
         }
+
+        Nan::Set(obj, Nan::New("fullscreen").ToLocalChecked(), Nan::New<v8::Boolean>(fullscreen));
     } else {
         //QHD
         w = 640;
@@ -141,9 +146,10 @@ void AminoGfx::ready() {
 
     //call callback
     if (startCallback && !startCallback->IsEmpty()) {
-        v8::Local<v8::Value> argv[] = { Nan::Null(), handle() };
+        v8::Local<v8::Object> obj = handle();
+        v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-        startCallback->Call(2, argv);
+        startCallback->Call(obj, 2, argv);
         delete startCallback;
         startCallback = NULL;
     }
@@ -169,38 +175,11 @@ void AminoGfx::destroy() {
 }
 
 /**
- * JS wants to change width.
- */
-NAN_METHOD(AminoGfx::SetW) {
-    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-    obj->requestW(info[0]->IntegerValue());
-}
-
-/**
- * JS wants to change height.
- */
-NAN_METHOD(AminoGfx::SetH) {
-    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-    obj->requestH(info[0]->IntegerValue());
-}
-
-/**
  * Size has changed, update internal and JS properties.
  */
 void AminoGfx::updateSize(int w, int h) {
-    if (this->w != w) {
-        this->w = w;
-
-        updateProperty("w", w);
-    }
-
-    if (this->h != h) {
-        this->h = h;
-
-        updateProperty("h", h);
-    }
+    propW->setValue(w);
+    propH->setValue(h);
 }
 
 
@@ -513,7 +492,7 @@ NAN_METHOD(node_glCreateShader) {
 NAN_METHOD(node_glShaderSource) {
   int shader   = info[0]->Uint32Value();
   int count    = info[1]->Uint32Value();
-  v8::String::Utf8Value jsource(info[2]->ToString());
+  v8::String::Utf8Value jsource(info[2]);
   const char *source = *jsource;
 
   glShaderSource(shader, count, &source, NULL);
@@ -590,7 +569,7 @@ NAN_METHOD(node_glUseProgram) {
 
 NAN_METHOD(node_glGetAttribLocation) {
   int prog                 = info[0]->Uint32Value();
-  v8::String::Utf8Value name(info[1]->ToString());
+  v8::String::Utf8Value name(info[1]);
   int loc = glGetAttribLocation(prog, *name);
 
   info.GetReturnValue().Set(loc);
@@ -598,7 +577,7 @@ NAN_METHOD(node_glGetAttribLocation) {
 
 NAN_METHOD(node_glGetUniformLocation) {
     int prog                 = info[0]->Uint32Value();
-    v8::String::Utf8Value name(info[1]->ToString());
+    v8::String::Utf8Value name(info[1]);
     int loc = glGetUniformLocation(prog, *name);
 
     info.GetReturnValue().Set(loc);

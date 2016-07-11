@@ -14,7 +14,7 @@ children.push(cp.fork('demos/projection/slave.js'));
 function projectProp(val, prop, obj) {
     var props = {};
 
-    props[prop.propname] = obj[prop.propname]();
+    props[prop.propName] = obj[prop.propName]();
 
     children.forEach(function (ch) {
         ch.send({

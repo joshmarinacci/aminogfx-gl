@@ -41,6 +41,16 @@ AminoJSObject::~AminoJSObject() {
     if (DEBUG_BASE) {
         printf("%s destructor\n", name.c_str());
     }
+
+    //free properties
+    for (std::map<int, AnyProperty *>::iterator iter = propertyMap.begin(); iter != propertyMap.end(); iter++) {
+        delete iter->second;
+    }
+
+    //free async updates
+    if (localAsyncUpdatesInstance) {
+        delete asyncUpdates;
+    }
 }
 
 /**
@@ -115,10 +125,12 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
 
 /**
  * Watch JS property changes.
+ *
+ * Note: has to be called in JS scope of setup()!
  */
-bool AminoJSObject::addPropertyWatcher(std::string name, Nan::FunctionCallback callback) {
+bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::Value> &jsValue) {
     if (DEBUG_BASE) {
-        printf("addPropertyWatcher()\n", name.c_str());
+        printf("addPropertyWatcher(): %s\n", name.c_str());
     }
 
     //create scope
@@ -129,7 +141,7 @@ bool AminoJSObject::addPropertyWatcher(std::string name, Nan::FunctionCallback c
 
     if (prop.IsEmpty()) {
         if (DEBUG_BASE) {
-            printf("property not defined: %s\n", name.c_str());
+            printf("-> property not defined: %s\n", name.c_str());
         }
 
         return false;
@@ -139,7 +151,7 @@ bool AminoJSObject::addPropertyWatcher(std::string name, Nan::FunctionCallback c
 
     if (!propLocal->IsObject()) {
         if (DEBUG_BASE) {
-            printf("property not an object: %s\n", name.c_str());
+            printf("-> property not an object: %s\n", name.c_str());
         }
 
         return false;
@@ -147,43 +159,106 @@ bool AminoJSObject::addPropertyWatcher(std::string name, Nan::FunctionCallback c
 
     v8::Local<v8::Object> obj = propLocal.As<v8::Object>();
 
-    //get watch function
-    Nan::MaybeLocal<v8::Value> propWatch = Nan::Get(obj, Nan::New<v8::String>("watch").ToLocalChecked());
+    //set nativeListener value
+    Nan::Set(obj, Nan::New<v8::String>("nativeListener").ToLocalChecked(), Nan::New<v8::Function>(PropertyUpdated));
 
-    if (propWatch.IsEmpty()) {
+    //set propId value
+    Nan::Set(obj, Nan::New<v8::String>("propId").ToLocalChecked(), Nan::New<v8::Integer>(id));
+
+    //default JS value
+    Nan::MaybeLocal<v8::Value> valueMaybe = Nan::Get(obj, Nan::New<v8::String>("value").ToLocalChecked());
+
+    if (valueMaybe.IsEmpty()) {
+        jsValue = Nan::Undefined();
+    } else {
+        jsValue = valueMaybe.ToLocalChecked();
+
         if (DEBUG_BASE) {
-            printf("watch property not found: %s\n", name.c_str());
+            v8::String::Utf8Value str(jsValue);
+
+            printf("-> default value: %s\n", *str);
         }
-
-        return false;
     }
-
-    v8::Local<v8::Value> propWatchLocal = propWatch.ToLocalChecked();
-
-    if (!propWatchLocal->IsFunction()) {
-        if (DEBUG_BASE) {
-            printf("watch property not a function: %s\n", name.c_str());
-        }
-
-        return false;
-    }
-
-    v8::Local<v8::Function> watchFunc = propWatchLocal.As<v8::Function>();
-
-    //call to add watcher
-    int argc = 1;
-    //FIXME wrong -> trap in later execution: Assertion failed: (object->InternalFieldCount() > 0), function Unwrap, file ../node_modules/nan/nan_object_wrap.h, line 33.
-    v8::Local<v8::Value> argv[] = { Nan::GetFunction(Nan::New<v8::FunctionTemplate>(callback)).ToLocalChecked() };
-
-    watchFunc->Call(obj, argc, argv);
-
-    if (DEBUG_BASE) {
-        printf("added property watcher: %s\n", name.c_str());
-    }
-
-    //TODO return default value
 
     return true;
+}
+
+/**
+ * Create float property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
+AminoJSObject::FloatProperty* AminoJSObject::createFloatProperty(std::string name) {
+    int id = ++lastPropertyId;
+    FloatProperty *prop = new FloatProperty(this, name, id);
+
+    //TODO simplify
+
+    propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
+
+    v8::Local<v8::Value> value;
+
+    if (addPropertyWatcher(name, id, value)) {
+        prop->connected = true;
+
+        //set default value
+        prop->setValue(value);
+    }
+
+    return prop;
+}
+
+//TODO int
+//TODO string
+/*
+        if (value->IsString()) {
+            v8::String::Utf8Value str(value);
+            std::string stdStr(*str);
+
+            jsValue = stdStr;
+*/
+
+/**
+ * Callback from property watcher to update native value.
+ */
+NAN_METHOD(AminoJSObject::PropertyUpdated) {
+    //params: value, propId, object
+    int id = info[1]->IntegerValue();
+
+    //pass to object instance
+    v8::Local<v8::Value> value = info[0];
+    v8::Local<v8::Object> jsObj = info[2].As<v8::Object>();
+    AminoJSObject *obj = Nan::ObjectWrap::Unwrap<AminoJSObject>(jsObj);
+
+    obj->enqueuePropertyUpdate(id, value);
+}
+
+void AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
+    //check queue exists
+    if (!asyncUpdates) {
+        printf("missing queue\n");
+
+        return;
+    }
+
+    //find property
+    std::map<int, AnyProperty *>::iterator iter = propertyMap.find(id);
+
+    if (iter == propertyMap.end()) {
+        //property not found
+        printf("property with id=%i not found!\n", id);
+
+        return;
+    }
+
+    //enqueue
+    AnyProperty *prop = iter->second;
+
+    if (DEBUG_BASE) {
+        printf("enqueuePropertyUpdate: %s (id=%i)\n", prop->name.c_str(), id);
+    }
+
+    asyncUpdates->push_back(new AsyncUpdate(prop, value));
 }
 
 /**
@@ -191,7 +266,7 @@ bool AminoJSObject::addPropertyWatcher(std::string name, Nan::FunctionCallback c
  */
 void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value) {
     if (DEBUG_BASE) {
-        printf("updateProperty()\n", name.c_str());
+        printf("updateProperty(): %s\n", name.c_str());
     }
 
     //create scope
@@ -203,7 +278,7 @@ void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value)
 
     if (prop.IsEmpty()) {
         if (DEBUG_BASE) {
-            printf("property not defined: %s\n", name.c_str());
+            printf("-> property not defined: %s\n", name.c_str());
         }
 
         return;
@@ -213,7 +288,7 @@ void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value)
 
     if (!propLocal->IsFunction()) {
         if (DEBUG_BASE) {
-            printf("property not a function: %s\n", name.c_str());
+            printf("-> property not a function: %s\n", name.c_str());
         }
 
         return;
@@ -222,14 +297,24 @@ void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value)
     v8::Local<v8::Function> updateFunc = propLocal.As<v8::Function>();
 
     //call
-    int argc = 1;
-    v8::Local<v8::Value> argv[] = { value };
+    int argc = 2;
+    v8::Local<v8::Value> argv[] = { value, Nan::True() };
 
     updateFunc->Call(obj, argc, argv);
 
     if (DEBUG_BASE) {
-        printf("updated property: %s\n", name.c_str());
+        printf("-> updated property: %s\n", name.c_str());
     }
+}
+
+/**
+ * Update JS property value.
+ */
+void AminoJSObject::updateProperty(std::string name, double value) {
+    //create scope
+    Nan::HandleScope scope;
+
+    updateProperty(name, Nan::New<v8::Number>(value));
 }
 
 /**
@@ -239,8 +324,140 @@ void AminoJSObject::updateProperty(std::string name, int value) {
     //create scope
     Nan::HandleScope scope;
 
-    updateProperty(name, Nan::New(value));
+    updateProperty(name, Nan::New<v8::Integer>(value));
 }
 
-//TODO getProperty(std::string name, Nan::Persistent<v8::Object> &persistent)
-//TODO updateProperty(Nan::Persistent<v8::Object> &persistent, v8::Local<v8::Value> value)
+/**
+ * Create async updates queue.
+ */
+void AminoJSObject::createAsyncQueue() {
+    if (!asyncUpdates) {
+        asyncUpdates = new std::vector<AsyncUpdate *>();
+        localAsyncUpdatesInstance = true;
+    }
+}
+
+/**
+ * Bind to global queue.
+ */
+void AminoJSObject::attachToAsyncQueue(AminoJSObject *obj) {
+    //detach
+    if (asyncUpdates && localAsyncUpdatesInstance) {
+        delete asyncUpdates;
+    }
+
+    asyncUpdates = obj->asyncUpdates;
+    localAsyncUpdatesInstance = false;
+}
+
+/**
+ * Process all queued updates.
+ */
+void AminoJSObject::processAsyncQueue() {
+    //check if global queue
+    if (!asyncUpdates || !localAsyncUpdatesInstance) {
+        return;
+    }
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //iterate
+    for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
+        AsyncUpdate *item = (*asyncUpdates)[i];
+
+        handleAsyncUpdate(item->property, item->getValue());
+    }
+
+    //clear
+    asyncUpdates->clear();
+}
+
+void AminoJSObject::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) {
+    //overwrite for extended handling
+
+    //default: update value
+    property->setValue(value);
+}
+
+//
+// AminoJSObject::AnyProperty
+//
+
+/**
+ * AnyProperty constructor.
+ */
+AminoJSObject::AnyProperty::AnyProperty(AminoJSObject *obj, std::string name, int id): obj(obj), name(name), id(id) {
+    //empty
+}
+
+void AminoJSObject::AnyProperty::setValue(v8::Local<v8::Value> &value) {
+    //overwrite
+}
+
+//
+// AminoJSObject::FloatProperty
+//
+
+/**
+ * FloatProperty constructor.
+ */
+AminoJSObject::FloatProperty::FloatProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(obj, name, id) {
+    //empty
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::FloatProperty::setValue(v8::Local<v8::Value> &value) {
+    if (value->IsNumber()) {
+        //double to float
+        this->value = value->NumberValue();
+
+        //Note: do not call updateProperty(), change is from JS side
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a number!\n");
+        }
+    }
+}
+
+/**
+ * Update the float value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::FloatProperty::setValue(float newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(name, value);
+        }
+    }
+}
+
+//
+// AminoJSObject::AsyncUpdate
+//
+
+/**
+ * Constructor.
+ */
+AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value): property(property) {
+    this->value.Reset(value);
+}
+
+/**
+ * Destructor.
+ */
+AminoJSObject::AsyncUpdate::~AsyncUpdate() {
+    value.Reset();
+}
+
+/**
+ * Get local value.
+ */
+v8::Local<v8::Value> AminoJSObject::AsyncUpdate::getValue() {
+    return Nan::New(value);
+}
