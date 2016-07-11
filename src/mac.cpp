@@ -37,7 +37,21 @@ public:
 private:
     static bool glfwInitialized;
     static int instanceCount;
+    static std::map<GLFWwindow *, AminoGfxMac *> *windowMap;
+
+    //GLFW window
     GLFWwindow *window;
+    bool resizing = false;
+
+    static AminoGfxMac* windowToInstance(GLFWwindow *window) {
+        std::map<GLFWwindow *, AminoGfxMac *>::iterator it = windowMap->find(window);
+
+        if (it != windowMap->end()) {
+            return it->second;
+        }
+
+        return NULL;
+    }
 
     /**
      * JS object construction.
@@ -49,7 +63,7 @@ private:
     /**
      * Setup JS instance.
      */
-    void setup() {
+    void setup() override {
         if (DEBUG_GLFW) {
             printf("AminoGfxMac.setup()\n");
         }
@@ -57,6 +71,7 @@ private:
         //init GLFW
         if (!glfwInitialized) {
             if (!glfwInit()) {
+                //exit on error
                 printf("error. quitting\n");
 
                 glfwTerminate();
@@ -75,7 +90,7 @@ private:
     /**
      * Destroy GLFW instance.
      */
-    void destroy() {
+    void destroy() override {
         if (destroyed) {
             return;
         }
@@ -83,7 +98,11 @@ private:
         AminoGfx::destroy();
 
         //GLFW
-        glfwDestroyWindow(window);
+        if (window) {
+            glfwDestroyWindow(window);
+            windowMap->erase(window);
+            window = NULL;
+        }
 
         instanceCount--;
 
@@ -95,7 +114,7 @@ private:
     /**
      * Get default monitor resolution.
      */
-    bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) {
+    bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) override {
         //debug
         //printf("getScreenInfo\n");
 
@@ -114,21 +133,283 @@ private:
     /**
      * Add GLFW properties.
      */
-    void populateRuntimeProperties(v8::Local<v8::Object> &obj) {
+    void populateRuntimeProperties(v8::Local<v8::Object> &obj) override {
         //debug
         //printf("populateRuntimeProperties\n");
 
+        AminoGfx::populateRuntimeProperties(obj);
+
+        //GLFW
         Nan::Set(obj, Nan::New("glfwVersion").ToLocalChecked(), Nan::New(std::string(glfwGetVersionString())).ToLocalChecked());
+
+        //retina scale factor
+        Nan::Set(obj, Nan::New("scale").ToLocalChecked(), Nan::New<v8::Integer>(viewportW / (int)propW->value));
     }
 
-    void start() {
-        //TODO create window, ...
+    /**
+     * Initialize GLFW window.
+     */
+    void initRenderer() override {
+        AminoGfx::initRenderer();
+
+        //create window
+        //TODO dynamic title
+        window = glfwCreateWindow(width, height, "AminoGfx OpenGL Output", NULL, NULL);
+
+        if (!window) {
+            //exit on error
+            printf("couldn't open a window. quitting\n");
+
+            glfwTerminate();
+            exit(EXIT_FAILURE);
+        }
+
+        //store
+        windowMap->insert(std::pair<GLFWwindow *, AminoGfxMac *>(window, this));
+
+        //check window size
+        if (DEBUG_GLFW) {
+            int windowW;
+            int windowH;
+
+            glfwGetWindowSize(window, &windowW, &windowH);
+
+            printf("window size: requested=%ix%i, got=%ix%i\n", (int)propW->value, (int)propH->value, windowW, windowH);
+        }
+
+        //get framebuffer size
+        glfwGetFramebufferSize(window, &viewportW, &viewportH);
+
+        //check framebuffer size
+        if (DEBUG_GLFW) {
+            printf("framebuffer size: %ix%i\n", viewportW, viewportH);
+        }
+
+        //activate context
+        glfwMakeContextCurrent(window);
+
+        //set bindings
+        glfwSetKeyCallback(window, handleKeyEvents);
+        glfwSetCursorPosCallback(window, handleMouseMoveEvents);
+        glfwSetMouseButtonCallback(window, handleMouseClickEvents);
+        glfwSetScrollCallback(window, handleMouseWheelEvents);
+        glfwSetWindowSizeCallback(window, handleWindowSizeChanged);
+        glfwSetWindowCloseCallback(window, handleWindowCloseEvent);
+    }
+
+    /**
+     * Key event.
+     */
+    static void handleKeyEvents(GLFWwindow *window, int key, int scancode, int action, int mods) {
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //debug
+        //printf("key event: key=%i scancode=%i\n", key, scancode);
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        if (action == GLFW_RELEASE) {
+            //release
+            Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("keyrelease").ToLocalChecked());
+        } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+            //press or repeat
+            Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("keypress").ToLocalChecked());
+        }
+
+        //key codes
+        Nan::Set(event_obj, Nan::New("keycode").ToLocalChecked(), Nan::New(key));
+        Nan::Set(event_obj, Nan::New("scancode").ToLocalChecked(), Nan::New(scancode));
+
+        obj->fireEvent(event_obj);
+    }
+
+    /**
+     * Mouse moved.
+     */
+    static void handleMouseMoveEvents(GLFWwindow *window, double x, double y) {
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //debug
+        //printf("mouse moved event: %f %f\n", x, y);
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),  Nan::New("mouseposition").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("x").ToLocalChecked(),     Nan::New(x));
+        Nan::Set(event_obj, Nan::New("y").ToLocalChecked(),     Nan::New(y));
+
+        obj->fireEvent(event_obj);
+    }
+
+    /**
+     * Mouse click event.
+     */
+    static void handleMouseClickEvents(GLFWwindow *window, int button, int action, int mods) {
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //debug
+        if (DEBUG_GLFW) {
+            printf("mouse clicked event: %i %i\n", button, action);
+        }
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousebutton").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("button").ToLocalChecked(), Nan::New(button));
+        Nan::Set(event_obj, Nan::New("state").ToLocalChecked(),  Nan::New(action));
+
+        obj->fireEvent(event_obj);
+    }
+
+    /**
+     * Mouse wheel event.
+     */
+    static void handleMouseWheelEvents(GLFWwindow *window, double xoff, double yoff) {
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousewheelv").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("xoff").ToLocalChecked(),   Nan::New(xoff));
+        Nan::Set(event_obj, Nan::New("yoff").ToLocalChecked(),   Nan::New(yoff));
+
+        obj->fireEvent(event_obj);
+    }
+
+    /**
+     * Window size has changed.
+     */
+    static void handleWindowSizeChanged(GLFWwindow *window, int newWidth, int newHeight) {
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        obj->handleWindowSizeChanged(newWidth, newHeight);
+    }
+
+    void handleWindowSizeChanged(int newWidth, int newHeight) {
+    	//check size
+        if (propW->value == newWidth && propH->value == newHeight) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //update
+        updateSize(newWidth, newHeight);
+
+        //debug
+        if (DEBUG_GLFW) {
+            printf("window size: %ix%i\n", newWidth, newHeight);
+        }
+
+        //get framebuffer size
+        glfwGetFramebufferSize(window, &viewportW, &viewportH);
+
+        //check framebuffer size
+        if (DEBUG_GLFW) {
+            printf("framebuffer size: %ix%i\n", viewportW, viewportH);
+        }
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("windowsize").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("width").ToLocalChecked(),    Nan::New(width));
+        Nan::Set(event_obj, Nan::New("height").ToLocalChecked(),   Nan::New(height));
+
+        //render
+        resizing = true;
+        render();
+        resizing = false;
+
+        //fire
+        fireEvent(event_obj);
+    }
+
+    /**
+     * Window close event.
+     *
+     * Note: window stays open.
+     */
+    static void handleWindowCloseEvent(GLFWwindow *window) {
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("windowclose").ToLocalChecked());
+
+        //fire
+        obj->fireEvent(event_obj);
+    }
+
+    void start() override {
+        //ready to get control back to JS code
         ready();
+    }
+
+    void bindContext() override {
+        //bind OpenGL context
+        glfwMakeContextCurrent(window);
+    }
+
+    void renderingDone() override {
+        //swap
+        glfwSwapBuffers(window);
+
+        //handle events
+        if (!resizing) {
+            glfwPollEvents();
+        }
     }
 };
 
 int AminoGfxMac::instanceCount;
 bool AminoGfxMac::glfwInitialized;
+std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLFWwindow *, AminoGfxMac *>();
 
 //
 // AminoGfxMacFactory
@@ -150,8 +431,6 @@ AminoJSObject* AminoGfxMacFactory::create() {
 
 // ========== Event Callbacks ===========
 
-static bool windowSizeChanged = true;
-
 int fbWidth;
 int fbHeight;
 
@@ -169,8 +448,6 @@ static void GLFW_WINDOW_SIZE_CALLBACK_FUNCTION(GLFWwindow *window, int newWidth,
     //update
     width = newWidth;
 	height = newHeight;
-
-	windowSizeChanged = true;
 
     if (!eventCallbackSet) {
         warnAbort("WARNING. Event callback not set");
@@ -419,7 +696,7 @@ NAN_METHOD(createWindow) {
 
     printf("GLFW_VERSION = %s\n", glfwGetVersionString());
 
-    //init valus
+    //init values
 	colorShader = new ColorShader();
 	textureShader = new TextureShader();
 
@@ -569,9 +846,6 @@ void render(bool resizing = false) {
     if (DEBUG_RENDER) {
         prerender = getTime();
     }
-
-    rend->modelViewChanged = windowSizeChanged;
-    windowSizeChanged = false;
     rend->startRender(root);
     delete rend;
 

@@ -54,6 +54,7 @@ protected:
         bool connected = false;
 
         AnyProperty(AminoJSObject *obj, std::string name, int id);
+        virtual ~AnyProperty() = 0;
 
         virtual void setValue(v8::Local<v8::Value> &value);
 
@@ -66,8 +67,9 @@ protected:
         float value;
 
         FloatProperty(AminoJSObject *obj, std::string name, int id);
+        ~FloatProperty();
 
-        void setValue(v8::Local<v8::Value> &value);
+        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(float newValue);
     };
 

@@ -122,6 +122,8 @@ extern int rootHandle;
 extern std::map<int, AminoFont *> fontmap;
 extern Nan::Callback *NODE_EVENT_CALLBACK;
 
+class AminoNode;
+
 /**
  * Amino main class to call from JavaScript.
  *
@@ -137,31 +139,53 @@ protected:
     bool destroyed = false;
     Nan::Callback *startCallback = NULL;
 
+    //renderer
+    AminoNode *root = NULL;
+    int viewportW;
+    int viewportH;
+    ColorShader *colorShader;
+    TextureShader *textureShader;
+    float r = 0;
+    float g = 0;
+    float b = 0;
+
     //properties
     FloatProperty *propW;
     FloatProperty *propH;
+    FloatProperty *propOpacity;
 
     //creation
     static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
 
-    void setup();
+    void setup() override;
 
     //abstract methods
+    virtual void initRenderer();
+    void setupRenderer();
+    void addRuntimeProperty();
+    virtual void populateRuntimeProperties(v8::Local<v8::Object> &obj);
+
     virtual void start();
     void ready();
-    virtual void populateRuntimeProperties(v8::Local<v8::Object> &obj) {};
+
+    virtual void render();
+    virtual void bindContext() = 0;
+    virtual void setupViewport();
+    virtual void renderScene();
+    virtual void renderingDone() = 0;
+
     virtual void destroy();
 
     virtual bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) { return false; };
-    void updateSize(int w, int h);
+    void updateSize(int w, int h); //call after size event
+
+    void fireEvent(v8::Local<v8::Object> &obj);
 
 private:
     //JS methods
     static NAN_METHOD(Start);
     static NAN_METHOD(Destroy);
-
-    static NAN_METHOD(SetW);
-    static NAN_METHOD(SetH);
+    static NAN_METHOD(Tick);
 };
 
 /**
@@ -542,6 +566,12 @@ public:
 
     void stop() {
         active = false;
+
+        //free then
+        if (then) {
+            delete then;
+            then = NULL;
+        }
     }
 
     void endAnimation() {
@@ -560,6 +590,8 @@ public:
 
             //TODO set this
             then->Call(0, NULL);
+            delete then;
+            then = NULL;
         }
 
         //TODO remove instance (needs refactoring; memory leak)

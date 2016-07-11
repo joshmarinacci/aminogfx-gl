@@ -109,7 +109,7 @@ var Core = function () {
      * Set the root node.
      */
     this.setRoot = function (node) {
-        this.native.setRoot(node.handle);
+        this.native.setRoot(node.handle);//cbx setRoot
         this.root = node;
     };
 
@@ -317,17 +317,15 @@ function Stage (core) {
         w: 100,
         h: 100,
         opacity: 1.0,
-        transparent: false,
         fill: '#000000',
 
         //not used
         x: 0,
         y: 0,
-        smooth: true
     });
 
     var self = this;
-
+//cbx
 	/**
      * @func on(name,node,cb) sets a callback for events matching the specified name on the
 	specified node. Use null for the node to match global events.
@@ -347,7 +345,7 @@ function Stage (core) {
      */
 	this.setRoot = function (root) {
 		core.setRoot(root);
-
+//cbx setRoot
 		return this;
 	};
 

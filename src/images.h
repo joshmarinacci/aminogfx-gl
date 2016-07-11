@@ -36,7 +36,7 @@ class AminoImageFactory : public AminoJSObjectFactory {
 public:
     AminoImageFactory(Nan::FunctionCallback callback);
 
-    AminoJSObject* create();
+    AminoJSObject* create() override;
 };
 
 #endif

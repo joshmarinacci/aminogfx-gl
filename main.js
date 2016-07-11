@@ -29,12 +29,97 @@ AminoGfx.prototype.init = function () {
 
     //initialize bindings
     amino_core.makeProps(this, {
-        //QHD
+        //position (window only)
+        x: 0,
+        y: 0,
+
+        //QHD size
         w: 640,
-        h: 360
+        h: 360,
+
+        //color
+        opacity: 1,
+        fill: '#000000'
     });
 
+    /* TODO conversion
+    this.fill.convert = function () {
+        var color = amino_core.ParseRGBString(stage.fill());
+
+        gl_native.updateWindowProperty(stage, 'r', color.r);
+        gl_native.updateWindowProperty(stage, 'g', color.g);
+        gl_native.updateWindowProperty(stage, 'b', color.b);
+    });
+    */
+
     //TODO more
+    //cbx
+
+    //init shaders
+    //Shaders.init(sgtest, OS);
+
+    //fonts
+    /*
+    fontmap['source']  = new JSFont(defaultFonts['source']);
+    fontmap['awesome'] = new JSFont(defaultFonts['awesome']);
+
+    core.defaultFont = fontmap['source'];
+    */
+
+    //root wrapper
+    /*
+    this.rootWrapper = this.createGroup();
+    sgtest.setRoot(this.rootWrapper);
+    */
+    //cbx
+};
+
+AminoGfx.prototype.start = function (done) {
+    this._start(done);
+
+    this.startTimer();
+};
+
+AminoGfx.prototype.startTimer = function () {
+    if (this.timer) {
+        return;
+    }
+
+    var self = this;
+
+    function immediateLoop() {
+        self.tick();
+
+        //debug: fps
+        if (DEBUG_FPS) {
+            var time = (new Date()).getTime();
+
+            if (self.lastTime) {
+                console.log('fps: ' + (1000 / (time - self.lastTime)));
+            }
+
+            self.lastTime = time;
+        }
+
+        //next cycle
+        self.timer = setImmediate(immediateLoop);
+    }
+
+    //see https://nodejs.org/api/timers.html#timers_setimmediate_callback_arg
+    this.timer = setImmediate(immediateLoop);
+};
+
+AminoGfx.prototype.handleEvent = function (evt) {
+    console.log('Event: ' + JSON.stringify(evt)); //FIXME cbx
+};
+
+AminoGfx.prototype.destroy = function () {
+    if (this.timer) {
+        clearImmediate(this.timer);
+        this.timer = null;
+    }
+
+    this._destroy();
 };
 
 exports.AminoGfx = AminoGfx;
@@ -500,7 +585,7 @@ var gl_native = {
         sgtest.updateProperty(handle, hash, value);
     },
     setRoot: function (handle) {
-        return  sgtest.addNodeToGroup(handle, this.rootWrapper);
+        return  sgtest.addNodeToGroup(handle, this.rootWrapper);//cbx
     },
     tick: function() {
         sgtest.tick();

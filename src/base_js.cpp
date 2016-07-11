@@ -421,6 +421,13 @@ AminoJSObject::FloatProperty::FloatProperty(AminoJSObject *obj, std::string name
 }
 
 /**
+ * FloatProperty destructor.
+ */
+AminoJSObject::FloatProperty::~FloatProperty() {
+    //empty
+}
+
+/**
  * Set value.
  */
 void AminoJSObject::FloatProperty::setValue(v8::Local<v8::Value> &value) {

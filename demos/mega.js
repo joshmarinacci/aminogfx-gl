@@ -10,8 +10,6 @@ exports.go = function (canvas) {
 		//output width
 		console.log('width = ', stage.w());
 
-        //stage.smooth(false);
-
 		//register font
 	    core.registerFont({
 	        name: 'Oswald',
@@ -209,7 +207,6 @@ exports.go = function (canvas) {
 
 		setTimeout(function () {
             stage.opacity(0.1);
-			//stage.transparent(true);
 		}, 4000);
 
 	});

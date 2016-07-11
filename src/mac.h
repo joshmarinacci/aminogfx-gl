@@ -8,7 +8,7 @@ class AminoGfxMacFactory : public AminoJSObjectFactory {
 public:
     AminoGfxMacFactory(Nan::FunctionCallback callback);
 
-    AminoJSObject* create();
+    AminoJSObject* create() override;
 };
 
 #endif

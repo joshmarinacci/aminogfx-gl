@@ -2,7 +2,6 @@
 //#include <node_buffer.h>
 
 SimpleRenderer::SimpleRenderer() {
-    modelViewChanged = false;
 }
 
 void SimpleRenderer::startRender(AminoNode *root) {
@@ -382,12 +381,6 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     glUniform4fv(font->coloruni, 1, color);
 
     glUniform1i(font->texuni, 0); //GL_TEXTURE0
-
-    /*
-    if (modelViewChanged) {
-        glUniformMatrix4fv(font->mvpuni,         1, 0,  modelView  );
-    }
-    */
 
     glUniformMatrix4fv(font->mvpuni, 1, 0, modelView);
 

@@ -1,6 +1,6 @@
 #include "base.h"
 
-using namespace v8;
+#include "SimpleRenderer.h"
 
 ColorShader *colorShader;
 TextureShader *textureShader;
@@ -25,6 +25,11 @@ std::vector<Update *> updates;
 //  AminoGfx
 //
 
+//TODO cleanup
+static float near = 150;
+static float far = -300;
+static float eye = 600;
+
 AminoGfx::AminoGfx(std::string name): AminoJSObject(name) {
     //empty
 }
@@ -48,8 +53,9 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(factory);
 
     //prototype methods
-    Nan::SetPrototypeMethod(tpl, "start", Start);
-    Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
+    Nan::SetPrototypeMethod(tpl, "_start", Start);
+    Nan::SetPrototypeMethod(tpl, "_destroy", Destroy);
+    Nan::SetPrototypeMethod(tpl, "tick", Tick);
 
     //global template instance
     Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
@@ -62,6 +68,7 @@ void AminoGfx::setup() {
     //register native properties
     propW = createFloatProperty("w");
     propH = createFloatProperty("h");
+    propOpacity = createFloatProperty("opacity");
 
     //screen size
     int w, h, refreshRate;
@@ -82,35 +89,13 @@ void AminoGfx::setup() {
         }
 
         Nan::Set(obj, Nan::New("fullscreen").ToLocalChecked(), Nan::New<v8::Boolean>(fullscreen));
-    } else {
-        //QHD
-        w = 640;
-        h = 360;
+
+        //screen size
+        if (fullscreen) {
+            //fixed size
+            updateSize(w, h);
+        }
     }
-
-    //default size
-    updateSize(w, h);
-
-    //OpenGL information
-    /* FIXME move to OpenGL init code
-    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-
-    Nan::Set(handle(), Nan::New("runtime").ToLocalChecked(), obj);
-
-    // 1) OpenGL version
-    Nan::Set(obj, Nan::New("renderer").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_RENDERER))).ToLocalChecked());
-    Nan::Set(obj, Nan::New("version").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VERSION))).ToLocalChecked());
-    Nan::Set(obj, Nan::New("vendor").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VENDOR))).ToLocalChecked());
-
-    // 2) texture size
-    GLint maxTextureSize;
-
-    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-    Nan::Set(obj, Nan::New("maxTextureSize").ToLocalChecked(), Nan::New(maxTextureSize));
-
-    // 3) platform specific
-    populateRuntimeProperties(obj);
-    */
 }
 
 /**
@@ -130,10 +115,75 @@ NAN_METHOD(AminoGfx::Start) {
 
     obj->startCallback = callback;
 
+    //init renderer context
+    obj->initRenderer();
+    obj->setupRenderer();
+
+    //runtime info
+    obj->addRuntimeProperty();
+
     //start (must call ready())
     obj->start();
 }
 
+/**
+ * Initialize the renderer (init OpenGL context).
+ */
+void AminoGfx::initRenderer() {
+    //empty: overwrite
+    viewportW = propW->value;
+    viewportH = propH->value;
+}
+
+/**
+ * Shader and matrix setup.
+ */
+void AminoGfx::setupRenderer() {
+    //init values
+	colorShader = new ColorShader();
+	textureShader = new TextureShader();
+
+    modelView = new GLfloat[16];
+    globaltx = new GLfloat[16];
+    make_identity_matrix(globaltx);
+}
+
+/**
+ * Adds runtime property.
+ */
+void AminoGfx::addRuntimeProperty() {
+    //OpenGL information
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+
+    Nan::Set(handle(), Nan::New("runtime").ToLocalChecked(), obj);
+
+    // 1) OpenGL version
+    Nan::Set(obj, Nan::New("renderer").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_RENDERER))).ToLocalChecked());
+    Nan::Set(obj, Nan::New("version").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VERSION))).ToLocalChecked());
+    Nan::Set(obj, Nan::New("vendor").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VENDOR))).ToLocalChecked());
+
+    // 2) texture size
+    GLint maxTextureSize;
+
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    Nan::Set(obj, Nan::New("maxTextureSize").ToLocalChecked(), Nan::New(maxTextureSize));
+
+    // 3) platform specific
+    populateRuntimeProperties(obj);
+}
+
+/**
+ * Add runtime specific properties.
+ */
+void AminoGfx::populateRuntimeProperties(v8::Local<v8::Object> &obj) {
+    //empty: overwrite
+}
+
+/**
+ * Start render cycle.
+ *
+ * Note: has to call ready.
+ */
 void AminoGfx::start() {
     //overwrite
 }
@@ -145,14 +195,101 @@ void AminoGfx::ready() {
     started = true;
 
     //call callback
-    if (startCallback && !startCallback->IsEmpty()) {
-        v8::Local<v8::Object> obj = handle();
-        v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
+    if (startCallback) {
+        if (!startCallback->IsEmpty()) {
+            v8::Local<v8::Object> obj = handle();
+            v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-        startCallback->Call(obj, 2, argv);
+            startCallback->Call(obj, 2, argv);
+        }
+
+        //free callback
         delete startCallback;
         startCallback = NULL;
     }
+}
+
+/**
+ * System has time to render a new scene.
+ */
+NAN_METHOD(AminoGfx::Tick) {
+    //TODO check fps
+    //TODO reduce updates to refreshRate
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    obj->render();
+}
+
+/**
+ * Render a scene (synchronous call).
+ */
+void AminoGfx::render() {
+    bindContext();
+
+    //updates
+    processAsyncQueue();
+    //TODO animations cbx
+
+    //viewport
+    setupViewport();
+
+    //root
+    renderScene();
+
+    //done
+    renderingDone();
+}
+
+void AminoGfx::setupViewport() {
+    //set up the viewport (y-inversion, top-left origin)
+
+    //scale
+    GLfloat *scaleM = new GLfloat[16];
+
+    make_scale_matrix(1, -1, 1, scaleM);
+
+    //translate
+    GLfloat *transM = new GLfloat[16];
+
+    make_trans_matrix(-((float)width) / 2, ((float)height) / 2, 0, transM);
+
+    //combine
+    GLfloat *m4 = new GLfloat[16];
+
+    mul_matrix(m4, transM, scaleM);
+
+    //3D perspective
+    GLfloat *pixelM = new GLfloat[16];
+
+    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
+    mul_matrix(modelView, pixelM, m4);
+
+    delete[] m4;
+    delete[] pixelM;
+    delete[] scaleM;
+    delete[] transM;
+
+    make_identity_matrix(globaltx);
+
+    //prepare
+    glViewport(0, 0, viewportW, viewportH);
+    glClearColor(r, g, b, propOpacity->value);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+}
+
+/**
+ * Render the root node and all its children.
+ */
+void AminoGfx::renderScene() {
+    if (!root) {
+        return;
+    }
+
+    SimpleRenderer *rend = new SimpleRenderer();
+
+    rend->startRender(root);
+    delete rend;
 }
 
 /**
@@ -172,16 +309,55 @@ NAN_METHOD(AminoGfx::Destroy) {
 void AminoGfx::destroy() {
     //to be overwritten
     destroyed = true;
+
+    //renderer (shader programs)
+    if (colorShader) {
+        delete colorShader;
+        colorShader = NULL;
+
+        delete textureShader;
+        textureShader = NULL;
+
+        delete[] modelView;
+        modelView = NULL;
+
+        delete[] globaltx;
+        globaltx = NULL;
+    }
 }
 
 /**
  * Size has changed, update internal and JS properties.
+ *
+ * Note: has to be called after window size has changed. Does not touch the window size.
  */
 void AminoGfx::updateSize(int w, int h) {
     propW->setValue(w);
     propH->setValue(h);
 }
 
+/**
+ * Fire runtime specific event.
+ */
+void AminoGfx::fireEvent(v8::Local<v8::Object> &evt) {
+    //event handler
+    v8::Local<v8::Object> obj = handle();
+    Nan::MaybeLocal<v8::Value> handleEventMaybe = Nan::Get(obj, Nan::New<v8::String>("handleEvent").ToLocalChecked());
+
+    if (!handleEventMaybe.IsEmpty()) {
+        v8::Local<v8::Value> value = handleEventMaybe.ToLocalChecked();
+
+        if (value->IsFunction()) {
+            v8::Local<v8::Function> func = value.As<v8::Function>();
+
+            //call
+            int argc = 1;
+            v8::Local<v8::Value> argv[1] = { evt };
+
+            func->Call(obj, argc, argv);
+        }
+    }
+}
 
 
 
