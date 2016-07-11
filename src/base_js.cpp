@@ -395,6 +395,20 @@ void AminoJSObject::AnyProperty::setValue(v8::Local<v8::Value> &value) {
     //overwrite
 }
 
+/**
+ * Retain base object instance.
+ */
+void AminoJSObject::AnyProperty::retain() {
+    obj->Ref();
+}
+
+/**
+ * Release base object instance.
+ */
+void AminoJSObject::AnyProperty::release() {
+    obj->Unref();
+}
+
 //
 // AminoJSObject::FloatProperty
 //
@@ -446,6 +460,9 @@ void AminoJSObject::FloatProperty::setValue(float newValue) {
  */
 AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value): property(property) {
     this->value.Reset(value);
+
+    //retain instance
+    property->retain();
 }
 
 /**
@@ -453,6 +470,9 @@ AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Val
  */
 AminoJSObject::AsyncUpdate::~AsyncUpdate() {
     value.Reset();
+
+    //release instance
+    property->release();
 }
 
 /**

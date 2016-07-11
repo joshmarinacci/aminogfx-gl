@@ -56,6 +56,9 @@ protected:
         AnyProperty(AminoJSObject *obj, std::string name, int id);
 
         virtual void setValue(v8::Local<v8::Value> &value);
+
+        void retain();
+        void release();
     };
 
     class FloatProperty : public AnyProperty {
