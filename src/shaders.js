@@ -1,13 +1,14 @@
 'use strict';
 
 /*
- * Shader Tools
+ * Shader Loader
  */
 
 var DEBUG = false;
 
-var fs = require('fs');
-var path = require('path');
+var fs    = require('fs');
+var path  = require('path');
+var async = require('async');
 
 var Shader = {
     /**
@@ -129,32 +130,74 @@ var Shader = {
 /**
  * Load shader code from file system.
  */
-function loadShaderCode(path, OS) {
-    var src = fs.readFileSync(path).toString();
+function loadShaderCode(path, OS, done) {
+    fs.readFile(path, 'utf8', function (err, src) {
+        if (err) {
+            done(err);
+            return;
+        }
 
-    if (OS == 'RPI') {
-        //Raspberry Pi need version number in shader
-        src = '#version 100\n' + src;
+        if (OS == 'RPI') {
+            //Raspberry Pi need version number in shader
+            src = '#version 100\n' + src;
+        }
+
+        done(null, src);
+    });
+}
+
+let shaders = null;
+
+/**
+ * Load all shaders.
+ *
+ * Note: platform independent
+ */
+exports.preloadShaders = function (OS, done) {
+    if (shaders) {
+        done(null, shaders);
+        return;
     }
 
-    return src;
-}
+    async.parallel([
+        function (callback) {
+            loadShaderCode(path.join(__dirname, '/shaders/color.vert'), OS, callback);
+        },
+        function (callback) {
+            loadShaderCode(path.join(__dirname, '/shaders/color.frag'), OS, callback);
+        },
+        function (callback) {
+            loadShaderCode(path.join(__dirname, '/shaders/texture.vert'), OS, callback);
+        },
+        function (callback) {
+            loadShaderCode(path.join(__dirname, '/shaders/texture.frag'), OS, callback);
+        }
+    ], function (err, res) {
+        shaders = res;
+
+        done(err, res);
+    });
+};
 
 /**
  * Initialize the basic aminogfx shaders.
  */
-exports.init = function (gfx, GL, OS) {
+exports.init = function (gfx, OS) {
+    if (!shaders || shaders.length != 4) {
+        throw new Error('shaders not preloaded!');
+    }
+
     var cshader = Object.create(Shader);
 
-    cshader.GL = GL;
+    cshader.GL = gfx.GL;
 
     if (DEBUG) {
         console.log('__dirname = ', __dirname);
     }
 
     //color shader
-    cshader.vertText = loadShaderCode(path.join(__dirname, '/shaders/color.vert'), OS);
-    cshader.fragText = loadShaderCode(path.join(__dirname, '/shaders/color.frag'), OS);
+    cshader.vertText = shaders[0];
+    cshader.fragText = shaders[1];
     cshader.build();
 
     cshader.useProgram();
@@ -174,9 +217,9 @@ exports.init = function (gfx, GL, OS) {
     //texture shader
     var tshader = Object.create(Shader);
 
-    tshader.GL = GL;
-    tshader.vertText = loadShaderCode(path.join(__dirname, '/shaders/texture.vert'), OS);
-    tshader.fragText = loadShaderCode(path.join(__dirname, '/shaders/texture.frag'), OS);
+    tshader.GL = gfx.GL;
+    tshader.vertText = shaders[2];
+    tshader.fragText = shaders[3];
     tshader.build();
 
     tshader.useProgram();

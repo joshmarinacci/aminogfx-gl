@@ -16,6 +16,20 @@ var path = require('path');
 var binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
 var sgtest = require(binding_path);
 
+var shaders = require('./src/shaders.js');
+var fs = require('fs');
+
+//detect platform
+var OS;
+
+if (process.arch == 'arm') {
+    OS = 'RPI';
+}
+
+if (process.platform == 'darwin') {
+    OS ='MAC';
+}
+
 //AminoGfx
 var AminoGfx = sgtest.AminoGfx;
 
@@ -70,23 +84,37 @@ AminoGfx.prototype.init = function () {
 AminoGfx.prototype.start = function (done) {
     var self = this;
 
-    //pass to native code
-    this._start(function (err) {
-        //init shaders
-        Shaders.init(self, AminoGfx.GL, OS);
-
-        //ready (Note: this points to the instance)
-        done.call(self, err);
-
-        //check root
-        /* cbxx
-        if (!this.root) {
-            throw new Error('Missing root!');
+    //preload shaders
+    shaders.preloadShaders(OS, function (err) {
+        if (err) {
+            done(err);
+            return;
         }
-        */
 
-        //start rendering loop
-        self.startTimer();
+        //pass to native code
+        self._start(function (err) {
+            if (err) {
+                done.call(self, err);
+                return;
+            }
+
+            //init shaders
+            self.GL = AminoGfx.GL;
+            shaders.init(self, OS);
+
+            //ready (Note: this points to the instance)
+            done.call(self, err);
+
+            //check root
+            /* cbxx
+            if (!this.root) {
+                throw new Error('Missing root!');
+            }
+            */
+
+            //start rendering loop
+            self.startTimer();
+        });
     });
 };
 
@@ -192,19 +220,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
 
 exports.AminoImage = AminoImage;
 
-//detect platform
-var OS;
-
-if (process.arch == 'arm') {
-    OS = 'RPI';
-}
-if (process.platform == 'darwin') {
-    OS ='MAC';
-}
-
 var Core = amino_core.Core;
-var Shaders = require('./src/shaders.js');
-var fs = require('fs');
 
 //Fonts
 
