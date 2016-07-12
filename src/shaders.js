@@ -80,6 +80,13 @@ var Shader = {
             console.log('error linking ', log);
             process.exit(1);
         }
+
+        //free shaders
+        GL.glDetachShader(program, shader.vert);
+        GL.glDeleteShader(shader.vert);
+        GL.glDetachShader(program, shader.frag);
+        GL.glDeleteShader(shader.frag);
+
         return program;
     },
 

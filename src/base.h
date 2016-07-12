@@ -1191,6 +1191,8 @@ NAN_METHOD(node_glGetShaderInfoLog);
 NAN_METHOD(node_glGetProgramInfoLog);
 NAN_METHOD(node_glCreateProgram);
 NAN_METHOD(node_glAttachShader);
+NAN_METHOD(node_glDetachShader);
+NAN_METHOD(node_glDeleteShader);
 NAN_METHOD(node_glLinkProgram);
 NAN_METHOD(node_glUseProgram);
 NAN_METHOD(node_glGetAttribLocation);

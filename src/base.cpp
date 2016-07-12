@@ -368,9 +368,11 @@ void AminoGfx::destroy() {
 
     //renderer (shader programs)
     if (colorShader) {
+        colorShader->destroy();
         delete colorShader;
         colorShader = NULL;
 
+        textureShader->destroy();
         delete textureShader;
         textureShader = NULL;
 
@@ -438,6 +440,8 @@ v8::Local<v8::Object> AminoGfx::createGLObject() {
 	Nan::Set(obj, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
 	Nan::Set(obj, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
 	Nan::Set(obj, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
+    Nan::Set(obj, Nan::New("glDetachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glDetachShader)).ToLocalChecked());
+    Nan::Set(obj, Nan::New("glDeleteShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glDeleteShader)).ToLocalChecked());
 	Nan::Set(obj, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
 	Nan::Set(obj, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
 	Nan::Set(obj, Nan::New("glGetProgramiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
@@ -774,7 +778,20 @@ NAN_METHOD(node_glAttachShader) {
   int prog     = info[0]->Uint32Value();
   int shader   = info[1]->Uint32Value();
 
-  glAttachShader(prog,shader);
+  glAttachShader(prog, shader);
+}
+
+NAN_METHOD(node_glDetachShader) {
+  int prog     = info[0]->Uint32Value();
+  int shader   = info[1]->Uint32Value();
+
+  glDetachShader(prog, shader);
+}
+
+NAN_METHOD(node_glDeleteShader) {
+  int shader   = info[0]->Uint32Value();
+
+  glDeleteShader(shader);
 }
 
 NAN_METHOD(node_glLinkProgram) {

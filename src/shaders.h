@@ -8,12 +8,14 @@
  */
 class ColorShader {
 public:
-    int prog;
+    int prog = -1;
     GLint u_matrix, u_trans, u_opacity;
     GLint attr_pos;
     GLint attr_color;
 
     ColorShader();
+
+    void destroy();
 };
 
 /**
@@ -21,12 +23,14 @@ public:
  */
 class TextureShader {
 public:
-    int prog;
+    int prog = -1;
     GLint u_matrix, u_trans, u_opacity;
     GLint attr_pos;
     GLint attr_texcoords, texID;
 
     TextureShader();
+
+    void destroy();
 };
 
 #endif
