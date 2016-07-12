@@ -444,8 +444,8 @@ NAN_METHOD(node_glBindBuffer) {
 
 NAN_METHOD(node_glBufferData) {
   int type   = info[0]->Uint32Value();
-  Handle<Array> array = Handle<Array>::Cast(info[1]);
-  float* verts = new float[array->Length()];
+  v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(info[1]);
+  float *verts = new float[array->Length()];
 
   for (std::size_t i = 0; i < array->Length(); i++) {
       verts[i] = array->Get(i)->ToNumber()->NumberValue();
@@ -689,54 +689,54 @@ void SimpleRenderer::drawGLNode(GLContext* ctx, GLNode* glnode) {
 //    Nan::Set(event_obj, Nan::New("GL_FRAMEBUFFER_COMPLETE").ToLocalChecked(), Nan::New(GL_FRAMEBUFFER_COMPLETE));
 //    Nan::Set(event_obj, Nan::New("GL_COLOR_ATTACHMENT0").ToLocalChecked(), Nan::New(GL_COLOR_ATTACHMENT0));
 
-    Nan::Set(event_obj, Nan::New("glGetString").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetString)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetError").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetError)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetString").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetString)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetError").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetError)).ToLocalChecked());
 //    Nan::Set(event_obj, Nan::New("glGenVertexArrays").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenVertexArrays)).ToLocalChecked());
 //    Nan::Set(event_obj, Nan::New("glBindVertexArray").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindVertexArray)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGenBuffers").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenBuffers)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBindBuffer").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindBuffer)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBufferData").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBufferData)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetProgramiv").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetShaderInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetShaderInfoLog)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glEnableVertexAttribArray").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glEnableVertexAttribArray)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glVertexAttribPointer").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glVertexAttribPointer)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glUniform1f").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUniform1f)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glUniform2f").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUniform2f)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glPointSize").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glPointSize)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glEnable").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glEnable)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBlendFunc").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBlendFunc)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBlendFuncSeparate").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBlendFuncSeparate)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBlendEquation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBlendEquation)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGenBuffers").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGenBuffers)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBindBuffer").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBindBuffer)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBufferData").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBufferData)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetProgramiv").ToLocalChecked(),  Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetShaderInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetShaderInfoLog)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glEnableVertexAttribArray").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glEnableVertexAttribArray)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glVertexAttribPointer").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glVertexAttribPointer)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glUniform1f").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUniform1f)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glUniform2f").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUniform2f)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glPointSize").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glPointSize)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glEnable").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glEnable)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBlendFunc").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBlendFunc)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBlendFuncSeparate").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBlendFuncSeparate)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBlendEquation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBlendEquation)).ToLocalChecked());
     Nan::Set(event_obj, Nan::New("GL_FUNC_ADD").ToLocalChecked(), Nan::New(GL_FUNC_ADD));
     Nan::Set(event_obj, Nan::New("GL_ONE").ToLocalChecked(), Nan::New(GL_ONE));
     Nan::Set(event_obj, Nan::New("GL_ZERO").ToLocalChecked(), Nan::New(GL_ZERO));
-    Nan::Set(event_obj, Nan::New("glDrawArrays").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glDrawArrays)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glDrawArrays").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glDrawArrays)).ToLocalChecked());
 
-    Nan::Set(event_obj, Nan::New("glGenFramebuffers").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenFramebuffers)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBindFramebuffer").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindFramebuffer)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glCheckFramebufferStatus").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCheckFramebufferStatus)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glGenTextures").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGenTextures)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glBindTexture").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glBindTexture)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glActiveTexture").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glActiveTexture)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glTexImage2D").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glTexImage2D)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glTexParameteri").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glTexParameteri)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGenFramebuffers").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGenFramebuffers)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBindFramebuffer").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBindFramebuffer)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glCheckFramebufferStatus").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCheckFramebufferStatus)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glGenTextures").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGenTextures)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glBindTexture").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glBindTexture)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glActiveTexture").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glActiveTexture)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glTexImage2D").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glTexImage2D)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glTexParameteri").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glTexParameteri)).ToLocalChecked());
 //    Nan::Set(event_obj, Nan::New("glFramebufferTexture2D").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glFramebufferTexture2D)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("glReadPixels").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glReadPixels)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("glReadPixels").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glReadPixels)).ToLocalChecked());
 
 
-    Nan::Set(event_obj, Nan::New("setModelView").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_setModelView)).ToLocalChecked());
-    Nan::Set(event_obj, Nan::New("setGlobalTransform").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_setGlobalTransform)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("setModelView").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_setModelView)).ToLocalChecked());
+    Nan::Set(event_obj, Nan::New("setGlobalTransform").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_setGlobalTransform)).ToLocalChecked());
 
 //    Handle<Value> event_argv[] = {event_obj};
 //    glnode->callback->Call(Context::GetCurrent()->Global(),1,event_argv);

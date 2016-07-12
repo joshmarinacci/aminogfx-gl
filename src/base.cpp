@@ -5,18 +5,8 @@
 ColorShader *colorShader;
 TextureShader *textureShader;
 GLfloat *modelView;
-GLfloat *globaltx;
-float window_fill_red;
-float window_fill_green;
-float window_fill_blue;
-float window_opacity;
-int width = 640;
-int height = 480;
 
-std::stack<void *> matrixStack;
-int rootHandle;
 std::map<int, AminoFont *> fontmap;
-Nan::Callback *NODE_EVENT_CALLBACK;
 std::vector<AminoNode *> rects;
 std::vector<Anim *> anims;
 std::vector<Update *> updates;
@@ -31,7 +21,8 @@ static float far = -300;
 static float eye = 600;
 
 AminoGfx::AminoGfx(std::string name): AminoJSObject(name) {
-    //empty
+    //async handling
+    createAsyncQueue();
 }
 
 AminoGfx::~AminoGfx() {
@@ -144,8 +135,6 @@ void AminoGfx::setupRenderer() {
 	textureShader = new TextureShader();
 
     modelView = new GLfloat[16];
-    globaltx = new GLfloat[16];
-    make_identity_matrix(globaltx);
 }
 
 /**
@@ -242,6 +231,8 @@ void AminoGfx::render() {
 
 void AminoGfx::setupViewport() {
     //set up the viewport (y-inversion, top-left origin)
+    float width = propW->value;
+    float height = propH->value;
 
     //scale
     GLfloat *scaleM = new GLfloat[16];
@@ -251,7 +242,7 @@ void AminoGfx::setupViewport() {
     //translate
     GLfloat *transM = new GLfloat[16];
 
-    make_trans_matrix(-((float)width) / 2, ((float)height) / 2, 0, transM);
+    make_trans_matrix(- width / 2, height / 2, 0, transM);
 
     //combine
     GLfloat *m4 = new GLfloat[16];
@@ -268,8 +259,6 @@ void AminoGfx::setupViewport() {
     delete[] pixelM;
     delete[] scaleM;
     delete[] transM;
-
-    make_identity_matrix(globaltx);
 
     //prepare
     glViewport(0, 0, viewportW, viewportH);
@@ -320,9 +309,6 @@ void AminoGfx::destroy() {
 
         delete[] modelView;
         modelView = NULL;
-
-        delete[] globaltx;
-        globaltx = NULL;
     }
 }
 
@@ -357,57 +343,6 @@ void AminoGfx::fireEvent(v8::Local<v8::Object> &evt) {
             func->Call(obj, argc, argv);
         }
     }
-}
-
-
-
-void scale(double x, double y) {
-    GLfloat scale[16];
-    GLfloat temp[16];
-
-    make_scale_matrix((float)x, (float)y, 1.0, scale);
-    mul_matrix(temp, globaltx, scale);
-    copy_matrix(globaltx, temp);
-}
-
-void translate(double x, double y) {
-    GLfloat tr[16];
-    GLfloat trans2[16];
-
-    make_trans_matrix((float)x, (float)y, 0, tr);
-    mul_matrix(trans2, globaltx, tr);
-    copy_matrix(globaltx, trans2);
-}
-
-void rotate(double x, double y, double z) {
-    GLfloat rot[16];
-    GLfloat temp[16];
-
-    make_x_rot_matrix(x, rot);
-    mul_matrix(temp, globaltx, rot);
-    copy_matrix(globaltx, temp);
-
-    make_y_rot_matrix(y, rot);
-    mul_matrix(temp, globaltx, rot);
-    copy_matrix(globaltx, temp);
-
-    make_z_rot_matrix(z, rot);
-    mul_matrix(temp, globaltx, rot);
-    copy_matrix(globaltx, temp);
-}
-
-void save() {
-    GLfloat *temp = new GLfloat[16];
-
-    copy_matrix(temp, globaltx);
-    matrixStack.push(globaltx);
-    globaltx = temp;
-}
-
-void restore() {
-    delete globaltx;
-    globaltx = (GLfloat*)matrixStack.top();
-    matrixStack.pop();
 }
 
 // --------------------------------------------------------------- add_text ---
@@ -855,34 +790,6 @@ NAN_METHOD(updateAnimProperty) {
     updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL, callback));
 }
 
-NAN_METHOD(updateWindowProperty) {
-    if (DEBUG_BASE) {
-        printf("updateWindowProperty()\n");
-    }
-
-    int windowHandle   = info[0]->Uint32Value();
-    int property       = info[1]->Uint32Value();
-    float value = 0;
-    std::wstring wstr = L"";
-
-    if (info[2]->IsNumber()) {
-        if (DEBUG_BASE) {
-            printf("-> updating window property %d \n", property);
-        }
-
-        value = info[2]->Uint32Value();
-    } else if (info[2]->IsString()) {
-        char *cstr = TO_CHAR(info[2]);
-
-        wstr = GetWC(cstr);
-        free(cstr);
-    } else {
-        printf("unsupported window property format: %i\n", property);
-    }
-
-    updates.push_back(new Update(WINDOW, windowHandle, property, value, wstr, NULL, NULL));
-}
-
 NAN_METHOD(addNodeToGroup) {
     int rectHandle   = info[0]->Uint32Value();
     int groupHandle  = info[1]->Uint32Value();
@@ -911,10 +818,6 @@ NAN_METHOD(removeNodeFromGroup) {
     group->children.erase(group->children.begin() + n);
 }
 
-NAN_METHOD(setRoot) {
-    rootHandle = info[0]->Uint32Value();
-}
-
 NAN_METHOD(loadBufferToTexture) {
     int texid = info[0]->Uint32Value();
     int w     = info[1]->Uint32Value();
@@ -924,7 +827,7 @@ NAN_METHOD(loadBufferToTexture) {
     //printf("got w=%d h=%d bpp=%d\n", w, h, bpp);
 
     //buffer
-    Local<Object> bufferObj = info[4]->ToObject();
+    v8::Local<v8::Object> bufferObj = info[4]->ToObject();
     char *bufferData = Buffer::Data(bufferObj);
     size_t bufferLength = Buffer::Length(bufferObj);
 

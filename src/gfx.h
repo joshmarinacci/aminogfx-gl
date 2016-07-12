@@ -27,21 +27,6 @@ static double getTime(void) {
 
 #endif
 
-#ifdef KLAATU
-
-#include <ui/DisplayInfo.h>
-#include <ui/FramebufferNativeWindow.h>
-#include <gui/SurfaceComposerClient.h>
-
-//return the current time in msec
-static double getTime(void) {
-    struct timespec res;
-    clock_gettime(CLOCK_REALTIME, &res);
-    return 1000.0 * res.tv_sec + ((double) res.tv_nsec / 1e6);
-}
-
-#endif
-
 #ifdef LINUX
 
 #include <GL/glfw.h>

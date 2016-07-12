@@ -67,17 +67,27 @@ AminoGfx.prototype.init = function () {
     */
 
     //root wrapper
-    /*
-    this.rootWrapper = this.createGroup();
-    sgtest.setRoot(this.rootWrapper);
-    */
-    //cbx
+    //this.setRoot(this.createGroup()); cbxx
 };
 
 AminoGfx.prototype.start = function (done) {
     this._start(done);
 
+    //check root
+    /* cbxx
+    if (!this.root) {
+        throw new Error('Missing root!');
+    }
+    */
+
+    //start rendering loop
     this.startTimer();
+};
+
+AminoGfx.prototype.setRoot = function (root) {
+    this.root = root;
+
+    this._setRoot(root); //TODO cbx
 };
 
 AminoGfx.prototype.startTimer = function () {
@@ -110,7 +120,12 @@ AminoGfx.prototype.startTimer = function () {
 };
 
 AminoGfx.prototype.handleEvent = function (evt) {
-    console.log('Event: ' + JSON.stringify(evt)); //FIXME cbx
+    //debug
+    //console.log('Event: ' + JSON.stringify(evt));
+
+    evt.time = new Date().getTime();
+
+    exports.input.processEvent(this, evt);
 };
 
 AminoGfx.prototype.destroy = function () {
@@ -172,7 +187,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
 exports.AminoImage = AminoImage;
 
 //detect platform
-var OS = 'KLAATU';
+var OS;
 
 if (process.arch == 'arm') {
     OS = 'RPI';
@@ -495,61 +510,6 @@ var gl_native = {
     getRegisteredFonts: function () {
         return fontmap;
     },
-    init: function (core) {
-        return sgtest.init();
-    },
-    startEventLoop: function () {
-        if (DEBUG) {
-            console.log('starting the event loop');
-        }
-
-        var self = this;
-
-        function immediateLoop() {
-            try {
-                self.tick(Core.getCore());
-            } catch (ex) {
-                //report
-                console.log(ex);
-                console.log(ex.stack);
-                console.log('EXCEPTION. QUITTING!');
-                return;
-            }
-
-            //debug: fps
-            if (DEBUG_FPS) {
-                var time = (new Date()).getTime();
-
-                if (self.lastTime) {
-                    console.log('fps: ' + (1000 / (time - self.lastTime)));
-                }
-                self.lastTime = time;
-            }
-
-            //next cycle
-            self.setImmediate(immediateLoop);
-        }
-
-        //1 ms
-        setTimeout(immediateLoop, 1);
-    },
-    createWindow: function (core, w, h) {
-        //create window
-        sgtest.createWindow(w, h);
-
-        //init shaders
-        Shaders.init(sgtest, OS);
-
-        //fonts
-        fontmap['source']  = new JSFont(defaultFonts['source']);
-        fontmap['awesome'] = new JSFont(defaultFonts['awesome']);
-
-        core.defaultFont = fontmap['source'];
-
-        //root wrapper
-        this.rootWrapper = this.createGroup();
-        sgtest.setRoot(this.rootWrapper);
-    },
     getFont: function (name) {
         return fontmap[name];
     },
@@ -585,20 +545,8 @@ var gl_native = {
         sgtest.updateProperty(handle, hash, value);
     },
     setRoot: function (handle) {
-        return  sgtest.addNodeToGroup(handle, this.rootWrapper);//cbx
+        return  sgtest.addNodeToGroup(handle, this.rootWrapper);//cbxx
     },
-    tick: function() {
-        sgtest.tick();
-    },
-    setImmediate: function (loop) {
-        //see https://nodejs.org/api/timers.html#timers_setimmediate_callback_arg
-        setImmediate(loop);
-    },
-//    setEventCallback: function(cb) {   return sgtest.setEventCallback(cb);   },
-    setEventCallback: function (cb) {   return sgtest.setEventCallback(function(){
-        //console.log("got some stuff",arguments);
-        cb(arguments[1]);
-    });   },
     createRect: function (hasImage) {
         return sgtest.createRect(hasImage);
     },
@@ -642,12 +590,6 @@ var gl_native = {
     loadBufferToTexture: function (texid, w, h, bpp, buf, cb) {
         return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf));
     },
-    setWindowSize: function (w, h) {
-        sgtest.setWindowSize(w, h);
-    },
-    getWindowSize: function (w, h) {
-        return sgtest.getWindowSize(w, h);
-    },
     createAnim: function (handle, prop, start, end, dur) {
         var hash = propsHash[prop];
 
@@ -668,51 +610,10 @@ var gl_native = {
         }
 
         sgtest.updateAnimProperty(handle, hash, type);
-    },
-    updateWindowProperty: function (stage, prop, value) {
-        var hash = propsHash[prop];
-
-        if (!hash) {
-            throw new Error('invalid native property name', prop);
-        }
-
-        return sgtest.updateWindowProperty(-1, hash, value);
     }
 };
 
 exports.input = amino_core.input;
-exports.start = function (cb) {
-    if (!cb) {
-        throw new Error('CB parameter missing to start app');
-    }
-
-    //init core
-    Core.setCore(new Core());
-
-    var core = Core.getCore();
-
-    core.native = gl_native;
-    amino_core.native = gl_native;
-    core.init();
-
-    //create stage
-    var stage = Core._core.createStage(600, 600);
-
-    stage.fill.watch(function () {
-        var color = amino_core.ParseRGBString(stage.fill());
-
-        gl_native.updateWindowProperty(stage, 'r', color.r);
-        gl_native.updateWindowProperty(stage, 'g', color.g);
-        gl_native.updateWindowProperty(stage, 'b', color.b);
-    });
-
-    stage.opacity.watch(function () {
-        gl_native.updateWindowProperty(stage, 'opacity', stage.opacity());
-    });
-
-    cb(core, stage);
-    core.start();
-};
 
 exports.makeProps = amino_core.makeProps;
 

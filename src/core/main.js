@@ -28,75 +28,11 @@ var Core = function () {
     };
 
     /**
-     * Initialize.
-     */
-    this.init = function () {
-        this.native.init(this);
-
-        this.native.setEventCallback(function (e) {
-            if (!e || e == null) {
-                console.log('ERROR. null event');
-                return;
-            }
-
-            //console.log("event type is", e.type);
-
-            e.time = new Date().getTime();
-
-            input.processEvent(self,e);
-        });
-    };
-
-    /**
      * Register a font.
      */
 	this.registerFont = function (args) {
 	    this.getNative().registerFont(args);
 	};
-
-    /**
-     * Windows was resized.
-     */
-    this.handleWindowSizeEvent = function (evt) {
-        //ignored
-
-        if (DEBUG) {
-            console.log('doing nothing with the resize');
-        }
-    };
-
-    /**
-     * Start.
-     */
-    this.start = function () {
-        //send a final window size event to make sure everything is lined up correctly
-        var size = this.native.getWindowSize();
-
-        this.stage.width = size.w;
-        this.stage.height = size.h;
-
-        input.processEvent(this, {
-            type: 'windowsize',
-            width: size.w,
-            height: size.h
-        });
-
-        if (!this.root) {
-            throw new Error('ERROR. No root set on stage');
-        }
-
-        this.native.startEventLoop();
-    };
-
-    /**
-     * Create the stage.
-     */
-    this.createStage = function (w, h) {
-        this.native.createWindow(this, w, h);
-        this.stage = new Stage(this).w(w).h(h);
-
-        return this.stage;
-    };
 
     /**
      * Get a font by name.
@@ -345,7 +281,7 @@ function Stage (core) {
      */
 	this.setRoot = function (root) {
 		core.setRoot(root);
-//cbx setRoot
+//cbxx setRoot
 		return this;
 	};
 
@@ -373,24 +309,6 @@ function Stage (core) {
 
         return null;
     };
-
-    /**
-     * Update size on window resizing.
-     */
-    core.on('windowsize', function (e) {
-        self.w(e.width);
-        self.h(e.height);
-    });
-
-    /**
-     * Resize window on property change.
-     */
-    function resizeScreen() {
-        core.getNative().setWindowSize(self.w(), self.h());
-    }
-
-    this.w.watch(resizeScreen);
-    this.h.watch(resizeScreen);
 }
 
 exports.makeProps = amino.makeProps;

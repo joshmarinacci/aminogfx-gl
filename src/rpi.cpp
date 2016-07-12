@@ -106,7 +106,7 @@ static void init_ogl(PWindow *state) {
    dispman_alpha.mask = 0;
 
    int LAYER = 0;
-   dispman_element = vc_dispmanx_element_add ( dispman_update, dispman_display,
+   dispman_element = vc_dispmanx_element_add (dispman_update, dispman_display,
       LAYER/*layer*/, &dst_rect, 0/*src*/,
       &src_rect, DISPMANX_PROTECTION_NONE,
       &dispman_alpha  /*alpha*/,
@@ -117,7 +117,7 @@ static void init_ogl(PWindow *state) {
    nativewindow.height = state->screen_height;
    vc_dispmanx_update_submit_sync( dispman_update );
 
-   state->surface = eglCreateWindowSurface( state->display, config, &nativewindow, NULL );
+   state->surface = eglCreateWindowSurface(state->display, config, &nativewindow, NULL);
    assert(state->surface != EGL_NO_SURFACE);
 
    // connect the context to the surface
@@ -228,54 +228,6 @@ static void init_inputs() {
         closedir(dir);
     }
 }
-/*
-static void GLFW_MOUSE_POS_CALLBACK_FUNCTION(int x, int y) {
-    if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-    Local<Object> event_obj = Object::New();
-    event_obj->Set(String::NewSymbol("type"), String::New("mouseposition"));
-    event_obj->Set(String::NewSymbol("x"), Number::New(x));
-    event_obj->Set(String::NewSymbol("y"), Number::New(y));
-    Handle<Value> event_argv[] = {event_obj};
-    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-}
-
-static void GLFW_KEY_CALLBACK_FUNCTION(int key, int action) {
-    if(!eventCallbackSet) warnAbort("WARNING. Event callback not set");
-    Local<Object> event_obj = Object::New();
-    if(action == 0) {
-        event_obj->Set(String::NewSymbol("type"), String::New("keyrelease"));
-    }
-    if(action == 1) {
-        event_obj->Set(String::NewSymbol("type"), String::New("keypress"));
-    }
-    if(action == 2) {
-        event_obj->Set(String::NewSymbol("type"), String::New("keyrepeat"));
-    }
-    event_obj->Set(String::NewSymbol("keycode"), Number::New(key));
-    Handle<Value> event_argv[] = {event_obj};
-    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-}
-
-
-static void GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(int button, int state) {
-    if(!eventCallbackSet) warnAbort("ERROR. Event callback not set");
-    Local<Object> event_obj = Object::New();
-    event_obj->Set(String::NewSymbol("type"), String::New("mousebutton"));
-    event_obj->Set(String::NewSymbol("button"), Number::New(button));
-    event_obj->Set(String::NewSymbol("state"), Number::New(state));
-    Handle<Value> event_argv[] = {event_obj};
-    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-}
-
-static void GLFW_MOUSE_WHEEL_CALLBACK_FUNCTION(int wheel) {
-    if(!eventCallbackSet) warnAbort("ERROR. Event callback not set");
-    Local<Object> event_obj = Object::New();
-    event_obj->Set(String::NewSymbol("type"), String::New("mousewheelv"));
-    event_obj->Set(String::NewSymbol("position"), Number::New(wheel));
-    Handle<Value> event_argv[] = {event_obj};
-    NODE_EVENT_CALLBACK->Call(Context::GetCurrent()->Global(), 1, event_argv);
-}
-*/
 static void handleEvent(input_event ev) {
     // relative event. probably mouse
     if(ev.type == EV_REL) {
@@ -328,10 +280,10 @@ static void processInputs() {
 }
 
 NAN_METHOD(init) {
-	matrixStack = std::stack<void *>();
     bcm_host_init();
+
     // Clear application state
-    memset( state, 0, sizeof( *state ) );
+    memset(state, 0, sizeof(*state));
 
     // Start OGLES
     init_ogl(state);
@@ -341,41 +293,6 @@ NAN_METHOD(init) {
     height = state->screen_height;
 
     init_inputs();
-}
-
-NAN_METHOD(createWindow) {
-    int w  = info[0]->Uint32Value();
-    int h  = info[1]->Uint32Value();
-
-    //Window already allocated at this point.
-    //Values ignored.
-
-    colorShader = new ColorShader();
-    textureShader = new TextureShader();
-
-    modelView = new GLfloat[16];
-    globaltx = new GLfloat[16];
-    make_identity_matrix(globaltx);
-
-    window_fill_red = 0;
-    window_fill_green = 0;
-    window_fill_blue = 0;
-    window_opacity = 1;
-}
-
-NAN_METHOD(setWindowSize) {
-    //not supported
-    printf("pretending to set the window size to: %d %d\n", width, height);
-}
-
-NAN_METHOD(getWindowSize) {
-    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-
-    //window size (is screen size)
-    Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(width));
-    Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(height));
-
-    info.GetReturnValue().Set(obj);
 }
 
 void render() {
@@ -415,7 +332,6 @@ void render() {
     GLfloat* pixelM = new GLfloat[16];
     loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
     mul_matrix(modelView,pixelM,m4);
-    make_identity_matrix(globaltx);
     glViewport(0,0,width, height);
     glClearColor(window_fill_red,window_fill_green,window_fill_blue,window_opacity);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -438,114 +354,9 @@ void render() {
     //    printf("animtime = %.2f render = %.2f frame = %.2f, full frame = %.2f\n", de.animationstime, de.rendertime, de.frametime, de.framewithsynctime);
 }
 
-NAN_METHOD(tick) {
-    render();
-}
-
-/*
-Handle<Value> selfDrive(const Arguments& args) {
-    HandleScope scope;
-    for(int i =0; i<100; i++) {
-        render();
-    }
-    return scope.Close(Undefined());
-}
-
-
-Handle<Value> runTest(const Arguments& args) {
-    HandleScope scope;
-
-    double startTime = getTime();
-    int count = 100;
-    Local<v8::Object> opts = args[0]->ToObject();
-    count = (int)(opts
-        ->Get(String::NewSymbol("count"))
-        ->ToNumber()
-        ->NumberValue()
-        );
-
-
-    bool sync = false;
-    sync = opts
-        ->Get(String::NewSymbol("sync"))
-        ->ToBoolean()
-        ->BooleanValue();
-
-    printf("rendering %d times, vsync = %d\n",count,sync);
-
-    printf("applying updates first\n");
-    for(int j=0; j<updates.size(); j++) {
-        updates[j]->apply();
-    }
-    updates.clear();
-
-    printf("setting up the screen\n");
-    GLfloat* scaleM = new GLfloat[16];
-    make_scale_matrix(1,-1,1,scaleM);
-    //make_scale_matrix(1,1,1,scaleM);
-    GLfloat* transM = new GLfloat[16];
-    make_trans_matrix(-width/2,height/2,0,transM);
-    //make_trans_matrix(10,10,0,transM);
-    //make_trans_matrix(0,0,0,transM);
-
-    GLfloat* m4 = new GLfloat[16];
-    mul_matrix(m4, transM, scaleM);
-
-
-    GLfloat* pixelM = new GLfloat[16];
-    //    loadPixelPerfectMatrix(pixelM, width, height, 600, 100, -150);
-    loadPixelPerfect(pixelM, width, height, eye, near, far);
-    //printf("eye = %f\n",eye);
-    //loadPerspectiveMatrix(pixelM, 45, 1, 10, -100);
-
-    GLfloat* m5 = new GLfloat[16];
-    //transpose(m5,pixelM);
-
-    mul_matrix(modelView,pixelM,m4);
-
-
-    make_identity_matrix(globaltx);
-    glViewport(0,0,width, height);
-    glClearColor(1,1,1,1);
-
-
-    glDisable(GL_DEPTH_TEST);
-    printf("running %d times\n",count);
-    for(int i=0; i<count; i++) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        for(int j=0; j<anims.size(); j++) {
-            anims[j]->update();
-        }
-        AminoNode* root = rects[rootHandle];
-        SimpleRenderer* rend = new SimpleRenderer();
-        rend->startRender(root);
-        delete rend;
-        if(sync) {
-            eglSwapBuffers(state->display, state->surface);
-        }
-    }
-
-    double endTime = getTime();
-    Local<Object> ret = Object::New();
-    ret->Set(String::NewSymbol("count"),Number::New(count));
-    ret->Set(String::NewSymbol("totalTime"),Number::New(endTime-startTime));
-    return scope.Close(ret);
-}
-*/
-
-NAN_METHOD(setEventCallback) {
-    eventCallbackSet = true;
-    NODE_EVENT_CALLBACK = new Nan::Callback(info[0].As<v8::Function>());
-}
-
-
-
 NAN_MODULE_INIT(InitAll) {
 
     Nan::Set(target, Nan::New("init").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(init)).ToLocalChecked());
-    Nan::Set(target, Nan::New("createWindow").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createWindow)).ToLocalChecked());
-    Nan::Set(target, Nan::New("setWindowSize").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(setWindowSize)).ToLocalChecked());
-    Nan::Set(target, Nan::New("getWindowSize").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getWindowSize)).ToLocalChecked());
 	Nan::Set(target, Nan::New("createRect").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createRect)).ToLocalChecked());
     Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createPoly)).ToLocalChecked());
     Nan::Set(target, Nan::New("createGroup").ToLocalChecked(),      Nan::GetFunction(Nan::New<FunctionTemplate>(createGroup)).ToLocalChecked());
@@ -554,14 +365,10 @@ NAN_MODULE_INIT(InitAll) {
     Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<FunctionTemplate>(stopAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("updateProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(updateProperty)).ToLocalChecked());
-    Nan::Set(target, Nan::New("updateWindowProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(updateWindowProperty)).ToLocalChecked());
     Nan::Set(target, Nan::New("updateAnimProperty").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(updateAnimProperty)).ToLocalChecked());
     Nan::Set(target, Nan::New("addNodeToGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<FunctionTemplate>(addNodeToGroup)).ToLocalChecked());
     Nan::Set(target, Nan::New("removeNodeFromGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<FunctionTemplate>(removeNodeFromGroup)).ToLocalChecked());
-    Nan::Set(target, Nan::New("tick").ToLocalChecked(),             Nan::GetFunction(Nan::New<FunctionTemplate>(tick)).ToLocalChecked());
 //    Nan::Set(target, Nan::New("selfDrive").ToLocalChecked(),        Nan::GetFunction(Nan::New<FunctionTemplate>(selfDrive)).ToLocalChecked());
-	Nan::Set(target, Nan::New("setEventCallback").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(setEventCallback)).ToLocalChecked());
-    Nan::Set(target, Nan::New("setRoot").ToLocalChecked(),          Nan::GetFunction(Nan::New<FunctionTemplate>(setRoot)).ToLocalChecked());
     Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(getCharWidth)).ToLocalChecked());
@@ -591,9 +398,6 @@ NAN_MODULE_INIT(InitAll) {
 	Nan::Set(target, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
 /*
     exports->Set(String::NewSymbol("init"),             FunctionTemplate::New(init)->GetFunction());
-    exports->Set(String::NewSymbol("createWindow"),     FunctionTemplate::New(createWindow)->GetFunction());
-    exports->Set(String::NewSymbol("setWindowSize"),    FunctionTemplate::New(setWindowSize)->GetFunction());
-    exports->Set(String::NewSymbol("getWindowSize"),    FunctionTemplate::New(getWindowSize)->GetFunction());
     exports->Set(String::NewSymbol("createRect"),       FunctionTemplate::New(createRect)->GetFunction());
     exports->Set(String::NewSymbol("createPoly"),       FunctionTemplate::New(createPoly)->GetFunction());
     exports->Set(String::NewSymbol("createGroup"),      FunctionTemplate::New(createGroup)->GetFunction());
@@ -603,13 +407,9 @@ NAN_MODULE_INIT(InitAll) {
     exports->Set(String::NewSymbol("stopAnim"),         FunctionTemplate::New(stopAnim)->GetFunction());
     exports->Set(String::NewSymbol("updateProperty"),   FunctionTemplate::New(updateProperty)->GetFunction());
     exports->Set(String::NewSymbol("updateAnimProperty"),FunctionTemplate::New(updateAnimProperty)->GetFunction());
-    exports->Set(String::NewSymbol("updateWindowProperty"),  FunctionTemplate::New(updateWindowProperty)->GetFunction());
     exports->Set(String::NewSymbol("addNodeToGroup"),   FunctionTemplate::New(addNodeToGroup)->GetFunction());
     exports->Set(String::NewSymbol("removeNodeFromGroup"),   FunctionTemplate::New(removeNodeFromGroup)->GetFunction());
-    exports->Set(String::NewSymbol("tick"),             FunctionTemplate::New(tick)->GetFunction());
     exports->Set(String::NewSymbol("selfDrive"),        FunctionTemplate::New(selfDrive)->GetFunction());
-    exports->Set(String::NewSymbol("setEventCallback"), FunctionTemplate::New(setEventCallback)->GetFunction());
-    exports->Set(String::NewSymbol("setRoot"),          FunctionTemplate::New(setRoot)->GetFunction());
     exports->Set(String::NewSymbol("loadBufferToTexture"),  FunctionTemplate::New(loadBufferToTexture)->GetFunction());
     exports->Set(String::NewSymbol("createNativeFont"), FunctionTemplate::New(createNativeFont)->GetFunction());
     exports->Set(String::NewSymbol("getCharWidth"),     FunctionTemplate::New(getCharWidth)->GetFunction());

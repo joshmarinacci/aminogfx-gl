@@ -156,14 +156,6 @@ var handlers = {
     keyrelease: function (core, evt) {
         statusobjects.keyboard.state[evt.keycode] = false;
         sendKeyboardReleaseEvent(core,IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state));
-    },
-
-    windowsize: function (core, evt) {
-        //send event to core
-        core.handleWindowSizeEvent(evt);
-
-        //handle callbacks
-        sendWindowSizeEvent(core, evt);
     }
 };
 
@@ -374,10 +366,6 @@ function sendKeyboardReleaseEvent(core, event) {
     event.type = 'keyrelease';
     event.target = focusobjects.keyboard.target;
     fireEventAtTarget(event.target, event);
-}
-
-function sendWindowSizeEvent(core, event) {
-    fireEventAtTarget(null, event);
 }
 
 function fireEventAtTarget(target, event) {

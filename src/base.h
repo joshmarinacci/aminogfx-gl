@@ -102,25 +102,11 @@ static const int WRAP_NONE = 0x0;
 static const int WRAP_END  = 0x1;
 static const int WRAP_WORD = 0x2;
 
-using namespace v8;
-
-static bool eventCallbackSet = false;
-extern int width;
-extern int height;
-
 extern ColorShader *colorShader;
 extern TextureShader *textureShader;
 extern GLfloat *modelView;
-extern GLfloat *globaltx;
-extern float window_fill_red;
-extern float window_fill_green;
-extern float window_fill_blue;
-extern float window_opacity;
 
-extern std::stack<void *> matrixStack;
-extern int rootHandle;
 extern std::map<int, AminoFont *> fontmap;
-extern Nan::Callback *NODE_EVENT_CALLBACK;
 
 class AminoNode;
 
@@ -256,8 +242,8 @@ public:
  *
  * Note: Any call to this should later be free'd. Never returns null.
  */
-static inline char *TO_CHAR(Handle<Value> val) {
-    String::Utf8Value utf8(val);
+static inline char *TO_CHAR(v8::Handle<v8::Value> val) {
+    v8::String::Utf8Value utf8(val);
     int len = utf8.length() + 1;
     char *str = (char *)calloc(sizeof(char), len);
 
@@ -837,7 +823,7 @@ public:
  */
 class GLNode : public AminoNode {
 public:
-    Persistent<Function> callback;
+    v8::Persistent<v8::Function> callback;
 
     GLNode() {
         type = GLNODE;
@@ -932,27 +918,6 @@ public:
 
         //window
         if (type == WINDOW) {
-            switch (property) {
-                case R_PROP:
-                    window_fill_red = value;
-                    break;
-
-                case G_PROP:
-                    window_fill_green = value;
-                    break;
-
-                case B_PROP:
-                    window_fill_blue = value;
-                    break;
-
-                case OPACITY_PROP:
-                    window_opacity = value;
-                    break;
-
-                default:
-                    printf("Unknown anim window update: %i\n", property);
-                    break;
-            }
             return;
         }
 
@@ -1204,7 +1169,7 @@ static std::wstring GetWString(v8::Handle<v8::String> str) {
  * Note: delete after use
  */
 static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
-    Handle<Array>  oarray = Handle<Array>::Cast(obj);
+    v8::Handle<v8::Array> oarray = v8::Handle<v8::Array>::Cast(obj);
     std::vector<float>* carray = new std::vector<float>();
 
     for (std::size_t i = 0; i < oarray->Length(); i++) {
@@ -1217,11 +1182,8 @@ static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
 //JavaScript bindings
 
 NAN_METHOD(updateProperty);
-NAN_METHOD(updateWindowProperty);
-NAN_METHOD(updateAnimProperty);
 NAN_METHOD(addNodeToGroup);
 NAN_METHOD(removeNodeFromGroup);
-NAN_METHOD(setRoot);
 NAN_METHOD(loadBufferToTexture);
 NAN_METHOD(getFontHeight);
 NAN_METHOD(getFontAscender);
