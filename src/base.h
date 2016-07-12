@@ -36,9 +36,7 @@ const int RECT = 2;
 const int TEXT = 3;
 const int ANIM = 4;
 const int POLY = 5;
-const int GLNODE = 6;
 const int INVALID = -1;
-const int WINDOW = 7;
 
 static const int FOREVER = -1;
 
@@ -102,10 +100,6 @@ static const int WRAP_NONE = 0x0;
 static const int WRAP_END  = 0x1;
 static const int WRAP_WORD = 0x2;
 
-extern ColorShader *colorShader;
-extern TextureShader *textureShader;
-extern GLfloat *modelView;
-
 extern std::map<int, AminoFont *> fontmap;
 
 class AminoNode;
@@ -131,7 +125,8 @@ protected:
     int viewportH;
     ColorShader *colorShader;
     TextureShader *textureShader;
-    float r = 0;
+    GLfloat *modelView;
+    float r = 0;//cbx
     float g = 0;
     float b = 0;
 
@@ -167,11 +162,19 @@ protected:
 
     void fireEvent(v8::Local<v8::Object> &obj);
 
+    void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override;
+    virtual void updateWindowSize() = 0;
+
 private:
     //JS methods
     static NAN_METHOD(Start);
     static NAN_METHOD(Destroy);
     static NAN_METHOD(Tick);
+    static NAN_METHOD(InitColorShader);
+    static NAN_METHOD(InitTextureShader);
+
+    //GL
+    static v8::Local<v8::Object> createGLObject();
 };
 
 /**
@@ -817,23 +820,6 @@ public:
 };
 
 /**
- * OpenGL node.
- *
- * Uses callback.
- */
-class GLNode : public AminoNode {
-public:
-    v8::Persistent<v8::Function> callback;
-
-    GLNode() {
-        type = GLNODE;
-    }
-
-    ~GLNode() {
-    }
-};
-
-/**
  * Updates for next animation cycle.
  *
  * Note: destroy() has to be called to free memory if parameters were not passed!
@@ -913,11 +899,6 @@ public:
                     printf("Unknown anim update: %i\n", property);
                     break;
             }
-            return;
-        }
-
-        //window
-        if (type == WINDOW) {
             return;
         }
 
@@ -1138,7 +1119,6 @@ NAN_METHOD(createRect);
 NAN_METHOD(createPoly);
 NAN_METHOD(createText);
 NAN_METHOD(createGroup);
-NAN_METHOD(createGLNode);
 NAN_METHOD(createAnim);
 NAN_METHOD(stopAnim);
 

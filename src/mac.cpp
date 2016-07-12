@@ -426,6 +426,25 @@ private:
             glfwPollEvents();
         }
     }
+
+    /**
+     * Update the window size.
+     */
+    void updateWindowSize() override {
+        //Note: not getting size changed event
+        glfwSetWindowSize(window, propW->value, propH->value);
+
+        //check window size
+        //cbx verify
+
+        //get framebuffer size
+        glfwGetFramebufferSize(window, &viewportW, &viewportH);
+
+        //check framebuffer size
+        if (DEBUG_GLFW) {
+            printf("framebuffer size: %ix%i\n", viewportW, viewportH);
+        }
+    }
 };
 
 int AminoGfxMac::instanceCount;
@@ -452,32 +471,6 @@ AminoJSObject* AminoGfxMacFactory::create() {
 
 // ========== Event Callbacks ===========
 
-//cbx TODO react on w/h changes
-NAN_METHOD(setWindowSize) {
-    int w  = info[0]->Uint32Value();
-    int h  = info[1]->Uint32Value();
-
-    //debug
-    if (DEBUG_GLFW) {
-        printf("setWindowSize(): %ix%i\n", w, h);
-    }
-/*
-    width = w;
-    height = h;
-
-    //Note: not getting size changed event
-    glfwSetWindowSize(window, width, height);
-
-    //get framebuffer size
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-
-    //check framebuffer size
-    if (DEBUG_GLFW) {
-        printf("framebuffer size: %ix%i\n", fbWidth, fbHeight);
-    }
-*/
-}
-
 NAN_MODULE_INIT(InitAll) {
     //main class
     AminoGfxMac::Init(target);
@@ -490,14 +483,12 @@ NAN_MODULE_INIT(InitAll) {
     Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createPoly)).ToLocalChecked());
     Nan::Set(target, Nan::New("createGroup").ToLocalChecked(),      Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createGroup)).ToLocalChecked());
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createText)).ToLocalChecked());
-    Nan::Set(target, Nan::New("createGLNode").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createGLNode)).ToLocalChecked());
     Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<v8::FunctionTemplate>(stopAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("updateProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateProperty)).ToLocalChecked());
 //cbx?    Nan::Set(target, Nan::New("updateAnimProperty").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateAnimProperty)).ToLocalChecked());
     Nan::Set(target, Nan::New("addNodeToGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<v8::FunctionTemplate>(addNodeToGroup)).ToLocalChecked());
     Nan::Set(target, Nan::New("removeNodeFromGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<v8::FunctionTemplate>(removeNodeFromGroup)).ToLocalChecked());
-//    Nan::Set(target, Nan::New("selfDrive").ToLocalChecked(),        Nan::GetFunction(Nan::New<FunctionTemplate>(selfDrive)).ToLocalChecked());
     Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<v8::FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getCharWidth)).ToLocalChecked());
@@ -507,28 +498,6 @@ NAN_MODULE_INIT(InitAll) {
     //TODO other platforms
     Nan::Set(target, Nan::New("getTextLineCount").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getTextLineCount)).ToLocalChecked());
     Nan::Set(target, Nan::New("getTextHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getTextHeight)).ToLocalChecked());
-//	Nan::Set(target, Nan::New("runTest").ToLocalChecked(),          Nan::GetFunction(Nan::New<FunctionTemplate>(runTest)).ToLocalChecked());
-	Nan::Set(target, Nan::New("initColorShader").ToLocalChecked(),  Nan::GetFunction(Nan::New<v8::FunctionTemplate>(initColorShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("initTextureShader").ToLocalChecked(),Nan::GetFunction(Nan::New<v8::FunctionTemplate>(initTextureShader)).ToLocalChecked());
-
-	Nan::Set(target, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(),    Nan::New(GL_VERTEX_SHADER));
-	Nan::Set(target, Nan::New("GL_FRAGMENT_SHADER").ToLocalChecked(),  Nan::New(GL_FRAGMENT_SHADER));
-	Nan::Set(target, Nan::New("GL_COMPILE_STATUS").ToLocalChecked(),   Nan::New(GL_COMPILE_STATUS));
-	Nan::Set(target, Nan::New("GL_LINK_STATUS").ToLocalChecked(),      Nan::New(GL_LINK_STATUS));
-
-	Nan::Set(target, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetProgramiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
-
 }
 
 //entry point

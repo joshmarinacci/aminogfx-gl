@@ -373,11 +373,18 @@ void AminoJSObject::processAsyncQueue() {
     asyncUpdates->clear();
 }
 
+/**
+ * Default implementation sets the value received from JS.
+ */
 void AminoJSObject::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) {
     //overwrite for extended handling
 
     //default: update value
     property->setValue(value);
+
+    if (DEBUG_BASE) {
+        printf("-> updated %s\n", property->name.c_str());
+    }
 }
 
 //

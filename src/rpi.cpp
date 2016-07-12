@@ -361,7 +361,6 @@ NAN_MODULE_INIT(InitAll) {
     Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createPoly)).ToLocalChecked());
     Nan::Set(target, Nan::New("createGroup").ToLocalChecked(),      Nan::GetFunction(Nan::New<FunctionTemplate>(createGroup)).ToLocalChecked());
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createText)).ToLocalChecked());
-    Nan::Set(target, Nan::New("createGLNode").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(createGLNode)).ToLocalChecked());
     Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<FunctionTemplate>(stopAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("updateProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(updateProperty)).ToLocalChecked());
@@ -375,69 +374,6 @@ NAN_MODULE_INIT(InitAll) {
     Nan::Set(target, Nan::New("getFontHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontHeight)).ToLocalChecked());
     Nan::Set(target, Nan::New("getFontAscender").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontAscender)).ToLocalChecked());
     Nan::Set(target, Nan::New("getFontDescender").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontDescender)).ToLocalChecked());
-//	Nan::Set(target, Nan::New("runTest").ToLocalChecked(),          Nan::GetFunction(Nan::New<FunctionTemplate>(runTest)).ToLocalChecked());
-	Nan::Set(target, Nan::New("initColorShader").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(initColorShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("initTextureShader").ToLocalChecked(),Nan::GetFunction(Nan::New<FunctionTemplate>(initTextureShader)).ToLocalChecked());
-
-	Nan::Set(target, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(),    Nan::New(GL_VERTEX_SHADER));
-	Nan::Set(target, Nan::New("GL_FRAGMENT_SHADER").ToLocalChecked(),  Nan::New(GL_FRAGMENT_SHADER));
-	Nan::Set(target, Nan::New("GL_COMPILE_STATUS").ToLocalChecked(),   Nan::New(GL_COMPILE_STATUS));
-	Nan::Set(target, Nan::New("GL_LINK_STATUS").ToLocalChecked(),      Nan::New(GL_LINK_STATUS));
-
-	Nan::Set(target, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetProgramiv").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
-	Nan::Set(target, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
-/*
-    exports->Set(String::NewSymbol("init"),             FunctionTemplate::New(init)->GetFunction());
-    exports->Set(String::NewSymbol("createRect"),       FunctionTemplate::New(createRect)->GetFunction());
-    exports->Set(String::NewSymbol("createPoly"),       FunctionTemplate::New(createPoly)->GetFunction());
-    exports->Set(String::NewSymbol("createGroup"),      FunctionTemplate::New(createGroup)->GetFunction());
-    exports->Set(String::NewSymbol("createText"),       FunctionTemplate::New(createText)->GetFunction());
-    exports->Set(String::NewSymbol("createGLNode"),     FunctionTemplate::New(createGLNode)->GetFunction());
-    exports->Set(String::NewSymbol("createAnim"),       FunctionTemplate::New(createAnim)->GetFunction());
-    exports->Set(String::NewSymbol("stopAnim"),         FunctionTemplate::New(stopAnim)->GetFunction());
-    exports->Set(String::NewSymbol("updateProperty"),   FunctionTemplate::New(updateProperty)->GetFunction());
-    exports->Set(String::NewSymbol("updateAnimProperty"),FunctionTemplate::New(updateAnimProperty)->GetFunction());
-    exports->Set(String::NewSymbol("addNodeToGroup"),   FunctionTemplate::New(addNodeToGroup)->GetFunction());
-    exports->Set(String::NewSymbol("removeNodeFromGroup"),   FunctionTemplate::New(removeNodeFromGroup)->GetFunction());
-    exports->Set(String::NewSymbol("selfDrive"),        FunctionTemplate::New(selfDrive)->GetFunction());
-    exports->Set(String::NewSymbol("loadBufferToTexture"),  FunctionTemplate::New(loadBufferToTexture)->GetFunction());
-    exports->Set(String::NewSymbol("createNativeFont"), FunctionTemplate::New(createNativeFont)->GetFunction());
-    exports->Set(String::NewSymbol("getCharWidth"),     FunctionTemplate::New(getCharWidth)->GetFunction());
-    exports->Set(String::NewSymbol("getFontHeight"),    FunctionTemplate::New(getFontHeight)->GetFunction());
-    exports->Set(String::NewSymbol("runTest"),          FunctionTemplate::New(runTest)->GetFunction());
-    exports->Set(String::NewSymbol("initColorShader"),  FunctionTemplate::New(initColorShader)->GetFunction());
-    exports->Set(String::NewSymbol("initTextureShader"),FunctionTemplate::New(initTextureShader)->GetFunction());
-
-	exports->Set(String::NewSymbol("GL_VERTEX_SHADER"), Number::New(GL_VERTEX_SHADER));
-	exports->Set(String::NewSymbol("GL_FRAGMENT_SHADER"), Number::New(GL_FRAGMENT_SHADER));
-	exports->Set(String::NewSymbol("GL_COMPILE_STATUS"), Number::New(GL_COMPILE_STATUS));
-	exports->Set(String::NewSymbol("GL_LINK_STATUS"), Number::New(GL_LINK_STATUS));
-
-	exports->Set(String::NewSymbol("glCreateShader"), FunctionTemplate::New(node_glCreateShader)->GetFunction());
-	exports->Set(String::NewSymbol("glShaderSource"), FunctionTemplate::New(node_glShaderSource)->GetFunction());
-	exports->Set(String::NewSymbol("glCompileShader"), FunctionTemplate::New(node_glCompileShader)->GetFunction());
-	exports->Set(String::NewSymbol("glGetShaderiv"), FunctionTemplate::New(node_glGetShaderiv)->GetFunction());
-	exports->Set(String::NewSymbol("glCreateProgram"), FunctionTemplate::New(node_glCreateProgram)->GetFunction());
-	exports->Set(String::NewSymbol("glAttachShader"), FunctionTemplate::New(node_glAttachShader)->GetFunction());
-	exports->Set(String::NewSymbol("glUseProgram"), FunctionTemplate::New(node_glUseProgram)->GetFunction());
-	exports->Set(String::NewSymbol("glLinkProgram"), FunctionTemplate::New(node_glLinkProgram)->GetFunction());
-	exports->Set(String::NewSymbol("glGetProgramiv"), FunctionTemplate::New(node_glGetProgramiv)->GetFunction());
-	exports->Set(String::NewSymbol("glGetAttribLocation"), FunctionTemplate::New(node_glGetAttribLocation)->GetFunction());
-	exports->Set(String::NewSymbol("glGetUniformLocation"), FunctionTemplate::New(node_glGetUniformLocation)->GetFunction());
-	exports->Set(String::NewSymbol("glGetProgramInfoLog"), FunctionTemplate::New(node_glGetProgramInfoLog)->GetFunction());
-*/
-
-
 }
 
 NODE_MODULE(aminonative, InitAll)

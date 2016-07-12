@@ -55,7 +55,6 @@ var Shader = {
      */
     compileProgram: function (shader) {
         var GL = this.GL;
-        var program = GL.glCreateProgram();
 
         //verify params
         if (!shader.frag) {
@@ -65,6 +64,8 @@ var Shader = {
         if (!shader.vert) {
             throw Error('missing shader.vert');
         }
+
+        var program = GL.glCreateProgram();
 
         GL.glAttachShader(program, shader.vert);
         GL.glAttachShader(program, shader.frag);
@@ -135,10 +136,10 @@ function loadShaderCode(path, OS) {
 /**
  * Initialize the basic aminogfx shaders.
  */
-exports.init = function (sgtest, OS) {
+exports.init = function (gfx, GL, OS) {
     var cshader = Object.create(Shader);
 
-    cshader.GL = sgtest;
+    cshader.GL = GL;
 
     if (DEBUG) {
         console.log('__dirname = ', __dirname);
@@ -156,7 +157,7 @@ exports.init = function (sgtest, OS) {
     cshader.locateUniform('opacity');
     cshader.locateAttrib('color');
 
-    sgtest.initColorShader(cshader.prog,
+    gfx.initColorShader(cshader.prog,
         cshader.uniforms.modelviewProjection,
         cshader.uniforms.trans,
         cshader.uniforms.opacity,
@@ -166,7 +167,7 @@ exports.init = function (sgtest, OS) {
     //texture shader
     var tshader = Object.create(Shader);
 
-    tshader.GL = sgtest;
+    tshader.GL = GL;
     tshader.vertText = loadShaderCode(path.join(__dirname, '/shaders/texture.vert'), OS);
     tshader.fragText = loadShaderCode(path.join(__dirname, '/shaders/texture.frag'), OS);
     tshader.build();
@@ -180,7 +181,7 @@ exports.init = function (sgtest, OS) {
     tshader.locateAttrib('pos');
     tshader.locateAttrib('texcoords');
 
-    sgtest.initTextureShader(tshader.prog,
+    gfx.initTextureShader(tshader.prog,
         tshader.uniforms.modelviewProjection,
         tshader.uniforms.trans,
         tshader.uniforms.opacity,

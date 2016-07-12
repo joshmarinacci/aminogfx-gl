@@ -167,11 +167,13 @@ exports.processEvent = function (core, evt) {
         console.log('processEvent() ' + JSON.stringify(evt));
     }
 
-    if (typeof handlers[evt.type] !== 'undefined') {
-        return handlers[evt.type](core, evt);
+    var handler = handlers[evt.type];
+
+    if (handler) {
+        return handler(core, evt);
     }
 
-    console.log('unhandled event', evt);
+    //console.log('unhandled event', evt);
 };
 
 /**

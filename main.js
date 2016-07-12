@@ -55,9 +55,6 @@ AminoGfx.prototype.init = function () {
     //TODO more
     //cbx
 
-    //init shaders
-    //Shaders.init(sgtest, OS);
-
     //fonts
     /*
     fontmap['source']  = new JSFont(defaultFonts['source']);
@@ -71,17 +68,26 @@ AminoGfx.prototype.init = function () {
 };
 
 AminoGfx.prototype.start = function (done) {
-    this._start(done);
+    var self = this;
 
-    //check root
-    /* cbxx
-    if (!this.root) {
-        throw new Error('Missing root!');
-    }
-    */
+    //pass to native code
+    this._start(function (err) {
+        //init shaders
+        Shaders.init(self, AminoGfx.GL, OS);
 
-    //start rendering loop
-    this.startTimer();
+        //ready (Note: this points to the instance)
+        done.call(self, err);
+
+        //check root
+        /* cbxx
+        if (!this.root) {
+            throw new Error('Missing root!');
+        }
+        */
+
+        //start rendering loop
+        self.startTimer();
+    });
 };
 
 AminoGfx.prototype.setRoot = function (root) {
@@ -553,7 +559,6 @@ var gl_native = {
     createGroup: function () {          return sgtest.createGroup();          },
     createPoly: function ()  {          return sgtest.createPoly();           },
     createText: function () {           return sgtest.createText();           },
-    createGLNode: function (cb)  {      return sgtest.createGLNode(cb);       },
     addNodeToGroup: function (h1,h2) {
         return sgtest.addNodeToGroup(h1,h2);
     },

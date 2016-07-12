@@ -2,10 +2,6 @@
 
 #include "SimpleRenderer.h"
 
-ColorShader *colorShader;
-TextureShader *textureShader;
-GLfloat *modelView;
-
 std::map<int, AminoFont *> fontmap;
 std::vector<AminoNode *> rects;
 std::vector<Anim *> anims;
@@ -47,9 +43,15 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetPrototypeMethod(tpl, "_start", Start);
     Nan::SetPrototypeMethod(tpl, "_destroy", Destroy);
     Nan::SetPrototypeMethod(tpl, "tick", Tick);
+    Nan::SetPrototypeMethod(tpl, "initColorShader", InitColorShader);
+    Nan::SetPrototypeMethod(tpl, "initTextureShader", InitTextureShader);
+
+    //special: GL object
+    Nan::SetTemplate(tpl, "GL", createGLObject());
 
     //global template instance
-    Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+    v8::Local<v8::Function> func = Nan::GetFunction(tpl).ToLocalChecked();
+    Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), func);
 }
 
 /**
@@ -121,6 +123,10 @@ NAN_METHOD(AminoGfx::Start) {
  * Initialize the renderer (init OpenGL context).
  */
 void AminoGfx::initRenderer() {
+    if (DEBUG_BASE) {
+        printf("-> initRenderer()\n");
+    }
+
     //empty: overwrite
     viewportW = propW->value;
     viewportH = propH->value;
@@ -130,11 +136,65 @@ void AminoGfx::initRenderer() {
  * Shader and matrix setup.
  */
 void AminoGfx::setupRenderer() {
+    if (DEBUG_BASE) {
+        printf("-> setupRenderer()\n");
+    }
+
     //init values
 	colorShader = new ColorShader();
 	textureShader = new TextureShader();
 
     modelView = new GLfloat[16];
+}
+
+/**
+ * Set color shader bindings.
+ */
+NAN_METHOD(AminoGfx::InitColorShader) {
+    if (DEBUG_BASE) {
+        printf("-> InitColorShader()\n");
+    }
+
+    if (info.Length() < 5) {
+        printf("initColorShader: not enough args\n");
+        exit(1);
+    };
+
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+    ColorShader *colorShader = obj->colorShader;
+
+    colorShader->prog        = info[0]->Uint32Value();
+    colorShader->u_matrix    = info[1]->Uint32Value();
+    colorShader->u_trans     = info[2]->Uint32Value();
+    colorShader->u_opacity   = info[3]->Uint32Value();
+
+    colorShader->attr_pos    = info[4]->Uint32Value();
+    colorShader->attr_color  = info[5]->Uint32Value();
+}
+
+/**
+ * Set texture shader bindings.
+ */
+NAN_METHOD(AminoGfx::InitTextureShader) {
+    if (DEBUG_BASE) {
+        printf("-> InitTextureShader()\n");
+    }
+
+    if (info.Length() < 6) {
+        printf("initTextureShader: not enough args\n");
+        exit(1);
+    };
+
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+    TextureShader *textureShader = obj->textureShader;
+
+    textureShader->prog        = info[0]->Uint32Value();
+    textureShader->u_matrix    = info[1]->Uint32Value();
+    textureShader->u_trans     = info[2]->Uint32Value();
+    textureShader->u_opacity   = info[3]->Uint32Value();
+
+    textureShader->attr_pos       = info[4]->Uint32Value();
+    textureShader->attr_texcoords = info[5]->Uint32Value();
 }
 
 /**
@@ -177,7 +237,14 @@ void AminoGfx::start() {
     //overwrite
 }
 
+/**
+ * Ready to call JS start() callback.
+ */
 void AminoGfx::ready() {
+    if (DEBUG_BASE) {
+        printf("-> ready()\n");
+    }
+
     //create scope
     Nan::HandleScope scope;
 
@@ -275,7 +342,7 @@ void AminoGfx::renderScene() {
         return;
     }
 
-    SimpleRenderer *rend = new SimpleRenderer();
+    SimpleRenderer *rend = new SimpleRenderer(colorShader, textureShader, modelView);
 
     rend->startRender(root);
     delete rend;
@@ -344,6 +411,50 @@ void AminoGfx::fireEvent(v8::Local<v8::Object> &evt) {
         }
     }
 }
+
+/**
+ * Handle async property updates.
+ */
+void AminoGfx::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) {
+    //default: set value
+    AminoJSObject::handleAsyncUpdate(property, value);
+
+    //size changes
+    if (property == propW || property == propH) {
+        updateWindowSize();
+    }
+}
+
+/**
+ * Create OpenGL bindings for JS.
+ */
+v8::Local<v8::Object> AminoGfx::createGLObject() {
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+
+    //functions
+	Nan::Set(obj, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glGetProgramiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
+	Nan::Set(obj, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
+
+    //constants
+    Nan::Set(obj, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(),    Nan::New(GL_VERTEX_SHADER));
+	Nan::Set(obj, Nan::New("GL_FRAGMENT_SHADER").ToLocalChecked(),  Nan::New(GL_FRAGMENT_SHADER));
+	Nan::Set(obj, Nan::New("GL_COMPILE_STATUS").ToLocalChecked(),   Nan::New(GL_COMPILE_STATUS));
+	Nan::Set(obj, Nan::New("GL_LINK_STATUS").ToLocalChecked(),      Nan::New(GL_LINK_STATUS));
+
+    return obj;
+}
+
+
 
 // --------------------------------------------------------------- add_text ---
 static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
@@ -1017,42 +1128,6 @@ NAN_METHOD(createNativeFont) {
     info.GetReturnValue().Set(id);
 }
 
-/**
- * Set color shader bindings.
- */
-NAN_METHOD(initColorShader) {
-    if (info.Length() < 5) {
-        printf("initColorShader: not enough args\n");
-        exit(1);
-    };
-
-    colorShader->prog        = info[0]->Uint32Value();
-    colorShader->u_matrix    = info[1]->Uint32Value();
-    colorShader->u_trans     = info[2]->Uint32Value();
-    colorShader->u_opacity   = info[3]->Uint32Value();
-
-    colorShader->attr_pos    = info[4]->Uint32Value();
-    colorShader->attr_color  = info[5]->Uint32Value();
-}
-
-/**
- * Set texture shader bindings.
- */
-NAN_METHOD(initTextureShader) {
-    if (info.Length() < 6) {
-        printf("initTextureShader: not enough args\n");
-        exit(1);
-    };
-
-    textureShader->prog        = info[0]->Uint32Value();
-    textureShader->u_matrix    = info[1]->Uint32Value();
-    textureShader->u_trans     = info[2]->Uint32Value();
-    textureShader->u_opacity   = info[3]->Uint32Value();
-
-    textureShader->attr_pos       = info[4]->Uint32Value();
-    textureShader->attr_texcoords = info[5]->Uint32Value();
-}
-
 NAN_METHOD(createRect) {
     Rect *rect = new Rect(info[0]->BooleanValue());
 
@@ -1083,16 +1158,6 @@ NAN_METHOD(createText) {
 NAN_METHOD(createGroup) {
     Group *node = new Group();
 
-    rects.push_back(node);
-
-    //return id
-    info.GetReturnValue().Set((int)rects.size() - 1);
-}
-
-NAN_METHOD(createGLNode) {
-    GLNode *node = new GLNode();
-
-    //node->callback = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
     rects.push_back(node);
 
     //return id
