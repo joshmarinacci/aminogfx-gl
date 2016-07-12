@@ -30,7 +30,9 @@ if (process.platform == 'darwin') {
     OS ='MAC';
 }
 
-//AminoGfx
+//
+//  AminoGfx
+//
 var AminoGfx = sgtest.AminoGfx;
 
 /**
@@ -109,12 +111,13 @@ AminoGfx.prototype.start = function (done) {
             done.call(self, err);
 
             //check root
-            if (!this.root) {
+            if (!self.root) {
                 throw new Error('Missing root!');
             }
 
             //start rendering loop
             self.startTimer();
+            console.log('cb3'); //cbx
         });
     });
 };
@@ -125,8 +128,16 @@ AminoGfx.prototype.setRoot = function (root) {
     this._setRoot(root);
 };
 
+AminoGfx.prototype.getRoot = function () {
+    return this.root;
+};
+
 AminoGfx.prototype.createGroup = function () {
     return new AminoGfx.Group(this);
+};
+
+AminoGfx.prototype.createRect = function () {
+    return new AminoGfx.Rect(this);
 };
 
 AminoGfx.prototype.startTimer = function () {
@@ -176,9 +187,137 @@ AminoGfx.prototype.destroy = function () {
     this._destroy();
 };
 
+AminoGfx.prototype.find = function (id) {
+    function findNodeById(id, node) {
+        if (node.id && node.id == id) {
+            return node;
+        }
+
+        if (node.isGroup) {
+            var count = node.getChildCount();
+
+            for (var i = 0; i < count; i++) {
+                var ret = findNodeById(id, node.getChild(i));
+
+                if (ret != null) {
+                    return ret;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    return findNodeById(id, this.getRoot());
+};
+
 exports.AminoGfx = AminoGfx;
 
-//AminoImage
+//
+// AminoGfx.Group
+//
+
+var Group = AminoGfx.Group;
+
+Group.prototype.init = function () {
+    amino_core.makeProps(this, {
+        id: '',
+
+        //visibility
+        visible: true,
+        opacity: 1,
+
+        //position
+        x: 0,
+        y: 0,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //clipping
+        cliprect: false
+    });
+
+    this.isGroup = true;
+    this.children = [];
+};
+
+Group.prototype.add = function () {
+    var count = arguments.length;
+
+    for (var i = 0; i < count; i++) {
+        var node = arguments[i];
+
+        if (!node) {
+            throw new Error('can\'t add a null child to a group');
+        }
+
+        if (this.children.indexOf(node) != -1) {
+            throw new Error('child was added before');
+        }
+
+        if (node == this || node.parent) {
+            throw new Error('already added to different group');
+        }
+
+        this._add(node);
+        this.children.push(node);
+        node.parent = this;
+    }
+
+    return this;
+};
+
+Group.prototype.remove = function (child) {
+    var n = this.children.indexOf(child);
+
+    if (n >=  0) {
+        this._remove(child);
+        this.children.splice(n, 1);
+    }
+
+    return this;
+};
+
+Group.prototype.clear = function () {
+    var count = this.children.length;
+
+    for (var i = 0; i < count; i++) {
+        this._remove(this.children[i]);
+    }
+
+    this.children = [];
+
+    return this;
+};
+
+Group.prototype.raiseToTop = function (node) {
+    if (!node) {
+        throw new Error('can\'t move a null child');
+    }
+
+    this.remove(node);
+    this.add(node);
+
+    return this;
+};
+
+//cbx
+
+//
+// AminoImage
+//
+
 var AminoImage = sgtest.AminoImage;
 
 Object.defineProperty(AminoImage.prototype, 'src', {
@@ -571,19 +710,8 @@ var gl_native = {
 
         sgtest.updateProperty(handle, hash, value);
     },
-    createRect: function (hasImage) {
-        return sgtest.createRect(hasImage);
-    },
     createPoly: function ()  {          return sgtest.createPoly();           },
     createText: function () {           return sgtest.createText();           },
-    addNodeToGroup: function (h1, h2) {
-//cbx
-        return sgtest.addNodeToGroup(h1,h2);
-    },
-    removeNodeFromGroup: function (h1, h2) {
-//cbx
-        return sgtest.removeNodeFromGroup(h1, h2);
-    },
     loadImage: function (src, cb) {
         var img = new AminoImage();
 

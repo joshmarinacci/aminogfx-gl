@@ -103,7 +103,6 @@ function applyNativeBinding(me) {
             prop.watch(func);
 
             //send default value to native side
-            //TODO replace later
             setters[name](prop(), prop, me);
         }
     }
@@ -328,106 +327,14 @@ function ImageView() {
  * Group object.
  */
 function Group() {
-    var core = amino.getCore();
-//cbx Group
-    amino.makeProps(this, {
-        id: '',
-
-        //visibility
-        visible: true,
-        opacity: 1,
-
-        //position
-        x: 0,
-        y: 0,
-
-        //size
-        w: 100,
-        h: 100,
-
-        //scaling
-        sx: 1,
-        sy: 1,
-
-        //rotation
-        rx: 0,
-        ry: 0,
-        rz: 0,
-
-        //clipping
-        cliprect: false
-    });
-
-    applyNativeBinding(this);
+//cbx group
 
     //methods
-    this.children = [];
-    this.addSingle = function (node) {
-        if (node == undefined) {
-            throw new Error('can\'t add a null child to a group');
-        }
-
-        if (node.handle == undefined) {
-            throw new Error('the child doesn\'t have a handle');
-        }
-
-        if (this.handle == undefined) {
-            throw new Error('not in the scene yet');
-        }
-
-        this.children.push(node);
-        node.parent = this;
-        core.getNative().addNodeToGroup(node.handle, this.handle);
-
-        return this;
-    };
-    this.add = function () {
-        for(var i = 0; i < arguments.length; i++) {
-            this.addSingle(arguments[i]);
-        }
-
-        return this;
-    };
-    this.remove = function (child) {
-        var n = this.children.indexOf(child);
-
-        if (n >=  0) {
-            core.getNative().removeNodeFromGroup(this.children[n].handle, this.handle);
-            this.children.splice(n, 1);
-        }
-
-        return this;
-    };
-    this.clear = function () {
-        for(var i = 0; i < this.children.length; i++) {
-            core.getNative().removeNodeFromGroup(this.children[i].handle, this.handle);
-        }
-
-        this.children = [];
-
-        return this;
-    };
-    this.isParent = function() {
-        return true;
-    };
-
-    this.raiseToTop = function (node) {
-        if (node == undefined) {
-            throw new Error('can\'t move a null child');
-        }
-
-        //if(node.handle == undefined) throw new Error("the child doesn't have a handle");
-
-        this.remove(node);
-        this.addSingle(node);
-
-        return this;
-    };
 
     function treeSearch (root, considerRoot, filter) {
         var res = [];
 
-        if (root.isParent && root.isParent()) {
+        if (root.isGroup) {
             for (var i = 0; i < root.children.length; i++) {
                 res = res.concat(treeSearch(root.children[i], true, filter));
             }
@@ -485,50 +392,6 @@ function FindResults() {
     this.length = function () {
         return this.children.length;
     };
-}
-
-/**
- * Button object.
- */
-function Button() {
-    Group.call(this);
-
-    amino.makeProps(this, {
-        w: 100,
-        h: 50,
-        text: 'a button'
-    });
-
-    this.background = new Rect();
-    this.add(this.background);
-    this.background.fill("#0044cc");
-    this.background.w.match(this.w);
-    this.background.h.match(this.h);
-
-    this.label = new Text().fill("#ffffff").y(20);
-    this.add(this.label);
-    this.label.text.match(this.text);
-    this.text('a button');
-    var self = this;
-
-    this.w.watch(function() {
-        var textw = self.label.calcWidth() * 2;
-        var texth = self.label.calcHeight() * 2;
-
-        self.label.x((self.w() - textw) / 2);
-        self.label.y((self.h() - texth)/2 + texth);
-    });
-
-    this.contains = contains;
-
-    var self = this;
-
-    amino.getCore().on('press', this.background, function (e) {
-        self.background.fill('#44ccff');
-    });
-    amino.getCore().on('release', this.background, function (e) {
-        self.background.fill('#0044cc');
-    });
 }
 
 /**
@@ -617,7 +480,6 @@ function Circle() {
 exports.Group = Group;
 exports.Rect = Rect;
 exports.Text = Text;
-exports.Button = Button;
 exports.Polygon = Polygon;
 exports.Circle = Circle;
 exports.ImageView = ImageView;

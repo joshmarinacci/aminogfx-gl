@@ -249,6 +249,13 @@ public:
     /**
      * Validate renderer instance. Must be called in JS method handler.
      */
+    bool checkRenderer(AminoNode *node) {
+        return checkRenderer(node->amino);
+    }
+
+    /**
+     * Validate renderer instance. Must be called in JS method handler.
+     */
     bool checkRenderer(AminoGfx *amino) {
         if (this->amino != amino) {
             Nan::ThrowTypeError("invalid renderer");
@@ -679,6 +686,16 @@ public:
 extern std::vector<Anim *> anims;
 
 /**
+ * Rect factory.
+ */
+class RectFactory : public AminoJSObjectFactory {
+public:
+    RectFactory(Nan::FunctionCallback callback);
+
+    AminoJSObject* create() override;
+};
+
+/**
  * Rectangle node class.
  */
 class Rect : public AminoNode {
@@ -702,7 +719,7 @@ public:
     bool hasImage;
     int texid;
 
-    Rect(std::string name, bool hasImage): AminoNode(name, RECT) {
+    Rect(bool hasImage): AminoNode(getFactory()->name, RECT) {
         //image
         texid = INVALID;
         this->hasImage = hasImage;
@@ -720,10 +737,41 @@ public:
         propR = createFloatProperty("r");
         propG = createFloatProperty("g");
         propB = createFloatProperty("b");
-        propLeft = createFloatProperty("left");
-        propRight = createFloatProperty("right");
-        propTop = createFloatProperty("top");
-        propBottom = createFloatProperty("bottom");
+
+        if (hasImage) {
+            propLeft = createFloatProperty("left");
+            propRight = createFloatProperty("right");
+            propTop = createFloatProperty("top");
+            propBottom = createFloatProperty("bottom");
+        }
+    }
+
+    //creation
+    static RectFactory* getFactory() {
+        static RectFactory *rectFactory;
+
+        if (!rectFactory) {
+            rectFactory = new RectFactory(New);
+        }
+
+        return rectFactory;
+    }
+
+    /**
+     * Initialize Group template.
+     */
+    static v8::Local<v8::Function> GetInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
+    }
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
     }
 };
 
@@ -831,6 +879,15 @@ public:
     ~Group() {
     }
 
+    void setup() override {
+        AminoNode::setup();
+
+        //register native properties
+        propW = createFloatProperty("w");
+        propH = createFloatProperty("h");
+        propCliprect = createBooleanProperty("cliprect");
+    }
+
     //creation
     static GroupFactory* getFactory() {
         static GroupFactory *groupFactory;
@@ -849,12 +906,13 @@ public:
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
         //prototype methods
-        //TODO Nan::SetPrototypeMethod(tpl, "_start", Start);
+        Nan::SetPrototypeMethod(tpl, "_add", Add);
+        Nan::SetPrototypeMethod(tpl, "_remove", Remove);
 
         //template function
         return Nan::GetFunction(tpl).ToLocalChecked();
     }
-
+private:
     /**
      * JS object construction.
      */
@@ -862,13 +920,34 @@ public:
         AminoJSObject::createInstance(info, getFactory());
     }
 
-    void setup() override {
-        AminoNode::setup();
+    static NAN_METHOD(Add) {
+        Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
+        AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
+printf("Add\n"); //FIXME cbx
+        if (!child->checkRenderer(group)) {
+            return;
+        }
 
-        //register native properties
-        propW = createFloatProperty("w");
-        propH = createFloatProperty("h");
-        propCliprect = createBooleanProperty("cliprect");
+        group->addChild(child);
+    }
+
+    void addChild(AminoNode *node) {
+        children.push_back(node);
+    }
+
+    static NAN_METHOD(Remove) {
+        Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
+        AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
+
+        group->removeChild(child);
+    }
+
+    void removeChild(AminoNode *node) {
+        std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
+
+        if (pos != children.end()) {
+            children.erase(pos);
+        }
     }
 };
 
@@ -1054,7 +1133,6 @@ public:
     }
 };
 
-NAN_METHOD(createRect);
 NAN_METHOD(createPoly);
 NAN_METHOD(createText);
 NAN_METHOD(createAnim);
@@ -1100,8 +1178,7 @@ static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
 //JavaScript bindings
 
 NAN_METHOD(updateProperty);
-NAN_METHOD(addNodeToGroup);//cbx
-NAN_METHOD(removeNodeFromGroup);
+NAN_METHOD(updateAnimProperty);
 NAN_METHOD(loadBufferToTexture);
 NAN_METHOD(getFontHeight);
 NAN_METHOD(getFontAscender);

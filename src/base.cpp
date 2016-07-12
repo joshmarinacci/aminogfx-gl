@@ -47,6 +47,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // group
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
     Nan::SetTemplate(tpl, "Group", Group::GetInitFunction());
+    Nan::SetTemplate(tpl, "Rect", Rect::GetInitFunction());
 
     //special: GL object
     Nan::SetTemplate(tpl, "GL", createGLObject());
@@ -289,7 +290,7 @@ void AminoGfx::render() {
 
     //updates
     processAsyncQueue();
-    //TODO animations cbx
+    //TODO animations
 
     //viewport
     setupViewport();
@@ -518,6 +519,21 @@ GroupFactory::GroupFactory(Nan::FunctionCallback callback): AminoJSObjectFactory
 
 AminoJSObject* GroupFactory::create() {
     return new Group();
+}
+
+//
+// RectFactory
+//
+
+/**
+ * Rect factory constructor.
+ */
+RectFactory::RectFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Rect", callback) {
+    //empty
+}
+
+AminoJSObject* RectFactory::create() {
+    return new Rect(false);
 }
 
 
@@ -981,34 +997,6 @@ NAN_METHOD(updateAnimProperty) {
     //updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL, callback));
 }
 
-NAN_METHOD(addNodeToGroup) {
-    int rectHandle   = info[0]->Uint32Value();
-    int groupHandle  = info[1]->Uint32Value();
-//cbx
-    //update group
-    Group *group = (Group *)rects[groupHandle];
-    AminoNode *node = rects[rectHandle];
-
-    group->children.push_back(node);
-}
-
-NAN_METHOD(removeNodeFromGroup) {
-    int rectHandle   = info[0]->Uint32Value();
-    int groupHandle  = info[1]->Uint32Value();
-    Group *group = (Group*)rects[groupHandle];
-    AminoNode *node = rects[rectHandle];
-    int n = -1;
-//cbx
-    //TODO simplify
-    for (std::size_t i = 0; i < group->children.size(); i++) {
-        if (group->children[i] == node) {
-            n = i;
-        }
-    }
-
-    group->children.erase(group->children.begin() + n);
-}
-
 NAN_METHOD(loadBufferToTexture) {
     int texid = info[0]->Uint32Value();
     int w     = info[1]->Uint32Value();
@@ -1206,15 +1194,6 @@ NAN_METHOD(createNativeFont) {
     //TODO glDeleteProgram (on destroy)
 
     info.GetReturnValue().Set(id);
-}
-
-NAN_METHOD(createRect) {
-    Rect *rect = new Rect("dummy", info[0]->BooleanValue());
-
-    rects.push_back(rect);
-
-    //return id
-    info.GetReturnValue().Set((int)rects.size() - 1);
 }
 
 NAN_METHOD(createPoly) {

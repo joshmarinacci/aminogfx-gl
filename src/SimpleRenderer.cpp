@@ -314,8 +314,6 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     c->restore();
 }
 
-int te = 0;
-
 /**
  * Render text.
  */

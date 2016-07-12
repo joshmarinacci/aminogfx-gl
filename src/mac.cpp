@@ -333,6 +333,10 @@ private:
      * Window size has changed.
      */
     static void handleWindowSizeChanged(GLFWwindow *window, int newWidth, int newHeight) {
+        if (DEBUG_GLFW) {
+            printf("handleWindowSizeChanged() %ix%i\n", newWidth, newHeight);
+        }
+
         AminoGfxMac *obj = windowToInstance(window);
 
         if (!obj) {
@@ -431,11 +435,11 @@ private:
      * Update the window size.
      */
     void updateWindowSize() override {
-        //Note: not getting size changed event
-        glfwSetWindowSize(window, propW->value, propH->value);
+        //debug
+        //printf("updateWindowSize\n");
 
-        //check window size
-        //cbx verify
+        //Note: getting size changed event
+        glfwSetWindowSize(window, propW->value, propH->value);
 
         //get framebuffer size
         glfwGetFramebufferSize(window, &viewportW, &viewportH);
@@ -479,15 +483,12 @@ NAN_MODULE_INIT(InitAll) {
     AminoImage::Init(target);
 
     //TODO cleanup
-	Nan::Set(target, Nan::New("createRect").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createRect)).ToLocalChecked());
     Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createPoly)).ToLocalChecked());
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createText)).ToLocalChecked());
     Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<v8::FunctionTemplate>(stopAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("updateProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateProperty)).ToLocalChecked());
-//cbx?    Nan::Set(target, Nan::New("updateAnimProperty").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateAnimProperty)).ToLocalChecked());
-    Nan::Set(target, Nan::New("addNodeToGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<v8::FunctionTemplate>(addNodeToGroup)).ToLocalChecked());
-    Nan::Set(target, Nan::New("removeNodeFromGroup").ToLocalChecked(),   Nan::GetFunction(Nan::New<v8::FunctionTemplate>(removeNodeFromGroup)).ToLocalChecked());
+    Nan::Set(target, Nan::New("updateAnimProperty").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateAnimProperty)).ToLocalChecked());
     Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<v8::FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getCharWidth)).ToLocalChecked());
