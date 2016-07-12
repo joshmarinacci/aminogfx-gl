@@ -54,12 +54,42 @@ AminoJSObject::~AminoJSObject() {
 }
 
 /**
+ * Get JS class name.
+ *
+ * Note: abstract
+ */
+std::string AminoJSObject::getName() {
+    return name;
+}
+
+/**
+ * Initialize the native object with passed parameters. Called before JS init().
+ */
+void AminoJSObject::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
+    //empty
+}
+
+/**
  * Initialize the native object.
  *
  * Called after the JS init() method.
  */
 void AminoJSObject::setup() {
     //empty
+}
+
+/**
+ * Retain JS reference.
+ */
+void AminoJSObject::retain() {
+    Ref();
+}
+
+/**
+ * Release JS reference.
+ */
+void AminoJSObject::release() {
+    Unref();
 }
 
 /**
@@ -99,6 +129,9 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
     AminoJSObject *obj = factory->create();
 
     obj->Wrap(info.This());
+
+    //pre-init
+    obj->preInit(info);
 
     //call init (if available)
     Nan::MaybeLocal<v8::Value> initValue = Nan::Get(info.This(), Nan::New<v8::String>("init").ToLocalChecked());
@@ -192,20 +225,37 @@ AminoJSObject::FloatProperty* AminoJSObject::createFloatProperty(std::string nam
     int id = ++lastPropertyId;
     FloatProperty *prop = new FloatProperty(this, name, id);
 
-    //TODO simplify
+    addProperty(prop);
 
+    return prop;
+}
+
+/**
+ * Create boolean property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
+AminoJSObject::BooleanProperty* AminoJSObject::createBooleanProperty(std::string name) {
+    int id = ++lastPropertyId;
+    BooleanProperty *prop = new BooleanProperty(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
+void AminoJSObject::addProperty(AnyProperty *prop) {
+    int id = prop->id;
     propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
 
     v8::Local<v8::Value> value;
 
-    if (addPropertyWatcher(name, id, value)) {
+    if (addPropertyWatcher(prop->name, id, value)) {
         prop->connected = true;
 
         //set default value
         prop->setValue(value);
     }
-
-    return prop;
 }
 
 //TODO int
@@ -325,6 +375,16 @@ void AminoJSObject::updateProperty(std::string name, int value) {
     Nan::HandleScope scope;
 
     updateProperty(name, Nan::New<v8::Integer>(value));
+}
+
+/**
+ * Update JS property value.
+ */
+void AminoJSObject::updateProperty(std::string name, bool value) {
+    //create scope
+    Nan::HandleScope scope;
+
+    updateProperty(name, Nan::New<v8::Boolean>(value));
 }
 
 /**
@@ -456,6 +516,54 @@ void AminoJSObject::FloatProperty::setValue(v8::Local<v8::Value> &value) {
  * Note: only updates the JS value if modified!
  */
 void AminoJSObject::FloatProperty::setValue(float newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(name, value);
+        }
+    }
+}
+
+//
+// AminoJSObject::BooleanProperty
+//
+
+/**
+ * BooleanProperty constructor.
+ */
+AminoJSObject::BooleanProperty::BooleanProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(obj, name, id) {
+    //empty
+}
+
+/**
+ * FloatProperty destructor.
+ */
+AminoJSObject::BooleanProperty::~BooleanProperty() {
+    //empty
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::BooleanProperty::setValue(v8::Local<v8::Value> &value) {
+    if (value->IsBoolean()) {
+        this->value = value->BooleanValue();
+
+        //Note: do not call updateProperty(), change is from JS side
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a boolean!\n");
+        }
+    }
+}
+
+/**
+ * Update the float value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::BooleanProperty::setValue(bool newValue) {
     if (value != newValue) {
         value = newValue;
 

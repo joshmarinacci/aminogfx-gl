@@ -37,6 +37,7 @@ protected:
     AminoJSObject(std::string name);
     virtual ~AminoJSObject();
 
+    virtual void preInit(Nan::NAN_METHOD_ARGS_TYPE info);
     virtual void setup();
 
     //properties
@@ -45,6 +46,7 @@ protected:
     void updateProperty(std::string name, v8::Local<v8::Value> value);
     void updateProperty(std::string name, double value);
     void updateProperty(std::string name, int value);
+    void updateProperty(std::string name, bool value);
 
     class AnyProperty {
     public:
@@ -73,7 +75,19 @@ protected:
         void setValue(float newValue);
     };
 
+    class BooleanProperty : public AnyProperty {
+    public:
+        bool value;
+
+        BooleanProperty(AminoJSObject *obj, std::string name, int id);
+        ~BooleanProperty();
+
+        void setValue(v8::Local<v8::Value> &value) override;
+        void setValue(bool newValue);
+    };
+
     FloatProperty* createFloatProperty(std::string name);
+    BooleanProperty* createBooleanProperty(std::string name);
 
     //async updates
     void createAsyncQueue();
@@ -91,6 +105,7 @@ private:
     int lastPropertyId = 0;
     std::map<int, AnyProperty *> propertyMap;
 
+    void addProperty(AnyProperty *prop);
     void enqueuePropertyUpdate(int id, v8::Local<v8::Value> value);
     static NAN_METHOD(PropertyUpdated);
 
@@ -112,14 +127,11 @@ private:
     bool localAsyncUpdatesInstance = false;
 
 public:
-    /**
-     * Get JS class name.
-     *
-     * Note: abstract
-     */
-    std::string getName() {
-        return name;
-    }
+
+    std::string getName();
+
+    void retain();
+    void release();
 };
 
 #endif

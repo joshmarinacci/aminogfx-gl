@@ -102,7 +102,7 @@ static const int WRAP_WORD = 0x2;
 
 extern std::map<int, AminoFont *> fontmap;
 
-class AminoNode;
+class Group;
 
 /**
  * Amino main class to call from JavaScript.
@@ -120,19 +120,19 @@ protected:
     Nan::Callback *startCallback = NULL;
 
     //renderer
-    AminoNode *root = NULL;
+    Group *root = NULL;
     int viewportW;
     int viewportH;
     ColorShader *colorShader;
     TextureShader *textureShader;
     GLfloat *modelView;
-    float r = 0;//cbx
-    float g = 0;
-    float b = 0;
 
     //properties
     FloatProperty *propW;
     FloatProperty *propH;
+    FloatProperty *propR;
+    FloatProperty *propG;
+    FloatProperty *propB;
     FloatProperty *propOpacity;
 
     //creation
@@ -165,6 +165,8 @@ protected:
     void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override;
     virtual void updateWindowSize() = 0;
 
+    void setRoot(Group *group);
+
 private:
     //JS methods
     static NAN_METHOD(Start);
@@ -172,6 +174,7 @@ private:
     static NAN_METHOD(Tick);
     static NAN_METHOD(InitColorShader);
     static NAN_METHOD(InitTextureShader);
+    static NAN_METHOD(SetRoot);
 
     //GL
     static v8::Local<v8::Object> createGLObject();
@@ -179,56 +182,61 @@ private:
 
 /**
  * Base class for all rendering nodes.
+ *
+ * Note: abstract.
  */
-class AminoNode {
+class AminoNode : public AminoJSObject {
 public:
+    AminoGfx *amino;
     int type;
 
     //location
-    float x;
-    float y;
+    FloatProperty *propX;
+    FloatProperty *propY;
 
     //zoom factor
-    float scalex;
-    float scaley;
+    FloatProperty *propScaleX;
+    FloatProperty *propScaleY;
 
     //rotation
-    float rotatex;
-    float rotatey;
-    float rotatez;
+    FloatProperty *propRotateX;
+    FloatProperty *propRotateY;
+    FloatProperty *propRotateZ;
 
     //opacity
-    float opacity;
+    FloatProperty *propOpacity;
 
     //visibility
-    int visible;
+    BooleanProperty *propVisible;
 
-    AminoNode() {
-        type = 0;
-
-        //location
-        x = 0;
-        y = 0;
-
-        //zoom factor
-        scalex = 1;
-        scaley = 1;
-
-        //rotation
-        rotatex = 0;
-        rotatey = 0;
-        rotatez = 0;
-
-        //opacity
-        opacity = 1;
-
-        //visibility
-        visible = 1;
+    AminoNode(std::string name, int type): AminoJSObject(name), type(type) {
+        //empty
     }
 
     virtual ~AminoNode() {
         //destroy (if not called before)
         destroy();
+    }
+
+    void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
+        //set amino instance
+        AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
+
+        this->amino = obj;
+    }
+
+    void setup() override {
+        AminoJSObject::setup();
+
+        //register native properties
+        propX = createFloatProperty("x");
+        propY = createFloatProperty("y");
+        propScaleX = createFloatProperty("sx");
+        propScaleY = createFloatProperty("sy");
+        propScaleX = createFloatProperty("rx");
+        propScaleY = createFloatProperty("ry");
+        propOpacity = createFloatProperty("opacity");
+        propVisible = createBooleanProperty("visible");
     }
 
     /**
@@ -238,6 +246,17 @@ public:
         //to be overwritten
     }
 
+    /**
+     * Validate renderer instance. Must be called in JS method handler.
+     */
+    bool checkRenderer(AminoGfx *amino) {
+        if (this->amino != amino) {
+            Nan::ThrowTypeError("invalid renderer");
+            return false;
+        }
+
+        return true;
+    }
 };
 
 /**
@@ -304,14 +323,11 @@ public:
     int vAlign;
     int lineNr;
 
-    TextNode() {
-        type = TEXT;
-
+    TextNode(std::string name): AminoNode(name, TEXT) {
         //white color
         r = 1.0;
         g = 1.0;
         b = 1.0;
-        opacity = 1;
 
         //box
         w = 0;
@@ -354,6 +370,7 @@ public:
 class Anim {
 private:
     Nan::Callback *then;
+
 public:
     AminoNode *target;
     float start;
@@ -505,38 +522,38 @@ public:
         switch (property) {
             //translation
             case X_PROP:
-                target->x = value;
+                target->propX->setValue(value);
                 break;
 
             case Y_PROP:
-                target->y = value;
+                target->propY->setValue(value);
                 break;
 
             //zoom
             case SCALE_X_PROP:
-                target->scalex = value;
+                target->propScaleX->setValue(value);
                 break;
 
             case SCALE_Y_PROP:
-                target->scaley = value;
+                target->propScaleY->setValue(value);
                 break;
 
             //rotation
             case ROTATE_X_PROP:
-                target->rotatex = value;
+                target->propRotateX->setValue(value);
                 break;
 
             case ROTATE_Y_PROP:
-                target->rotatey = value;
+                target->propRotateY->setValue(value);
                 break;
 
             case ROTATE_Z_PROP:
-                target->rotatez = value;
+                target->propRotateZ->setValue(value);
                 break;
 
             //opacity
             case OPACITY_PROP:
-                target->opacity = value;
+                target->propOpacity->setValue(value);
                 break;
 
             //TODO js callback
@@ -545,8 +562,6 @@ public:
                 printf("Unknown animation property: %i\n", property);
                 break;
         }
-
-        //FIXME JS value not updated and therefore bindto callbacks not fired!
     }
 
     //TODO pause
@@ -669,51 +684,46 @@ extern std::vector<Anim *> anims;
 class Rect : public AminoNode {
 public:
     //size
-    float w;
-    float h;
+    FloatProperty *propW;
+    FloatProperty *propH;
 
     //color
-    float r;
-    float g;
-    float b;
+    FloatProperty *propR;
+    FloatProperty *propG;
+    FloatProperty *propB;
 
     //offset
-    float left;
-    float right;
-    float top;
-    float bottom;
+    FloatProperty *propLeft;
+    FloatProperty *propRight;
+    FloatProperty *propTop;
+    FloatProperty *propBottom;
 
     //image
     bool hasImage;
     int texid;
 
-    Rect(bool hasImage) {
-        type = RECT;
-
-        //size
-        w = 100;
-        h = 100;
-
-        //color (white; rect only)
-        r = 1;
-        g = 1;
-        b = 1;
-
-        //opacity
-        opacity = 1;
-
+    Rect(std::string name, bool hasImage): AminoNode(name, RECT) {
         //image
         texid = INVALID;
         this->hasImage = hasImage;
-
-        //offset (world coordinates: 0..1)
-        left   = 0;
-        bottom = 1;
-        right  = 1;
-        top    = 0;
     }
 
     virtual ~Rect() {
+    }
+
+    void setup() override {
+        AminoNode::setup();
+
+        //register native properties
+        propW = createFloatProperty("w");
+        propH = createFloatProperty("h");
+        propR = createFloatProperty("r");
+        propG = createFloatProperty("g");
+        propB = createFloatProperty("b");
+        propLeft = createFloatProperty("left");
+        propRight = createFloatProperty("right");
+        propTop = createFloatProperty("top");
+        propBottom = createFloatProperty("bottom");
     }
 };
 
@@ -723,6 +733,7 @@ public:
 class PolyNode : public AminoNode {
 private:
     std::vector<float> *geometry;
+
 public:
     float r;
     float g;
@@ -730,15 +741,11 @@ public:
     int dimension;
     int filled;
 
-    PolyNode() {
-        type = POLY;
-
+    PolyNode(std::string name): AminoNode(name, POLY) {
         //color: green
         r = 0;
         g = 1;
         b = 0;
-
-        opacity = 1;
 
         //not filled
         filled = 0;
@@ -793,29 +800,75 @@ public:
 };
 
 /**
+ * Group factory.
+ */
+class GroupFactory : public AminoJSObjectFactory {
+public:
+    GroupFactory(Nan::FunctionCallback callback);
+
+    AminoJSObject* create() override;
+};
+
+/**
  * Group node.
  *
  * Special: supports clipping
  */
 class Group : public AminoNode {
 public:
+    //internal
     std::vector<AminoNode *> children;
-    float w;
-    float h;
-    int cliprect;
 
-    Group() {
-        type = GROUP;
+    //properties
+    FloatProperty *propW;
+    FloatProperty *propH;
+    BooleanProperty *propCliprect;
 
-        //default size
-        w = 50;
-        h = 50;
-
-        //clipping: off
-        cliprect = 0;
+    Group(): AminoNode(getFactory()->name, GROUP) {
+        //empty
     }
 
     ~Group() {
+    }
+
+    //creation
+    static GroupFactory* getFactory() {
+        static GroupFactory *groupFactory;
+
+        if (!groupFactory) {
+            groupFactory = new GroupFactory(New);
+        }
+
+        return groupFactory;
+    }
+
+    /**
+     * Initialize Group template.
+     */
+    static v8::Local<v8::Function> GetInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+
+        //prototype methods
+        //TODO Nan::SetPrototypeMethod(tpl, "_start", Start);
+
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
+    }
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
+    }
+
+    void setup() override {
+        AminoNode::setup();
+
+        //register native properties
+        propW = createFloatProperty("w");
+        propH = createFloatProperty("h");
+        propCliprect = createBooleanProperty("cliprect");
     }
 };
 
@@ -905,119 +958,7 @@ public:
         //node
         AminoNode *target = rects[node];
 
-        switch (property) {
-            //origin
-            case X_PROP:
-                target->x = value;
-                return;
-
-            case Y_PROP:
-                target->y = value;
-                return;
-
-            //scaling factor
-            case SCALE_X_PROP:
-                target->scalex = value;
-                return;
-
-            case SCALE_Y_PROP:
-                target->scaley = value;
-                return;
-
-            //rotation
-            case ROTATE_X_PROP:
-                target->rotatex = value;
-                return;
-
-            case ROTATE_Y_PROP:
-                target->rotatey = value;
-                return;
-
-            case ROTATE_Z_PROP:
-                target->rotatez = value;
-                return;
-
-            //visibility
-            case VISIBLE_PROP:
-                target->visible = value;
-                return;
-
-            case OPACITY_PROP:
-                target->opacity = value;
-                return;
-        }
-
-        if (target->type == RECT) {
-            //rect
-            Rect *rect = (Rect *)target;
-
-            switch (property) {
-                case R_PROP:
-                    rect->r = value;
-                    break;
-
-                case G_PROP:
-                    rect->g = value;
-                    break;
-
-                case B_PROP:
-                    rect->b = value;
-                    break;
-
-                case W_PROP:
-                    rect->w = value;
-                    break;
-
-                case H_PROP:
-                    rect->h = value;
-                    break;
-
-                case TEXID_PROP:
-                    rect->texid = value;
-                    break;
-
-                case TEXTURE_LEFT_PROP:
-                    rect->left = value;
-                    break;
-
-                case TEXTURE_RIGHT_PROP:
-                    rect->right = value;
-                    break;
-
-                case TEXTURE_TOP_PROP:
-                    rect->top = value;
-                    break;
-
-                case TEXTURE_BOTTOM_PROP:
-                    rect->bottom = value;
-                    break;
-
-                default:
-                    printf("Unknown anim rect update: %i\n", property);
-                    break;
-            }
-        } else if (target->type == GROUP) {
-            //group
-            Group *group = (Group *)target;
-
-            switch (property) {
-                case W_PROP:
-                    group->w = value;
-                    break;
-
-                case H_PROP:
-                    group->h = value;
-                    break;
-
-                case CLIPRECT_PROP:
-                    group->cliprect = value;
-                    break;
-
-                default:
-                    printf("Unknown anim group update: %i\n", property);
-                    break;
-            }
-        } else if (target->type == TEXT) {
+        if (target->type == TEXT) {
             //text
             TextNode *textnode = (TextNode *)target;
             bool refresh = false;
@@ -1113,12 +1054,9 @@ public:
     }
 };
 
-extern std::vector<Update *> updates;
-
 NAN_METHOD(createRect);
 NAN_METHOD(createPoly);
 NAN_METHOD(createText);
-NAN_METHOD(createGroup);
 NAN_METHOD(createAnim);
 NAN_METHOD(stopAnim);
 
@@ -1162,7 +1100,7 @@ static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
 //JavaScript bindings
 
 NAN_METHOD(updateProperty);
-NAN_METHOD(addNodeToGroup);
+NAN_METHOD(addNodeToGroup);//cbx
 NAN_METHOD(removeNodeFromGroup);
 NAN_METHOD(loadBufferToTexture);
 NAN_METHOD(getFontHeight);

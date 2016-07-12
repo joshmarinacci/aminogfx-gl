@@ -53,18 +53,21 @@ AminoGfx.prototype.init = function () {
 
         //color
         opacity: 1,
-        fill: '#000000'
+        fill: '#000000',
+        r: 0,
+        g: 0,
+        b: 0
     });
 
-    /* TODO conversion
-    this.fill.convert = function () {
-        var color = amino_core.ParseRGBString(stage.fill());
+    var self = this;
 
-        gl_native.updateWindowProperty(stage, 'r', color.r);
-        gl_native.updateWindowProperty(stage, 'g', color.g);
-        gl_native.updateWindowProperty(stage, 'b', color.b);
+    this.fill.watch(function (value) {
+        var color = amino_core.ParseRGBString(value);
+
+        self.r(color.r);
+        self.g(color.g);
+        self.b(color.b);
     });
-    */
 
     //TODO more
     //cbx
@@ -78,7 +81,7 @@ AminoGfx.prototype.init = function () {
     */
 
     //root wrapper
-    //this.setRoot(this.createGroup()); cbxx
+    this.setRoot(this.createGroup());
 };
 
 AminoGfx.prototype.start = function (done) {
@@ -106,11 +109,9 @@ AminoGfx.prototype.start = function (done) {
             done.call(self, err);
 
             //check root
-            /* cbxx
             if (!this.root) {
                 throw new Error('Missing root!');
             }
-            */
 
             //start rendering loop
             self.startTimer();
@@ -121,7 +122,11 @@ AminoGfx.prototype.start = function (done) {
 AminoGfx.prototype.setRoot = function (root) {
     this.root = root;
 
-    this._setRoot(root); //TODO cbx
+    this._setRoot(root);
+};
+
+AminoGfx.prototype.createGroup = function () {
+    return new AminoGfx.Group(this);
 };
 
 AminoGfx.prototype.startTimer = function () {
@@ -566,19 +571,17 @@ var gl_native = {
 
         sgtest.updateProperty(handle, hash, value);
     },
-    setRoot: function (handle) {
-        return  sgtest.addNodeToGroup(handle, this.rootWrapper);//cbxx
-    },
     createRect: function (hasImage) {
         return sgtest.createRect(hasImage);
     },
-    createGroup: function () {          return sgtest.createGroup();          },
     createPoly: function ()  {          return sgtest.createPoly();           },
     createText: function () {           return sgtest.createText();           },
-    addNodeToGroup: function (h1,h2) {
+    addNodeToGroup: function (h1, h2) {
+//cbx
         return sgtest.addNodeToGroup(h1,h2);
     },
     removeNodeFromGroup: function (h1, h2) {
+//cbx
         return sgtest.removeNodeFromGroup(h1, h2);
     },
     loadImage: function (src, cb) {

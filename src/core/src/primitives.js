@@ -329,7 +329,7 @@ function ImageView() {
  */
 function Group() {
     var core = amino.getCore();
-
+//cbx Group
     amino.makeProps(this, {
         id: '',
 
@@ -357,9 +357,6 @@ function Group() {
         //clipping
         cliprect: false
     });
-
-    //native
-    this.handle = core.getNative().createGroup();
 
     applyNativeBinding(this);
 

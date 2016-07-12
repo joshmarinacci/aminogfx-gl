@@ -31,6 +31,7 @@ gfx.start(function (err) {
     //modify size
     this.w(200);
     this.h(200);
+    this.fill('#0000FF');
 
-    //TODO more
+    //TODO more cbx
 });

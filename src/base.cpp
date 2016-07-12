@@ -5,16 +5,10 @@
 std::map<int, AminoFont *> fontmap;
 std::vector<AminoNode *> rects;
 std::vector<Anim *> anims;
-std::vector<Update *> updates;
 
 //
 //  AminoGfx
 //
-
-//TODO cleanup
-static float near = 150;
-static float far = -300;
-static float eye = 600;
 
 AminoGfx::AminoGfx(std::string name): AminoJSObject(name) {
     //async handling
@@ -40,11 +34,19 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(factory);
 
     //prototype methods
+
+    // basic
     Nan::SetPrototypeMethod(tpl, "_start", Start);
     Nan::SetPrototypeMethod(tpl, "_destroy", Destroy);
     Nan::SetPrototypeMethod(tpl, "tick", Tick);
+
+    // shader
     Nan::SetPrototypeMethod(tpl, "initColorShader", InitColorShader);
     Nan::SetPrototypeMethod(tpl, "initTextureShader", InitTextureShader);
+
+    // group
+    Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
+    Nan::SetTemplate(tpl, "Group", Group::GetInitFunction());
 
     //special: GL object
     Nan::SetTemplate(tpl, "GL", createGLObject());
@@ -61,6 +63,9 @@ void AminoGfx::setup() {
     //register native properties
     propW = createFloatProperty("w");
     propH = createFloatProperty("h");
+    propR = createFloatProperty("r");
+    propG = createFloatProperty("g");
+    propB = createFloatProperty("b");
     propOpacity = createFloatProperty("opacity");
 
     //screen size
@@ -318,6 +323,9 @@ void AminoGfx::setupViewport() {
 
     //3D perspective
     GLfloat *pixelM = new GLfloat[16];
+    const float near = 150;
+    const float far = -300;
+    const float eye = 600;
 
     loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
     mul_matrix(modelView, pixelM, m4);
@@ -329,7 +337,7 @@ void AminoGfx::setupViewport() {
 
     //prepare
     glViewport(0, 0, viewportW, viewportH);
-    glClearColor(r, g, b, propOpacity->value);
+    glClearColor(propR->value, propG->value, propB->value, propOpacity->value);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
 }
@@ -378,6 +386,11 @@ void AminoGfx::destroy() {
 
         delete[] modelView;
         modelView = NULL;
+    }
+
+    if (root) {
+        root->release();
+        root = NULL;
     }
 }
 
@@ -457,6 +470,56 @@ v8::Local<v8::Object> AminoGfx::createGLObject() {
 
     return obj;
 }
+
+NAN_METHOD(AminoGfx::SetRoot) {
+    //new value
+    Group *group;
+
+    if (info[0]->IsNull() || info[0]->IsUndefined()) {
+        group = NULL;
+    } else {
+        group = Nan::ObjectWrap::Unwrap<Group>(info[0]->ToObject());
+    }
+
+    AminoGfx *obj= Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    obj->setRoot(group);
+}
+
+void AminoGfx::setRoot(Group *group) {
+    //validate
+    if (group && !group->checkRenderer(this)) {
+        return;
+    }
+
+    //free old one
+    if (root) {
+        root->release();
+    }
+
+    //set
+    root = group;
+
+    if (group) {
+        group->retain();
+    }
+}
+
+//
+// GroupFactory
+//
+
+/**
+ * Group factory constructor.
+ */
+GroupFactory::GroupFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Group", callback) {
+    //empty
+}
+
+AminoJSObject* GroupFactory::create() {
+    return new Group();
+}
+
 
 
 
@@ -823,7 +886,7 @@ NAN_METHOD(node_glGetUniformLocation) {
 }
 
 NAN_METHOD(updateProperty) {
-    int rectHandle   = info[0]->Uint32Value();
+    //int rectHandle   = info[0]->Uint32Value();
     int property     = info[1]->Uint32Value();
 
     if (DEBUG_BASE) {
@@ -863,11 +926,11 @@ NAN_METHOD(updateProperty) {
         printf("unsupported property format: %i\n", property);
     }
 
-    updates.push_back(new Update(RECT, rectHandle, property, value, wstr, arr, NULL));
+    //updates.push_back(new Update(RECT, rectHandle, property, value, wstr, arr, NULL));
 }
 
 NAN_METHOD(updateAnimProperty) {
-    int rectHandle   = info[0]->Uint32Value();
+    //int rectHandle   = info[0]->Uint32Value();
     int property     = info[1]->Uint32Value();
 
     //value
@@ -915,13 +978,13 @@ NAN_METHOD(updateAnimProperty) {
         printf("unsupported anim property format: %i\n", property);
     }
 
-    updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL, callback));
+    //updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL, callback));
 }
 
 NAN_METHOD(addNodeToGroup) {
     int rectHandle   = info[0]->Uint32Value();
     int groupHandle  = info[1]->Uint32Value();
-
+//cbx
     //update group
     Group *group = (Group *)rects[groupHandle];
     AminoNode *node = rects[rectHandle];
@@ -935,7 +998,7 @@ NAN_METHOD(removeNodeFromGroup) {
     Group *group = (Group*)rects[groupHandle];
     AminoNode *node = rects[rectHandle];
     int n = -1;
-
+//cbx
     //TODO simplify
     for (std::size_t i = 0; i < group->children.size(); i++) {
         if (group->children[i] == node) {
@@ -1146,7 +1209,7 @@ NAN_METHOD(createNativeFont) {
 }
 
 NAN_METHOD(createRect) {
-    Rect *rect = new Rect(info[0]->BooleanValue());
+    Rect *rect = new Rect("dummy", info[0]->BooleanValue());
 
     rects.push_back(rect);
 
@@ -1155,7 +1218,7 @@ NAN_METHOD(createRect) {
 }
 
 NAN_METHOD(createPoly) {
-    PolyNode *node = new PolyNode();
+    PolyNode *node = new PolyNode("dummy");
 
     rects.push_back(node);
 
@@ -1164,16 +1227,7 @@ NAN_METHOD(createPoly) {
 }
 
 NAN_METHOD(createText) {
-    TextNode *node = new TextNode();
-
-    rects.push_back(node);
-
-    //return id
-    info.GetReturnValue().Set((int)rects.size() - 1);
-}
-
-NAN_METHOD(createGroup) {
-    Group *node = new Group();
+    TextNode *node = new TextNode("dummy");
 
     rects.push_back(node);
 

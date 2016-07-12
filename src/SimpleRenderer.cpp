@@ -21,16 +21,16 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
         return;
     }
     //skip non-visible nodes
-    if (root->visible != 1) {
+    if (!root->propVisible->value) {
         return;
     }
 
     c->save();
 
     //transform
-    c->translate(root->x, root->y);
-    c->scale(root->scalex, root->scaley);
-    c->rotate(root->rotatex, root->rotatey, root->rotatez);
+    c->translate(root->propX->value, root->propY->value);
+    c->scale(root->propScaleX->value, root->propScaleY->value);
+    c->rotate(root->propRotateX->value, root->propRotateY->value, root->propRotateZ->value);
 
     //draw
     switch (root->type) {
@@ -108,7 +108,7 @@ void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView
 }
 
 void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
-    if (group->cliprect == 1) {
+    if (group->propCliprect->value) {
         //turn on stenciling
         glDepthMask(GL_FALSE);
         glEnable(GL_STENCIL_TEST);
@@ -125,8 +125,8 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
         //draw the stencil
         float x = 0;
         float y = 0;
-        float x2 = group->w;
-        float y2 = group->h;
+        float x2 = group->propW->value;
+        float y2 = group->propH->value;
         GLfloat verts[6][2];
 
         verts[0][0] = x;
@@ -163,7 +163,7 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
 
     //group opacity
     c->saveOpacity();
-    c->applyOpacity(group->opacity);
+    c->applyOpacity(group->propOpacity->value);
 
     //render items
     for (std::size_t i = 0; i < group->children.size(); i++) {
@@ -173,7 +173,7 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
     //restore opacity
     c->restoreOpacity();
 
-    if (group->cliprect == 1) {
+    if (group->propCliprect->value) {
         glDisable(GL_STENCIL_TEST);
     }
 }
@@ -206,9 +206,11 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
     ctx->useProgram(colorShader->prog);
     glUniformMatrix4fv(colorShader->u_matrix, 1, GL_FALSE, modelView);
     glUniformMatrix4fv(colorShader->u_trans,  1, GL_FALSE, ctx->globaltx);
-    glUniform1f(colorShader->u_opacity, poly->opacity);
 
-    GLfloat opacity = poly->opacity * ctx->opacity;
+    GLfloat opacity = poly->propOpacity->value * ctx->opacity;
+
+    //TODO verify, opacity used twice!
+    glUniform1f(colorShader->u_opacity, opacity);
 
     if (opacity != 1.0) {
         glEnable(GL_BLEND);
@@ -245,8 +247,8 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     //two triangles
     float x =  0;
     float y =  0;
-    float x2 = rect->w;
-    float y2 = rect->h;
+    float x2 = rect->propW->value;
+    float y2 = rect->propH->value;
 
     GLfloat verts[6][2];
 
@@ -264,17 +266,17 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     verts[5][0] = x;
     verts[5][1] = y;
 
-    GLfloat opacity = rect->opacity * c->opacity;
+    GLfloat opacity = rect->propOpacity->value * c->opacity;
 
     if (rect->texid != INVALID) {
         //texture
 
         //image coordinates (fractional world coordinates)
         GLfloat texcoords[6][2];
-        float tx  = rect->left;   //0
-        float ty2 = rect->bottom; //1;
-        float tx2 = rect->right;  //1;
-        float ty  = rect->top;    //0;
+        float tx  = rect->propLeft->value;   //0
+        float ty2 = rect->propBottom->value; //1;
+        float tx2 = rect->propRight->value;  //1;
+        float ty  = rect->propTop->value;    //0;
 
         texcoords[0][0] = tx;    texcoords[0][1] = ty;
         texcoords[1][0] = tx2;   texcoords[1][1] = ty;
@@ -288,17 +290,20 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
     } else if (!rect->hasImage) {
         //color
         GLfloat colors[6][3];
+        float r = rect->propR->value;
+        float g = rect->propG->value;
+        float b = rect->propB->value;
 
         for (int i = 0; i < 6; i++) {
             for (int j = 0; j < 3; j++) {
                 colors[i][j] = 0.5;
 
                 if (j==0) {
-                    colors[i][j] = rect->r;
+                    colors[i][j] = r;
                 } else if (j==1) {
-                    colors[i][j] = rect->g;
+                    colors[i][j] = g;
                 } else if (j==2) {
-                    colors[i][j] = rect->b;
+                    colors[i][j] = b;
                 }
             }
         }
@@ -372,7 +377,7 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     }
 
     //color & opacity
-    GLfloat color[4] = {text->r, text->g, text->b, c->opacity * text->opacity};
+    GLfloat color[4] = {text->r, text->g, text->b, c->opacity * text->propOpacity->value};
 
     glUniform4fv(font->coloruni, 1, color);
 

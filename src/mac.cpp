@@ -481,7 +481,6 @@ NAN_MODULE_INIT(InitAll) {
     //TODO cleanup
 	Nan::Set(target, Nan::New("createRect").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createRect)).ToLocalChecked());
     Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createPoly)).ToLocalChecked());
-    Nan::Set(target, Nan::New("createGroup").ToLocalChecked(),      Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createGroup)).ToLocalChecked());
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createText)).ToLocalChecked());
     Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createAnim)).ToLocalChecked());
     Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<v8::FunctionTemplate>(stopAnim)).ToLocalChecked());
