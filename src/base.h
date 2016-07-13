@@ -956,6 +956,10 @@ private:
      * Add a child node.
      */
     void addChild(AminoNode *node) {
+        if (DEBUG_BASE) {
+            printf("-> addChild()\n");
+        }
+
         children.push_back(node);
 
         //strong reference
@@ -971,6 +975,10 @@ private:
     }
 
     void removeChild(AminoNode *node) {
+        if (DEBUG_BASE) {
+            printf("-> removeChild()\n");
+        }
+
         //remove pointer
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
 
@@ -985,18 +993,22 @@ private:
     /**
      * Async value handling.
      */
-    void handleAsyncUpdate(AsyncValueUpdate *update) {
-        AminoJSObject::handleAsyncUpdate(update);
+    bool handleAsyncUpdate(AsyncValueUpdate *update) override {
+        if (AminoJSObject::handleAsyncUpdate(update)) {
+            return true;
+        }
 
         switch (update->id) {
             case ID_ADD_CHILD:
                 addChild((AminoNode *)update->valueObj);
-                break;
+                return true;
 
             case ID_REMOVE_CHILD:
                 removeChild((AminoNode *)update->valueObj);
-                break;
+                return true;
         }
+
+        return false;
     }
 };
 

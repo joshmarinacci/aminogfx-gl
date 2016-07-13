@@ -73,7 +73,7 @@ protected:
 
     class FloatProperty : public AnyProperty {
     public:
-        float value;
+        float value = 0;
 
         FloatProperty(AminoJSObject *obj, std::string name, int id);
         ~FloatProperty();
@@ -84,7 +84,7 @@ protected:
 
     class BooleanProperty : public AnyProperty {
     public:
-        bool value;
+        bool value = false;
 
         BooleanProperty(AminoJSObject *obj, std::string name, int id);
         ~BooleanProperty();
@@ -129,7 +129,7 @@ protected:
     public:
         int id;
         AminoJSObject *obj;
-        AminoJSObject *valueObj;
+        AminoJSObject *valueObj = NULL;
 
         AsyncValueUpdate(int id, AminoJSObject *obj, AminoJSObject *value);
         ~AsyncValueUpdate();
@@ -138,7 +138,7 @@ protected:
     bool enqueueValueUpdate(int id, AminoJSObject *value);
     bool enqueueValueUpdate(AsyncValueUpdate *update);
 
-    virtual void handleAsyncUpdate(AsyncValueUpdate *update);
+    virtual bool handleAsyncUpdate(AsyncValueUpdate *update);
 
     //static methods
     static v8::Local<v8::FunctionTemplate> createTemplate(AminoJSObjectFactory* factory);

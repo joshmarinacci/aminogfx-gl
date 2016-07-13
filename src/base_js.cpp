@@ -192,7 +192,7 @@ bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::V
 
     if (!propLocal->IsObject()) {
         if (DEBUG_BASE) {
-            printf("-> property not an object: %s\n", name.c_str());
+            printf("-> property not an object: %s in %s\n", name.c_str(), this->name.c_str());
         }
 
         return false;
@@ -309,7 +309,7 @@ NAN_METHOD(AminoJSObject::PropertyUpdated) {
  * Enqueue a value update.
  */
 bool AminoJSObject::enqueueValueUpdate(int id, AminoJSObject *value) {
-    enqueueValueUpdate(new AsyncValueUpdate(id, this, value));
+    return enqueueValueUpdate(new AsyncValueUpdate(id, this, value));
 }
 
 /**
@@ -341,8 +341,10 @@ bool AminoJSObject::enqueueValueUpdate(AsyncValueUpdate *update) {
 /**
  * Custom handler for implementation specific async update.
  */
-void AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
+bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
     //overwrite
+
+    return false;
 }
 
 /**
@@ -520,6 +522,7 @@ void AminoJSObject::processAsyncQueue() {
 
         switch (item->type) {
             case ASYNC_UPDATE_PROPERTY:
+                //property update
                 {
                     AsyncPropertyUpdate *propItem = static_cast<AsyncPropertyUpdate *>(item);
 
@@ -528,11 +531,18 @@ void AminoJSObject::processAsyncQueue() {
                 break;
 
             case ASYNC_UPDATE_VALUE:
+                //custom value update
                 {
                     AsyncValueUpdate *valueItem = static_cast<AsyncValueUpdate *>(item);
 
-                    handleAsyncUpdate(valueItem);
+                    if (!valueItem->obj->handleAsyncUpdate(valueItem)) {
+                        printf("unhandled async update %i by %s\n", valueItem->id, valueItem->obj->name.c_str());
+                    }
                 }
+                break;
+
+            default:
+                printf("unknown async type: %i\n", item->type);
                 break;
         }
 

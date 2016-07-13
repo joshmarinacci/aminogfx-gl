@@ -406,14 +406,23 @@ Rect.prototype.init = function () {
     amino_core.makeProps(this, {
         id: '',
         visible: true,
+
+        //position
         x: 0,
         y: 0,
-        sx: 1,
-        sy: 1,
 
         //size
         w: 100,
         h: 100,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
 
         //white
         fill: '#ffffff',
