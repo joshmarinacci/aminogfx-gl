@@ -49,6 +49,14 @@ AminoJSObject::~AminoJSObject() {
 
     //free async updates
     if (localAsyncUpdatesInstance) {
+        std::size_t count = asyncUpdates->size();
+
+        for (std::size_t i = 0; i < count; i++) {
+            AnyAsyncUpdate *item = (*asyncUpdates)[i];
+
+            delete item;
+        }
+
         delete asyncUpdates;
     }
 }
@@ -297,6 +305,49 @@ NAN_METHOD(AminoJSObject::PropertyUpdated) {
     obj->enqueuePropertyUpdate(id, value);
 }
 
+/**
+ * Enqueue a value update.
+ */
+bool AminoJSObject::enqueueValueUpdate(int id, AminoJSObject *value) {
+    enqueueValueUpdate(new AsyncValueUpdate(id, this, value));
+}
+
+/**
+ * Enqueue a value update.
+ */
+bool AminoJSObject::enqueueValueUpdate(AsyncValueUpdate *update) {
+    if (!update) {
+        return false;
+    }
+
+    //check queue exists
+    if (!asyncUpdates) {
+        printf("missing queue: %s\n", name.c_str());
+
+        delete update;
+        return false;
+    }
+
+    //enqueue
+    if (DEBUG_BASE) {
+        printf("enqueueValueUpdate: id=%i\n", update->id);
+    }
+
+    asyncUpdates->push_back(update);
+
+    return true;
+}
+
+/**
+ * Custom handler for implementation specific async update.
+ */
+void AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
+    //overwrite
+}
+
+/**
+ * Enqueue a property update.
+ */
 void AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
     //check queue exists
     if (!asyncUpdates) {
@@ -322,7 +373,7 @@ void AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
         printf("enqueuePropertyUpdate: %s (id=%i)\n", prop->name.c_str(), id);
     }
 
-    asyncUpdates->push_back(new AsyncUpdate(prop, value));
+    asyncUpdates->push_back(new AsyncPropertyUpdate(prop, value));
 }
 
 /**
@@ -416,7 +467,7 @@ void AminoJSObject::updateProperty(std::string name, std::string value) {
  */
 void AminoJSObject::createAsyncQueue() {
     if (!asyncUpdates) {
-        asyncUpdates = new std::vector<AsyncUpdate *>();
+        asyncUpdates = new std::vector<AnyAsyncUpdate *>();
         localAsyncUpdatesInstance = true;
     }
 }
@@ -427,6 +478,14 @@ void AminoJSObject::createAsyncQueue() {
 void AminoJSObject::attachToAsyncQueue(AminoJSObject *obj) {
     //detach
     if (asyncUpdates && localAsyncUpdatesInstance) {
+        std::size_t count = asyncUpdates->size();
+
+        for (std::size_t i = 0; i < count; i++) {
+            AnyAsyncUpdate *item = (*asyncUpdates)[i];
+
+            delete item;
+        }
+
         delete asyncUpdates;
     }
 
@@ -457,9 +516,28 @@ void AminoJSObject::processAsyncQueue() {
 
     //iterate
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
-        AsyncUpdate *item = (*asyncUpdates)[i];
+        AnyAsyncUpdate *item = (*asyncUpdates)[i];
 
-        handleAsyncUpdate(item->property, item->getValue());
+        switch (item->type) {
+            case ASYNC_UPDATE_PROPERTY:
+                {
+                    AsyncPropertyUpdate *propItem = static_cast<AsyncPropertyUpdate *>(item);
+
+                    handleAsyncUpdate(propItem->property, propItem->getValue());
+                }
+                break;
+
+            case ASYNC_UPDATE_VALUE:
+                {
+                    AsyncValueUpdate *valueItem = static_cast<AsyncValueUpdate *>(item);
+
+                    handleAsyncUpdate(valueItem);
+                }
+                break;
+        }
+
+        //free item
+        delete item;
     }
 
     //clear
@@ -662,13 +740,45 @@ void AminoJSObject::Utf8Property::setValue(char *newValue) {
 }
 
 //
-// AminoJSObject::AsyncUpdate
+// AminoJSObject::AnyAsyncUpdate
+//
+
+AminoJSObject::AnyAsyncUpdate::AnyAsyncUpdate(int type): type(type) {
+    //empty
+}
+
+AminoJSObject::AnyAsyncUpdate::~AnyAsyncUpdate() {
+    //empty
+}
+
+//
+// AminoJSObject::AsyncValueUpdate
+//
+
+AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(int id, AminoJSObject *obj, AminoJSObject *value): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), id(id), obj(obj), valueObj(value) {
+    obj->retain();
+
+    if (value) {
+        value->retain();
+    }
+}
+
+AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
+    obj->release();
+
+    if (valueObj) {
+        valueObj->release();
+    }
+}
+
+//
+// AminoJSObject::AsyncPropertyUpdate
 //
 
 /**
  * Constructor.
  */
-AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value): property(property) {
+AminoJSObject::AsyncPropertyUpdate::AsyncPropertyUpdate(AnyProperty *property, v8::Local<v8::Value> value): AnyAsyncUpdate(ASYNC_UPDATE_PROPERTY), property(property) {
     //store persistent reference
     this->value.Reset(value);
 
@@ -679,7 +789,7 @@ AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Val
 /**
  * Destructor.
  */
-AminoJSObject::AsyncUpdate::~AsyncUpdate() {
+AminoJSObject::AsyncPropertyUpdate::~AsyncPropertyUpdate() {
     //free persistent reference
     value.Reset();
 
@@ -690,6 +800,6 @@ AminoJSObject::AsyncUpdate::~AsyncUpdate() {
 /**
  * Get local value.
  */
-v8::Local<v8::Value> AminoJSObject::AsyncUpdate::getValue() {
+v8::Local<v8::Value> AminoJSObject::AsyncPropertyUpdate::getValue() {
     return Nan::New(value);
 }

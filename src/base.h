@@ -102,6 +102,9 @@ static const int WRAP_WORD = 0x2;
 
 extern std::map<int, AminoFont *> fontmap;
 
+#define ID_ADD_CHILD    100
+#define ID_REMOVE_CHILD 101
+
 class Group;
 
 /**
@@ -928,6 +931,7 @@ public:
         //template function
         return Nan::GetFunction(tpl).ToLocalChecked();
     }
+
 private:
     /**
      * JS object construction.
@@ -937,7 +941,6 @@ private:
     }
 
     static NAN_METHOD(Add) {
-        //cbx async
         Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
@@ -945,28 +948,54 @@ private:
             return;
         }
 
-        group->addChild(child);
+        //handle async
+        group->enqueueValueUpdate(ID_ADD_CHILD, child);
     }
 
+    /**
+     * Add a child node.
+     */
     void addChild(AminoNode *node) {
         children.push_back(node);
+
+        //strong reference
+        node->retain();
     }
 
     static NAN_METHOD(Remove) {
-        //cbx async
         Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
-        group->removeChild(child);
+        //handle async
+        group->enqueueValueUpdate(ID_REMOVE_CHILD, child);
     }
 
     void removeChild(AminoNode *node) {
         //remove pointer
-//cbx prevent delete
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
 
         if (pos != children.end()) {
             children.erase(pos);
+
+            //remove strong reference
+            node->release();
+        }
+    }
+
+    /**
+     * Async value handling.
+     */
+    void handleAsyncUpdate(AsyncValueUpdate *update) {
+        AminoJSObject::handleAsyncUpdate(update);
+
+        switch (update->id) {
+            case ID_ADD_CHILD:
+                addChild((AminoNode *)update->valueObj);
+                break;
+
+            case ID_REMOVE_CHILD:
+                removeChild((AminoNode *)update->valueObj);
+                break;
         }
     }
 };

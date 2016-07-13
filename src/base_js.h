@@ -5,6 +5,11 @@
 #include <node_buffer.h>
 #include <nan.h>
 #include <map>
+#include <memory>
+
+#define ASYNC_UPDATE_PROPERTY   0
+#define ASYNC_UPDATE_VALUE      1
+#define ASYNC_UPDATE_CUSTOM   100
 
 //FIXME
 #define DEBUG_BASE true
@@ -112,6 +117,29 @@ protected:
     void processAsyncQueue();
     virtual void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value);
 
+    class AnyAsyncUpdate {
+    public:
+        int type;
+
+        AnyAsyncUpdate(int type);
+        virtual ~AnyAsyncUpdate();
+    };
+
+    class AsyncValueUpdate : public AnyAsyncUpdate {
+    public:
+        int id;
+        AminoJSObject *obj;
+        AminoJSObject *valueObj;
+
+        AsyncValueUpdate(int id, AminoJSObject *obj, AminoJSObject *value);
+        ~AsyncValueUpdate();
+    };
+
+    bool enqueueValueUpdate(int id, AminoJSObject *value);
+    bool enqueueValueUpdate(AsyncValueUpdate *update);
+
+    virtual void handleAsyncUpdate(AsyncValueUpdate *update);
+
     //static methods
     static v8::Local<v8::FunctionTemplate> createTemplate(AminoJSObjectFactory* factory);
     static void createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObjectFactory* factory);
@@ -126,12 +154,12 @@ private:
     static NAN_METHOD(PropertyUpdated);
 
     //async updates
-    class AsyncUpdate {
+    class AsyncPropertyUpdate : public AnyAsyncUpdate {
     public:
         AnyProperty *property;
 
-        AsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value);
-        ~AsyncUpdate();
+        AsyncPropertyUpdate(AnyProperty *property, v8::Local<v8::Value> value);
+        ~AsyncPropertyUpdate();
 
         v8::Local<v8::Value> getValue();
 
@@ -139,7 +167,7 @@ private:
         Nan::Persistent<v8::Value> value;
     };
 
-    std::vector<AsyncUpdate *> *asyncUpdates = NULL;
+    std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
     bool localAsyncUpdatesInstance = false;
 
 public:
