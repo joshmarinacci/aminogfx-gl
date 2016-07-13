@@ -77,16 +77,6 @@ function setWrap(val, prop, obj) {
 //native async updates
 var setters = {};
 
-['visible', 'x', 'y', 'w', 'h', 'sx', 'sy',
-    'opacity', 'text', 'fontSize', 'filled',
-    'rx', 'ry', 'rz', 'geometry', 'dimension', 'cliprect',
-    'textureLeft', 'textureRight', 'textureTop', 'textureBottom'
-].forEach(function (name) {
-    setters[name] = function (val, prop, obj) {
-        amino.getCore().getNative().updateProperty(obj.handle, name, val);
-    };
-});
-
 setters['fill'] = setFill;
 setters['vAlign'] = setVAlign;
 setters['wrap'] = setWrap;
@@ -106,52 +96,6 @@ function applyNativeBinding(me) {
             setters[name](prop(), prop, me);
         }
     }
-}
-
-/**
- * Check if a given point is inside this node.
- *
- * Note: has to be used in object.
- *
- * @param pt coordinate relative to origin of node
- */
-function contains(pt) {
-    var x = this.x();
-    var y = this.y();
-
-    return pt.x >= 0 && pt.x < this.w() &&
-           pt.y >= 0 && pt.y < this.h();
-}
-
-/**
- * Rect object.
- */
-function Rect() {
-    //properties
-    amino.makeProps(this, {
-        id: '',
-        visible: true,
-        x: 0,
-        y: 0,
-        sx: 1,
-        sy: 1,
-
-        //size
-        w: 100,
-        h: 100,
-
-        //white
-        fill: '#ffffff',
-        opacity: 1.0
-    });
-
-    //native handle (int)
-    this.handle = amino.getCore().getNative().createRect(false);
-
-    applyNativeBinding(this);
-
-    this.contains = contains;
-    this.acceptsMouseEvents = false;
 }
 
 /**
@@ -324,77 +268,6 @@ function ImageView() {
 }
 
 /**
- * Group object.
- */
-function Group() {
-//cbx group
-
-    //methods
-
-    function treeSearch (root, considerRoot, filter) {
-        var res = [];
-
-        if (root.isGroup) {
-            for (var i = 0; i < root.children.length; i++) {
-                res = res.concat(treeSearch(root.children[i], true, filter));
-            }
-        }
-
-        if (considerRoot && filter(root)) {
-            return res.concat([root]);
-        }
-
-        return res;
-    }
-
-    this.find = function (pattern) {
-        var results = new FindResults();
-
-        if (pattern.indexOf('#') == 0) {
-            var id = pattern.substring(1);
-
-            results.children = treeSearch(this, false, function (child) {
-                return (child.id().toLowerCase() == id);
-            });
-        } else {
-            results.children = treeSearch(this, false, function (child) {
-                return child.constructor.name.toLowerCase() == pattern.toLowerCase();
-            });
-        }
-
-        return results;
-    };
-}
-
-function FindResults() {
-    this.children = [];
-
-    function makefindprop(obj, name) {
-        obj[name] = function (val) {
-            this.children.forEach(function (child) {
-                if (child[name]) {
-                    child[name](val);
-                }
-            });
-
-            return this;
-        };
-    }
-
-    makefindprop(this, 'visible');
-    makefindprop(this, 'fill');
-    makefindprop(this, 'filled');
-    makefindprop(this, 'x');
-    makefindprop(this, 'y');
-    makefindprop(this, 'w');
-    makefindprop(this, 'h');
-
-    this.length = function () {
-        return this.children.length;
-    };
-}
-
-/**
  * Polygon object.
  */
 function Polygon() {
@@ -477,8 +350,6 @@ function Circle() {
 }
 
 //exports
-exports.Group = Group;
-exports.Rect = Rect;
 exports.Text = Text;
 exports.Polygon = Polygon;
 exports.Circle = Circle;

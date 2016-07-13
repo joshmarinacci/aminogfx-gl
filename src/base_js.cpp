@@ -286,7 +286,7 @@ NAN_METHOD(AminoJSObject::PropertyUpdated) {
 void AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
     //check queue exists
     if (!asyncUpdates) {
-        printf("missing queue\n");
+        printf("missing queue: %s\n", name.c_str());
 
         return;
     }
@@ -411,6 +411,15 @@ void AminoJSObject::attachToAsyncQueue(AminoJSObject *obj) {
 }
 
 /**
+ * Unbind from global queue.
+ */
+void AminoJSObject::detachFromAsyncQueue() {
+    if (!localAsyncUpdatesInstance) {
+        asyncUpdates = NULL;
+    }
+}
+
+/**
  * Process all queued updates.
  */
 void AminoJSObject::processAsyncQueue() {
@@ -443,7 +452,9 @@ void AminoJSObject::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value
     property->setValue(value);
 
     if (DEBUG_BASE) {
-        printf("-> updated %s\n", property->name.c_str());
+        v8::String::Utf8Value str(value);
+
+        printf("-> updated %s in %s to %s\n", property->name.c_str(), property->obj->name.c_str(), *str);
     }
 }
 
@@ -458,8 +469,8 @@ AminoJSObject::AnyProperty::AnyProperty(AminoJSObject *obj, std::string name, in
     //empty
 }
 
-void AminoJSObject::AnyProperty::setValue(v8::Local<v8::Value> &value) {
-    //overwrite
+AminoJSObject::AnyProperty::~AnyProperty() {
+    //empty
 }
 
 /**
@@ -581,6 +592,7 @@ void AminoJSObject::BooleanProperty::setValue(bool newValue) {
  * Constructor.
  */
 AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value): property(property) {
+    //store persistent reference
     this->value.Reset(value);
 
     //retain instance
@@ -591,6 +603,7 @@ AminoJSObject::AsyncUpdate::AsyncUpdate(AnyProperty *property, v8::Local<v8::Val
  * Destructor.
  */
 AminoJSObject::AsyncUpdate::~AsyncUpdate() {
+    //free persistent reference
     value.Reset();
 
     //release instance

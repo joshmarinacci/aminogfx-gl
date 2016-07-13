@@ -51,13 +51,26 @@ amino.makeProp = function (obj, name, val) {
      * Callback: (value, property, object)
      */
     prop.watch = function (fun) {
-        if (fun === undefined) {
+        if (!fun) {
             throw new Error('function undefined for property ' + name + ' on object with value ' + val);
         }
 
         this.listeners.push(fun);
 
         return this;
+    };
+
+    /**
+     * Unwatch a registered function.
+     */
+    prop.unwatch = function (fun) {
+        var n = this.listeners.indexOf(fun);
+
+        if (n == -1) {
+            throw new Error('function was not registered');
+        }
+
+        this.listeners.splice(n, 1);
     };
 
     /**
@@ -78,15 +91,12 @@ amino.makeProp = function (obj, name, val) {
         }
 
         //check if modified
-        //FIXME add again after fixing the animation JS value
-        /*
         if (v === this.value) {
             //debug
             //console.log('not changed: ' + name);
 
             return obj;
         }
-        */
 
         //update
         this.value = v;
@@ -109,6 +119,7 @@ amino.makeProp = function (obj, name, val) {
      * Create animation.
      */
     prop.anim = function () {
+        //cbx anim
         return amino.getCore().getNative().createPropAnim(obj, name);
     };
 

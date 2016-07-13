@@ -225,6 +225,8 @@ public:
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
 
         this->amino = obj;
+
+        this->attachToAsyncQueue(obj);
     }
 
     void setup() override {
@@ -602,6 +604,9 @@ public:
                 printf("-> callback used\n");
             }
 
+            //create scope
+            Nan::HandleScope scope;
+
             //TODO set this
             then->Call(0, NULL);
             delete then;
@@ -950,6 +955,8 @@ private:
     }
 
     void removeChild(AminoNode *node) {
+        //remove pointer
+//cbx prevent delete
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
 
         if (pos != children.end()) {

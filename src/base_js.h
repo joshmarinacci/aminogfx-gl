@@ -56,10 +56,11 @@ protected:
         bool connected = false;
 
         AnyProperty(AminoJSObject *obj, std::string name, int id);
-        virtual ~AnyProperty() = 0;
+        virtual ~AnyProperty();
 
-        virtual void setValue(v8::Local<v8::Value> &value);
+        virtual void setValue(v8::Local<v8::Value> &value) = 0;
 
+        //weak reference control
         void retain();
         void release();
     };
@@ -86,12 +87,15 @@ protected:
         void setValue(bool newValue);
     };
 
+    //cbx Utf8Property
+
     FloatProperty* createFloatProperty(std::string name);
     BooleanProperty* createBooleanProperty(std::string name);
 
     //async updates
     void createAsyncQueue();
     void attachToAsyncQueue(AminoJSObject *obj);
+    void detachFromAsyncQueue();
 
     void processAsyncQueue();
     virtual void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value);

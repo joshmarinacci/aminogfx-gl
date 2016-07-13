@@ -61,15 +61,7 @@ AminoGfx.prototype.init = function () {
         b: 0
     });
 
-    var self = this;
-
-    this.fill.watch(function (value) {
-        var color = amino_core.ParseRGBString(value);
-
-        self.r(color.r);
-        self.g(color.g);
-        self.b(color.b);
-    });
+    this.fill.watch(watchFill);
 
     //TODO more
     //cbx
@@ -85,6 +77,17 @@ AminoGfx.prototype.init = function () {
     //root wrapper
     this.setRoot(this.createGroup());
 };
+
+/**
+ * Fill value has changed.
+ */
+function watchFill(value, prop, obj) {
+    var color = amino_core.ParseRGBString(value);
+
+    obj.r(color.r);
+    obj.g(color.g);
+    obj.b(color.b);
+}
 
 AminoGfx.prototype.start = function (done) {
     var self = this;
@@ -222,6 +225,10 @@ exports.AminoGfx = AminoGfx;
 var Group = AminoGfx.Group;
 
 Group.prototype.init = function () {
+    if (DEBUG) {
+        console.log('Group.init()');
+    }
+
     amino_core.makeProps(this, {
         id: '',
 
@@ -315,7 +322,125 @@ Group.prototype.raiseToTop = function (node) {
     return this;
 };
 
-//cbx
+Group.prototype.find = function (pattern) {
+    var results = new FindResults();
+
+    if (pattern.indexOf('#') == 0) {
+        //id
+        var id = pattern.substring(1);
+
+        results.children = treeSearch(this, false, function (child) {
+            return (child.id().toLowerCase() == id);
+        });
+    } else {
+        results.children = treeSearch(this, false, function (child) {
+            return child.constructor.name.toLowerCase() == pattern.toLowerCase();
+        });
+    }
+
+    return results;
+};
+
+function treeSearch (root, considerRoot, filter) {
+    var res = [];
+
+    if (root.isGroup) {
+        var count = root.children.length;
+
+        for (var i = 0; i < count; i++) {
+            res = res.concat(treeSearch(root.children[i], true, filter));
+        }
+    }
+
+    if (considerRoot && filter(root)) {
+        return res.concat([root]);
+    }
+
+    return res;
+}
+
+function FindResults() {
+    this.children = [];
+
+    function makefindprop(obj, name) {
+        obj[name] = function (val) {
+            this.children.forEach(function (child) {
+                if (child[name]) {
+                    child[name](val);
+                }
+            });
+
+            return this;
+        };
+    }
+
+    //TODO review
+    makefindprop(this, 'visible');
+    makefindprop(this, 'fill');
+    makefindprop(this, 'filled');
+    makefindprop(this, 'x');
+    makefindprop(this, 'y');
+    makefindprop(this, 'w');
+    makefindprop(this, 'h');
+
+    this.length = function () {
+        return this.children.length;
+    };
+}
+
+//
+// Rect
+//
+
+var Rect = AminoGfx.Rect;
+
+Rect.prototype.init = function () {
+    if (DEBUG) {
+        console.log('Rect.init()');
+    }
+
+    //properties
+    amino_core.makeProps(this, {
+        id: '',
+        visible: true,
+        x: 0,
+        y: 0,
+        sx: 1,
+        sy: 1,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //white
+        fill: '#ffffff',
+        r: 1,
+        g: 1,
+        b: 1,
+        opacity: 1.0
+    });
+
+    //special
+    this.fill.watch(watchFill);
+
+    //methods
+    this.contains = contains;
+};
+
+/**
+ * Check if a given point is inside this node.
+ *
+ * Note: has to be used in object.
+ *
+ * @param pt coordinate relative to origin of node
+ */
+function contains(pt) {
+    var x = this.x();
+    var y = this.y();
+
+    return pt.x >= 0 && pt.x < this.w() &&
+           pt.y >= 0 && pt.y < this.h();
+}
 
 //
 // AminoImage

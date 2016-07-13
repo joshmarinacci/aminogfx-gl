@@ -29,9 +29,19 @@ gfx.start(function (err) {
     console.log('runtime: ' + JSON.stringify(gfx.runtime));
 
     //modify size
-    this.w(200);
-    this.h(200);
+    this.w(400);
+    this.h(400);
     this.fill('#0000FF');
+
+    //create group
+    const g = this.createGroup();
+
+    this.setRoot(g);
+
+    //add rect
+    const r = (this.createRect()).w(100).h(100).fill('#FF0000');
+
+    g.add(r);
 
     //TODO more cbx
 });
