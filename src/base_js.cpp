@@ -244,6 +244,20 @@ AminoJSObject::BooleanProperty* AminoJSObject::createBooleanProperty(std::string
     return prop;
 }
 
+/**
+ * Create UTF8 string property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
+AminoJSObject::Utf8Property* AminoJSObject::createUtf8Property(std::string name) {
+    int id = ++lastPropertyId;
+    Utf8Property *prop = new Utf8Property(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
 void AminoJSObject::addProperty(AnyProperty *prop) {
     int id = prop->id;
     propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
@@ -385,6 +399,16 @@ void AminoJSObject::updateProperty(std::string name, bool value) {
     Nan::HandleScope scope;
 
     updateProperty(name, Nan::New<v8::Boolean>(value));
+}
+
+/**
+ * Update JS property value.
+ */
+void AminoJSObject::updateProperty(std::string name, std::string value) {
+    //create scope
+    Nan::HandleScope scope;
+
+    updateProperty(name, Nan::New<v8::String>(value).ToLocalChecked());
 }
 
 /**
@@ -582,6 +606,59 @@ void AminoJSObject::BooleanProperty::setValue(bool newValue) {
             obj->updateProperty(name, value);
         }
     }
+}
+
+//
+// AminoJSObject::BooleanProperty
+//
+
+/**
+ * Utf8Property constructor.
+ */
+AminoJSObject::Utf8Property::Utf8Property(AminoJSObject *obj, std::string name, int id): AnyProperty(obj, name, id) {
+    //empty
+}
+
+/**
+ * Utf8Property destructor.
+ */
+AminoJSObject::Utf8Property::~Utf8Property() {
+    //empty
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::Utf8Property::setValue(v8::Local<v8::Value> &value) {
+    //convert anything to a string
+    v8::String::Utf8Value str(value);
+
+    //convert it to string
+    this->value = std::string(*str);
+}
+
+/**
+ * Update the string value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::Utf8Property::setValue(std::string newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(name, value);
+        }
+    }
+}
+
+/**
+ * Update the string value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::Utf8Property::setValue(char *newValue) {
+    setValue(std::string(newValue));
 }
 
 //

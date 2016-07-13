@@ -47,6 +47,7 @@ protected:
     void updateProperty(std::string name, double value);
     void updateProperty(std::string name, int value);
     void updateProperty(std::string name, bool value);
+    void updateProperty(std::string name, std::string value);
 
     class AnyProperty {
     public:
@@ -87,10 +88,21 @@ protected:
         void setValue(bool newValue);
     };
 
-    //cbx Utf8Property
+    class Utf8Property : public AnyProperty {
+    public:
+        std::string value;
+
+        Utf8Property(AminoJSObject *obj, std::string name, int id);
+        ~Utf8Property();
+
+        void setValue(v8::Local<v8::Value> &value) override;
+        void setValue(std::string newValue);
+        void setValue(char *newValue);
+    };
 
     FloatProperty* createFloatProperty(std::string name);
     BooleanProperty* createBooleanProperty(std::string name);
+    Utf8Property* createUtf8Property(std::string name);
 
     //async updates
     void createAsyncQueue();
