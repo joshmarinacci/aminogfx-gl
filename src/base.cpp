@@ -68,6 +68,7 @@ void AminoGfx::setup() {
     propG = createFloatProperty("g");
     propB = createFloatProperty("b");
     propOpacity = createFloatProperty("opacity");
+    propTitle = createUtf8Property("title");
 
     //screen size
     int w, h, refreshRate;
@@ -447,6 +448,11 @@ void AminoGfx::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> val
     //size changes
     if (property == propW || property == propH) {
         updateWindowSize();
+    }
+
+    //title
+    if (property == propTitle) {
+        updateWindowTitle();
     }
 }
 

@@ -58,7 +58,10 @@ AminoGfx.prototype.init = function () {
         fill: '#000000',
         r: 0,
         g: 0,
-        b: 0
+        b: 0,
+
+        //title
+        title: 'AminoGfx OpenGL'
     });
 
     this.fill.watch(watchFill);

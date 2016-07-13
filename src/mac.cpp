@@ -163,15 +163,7 @@ private:
          */
 
         //create window
-        //TODO dynamic title
-        /*
-        if (info[2]->IsString()) {
-        char *cstr = TO_CHAR(info[2]);
-
-        wstr = GetWC(cstr);
-        free(cstr);
-    } */
-        window = glfwCreateWindow(propW->value, propH->value, "AminoGfx OpenGL Output", NULL, NULL);
+        window = glfwCreateWindow(propW->value, propH->value, propTitle->value.c_str(), NULL, NULL);
 
         if (!window) {
             //exit on error
@@ -451,6 +443,13 @@ private:
         if (DEBUG_GLFW) {
             printf("framebuffer size: %ix%i\n", viewportW, viewportH);
         }
+    }
+
+    /**
+     * Update the title.
+     */
+    void updateWindowTitle() override {
+        glfwSetWindowTitle(window, propTitle->value.c_str());
     }
 };
 

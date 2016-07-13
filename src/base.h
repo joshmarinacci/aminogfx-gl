@@ -135,6 +135,7 @@ protected:
     FloatProperty *propG;
     FloatProperty *propB;
     FloatProperty *propOpacity;
+    Utf8Property *propTitle;
 
     //creation
     static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
@@ -166,6 +167,7 @@ protected:
 
     void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override;
     virtual void updateWindowSize() = 0;
+    virtual void updateWindowTitle() = 0;
 
     void setRoot(Group *group);
 
