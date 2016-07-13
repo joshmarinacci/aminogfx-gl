@@ -129,6 +129,8 @@ protected:
     GLfloat *modelView;
 
     //properties
+    FloatProperty *propX;
+    FloatProperty *propY;
     FloatProperty *propW;
     FloatProperty *propH;
     FloatProperty *propR;
@@ -162,11 +164,13 @@ protected:
 
     virtual bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) { return false; };
     void updateSize(int w, int h); //call after size event
+    void updatePosition(int x, int y); //call after position event
 
     void fireEvent(v8::Local<v8::Object> &obj);
 
     void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override;
     virtual void updateWindowSize() = 0;
+    virtual void updateWindowPosition() = 0;
     virtual void updateWindowTitle() = 0;
 
     void setRoot(Group *group);

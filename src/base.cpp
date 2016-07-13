@@ -62,6 +62,8 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
  */
 void AminoGfx::setup() {
     //register native properties
+    propX = createFloatProperty("x");
+    propY = createFloatProperty("y");
     propW = createFloatProperty("w");
     propH = createFloatProperty("h");
     propR = createFloatProperty("r");
@@ -416,6 +418,16 @@ void AminoGfx::updateSize(int w, int h) {
 }
 
 /**
+ * Position has changed, update internal and JS properties.
+ *
+ * Note: has to be called after window position has changed. Does not touch the window position.
+ */
+void AminoGfx::updatePosition(int x, int y) {
+    propX->setValue(x);
+    propY->setValue(y);
+}
+
+/**
  * Fire runtime specific event.
  */
 void AminoGfx::fireEvent(v8::Local<v8::Object> &evt) {
@@ -448,11 +460,20 @@ void AminoGfx::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> val
     //size changes
     if (property == propW || property == propH) {
         updateWindowSize();
+        return;
+    }
+
+    //position changes
+
+    if (property == propX || property == propY) {
+        updateWindowPosition();
+        return;
     }
 
     //title
     if (property == propTitle) {
         updateWindowTitle();
+        return;
     }
 }
 

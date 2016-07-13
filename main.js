@@ -45,9 +45,9 @@ AminoGfx.prototype.init = function () {
 
     //initialize bindings
     amino_core.makeProps(this, {
-        //position (window only)
-        x: 0,
-        y: 0,
+        //position (auto set)
+        x: -1,
+        y: -1,
 
         //QHD size
         w: 640,

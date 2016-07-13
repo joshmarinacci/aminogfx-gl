@@ -188,6 +188,19 @@ private:
 
         updateSize(windowW, windowH);
 
+        //check window pos
+        if (propX->value != -1 && propY->value != -1) {
+            //use initial position
+            glfwSetWindowPos(window, propX->value, propY->value);
+        }
+
+        int windowX;
+        int windowY;
+
+        glfwGetWindowPos(window, &windowX, &windowY);
+
+        updatePosition(windowX, windowY);
+
         //get framebuffer size
         glfwGetFramebufferSize(window, &viewportW, &viewportH);
 
@@ -205,6 +218,7 @@ private:
         glfwSetMouseButtonCallback(window, handleMouseClickEvents);
         glfwSetScrollCallback(window, handleMouseWheelEvents);
         glfwSetWindowSizeCallback(window, handleWindowSizeChanged);
+        glfwSetWindowPosCallback(window, handleWindowPosChanged);
         glfwSetWindowCloseCallback(window, handleWindowCloseEvent);
     }
 
@@ -366,14 +380,59 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("windowsize").ToLocalChecked());
-        Nan::Set(event_obj, Nan::New("width").ToLocalChecked(),    Nan::New(propW->value));
-        Nan::Set(event_obj, Nan::New("height").ToLocalChecked(),   Nan::New(propH->value));
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("windowsize").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("width").ToLocalChecked(),  Nan::New(propW->value));
+        Nan::Set(event_obj, Nan::New("height").ToLocalChecked(), Nan::New(propH->value));
 
         //render
         resizing = true;
         render();
         resizing = false;
+
+        //fire
+        fireEvent(event_obj);
+    }
+
+    /**
+     * Window position has changed.
+     */
+    static void handleWindowPosChanged(GLFWwindow *window, int newX, int newY) {
+        if (DEBUG_GLFW) {
+            printf("handleWindowPosChanged() %ix%i\n", newX, newY);
+        }
+
+        AminoGfxMac *obj = windowToInstance(window);
+
+        if (!obj) {
+            return;
+        }
+
+        obj->handleWindowPosChanged(newX, newY);
+    }
+
+    void handleWindowPosChanged(int newX, int newY) {
+        //check size
+        if (propX->value == newX && propY->value == newY) {
+            return;
+        }
+
+        //create scope
+        Nan::HandleScope scope;
+
+        //update
+        updatePosition(newX, newY);
+
+        //debug
+        if (DEBUG_GLFW) {
+            printf("window position: %ix%i\n", newX, newY);
+        }
+
+        //create object
+        v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
+
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("windowpos").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("x").ToLocalChecked(),    Nan::New(propX->value));
+        Nan::Set(event_obj, Nan::New("y").ToLocalChecked(),    Nan::New(propY->value));
 
         //fire
         fireEvent(event_obj);
@@ -443,6 +502,13 @@ private:
         if (DEBUG_GLFW) {
             printf("framebuffer size: %ix%i\n", viewportW, viewportH);
         }
+    }
+
+    /**
+     * Update the window position.
+     */
+    void updateWindowPosition() override {
+        glfwSetWindowPos(window, propX->value, propY->value);
     }
 
     /**

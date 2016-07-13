@@ -28,6 +28,10 @@ gfx.start(function (err) {
     //runtime
     console.log('runtime: ' + JSON.stringify(gfx.runtime));
 
+    //show position
+    console.log('position: ' + this.x() + '/' + this.y());
+    //this.x(0).y(0);
+
     //modify size
     this.w(400);
     this.h(400);
