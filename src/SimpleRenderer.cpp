@@ -1,25 +1,34 @@
 #include "SimpleRenderer.h"
-//#include <node_buffer.h>
+
+#define DEBUG_RENDERER false
 
 SimpleRenderer::SimpleRenderer(ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): colorShader(colorShader), textureShader(textureShader), modelView(modelView) {
+    if (DEBUG_RENDERER) {
+        printf("created SimpleRenderer\n");
+    }
 }
 
 void SimpleRenderer::startRender(AminoNode *root) {
+    if (DEBUG_RENDERER) {
+        printf("-> startRender()\n");
+    }
+
     GLContext *c = new GLContext();
 
     this->render(c, root);
     delete c;
-
-//    printf("shader count = %d\n",c->shadercount);
-//    printf("shader dupe count = %d\n",c->shaderDupCount);
-//    printf("texture dupe count = %d\n",c->texDupCount);
-
 }
+
 void SimpleRenderer::render(GLContext *c, AminoNode *root) {
+    if (DEBUG_RENDERER) {
+        printf("-> render()\n");
+    }
+
     if (root == NULL) {
         printf("WARNING. NULL NODE!\n");
         return;
     }
+
     //skip non-visible nodes
     if (!root->propVisible->value) {
         return;
@@ -48,6 +57,10 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
 
         case TEXT:
             this->drawText(c, (TextNode *)root);
+            break;
+
+        default:
+            printf("invalid node type: %i\n", root->type);
             break;
     }
 
@@ -108,6 +121,10 @@ void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView
 }
 
 void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
+    if (DEBUG_RENDERER) {
+        printf("-> drawGroup()\n");
+    }
+
     if (group->propCliprect->value) {
         //turn on stenciling
         glDepthMask(GL_FALSE);
@@ -166,7 +183,9 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
     c->applyOpacity(group->propOpacity->value);
 
     //render items
-    for (std::size_t i = 0; i < group->children.size(); i++) {
+    std::size_t count = group->children.size();
+
+    for (std::size_t i = 0; i < count; i++) {
         this->render(c, group->children[i]);
     }
 
@@ -179,6 +198,10 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
 }
 
 void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
+    if (DEBUG_RENDERER) {
+        printf("-> drawPoly()\n");
+    }
+
     std::vector<float> *geometry = poly->getGeometry();
     int len = geometry->size();
     int dim = poly->dimension;
@@ -242,6 +265,10 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
 }
 
 void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
+    if (DEBUG_RENDERER) {
+        printf("-> drawRect()\n");
+    }
+
     c->save();
 
     //two triangles
@@ -318,6 +345,10 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
  * Render text.
  */
 void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
+    if (DEBUG_RENDERER) {
+        printf("-> drawText()\n");
+    }
+
     if (fontmap.empty()) {
         return;
     }

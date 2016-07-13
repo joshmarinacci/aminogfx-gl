@@ -8,16 +8,10 @@ public:
     std::stack<void *> matrixStack;
     GLfloat *globaltx;
     GLfloat opacity;
-    int shadercount;
-    int shaderDupCount;
-    int texDupCount;
     int prevProg;
     int prevtex;
 
     GLContext() {
-        shadercount = 0;
-        shaderDupCount = 0;
-        texDupCount = 0;
         prevProg = -1;
         prevtex = -1;
 
@@ -111,17 +105,14 @@ public:
 
     void useProgram(int prog) {
 //        if(prog == prevProg) {
-//            shaderDupCount++;
 //        } else {
             glUseProgram(prog);
 //        }
         prevProg = prog;
-        shadercount++;
     }
 
     void bindTexture(int tex) {
 //        if(prevtex == tex) {
-//            texDupCount++;
 //        } else {
             glBindTexture( GL_TEXTURE_2D, tex);
 //        }

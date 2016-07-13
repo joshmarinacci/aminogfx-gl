@@ -422,6 +422,9 @@ private:
     }
 
     void renderingDone() override {
+        //debug
+        //printf("renderingDone()\n");
+
         //swap
         glfwSwapBuffers(window);
 

@@ -117,7 +117,6 @@ AminoGfx.prototype.start = function (done) {
 
             //start rendering loop
             self.startTimer();
-            console.log('cb3'); //cbx
         });
     });
 };
@@ -148,6 +147,9 @@ AminoGfx.prototype.startTimer = function () {
     var self = this;
 
     function immediateLoop() {
+        //debug
+        //console.log('tick()');
+
         self.tick();
 
         //debug: fps
@@ -284,6 +286,7 @@ Group.prototype.remove = function (child) {
     if (n >=  0) {
         this._remove(child);
         this.children.splice(n, 1);
+        child.parent = null;
     }
 
     return this;

@@ -287,6 +287,7 @@ NAN_METHOD(AminoGfx::Tick) {
  */
 void AminoGfx::render() {
     bindContext();
+    rendering = true;
 
     //updates
     processAsyncQueue();
@@ -300,6 +301,14 @@ void AminoGfx::render() {
 
     //done
     renderingDone();
+    rendering = false;
+}
+
+/**
+ * Check if rendering scene right now.
+ */
+bool AminoGfx::isRendering() {
+    return rendering;
 }
 
 void AminoGfx::setupViewport() {
@@ -351,10 +360,10 @@ void AminoGfx::renderScene() {
         return;
     }
 
-    SimpleRenderer *rend = new SimpleRenderer(colorShader, textureShader, modelView);
+    SimpleRenderer *renderer = new SimpleRenderer(colorShader, textureShader, modelView);
 
-    rend->startRender(root);
-    delete rend;
+    renderer->startRender(root);
+    delete renderer;
 }
 
 /**

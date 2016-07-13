@@ -117,6 +117,7 @@ public:
 protected:
     bool started = false;
     bool destroyed = false;
+    bool rendering = false;
     Nan::Callback *startCallback = NULL;
 
     //renderer
@@ -154,6 +155,7 @@ protected:
     virtual void setupViewport();
     virtual void renderScene();
     virtual void renderingDone() = 0;
+    bool isRendering();
 
     virtual void destroy();
 
@@ -187,7 +189,7 @@ private:
  */
 class AminoNode : public AminoJSObject {
 public:
-    AminoGfx *amino;
+    AminoGfx *amino = NULL;
     int type;
 
     //location
@@ -233,8 +235,9 @@ public:
         propY = createFloatProperty("y");
         propScaleX = createFloatProperty("sx");
         propScaleY = createFloatProperty("sy");
-        propScaleX = createFloatProperty("rx");
-        propScaleY = createFloatProperty("ry");
+        propRotateX = createFloatProperty("rx");
+        propRotateY = createFloatProperty("ry");
+        propRotateZ = createFloatProperty("rz");
         propOpacity = createFloatProperty("opacity");
         propVisible = createBooleanProperty("visible");
     }
@@ -763,6 +766,8 @@ public:
     static v8::Local<v8::Function> GetInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
+        //no methods
+
         //template function
         return Nan::GetFunction(tpl).ToLocalChecked();
     }
@@ -921,9 +926,10 @@ private:
     }
 
     static NAN_METHOD(Add) {
+        //cbx async
         Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
-printf("Add\n"); //FIXME cbx
+
         if (!child->checkRenderer(group)) {
             return;
         }
@@ -936,6 +942,7 @@ printf("Add\n"); //FIXME cbx
     }
 
     static NAN_METHOD(Remove) {
+        //cbx async
         Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
