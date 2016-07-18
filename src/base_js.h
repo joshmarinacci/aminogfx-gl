@@ -54,14 +54,19 @@ protected:
     void updateProperty(std::string name, bool value);
     void updateProperty(std::string name, std::string value);
 
+    static const int PROPERTY_FLOAT   = 1;
+    static const int PROPERTY_BOOLEAN = 2;
+    static const int PROPERTY_UTF8    = 3;
+
     class AnyProperty {
     public:
+        int type;
         AminoJSObject *obj;
         std::string name;
         int id;
         bool connected = false;
 
-        AnyProperty(AminoJSObject *obj, std::string name, int id);
+        AnyProperty(int type, AminoJSObject *obj, std::string name, int id);
         virtual ~AnyProperty();
 
         virtual void setValue(v8::Local<v8::Value> &value) = 0;
@@ -150,7 +155,7 @@ private:
     std::map<int, AnyProperty *> propertyMap;
 
     void addProperty(AnyProperty *prop);
-    void enqueuePropertyUpdate(int id, v8::Local<v8::Value> value);
+    bool enqueuePropertyUpdate(int id, v8::Local<v8::Value> value);
     static NAN_METHOD(PropertyUpdated);
 
     //async updates
@@ -176,6 +181,8 @@ public:
 
     void retain();
     void release();
+
+    AnyProperty* getPropertyWithId(int id);
 };
 
 #endif

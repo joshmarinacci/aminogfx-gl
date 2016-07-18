@@ -350,32 +350,46 @@ bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
 /**
  * Enqueue a property update.
  */
-void AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
+bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
     //check queue exists
     if (!asyncUpdates) {
         printf("missing queue: %s\n", name.c_str());
 
-        return;
+        return false;
     }
 
     //find property
-    std::map<int, AnyProperty *>::iterator iter = propertyMap.find(id);
+    AnyProperty *prop = getPropertyWithId(id);
 
-    if (iter == propertyMap.end()) {
+    if (!prop) {
         //property not found
         printf("property with id=%i not found!\n", id);
 
-        return;
+        return false;
     }
 
     //enqueue
-    AnyProperty *prop = iter->second;
-
     if (DEBUG_BASE) {
         printf("enqueuePropertyUpdate: %s (id=%i)\n", prop->name.c_str(), id);
     }
 
     asyncUpdates->push_back(new AsyncPropertyUpdate(prop, value));
+
+    return true;
+}
+
+/**
+ * Get property with id.
+ */
+AminoJSObject::AnyProperty* AminoJSObject::getPropertyWithId(int id) {
+    std::map<int, AnyProperty *>::iterator iter = propertyMap.find(id);
+
+    if (iter == propertyMap.end()) {
+        //property not found
+        return NULL;
+    }
+
+    return iter->second;
 }
 
 /**
@@ -577,7 +591,7 @@ void AminoJSObject::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value
 /**
  * AnyProperty constructor.
  */
-AminoJSObject::AnyProperty::AnyProperty(AminoJSObject *obj, std::string name, int id): obj(obj), name(name), id(id) {
+AminoJSObject::AnyProperty::AnyProperty(int type, AminoJSObject *obj, std::string name, int id): type(type), obj(obj), name(name), id(id) {
     //empty
 }
 
@@ -606,7 +620,7 @@ void AminoJSObject::AnyProperty::release() {
 /**
  * FloatProperty constructor.
  */
-AminoJSObject::FloatProperty::FloatProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(obj, name, id) {
+AminoJSObject::FloatProperty::FloatProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_FLOAT, obj, name, id) {
     //empty
 }
 
@@ -655,7 +669,7 @@ void AminoJSObject::FloatProperty::setValue(float newValue) {
 /**
  * BooleanProperty constructor.
  */
-AminoJSObject::BooleanProperty::BooleanProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(obj, name, id) {
+AminoJSObject::BooleanProperty::BooleanProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_BOOLEAN, obj, name, id) {
     //empty
 }
 
@@ -703,7 +717,7 @@ void AminoJSObject::BooleanProperty::setValue(bool newValue) {
 /**
  * Utf8Property constructor.
  */
-AminoJSObject::Utf8Property::Utf8Property(AminoJSObject *obj, std::string name, int id): AnyProperty(obj, name, id) {
+AminoJSObject::Utf8Property::Utf8Property(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_UTF8, obj, name, id) {
     //empty
 }
 

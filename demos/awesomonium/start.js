@@ -276,8 +276,6 @@ function buildGlobe(group) {
 
     // spin it forever
     group.rz.anim().from(0).to(360).dur(60 * 1000).loop(-1).start();
-    //core.createPropAnim(group,"rotateZ",0,-360,60*1000).setCount(-1);
-
 }
 
 function createBar1(w, h, count, color) {

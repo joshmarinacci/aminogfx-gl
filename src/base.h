@@ -86,11 +86,6 @@ static const int TEXT_WRAP_PROP   = 41;
 
 //property values
 
-static const int LERP_LINEAR       = 0x0;
-static const int LERP_CUBIC_IN     = 0x1;
-static const int LERP_CUBIC_OUT    = 0x2;
-static const int LERP_CUBIC_IN_OUT = 0x3;
-
 static const int VALIGN_BASELINE = 0x0;
 static const int VALIGN_TOP      = 0x1;
 static const int VALIGN_MIDDLE   = 0x2;
@@ -106,6 +101,7 @@ extern std::map<int, AminoFont *> fontmap;
 #define ID_REMOVE_CHILD 101
 
 class Group;
+class Anim;
 
 /**
  * Amino main class to call from JavaScript.
@@ -116,6 +112,9 @@ class AminoGfx : public AminoJSObject {
 public:
     AminoGfx(std::string name);
     virtual ~AminoGfx();
+
+    void addAnimation(Anim *anim);
+    void removeAnimation(Anim *anim);
 
 protected:
     bool started = false;
@@ -142,6 +141,9 @@ protected:
     FloatProperty *propOpacity;
     Utf8Property *propTitle;
 
+    //animations
+    std::vector<Anim *> animations;
+
     //creation
     static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
 
@@ -157,6 +159,7 @@ protected:
     void ready();
 
     virtual void render();
+    void processAnimations();
     virtual void bindContext() = 0;
     virtual void setupViewport();
     virtual void renderScene();
@@ -231,10 +234,13 @@ public:
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
         //set amino instance
-        AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
+        v8::Local<v8::Object> jsObj = info[0]->ToObject();
+        AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(jsObj);
 
         this->amino = obj;
+        Nan::Set(handle(), Nan::New("amino").ToLocalChecked(), jsObj);
 
+        //bind to queue
         this->attachToAsyncQueue(obj);
     }
 
@@ -386,61 +392,92 @@ public:
 };
 
 /**
+ * Animation factory.
+ */
+class AnimFactory : public AminoJSObjectFactory {
+public:
+    AnimFactory(Nan::FunctionCallback callback);
+
+    AminoJSObject* create() override;
+};
+
+/**
  * Animation class.
  */
-class Anim {
+class Anim : public AminoJSObject {
 private:
-    Nan::Callback *then;
+    AminoGfx *amino;
+    AnyProperty *prop;
 
-public:
-    AminoNode *target;
+    bool started = false;
+    bool destroyed = false;
+
     float start;
     float end;
-    int property;
-    int id;
-    bool started;
-    bool active;
-    double startTime;
-    double lastTime;
-    double pauseTime;
-    int loopcount;
+    int count;
     float duration;
     bool autoreverse;
-    int direction;
-    int lerptype;
+    int direction = FORWARD;
+    int timeFunc = TF_CUBIC_IN_OUT;
+    Nan::Callback *then = NULL;
 
-    static const int FORWARD = 1;
+    double startTime = 0;
+    double lastTime  = 0;
+    double pauseTime = 0;
+
+    static const int FORWARD  = 1;
     static const int BACKWARD = 2;
 
-    Anim(AminoNode *Target, int Property, float Start, float End,
-            float Duration) {
-        id = -1;
+public:
+    static const int TF_LINEAR       = 0x0;
+    static const int TF_CUBIC_IN     = 0x1;
+    static const int TF_CUBIC_OUT    = 0x2;
+    static const int TF_CUBIC_IN_OUT = 0x3;
 
-        //properties
-        target = Target;
-        property = Property;
+    Anim(): AminoJSObject(getFactory()->name) {
+        //empty
+    }
 
-        start = Start;
-        end = End;
-        duration = Duration;
-
-        //state
-        started = false;
-        loopcount = 1;
-        autoreverse = false;
-        direction = FORWARD;
-        lerptype = LERP_LINEAR;
-        then = NULL;
-        active = true;
-
-        if (DEBUG_RESOURCES) {
-            printf("created animation\n");
+    ~Anim() {
+        if (!destroyed) {
+            destroy();
         }
     }
 
-    virtual ~Anim() {
-        if (DEBUG_BASE || DEBUG_RESOURCES) {
-            printf("Anim: destructor()\n");
+    void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
+        //params
+        AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
+        AminoNode *node = Nan::ObjectWrap::Unwrap<AminoNode>(info[1]->ToObject());
+        int propId = info[2]->Uint32Value();
+//cbx check destroyed
+        if (!node->checkRenderer(obj)) {
+            return;
+        }
+
+        //get property
+        AnyProperty *prop = node->getPropertyWithId(propId);
+
+        if (!prop || prop->type != PROPERTY_FLOAT) {
+            Nan::ThrowTypeError("property cannot be animated");
+            return;
+        }
+
+        this->amino = obj;
+        this->prop = prop;
+
+        //retain property
+        prop->retain();
+
+        //enqueue
+        obj->addAnimation(this);
+    }
+
+    virtual void destroy() {
+        destroyed = true;
+
+        if (prop) {
+            prop->release();
+            prop = NULL;
         }
 
         if (then) {
@@ -449,39 +486,105 @@ public:
         }
     }
 
+    //creation
+    static AnimFactory* getFactory() {
+        static AnimFactory *animFactory;
+
+        if (!animFactory) {
+            animFactory = new AnimFactory(New);
+        }
+
+        return animFactory;
+    }
+
     /**
-     * Set then callback value.
+     * Initialize Group template.
      */
-    void setThen(Nan::Callback *then) {
-        if (this->then == then) {
+    static v8::Local<v8::Function> GetInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+
+        //methods
+        Nan::SetPrototypeMethod(tpl, "_start", Start);
+        Nan::SetPrototypeMethod(tpl, "stop", Stop);
+
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
+    }
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
+    }
+
+    static NAN_METHOD(Start) {
+        Anim *obj = Nan::ObjectWrap::Unwrap<Anim>(info.This());
+        v8::Local<v8::Object> data = info[0]->ToObject();
+
+        obj->handleStart(data);
+    }
+
+    void handleStart(v8::Local<v8::Object> &data) {
+        if (started) {
+            Nan::ThrowTypeError("already started");
             return;
         }
 
-        if (this->then) {
-            delete this->then;
+        //parameters
+        start       = Nan::Get(data, Nan::New<v8::String>("from").ToLocalChecked()).ToLocalChecked()->NumberValue();
+        end         = Nan::Get(data, Nan::New<v8::String>("to").ToLocalChecked()).ToLocalChecked()->NumberValue();
+        duration    = Nan::Get(data, Nan::New<v8::String>("duration").ToLocalChecked()).ToLocalChecked()->NumberValue();
+        count       = Nan::Get(data, Nan::New<v8::String>("count").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+        autoreverse = Nan::Get(data, Nan::New<v8::String>("autoreverse").ToLocalChecked()).ToLocalChecked()->BooleanValue();
+
+        //time func
+        v8::String::Utf8Value str(Nan::Get(data, Nan::New<v8::String>("timeFunc").ToLocalChecked()).ToLocalChecked());
+        std::string tf = std::string(*str);
+
+        if (tf == "cubicIn") {
+            timeFunc = TF_CUBIC_IN;
+        } else if (tf == "cubicOut") {
+            timeFunc = TF_CUBIC_OUT;
+        } else if (tf == "cubicInOut") {
+            timeFunc = TF_CUBIC_IN_OUT;
+        } else {
+            timeFunc = TF_LINEAR;
         }
 
-        this->then = then;
+        //then
+        v8::MaybeLocal<v8::Value> maybeThen = Nan::Get(data, Nan::New<v8::String>("then").ToLocalChecked());
+
+        if (!maybeThen.IsEmpty()) {
+            v8::Local<v8::Value> thenLocal = maybeThen.ToLocalChecked();
+
+            if (thenLocal->IsFunction()) {
+                then = new Nan::Callback(thenLocal.As<v8::Function>());
+            }
+        }
+
+        //start
+        started = true;
     }
 
     /**
      * Cubic-in time function.
      */
-    float cubicIn(float t) {
+    static float cubicIn(float t) {
         return pow(t, 3);
     }
 
     /**
      * Cubic-out time function.
      */
-    float cubicOut(float t) {
+    static float cubicOut(float t) {
         return 1 - cubicIn(1 - t);
     }
 
     /**
      * Cubic-in-out time function.
      */
-    float cubicInOut(float t) {
+    static float cubicInOut(float t) {
         if (t < 0.5) {
             return cubicIn(t * 2.0) / 2.0;
         }
@@ -492,25 +595,23 @@ public:
     /**
      * Call time function.
      */
-    float lerp(float t) {
+    float timeToPosition(float t) {
         float t2 = 0;
 
-        switch (lerptype) {
-            case LERP_CUBIC_IN:
+        switch (timeFunc) {
+            case TF_CUBIC_IN:
                 t2 = cubicIn(t);
                 break;
 
-            case LERP_CUBIC_OUT:
+            case TF_CUBIC_OUT:
                 t2 = cubicOut(t);
                 break;
 
-            case LERP_CUBIC_IN_OUT:
+            case TF_CUBIC_IN_OUT:
                 t2 = cubicInOut(t);
                 break;
 
-            //TODO JS callback
-
-            case LERP_LINEAR:
+            case TF_LINEAR:
             default:
                 t2 = t;
                 break;
@@ -540,62 +641,34 @@ public:
      * @param value current property value.
      */
     void applyValue(float value) {
-        switch (property) {
-            //translation
-            case X_PROP:
-                target->propX->setValue(value);
-                break;
-
-            case Y_PROP:
-                target->propY->setValue(value);
-                break;
-
-            //zoom
-            case SCALE_X_PROP:
-                target->propScaleX->setValue(value);
-                break;
-
-            case SCALE_Y_PROP:
-                target->propScaleY->setValue(value);
-                break;
-
-            //rotation
-            case ROTATE_X_PROP:
-                target->propRotateX->setValue(value);
-                break;
-
-            case ROTATE_Y_PROP:
-                target->propRotateY->setValue(value);
-                break;
-
-            case ROTATE_Z_PROP:
-                target->propRotateZ->setValue(value);
-                break;
-
-            //opacity
-            case OPACITY_PROP:
-                target->propOpacity->setValue(value);
-                break;
-
-            //TODO js callback
-
-            default:
-                printf("Unknown animation property: %i\n", property);
-                break;
+        if (!prop) {
+            return;
         }
+
+        FloatProperty *floatProp = (FloatProperty *)prop;
+
+        floatProp->setValue(value);
     }
 
     //TODO pause
     //TODO resume
     //TODO reset (start from beginning)
 
-    void stop() {
-        active = false;
+    static NAN_METHOD(Stop) {
+        Anim *obj = Nan::ObjectWrap::Unwrap<Anim>(info.This());
 
-        //free then
-        if (then) {
-            delete then;
-            then = NULL;
+        obj->stop();
+    }
+
+    void stop() {
+        if (!destroyed) {
+            //remove animation
+            if (amino) {
+                amino->removeAnimation(this);
+            }
+
+            //free resources
+            destroy();
         }
     }
 
@@ -616,32 +689,27 @@ public:
             //create scope
             Nan::HandleScope scope;
 
-            //TODO set this
-            then->Call(0, NULL);
-            delete then;
-            then = NULL;
+            //call
+            then->Call(handle(), 0, NULL);
         }
 
-        //TODO remove instance (needs refactoring; memory leak)
-
-        //deactivate
-        active = false;
+        //stop
+        stop();
     }
 
     void update(double currentTime) {
         //check active
-    	if (!active) {
+    	if (!started) {
             return;
         }
 
         //check remaining loops
-        if (loopcount == 0) {
+        if (count == 0) {
             return;
         }
 
         //handle first start
-        if (!started) {
-            started = true;
+        if (startTime == 0) {
             startTime = currentTime;
             lastTime = currentTime;
             pauseTime = 0;
@@ -663,14 +731,14 @@ public:
             //end reached
             bool doToggle = false;
 
-            if (loopcount == FOREVER) {
+            if (count == FOREVER) {
                 doToggle = true;
             }
 
-            if (loopcount > 0) {
-                loopcount--;
+            if (count > 0) {
+                count--;
 
-                if (loopcount > 0) {
+                if (count > 0) {
                     doToggle = true;
                 } else {
                     endAnimation();
@@ -694,13 +762,11 @@ public:
         }
 
         //apply time function
-        float value = lerp(t);
+        float value = timeToPosition(t);
 
         applyValue(value);
     }
 };
-
-extern std::vector<Anim *> anims;
 
 /**
  * Rect factory.
@@ -743,6 +809,7 @@ public:
     }
 
     virtual ~Rect() {
+        //empty
     }
 
     void setup() override {
@@ -1063,38 +1130,6 @@ public:
     }
 
     void apply() {
-        //animation
-        if (type == ANIM) {
-            Anim *anim = anims[node];
-
-            switch (property) {
-                case LERP_PROP:
-                    anim->lerptype = value;
-                    break;
-
-                case COUNT_PROP:
-                    anim->loopcount = value;
-                    break;
-
-                case AUTOREVERSE_PROP:
-                    anim->autoreverse = value;
-                    break;
-
-                case THEN_PROP:
-                    anim->setThen(callback);
-                    break;
-
-                case STOP_PROP:
-                    anim->stop();
-                    break;
-
-                default:
-                    printf("Unknown anim update: %i\n", property);
-                    break;
-            }
-            return;
-        }
-
         //node
         AminoNode *target = rects[node];
 
@@ -1196,8 +1231,6 @@ public:
 
 NAN_METHOD(createPoly);
 NAN_METHOD(createText);
-NAN_METHOD(createAnim);
-NAN_METHOD(stopAnim);
 
 /**
  * Get wstring from v8 string.
@@ -1238,8 +1271,6 @@ static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
 
 //JavaScript bindings
 
-NAN_METHOD(updateProperty);
-NAN_METHOD(updateAnimProperty);
 NAN_METHOD(loadBufferToTexture);
 NAN_METHOD(getFontHeight);
 NAN_METHOD(getFontAscender);
@@ -1273,15 +1304,5 @@ NAN_METHOD(node_glLinkProgram);
 NAN_METHOD(node_glUseProgram);
 NAN_METHOD(node_glGetAttribLocation);
 NAN_METHOD(node_glGetUniformLocation);
-
-
-struct DebugEvent {
-    double inputtime;
-    double updatestime;
-    double animationstime;
-    double rendertime;
-    double frametime;
-    double framewithsynctime;
-};
 
 #endif

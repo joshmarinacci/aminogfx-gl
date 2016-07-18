@@ -553,10 +553,6 @@ NAN_MODULE_INIT(InitAll) {
     //TODO cleanup
     Nan::Set(target, Nan::New("createPoly").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createPoly)).ToLocalChecked());
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createText)).ToLocalChecked());
-    Nan::Set(target, Nan::New("createAnim").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createAnim)).ToLocalChecked());
-    Nan::Set(target, Nan::New("stopAnim").ToLocalChecked(),         Nan::GetFunction(Nan::New<v8::FunctionTemplate>(stopAnim)).ToLocalChecked());
-    Nan::Set(target, Nan::New("updateProperty").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateProperty)).ToLocalChecked());
-    Nan::Set(target, Nan::New("updateAnimProperty").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(updateAnimProperty)).ToLocalChecked());
     Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<v8::FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getCharWidth)).ToLocalChecked());

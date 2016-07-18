@@ -4,7 +4,6 @@
 
 std::map<int, AminoFont *> fontmap;
 std::vector<AminoNode *> rects;
-std::vector<Anim *> anims;
 
 //
 //  AminoGfx
@@ -47,7 +46,10 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // group
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
     Nan::SetTemplate(tpl, "Group", Group::GetInitFunction());
+
+    // other
     Nan::SetTemplate(tpl, "Rect", Rect::GetInitFunction());
+    Nan::SetTemplate(tpl, "Anim", Anim::GetInitFunction());
 
     //special: GL object
     Nan::SetTemplate(tpl, "GL", createGLObject());
@@ -294,7 +296,7 @@ void AminoGfx::render() {
 
     //updates
     processAsyncQueue();
-    //TODO animations
+    processAnimations();
 
     //viewport
     setupViewport();
@@ -305,6 +307,18 @@ void AminoGfx::render() {
     //done
     renderingDone();
     rendering = false;
+}
+
+/**
+ * Update all animated values.
+ */
+void AminoGfx::processAnimations() {
+    double currentTime = getTime();
+    int count = animations.size();
+
+    for (int i = 0; i < count; i++) {
+        animations[i]->update(currentTime);
+    }
 }
 
 /**
@@ -542,6 +556,26 @@ void AminoGfx::setRoot(Group *group) {
     }
 }
 
+/**
+ * Add animation.
+ */
+void AminoGfx::addAnimation(Anim *anim) {
+    animations.push_back(anim);
+}
+
+/**
+ * Remove animation.
+ *
+ * Note: does not release the instance.
+ */
+void AminoGfx::removeAnimation(Anim *anim) {
+    std::vector<Anim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
+
+    if (pos != animations.end()) {
+        animations.erase(pos);
+    }
+}
+
 //
 // GroupFactory
 //
@@ -571,6 +605,22 @@ RectFactory::RectFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("
 AminoJSObject* RectFactory::create() {
     return new Rect(false);
 }
+
+//
+// AnimFactory
+//
+
+/**
+ * Animation factory constructor.
+ */
+AnimFactory::AnimFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Anim", callback) {
+    //empty
+}
+
+AminoJSObject* AnimFactory::create() {
+    return new Anim();
+}
+
 
 
 
@@ -937,102 +987,6 @@ NAN_METHOD(node_glGetUniformLocation) {
     info.GetReturnValue().Set(loc);
 }
 
-NAN_METHOD(updateProperty) {
-    //int rectHandle   = info[0]->Uint32Value();
-    int property     = info[1]->Uint32Value();
-
-    if (DEBUG_BASE) {
-        printf("updateProperty()\n");
-    }
-
-    float value = 0;
-    std::wstring wstr = L"";
-    std::vector<float> *arr = NULL;
-
-    if (info[2]->IsNumber()) {
-        value = info[2]->NumberValue();
-
-        if (DEBUG_BASE) {
-            printf("-> setting number %f on prop %d \n", value, property);
-        }
-    } else if (info[2]->IsBoolean()) {
-        //convert boolean to 1 or 0
-        value = info[2]->BooleanValue() ? 1:0;
-
-        if (DEBUG_BASE) {
-            printf("-> setting boolean %f on prop %d \n", value, property);
-        }
-    } else if (info[2]->IsString()) {
-        wstr = GetWString(info[2]->ToString());
-
-        if (DEBUG_BASE) {
-            printf("-> string '%S' on prop %d\n", wstr.c_str(), property);
-        }
-    } else if (info[2]->IsArray()) {
-        if (DEBUG_BASE) {
-            printf("-> float array on prop %d\n", property);
-        }
-        //Note: has to be free'd
-        arr = GetFloatArray(v8::Handle<v8::Array>::Cast(info[2]));
-    } else {
-        printf("unsupported property format: %i\n", property);
-    }
-
-    //updates.push_back(new Update(RECT, rectHandle, property, value, wstr, arr, NULL));
-}
-
-NAN_METHOD(updateAnimProperty) {
-    //int rectHandle   = info[0]->Uint32Value();
-    int property     = info[1]->Uint32Value();
-
-    //value
-    float value = 0;
-    std::wstring wstr = L"";
-    Nan::Callback *callback = NULL;
-
-    if (DEBUG_BASE) {
-        printf("updateAnimProperty()\n");
-    }
-
-    if (info[2]->IsNumber()) {
-        value = info[2]->NumberValue();
-
-        if (DEBUG_BASE) {
-            printf("-> setting number %f on prop %d \n", value, property);
-        }
-    } else if (info[2]->IsBoolean()) {
-        //convert boolean to 1 or 0
-        value = info[2]->BooleanValue() ? 1:0;
-
-        if (DEBUG_BASE) {
-            printf("-> setting boolean %f on prop %d \n", value, property);
-        }
-    } else if (info[2]->IsString()) {
-        if (DEBUG_BASE) {
-            printf("-> trying to do a string\n");
-        }
-
-       char *cstr = TO_CHAR(info[2]);
-
-       wstr = GetWC(cstr);
-       free(cstr);
-    } else if (info[2]->IsFunction()) {
-        if (DEBUG_BASE) {
-            printf("-> callback\n");
-        }
-
-        callback = new Nan::Callback(info[2].As<v8::Function>());
-    } else if (info[2]->IsNull() || info[2]->IsUndefined()) {
-        if (DEBUG_BASE) {
-            printf("-> callback (null)\n");
-        }
-    } else {
-        printf("unsupported anim property format: %i\n", property);
-    }
-
-    //updates.push_back(new Update(ANIM, rectHandle, property, value, wstr, NULL, callback));
-}
-
 NAN_METHOD(loadBufferToTexture) {
     int texid = info[0]->Uint32Value();
     int w     = info[1]->Uint32Value();
@@ -1249,42 +1203,3 @@ NAN_METHOD(createText) {
     //return id
     info.GetReturnValue().Set((int)rects.size() - 1);
 }
-
-/**
- * Create animation handler.
- *
- * createAnim(rect, property, startm end, duration)
- */
-NAN_METHOD(createAnim) {
-    int rectHandle   = info[0]->Uint32Value();
-    int property     = info[1]->Uint32Value();
-    float start      = info[2]->NumberValue();
-    float end        = info[3]->NumberValue();
-    float duration   = info[4]->Uint32Value();
-
-    Anim *anim = new Anim(rects[rectHandle], property, start, end, duration);
-
-    //add to collection
-    anims.push_back(anim);
-
-    anim->id = anims.size() - 1;
-    anim->active = true;
-
-    //return id
-    info.GetReturnValue().Set(anim->id);
-}
-
-/**
- * Stop animation.
- */
-NAN_METHOD(stopAnim) {
-	int id = info[0]->Uint32Value();
-
-    //deactivate the animation
-	Anim *anim = anims[id];
-
-	anim->active = false;
-}
-
-//FIXME animations are never removed
-//FIXME animation id handling is not flexible enough

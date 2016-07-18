@@ -8,47 +8,10 @@ var PImage = require('../../pureimage/pureimage');
 var comp = require('../../richtext/component');
 
 /**
- * Convert RGB expression to object.
- *
- * Supports:
- *
- *  - hex strings
- *  - array: r, g, b (0..1)
- *  - objects: r, g, b (0..1)
- */
-function ParseRGBString(Fill) {
-    if (typeof Fill == 'string') {
-        //strip off any leading #
-        if (Fill.substring(0, 1) == '#') {
-            Fill = Fill.substring(1);
-        }
-
-        //pull out the components
-        var r = parseInt(Fill.substring(0, 2), 16);
-        var g = parseInt(Fill.substring(2, 4), 16);
-        var b = parseInt(Fill.substring(4, 6), 16);
-
-        return {
-            r: r / 255,
-            g: g / 255,
-            b: b / 255
-        };
-    } else if (Array.isArray(Fill)) {
-        return {
-            r: Fill[0],
-            g: Fill[1],
-            b: Fill[2]
-        };
-    }
-
-    return Fill;
-}
-
-/**
  * Fill value has changed.
  */
 function setFill(val, prop, obj) {
-    var color = ParseRGBString(val);
+    var color = parseRGBString(val);
     var n = amino.getCore().getNative();
 
     n.updateProperty(obj.handle, 'r', color.r);
@@ -354,7 +317,6 @@ exports.Text = Text;
 exports.Polygon = Polygon;
 exports.Circle = Circle;
 exports.ImageView = ImageView;
-exports.ParseRGBString = ParseRGBString;
 
 /**
  * PixelView object.

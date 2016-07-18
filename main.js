@@ -44,7 +44,9 @@ AminoGfx.prototype.init = function () {
     }
 
     //initialize bindings
-    amino_core.makeProps(this, {
+    this.amino = this;
+
+    makeProps(this, {
         //position (auto set)
         x: -1,
         y: -1,
@@ -85,11 +87,48 @@ AminoGfx.prototype.init = function () {
  * Fill value has changed.
  */
 function watchFill(value, prop, obj) {
-    var color = amino_core.ParseRGBString(value);
+    var color = parseRGBString(value);
 
     obj.r(color.r);
     obj.g(color.g);
     obj.b(color.b);
+}
+
+/**
+ * Convert RGB expression to object.
+ *
+ * Supports:
+ *
+ *  - hex strings
+ *  - array: r, g, b (0..1)
+ *  - objects: r, g, b (0..1)
+ */
+function parseRGBString(Fill) {
+    if (typeof Fill == 'string') {
+        //strip off any leading #
+        if (Fill.substring(0, 1) == '#') {
+            Fill = Fill.substring(1);
+        }
+
+        //pull out the components
+        var r = parseInt(Fill.substring(0, 2), 16);
+        var g = parseInt(Fill.substring(2, 4), 16);
+        var b = parseInt(Fill.substring(4, 6), 16);
+
+        return {
+            r: r / 255,
+            g: g / 255,
+            b: b / 255
+        };
+    } else if (Array.isArray(Fill)) {
+        return {
+            r: Fill[0],
+            g: Fill[1],
+            b: Fill[2]
+        };
+    }
+
+    return Fill;
 }
 
 AminoGfx.prototype.start = function (done) {
@@ -137,10 +176,16 @@ AminoGfx.prototype.getRoot = function () {
     return this.root;
 };
 
+/**
+ * Create group element.
+ */
 AminoGfx.prototype.createGroup = function () {
     return new AminoGfx.Group(this);
 };
 
+/**
+ * Create rect element.
+ */
 AminoGfx.prototype.createRect = function () {
     return new AminoGfx.Rect(this);
 };
@@ -232,7 +277,8 @@ Group.prototype.init = function () {
         console.log('Group.init()');
     }
 
-    amino_core.makeProps(this, {
+    //bindings
+    makeProps(this, {
         id: '',
 
         //visibility
@@ -403,7 +449,7 @@ Rect.prototype.init = function () {
     }
 
     //properties
-    amino_core.makeProps(this, {
+    makeProps(this, {
         id: '',
         visible: true,
 
@@ -607,17 +653,6 @@ var propsHash = {
 };
 
 /**
- * Time function native property values.
- */
-var timeFuncsHash = {
-    //time function
-    linear:     0x0,
-    cubicIn:    0x1,
-    cubicOut:   0x2,
-    cubicInOut: 0x3
-};
-
-/**
  * Vertial text alignment property values.
  */
 var textVAlignHash = {
@@ -720,91 +755,118 @@ function JSFont(desc) {
     };
 }
 
-/**
- * Animated property.
- */
-function JSPropAnim(target, name) {
+//
+// Anim
+//
+
+var Anim = AminoGfx.Anim;
+
+Anim.prototype.init = function () {
     this._from = null;
     this._to = null;
     this._duration = 1000;
     this._loop = 1;
     this._delay = 0;
-    this._autoreverse = 0;
-    this._lerpprop = timeFuncsHash.cubicInOut;
+    this._autoreverse = false;
+    this._timeFunc = 'cubicInOut';
     this._then_fun = null;
+};
 
-    //setters
-    this.from  = function(val) {  this._from = val;        return this;  };
-    this.to    = function(val) {  this._to = val;          return this;  };
-    this.dur   = function(val) {  this._duration = val;    return this;  };
-    this.delay = function(val) {  this._delay = val;       return this;  };
-    this.loop  = function(val) {  this._loop = val;        return this;  };
-    this.then  = function(fun) {  this._then_fun = fun;    return this;  };
-    this.autoreverse = function(val) { this._autoreverse = val ? 1:0; return this;  };
-    this.timeFunc = function (val) {
-        var tf = timeFuncsHash[val];
+Anim.prototype.from = function (val) {
+    this._from = val;
 
-        if (!tf) {
-            throw new Error('unknown time function: ' + val);
-        }
+    return this;
+};
 
-        this._lerpprop = tf;
+Anim.prototype.to = function (val) {
+    this._to = val;
 
-        return this;
-    };
+    return this;
+};
 
-    /*
-     * Start the animation.
-     */
-    this.start = function () {
+Anim.prototype.dur = function (val) {
+    this._duration = val;
+
+    return this;
+};
+
+Anim.prototype.delay = function (val) {
+    this._delay = val;
+
+    return this;
+};
+
+Anim.prototype.loop = function (val) {
+    this._loop = val;
+
+    return this;
+};
+
+Anim.prototype.then = function (fun) {
+    this._then_fun = fun;
+
+    return this;
+};
+
+Anim.prototype.autoreverse = function(val) {
+    this._autoreverse = val;
+
+    return this;
+};
+
+//Time function values.
+var timeFuncs = ['linear', 'cubicIn', 'cubicOut', 'cubicInOut'];
+
+Anim.prototype.timeFunc = function (val) {
+    if (timeFuncs.indexOf(value) === -1) {
+        throw new Error('unknown time function: ' + val);
+    }
+
+    this._timeFunc = tf;
+
+    return this;
+};
+
+/*
+ * Start the animation.
+ */
+Anim.prototype.start = function () {
+    if (DEBUG) {
+        console.log('starting anim');
+    }
+
+    var self = this;
+
+    setTimeout (function () {
         if (DEBUG) {
-            console.log('startin anim');
+            console.log('after delay. making it.');
         }
 
-        var self = this;
+        //validate
+        if (self._from == null) {
+            throw new Error('missing from value');
+        }
 
-        setTimeout(function () {
-            if (DEBUG) {
-                console.log('after delay. making it.');
-            }
+        if (self._to == null) {
+            throw new Error('missing to value');
+        }
 
-            //create native instance
-            var core = Core.getCore();
-            var nat = core.getNative();
+        //native start
+        self._start({
+            from: self._from,
+            to: self._to,
+            duration : self._duration,
+            count: self._loop,
+            autoreverse: self._autoreverse,
+            timeFunc: self._timeFunc,
+            then: self._then_fun
+        });
+    }, this._delay);
 
-            self.handle = nat.createAnim(target.handle, name, self._from,self._to,self._duration);
-
-            if (DEBUG) {
-                console.log('handle is: ', self.handle);
-            }
-
-            //set params
-            nat.updateAnimProperty(self.handle, 'count', self._loop);
-            nat.updateAnimProperty(self.handle, 'autoreverse', self._autoreverse);
-            nat.updateAnimProperty(self.handle, 'lerpprop', self._lerpprop);
-            nat.updateAnimProperty(self.handle, 'then', self._then_fun);
-
-            //add
-            core.anims.push(self);
-        }, this._delay);
-
-        return this;
-    };
-
-    /**
-     * Stop the animation.
-     */
-    this.stop = function () {
-        Core.getCore().getNative().updateAnimProperty(this.handle, 'stop', true);
-    };
-
-    //TODO more features from native
-
-}
+    return this;
+};
 
 //native bindings
-
-var PNG_HEADER = new Buffer([ 137, 80, 78, 71, 13, 10, 26, 10 ]); //PNG Header
 
 var gl_native = {
     createNativeFont: function (filename) {
@@ -834,21 +896,6 @@ var gl_native = {
         }
 
         return sgtest.getTextHeight(handle);
-    },
-    updateProperty: function (handle, name, value) {
-        if (handle == undefined) {
-            throw new Error('Can\'t set a property on an undefined handle!!');
-        }
-
-        //console.log('setting', handle, name, propsHash[name], value, typeof value);
-
-        var hash = propsHash[name];
-
-        if (!hash) {
-            throw new Error('Unknown update property: ' + name);
-        }
-
-        sgtest.updateProperty(handle, hash, value);
     },
     createPoly: function ()  {          return sgtest.createPoly();           },
     createText: function () {           return sgtest.createText();           },
@@ -881,39 +928,162 @@ var gl_native = {
     },
     loadBufferToTexture: function (texid, w, h, bpp, buf, cb) {
         return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf));
-    },
-    createAnim: function (handle, prop, start, end, dur) {
-        var hash = propsHash[prop];
-
-        if (!hash) {
-            throw new Error('invalid native property name', prop);
-        }
-
-        return sgtest.createAnim(handle, hash, start, end, dur);
-    },
-    createPropAnim: function (obj, name) {
-        return new JSPropAnim(obj, name);
-    },
-    updateAnimProperty: function (handle, prop, type) {
-        var hash = propsHash[prop];
-
-        if (!hash) {
-            throw new Error('invalid animattion property: ' + prop);
-        }
-
-        sgtest.updateAnimProperty(handle, hash, type);
     }
 };
 
 exports.input = amino_core.input;
 
-exports.makeProps = amino_core.makeProps;
+/**
+ * Create properties.
+ */
+function makeProps(obj, props) {
+    for (var name in props) {
+        makeProp(obj, name, props[name]);
+    }
+
+    return obj;
+};
+
+/**
+ * Create property handlers.
+ *
+ * @param obj object reference.
+ * @param name property name.
+ * @param val default value.
+ */
+function makeProp(obj, name, val) {
+    /**
+     * Property function.
+     *
+     * Getter and setter.
+     */
+    var prop = function (v, nativeCall) {
+        if (v != undefined) {
+            return prop.set(v, obj, nativeCall);
+        } else {
+            return prop.get();
+        }
+    };
+
+    prop.value = val;
+    prop.propName = name;
+    prop.readonly = false;
+    prop.nativeListener = null;
+    prop.listeners = [];
+
+    /**
+     * Add watch callback.
+     *
+     * Callback: (value, property, object)
+     */
+    prop.watch = function (fun) {
+        if (!fun) {
+            throw new Error('function undefined for property ' + name + ' on object with value ' + val);
+        }
+
+        this.listeners.push(fun);
+
+        return this;
+    };
+
+    /**
+     * Unwatch a registered function.
+     */
+    prop.unwatch = function (fun) {
+        var n = this.listeners.indexOf(fun);
+
+        if (n == -1) {
+            throw new Error('function was not registered');
+        }
+
+        this.listeners.splice(n, 1);
+    };
+
+    /**
+     * Getter function.
+     */
+    prop.get = function () {
+        return this.value;
+    };
+
+    /**
+     * Setter function.
+     */
+    prop.set = function (v, obj, nativeCall) {
+        //check readonly
+        if (this.readonly) {
+            //ignore any changes
+            return obj;
+        }
+
+        //check if modified
+        if (v === this.value) {
+            //debug
+            //console.log('not changed: ' + name);
+
+            return obj;
+        }
+
+        //update
+        this.value = v;
+
+        //native listener
+        if (this.nativeListener && !nativeCall) {
+            //prevent recursion in case of updates from native side
+            this.nativeListener(this.value, this.propId, obj);
+        }
+
+        //fire listeners
+        for (var i = 0; i < this.listeners.length; i++) {
+            this.listeners[i](this.value, this, obj);
+        }
+
+        return obj;
+    };
+
+    /**
+     * Create animation.
+     */
+    prop.anim = function () {
+        if (!obj.amino) {
+            throw new Error('not an amino object');
+        }
+
+        if (!this.propId) {
+            throw new Error('property cannot be animated');
+        }
+
+        return new AminoGfx.Anim(obj.amino, obj, this.propId);
+    };
+
+    /**
+     * Bind to other property.
+     *
+     * Optional: callback to modify value.
+     */
+    prop.bindto = function (prop, fun) {
+        var set = this;
+
+        prop.listeners.push(function (v) {
+            if (fun) {
+                set(fun(v));
+            } else {
+                set(v);
+            }
+        });
+
+        return this;
+    };
+
+    //attach
+    obj[name] = prop;
+};
+
+exports.makeProps = makeProps;
 
 //basic
-exports.Rect      = amino_core.Rect;
-exports.Group     = amino_core.Group;
-exports.Circle    = amino_core.Circle;
 exports.Polygon   = amino_core.Polygon;
+exports.Circle    = amino_core.Circle;
 exports.Text      = amino_core.Text;
 exports.ImageView = amino_core.ImageView;
 

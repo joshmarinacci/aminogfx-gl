@@ -47,5 +47,11 @@ gfx.start(function (err) {
 
     g.add(r);
 
+    //animation
+    r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(-1).start();
+    r.b.watch((value) => {
+        console.log('animation state: ' + value);
+    });
+
     //TODO more cbx
 });

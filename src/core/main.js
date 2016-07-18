@@ -184,15 +184,10 @@ var Core = function () {
     };
 };
 
-exports.makeProps = amino.makeProps;
-
-exports.Rect = amino.Rect;
-exports.Group = amino.Group;
 exports.Text = amino.Text;
 exports.Polygon = amino.Polygon;
 exports.Circle = amino.Circle;
 exports.ImageView = amino.ImageView;
-exports.ParseRGBString = amino.primitives.ParseRGBString;
 
 exports.PixelView    = amino.PixelView;
 exports.RichTextView = amino.RichTextView;
