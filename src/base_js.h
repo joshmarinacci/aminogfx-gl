@@ -245,6 +245,7 @@ private:
     };
 
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
+    uv_mutex_t asyncLock;
 };
 
 #endif

@@ -938,6 +938,10 @@ AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
 
 AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
     asyncUpdates = new std::vector<AnyAsyncUpdate *>();
+
+    if (!uv_mutex_init(&asyncLock)) {
+        printf("could not create mutex\n");
+    }
 }
 
 AminoJSEventObject::~AminoJSEventObject() {
@@ -950,6 +954,7 @@ AminoJSEventObject::~AminoJSEventObject() {
     }
 
     delete asyncUpdates;
+    uv_mutex_destroy(&asyncLock);
 }
 
 /**
@@ -969,8 +974,10 @@ void AminoJSEventObject::processAsyncQueue() {
 
     //create scope
     Nan::HandleScope scope;
-//cbx lock
+
     //iterate
+    uv_mutex_lock(&asyncLock);
+
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
         AnyAsyncUpdate *item = (*asyncUpdates)[i];
 
@@ -1006,6 +1013,8 @@ void AminoJSEventObject::processAsyncQueue() {
 
     //clear
     asyncUpdates->clear();
+
+    uv_mutex_unlock(&asyncLock);
 }
 
 /**
@@ -1020,8 +1029,10 @@ bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
     if (DEBUG_BASE) {
         printf("enqueueValueUpdate: id=%i\n", update->id);
     }
-//cbx lock
+
+    uv_mutex_lock(&asyncLock);
     asyncUpdates->push_back(update);
+    uv_mutex_unlock(&asyncLock);
 
     return true;
 }
@@ -1034,8 +1045,9 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
         return false;
     }
 
-//cbx lock
+    uv_mutex_lock(&asyncLock);
     asyncUpdates->push_back(new AsyncPropertyUpdate(prop, value));
+    uv_mutex_unlock(&asyncLock);
 
     return true;
 }
