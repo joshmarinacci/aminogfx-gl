@@ -45,6 +45,8 @@ gfx.start(function (err) {
     //add rect
     const r = (this.createRect()).w(100).h(100).fill('#FF0000');
 
+    r.originX(.5).originY(.5).rz(45);
+
     g.add(r);
 
     //animation

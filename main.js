@@ -308,6 +308,10 @@ Group.prototype.init = function () {
         w: 100,
         h: 100,
 
+        //origin
+        originX: 0,
+        originY: 0,
+
         //scaling
         sx: 1,
         sy: 1,
@@ -475,6 +479,10 @@ Rect.prototype.init = function () {
         //size
         w: 100,
         h: 100,
+
+        //origin
+        originX: 0,
+        originY: 0,
 
         //rotation
         rx: 0,

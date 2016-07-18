@@ -208,6 +208,14 @@ public:
     FloatProperty *propX;
     FloatProperty *propY;
 
+    //size (optional)
+    FloatProperty *propW = NULL;
+    FloatProperty *propH = NULL;
+
+    //origin (optional)
+    FloatProperty *propOriginX = NULL;
+    FloatProperty *propOriginY = NULL;
+
     //zoom factor
     FloatProperty *propScaleX;
     FloatProperty *propScaleY;
@@ -783,10 +791,6 @@ public:
  */
 class Rect : public AminoNode {
 public:
-    //size
-    FloatProperty *propW;
-    FloatProperty *propH;
-
     //color
     FloatProperty *propR;
     FloatProperty *propG;
@@ -818,6 +822,10 @@ public:
         //register native properties
         propW = createFloatProperty("w");
         propH = createFloatProperty("h");
+
+        propOriginX = createFloatProperty("originX");
+        propOriginY = createFloatProperty("originY");
+
         propR = createFloatProperty("r");
         propG = createFloatProperty("g");
         propB = createFloatProperty("b");
@@ -971,8 +979,6 @@ public:
     std::vector<AminoNode *> children;
 
     //properties
-    FloatProperty *propW;
-    FloatProperty *propH;
     BooleanProperty *propCliprect;
 
     Group(): AminoNode(getFactory()->name, GROUP) {
@@ -988,6 +994,10 @@ public:
         //register native properties
         propW = createFloatProperty("w");
         propH = createFloatProperty("h");
+
+        propOriginX = createFloatProperty("originX");
+        propOriginY = createFloatProperty("originY");
+
         propCliprect = createBooleanProperty("cliprect");
     }
 
