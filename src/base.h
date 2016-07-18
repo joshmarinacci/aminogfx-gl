@@ -118,7 +118,6 @@ public:
 
 protected:
     bool started = false;
-    bool destroyed = false;
     bool rendering = false;
     Nan::Callback *startCallback = NULL;
 
@@ -166,7 +165,7 @@ protected:
     virtual void renderingDone() = 0;
     bool isRendering();
 
-    virtual void destroy();
+    void destroy() override;
 
     virtual bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) { return false; };
     void updateSize(int w, int h); //call after size event
@@ -236,8 +235,7 @@ public:
     }
 
     virtual ~AminoNode() {
-        //destroy (if not called before)
-        destroy();
+        //see destroy
     }
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
@@ -271,6 +269,8 @@ public:
      * Free all resources.
      */
     virtual void destroy() {
+        AminoJSObject::destroy();
+
         //to be overwritten
     }
 
@@ -418,7 +418,6 @@ private:
     AnyProperty *prop;
 
     bool started = false;
-    bool destroyed = false;
 
     float start;
     float end;
@@ -447,9 +446,7 @@ public:
     }
 
     ~Anim() {
-        if (!destroyed) {
-            destroy();
-        }
+        //see destroy
     }
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
@@ -480,9 +477,7 @@ public:
         obj->addAnimation(this);
     }
 
-    virtual void destroy() {
-        destroyed = true;
-
+    void destroy() override {
         if (prop) {
             prop->release();
             prop = NULL;

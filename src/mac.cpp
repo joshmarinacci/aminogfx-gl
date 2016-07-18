@@ -91,10 +91,6 @@ private:
      * Destroy GLFW instance.
      */
     void destroy() override {
-        if (destroyed) {
-            return;
-        }
-
         AminoGfx::destroy();
 
         //GLFW

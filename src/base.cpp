@@ -20,10 +20,6 @@ AminoGfx::~AminoGfx() {
     }
 
     //Note: properties are deleted by base class destructor
-
-    if (!destroyed) {
-        destroy();
-    }
 }
 
 /**
@@ -400,9 +396,6 @@ NAN_METHOD(AminoGfx::Destroy) {
  * Stop rendering and free resources.
  */
 void AminoGfx::destroy() {
-    //to be overwritten
-    destroyed = true;
-
     //renderer (shader programs)
     if (colorShader) {
         colorShader->destroy();

@@ -42,6 +42,10 @@ AminoJSObject::~AminoJSObject() {
         printf("%s destructor\n", name.c_str());
     }
 
+    if (!destroyed) {
+        destroy();
+    }
+
     //free properties
     for (std::map<int, AnyProperty *>::iterator iter = propertyMap.begin(); iter != propertyMap.end(); iter++) {
         delete iter->second;
@@ -50,7 +54,7 @@ AminoJSObject::~AminoJSObject() {
     //free async updates
     if (localAsyncUpdatesInstance) {
         std::size_t count = asyncUpdates->size();
-
+//cbx refactor
         for (std::size_t i = 0; i < count; i++) {
             AnyAsyncUpdate *item = (*asyncUpdates)[i];
 
@@ -84,6 +88,13 @@ void AminoJSObject::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
  */
 void AminoJSObject::setup() {
     //empty
+}
+
+/**
+ * Free all resources.
+ */
+void AminoJSObject::destroy() {
+    destroyed = true;
 }
 
 /**

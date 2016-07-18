@@ -38,12 +38,14 @@ public:
 class AminoJSObject : public Nan::ObjectWrap {
 protected:
     std::string name;
+    bool destroyed = false;
 
     AminoJSObject(std::string name);
     virtual ~AminoJSObject();
 
     virtual void preInit(Nan::NAN_METHOD_ARGS_TYPE info);
     virtual void setup();
+    virtual void destroy();
 
     //properties
     bool addPropertyWatcher(std::string name, int id, v8::Local<v8::Value> &jsValue);
