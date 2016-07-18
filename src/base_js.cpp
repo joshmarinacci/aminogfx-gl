@@ -127,6 +127,7 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
 
     //check constructor call
     if (!info.IsConstructCall()) {
+        //called as plain function (e.g. in extended class)
         Nan::ThrowTypeError("please use new() instead of function call");
         return;
     }
@@ -160,6 +161,23 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
 
     //native setup
     obj->setup();
+
+    //call initDone (if available)
+    Nan::MaybeLocal<v8::Value> initDoneValue = Nan::Get(info.This(), Nan::New<v8::String>("initDone").ToLocalChecked());
+
+    if (!initDoneValue.IsEmpty()) {
+        v8::Local<v8::Value> initDoneLocal = initDoneValue.ToLocalChecked();
+
+        if (initDoneLocal->IsFunction()) {
+            v8::Local<v8::Function> initDoneFunc = initDoneLocal.As<v8::Function>();
+
+            //call
+            int argc = 0;
+            v8::Local<v8::Value> argv[0];
+
+            initDoneFunc->Call(info.This(), argc, argv);
+        }
+    }
 
     info.GetReturnValue().Set(info.This());
 }

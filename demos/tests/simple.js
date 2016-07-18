@@ -48,10 +48,14 @@ gfx.start(function (err) {
     g.add(r);
 
     //animation
-    r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(-1).start();
+//    r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(1).then(animDone).start();
     r.b.watch((value) => {
         console.log('animation state: ' + value);
     });
+
+    function animDone() {
+        console.log('animation done');
+    }
 
     //polygon
     var poly = this.createPolygon().dimension(2).fill('#00FF00');
@@ -60,12 +64,11 @@ gfx.start(function (err) {
     g.add(poly);
 
     //circle
-/* FIXME cbx
     var circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(200).y(200);
 
     g.add(circle);
-*/
+
     //TODO more cbx
 });

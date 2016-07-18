@@ -535,6 +535,11 @@ Polygon.prototype.init = function () {
         sx: 1,
         sy: 1,
 
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
         //fill
         fill: '#ff0000',
         fillR: 1,
@@ -543,7 +548,6 @@ Polygon.prototype.init = function () {
         opacity: 1.,
 
         //properties
-        //closed: true,
         filled: true,
 
         dimension: 2, //2D
@@ -573,21 +577,43 @@ Polygon.prototype.contains = function () {
 // Circle
 //
 
-function Circle(amino) {
-    //call super
-    Polygon.call(this, amino);
+var Circle = extendNative(Polygon);
+
+AminoGfx.Circle = Circle;
+
+/**
+ * Extend a native rendering object.
+ *
+ * Note: JavaScript does not allow extending native template. Therefore a new template instance has to be created first.
+ */
+function extendNative(constr) {
+    var templ = constr.newTemplate();
+
+    for (var item in constr.prototype) {
+        //debug
+        //console.log('copying: ' + item);
+
+        templ[item] = constr.prototype[item];
+    }
+
+    return templ;
 }
 
-util.inherits(Circle, Polygon);
-
 Circle.prototype.init = function () {
+    //get Polygon properties
+    Polygon.prototype.init.call(this);
+
     //bindings
     makeProps(this, {
-        radius: 50,
+        radius: 0,
         steps: 30
     });
 
-    //Monitor radius updates.
+    this.dimension(2);
+
+    //monitor radius updates
+    var self = this;
+
     this.radius.watch(function (r) {
         var points = [];
         var steps = self.steps();
@@ -601,9 +627,11 @@ Circle.prototype.init = function () {
 
         self.geometry(points);
     });
-}
+};
 
-AminoGfx.Circle = Circle;
+Circle.prototype.initDone = function () {
+    this.radius(50);
+};
 
 /**
  * Special case for circle.
@@ -709,62 +737,6 @@ var defaultFonts = {
             }
         }
     }
-};
-
-/**
- * Native property ids.
- *
- * Note: value has to match native code value
- */
-var propsHash = {
-
-    //general
-    visible: 18,
-    opacity: 27,
-    r: 5,
-    g: 6,
-    b: 7,
-    texid: 8,
-    w: 10,
-    h: 11,
-    x: 21,
-    y: 22,
-
-    //transforms  (use x and y for translate in X and Y)
-    sx: 2,
-    sy: 3,
-    rz: 4,
-    rx: 19,
-    ry: 20,
-
-    //text
-    text: 9,
-    fontSize: 12,
-    fontId: 28,
-    vAlign: 40,
-    wrap: 41,
-
-    //animation
-    count: 29,
-    lerpprop: 16,
-    autoreverse: 35,
-    then: 37,
-    stop: 38,
-
-    //geometry
-    geometry:  24,
-    filled:    25,
-    closed:    26,
-    dimension: 36,
-
-    //rectangle texture
-    textureLeft:   30,
-    textureRight:  31,
-    textureTop:    32,
-    textureBottom: 33,
-
-    //clipping
-    cliprect: 34
 };
 
 /**
@@ -885,45 +857,61 @@ Anim.prototype.init = function () {
     this._autoreverse = false;
     this._timeFunc = 'cubicInOut';
     this._then_fun = null;
+
+    this.started = false;
 };
 
 Anim.prototype.from = function (val) {
+    this.checkStarted();
+
     this._from = val;
 
     return this;
 };
 
 Anim.prototype.to = function (val) {
+    this.checkStarted();
+
     this._to = val;
 
     return this;
 };
 
 Anim.prototype.dur = function (val) {
+    this.checkStarted();
+
     this._duration = val;
 
     return this;
 };
 
 Anim.prototype.delay = function (val) {
+    this.checkStarted();
+
     this._delay = val;
 
     return this;
 };
 
 Anim.prototype.loop = function (val) {
+    this.checkStarted();
+
     this._loop = val;
 
     return this;
 };
 
 Anim.prototype.then = function (fun) {
+    this.checkStarted();
+
     this._then_fun = fun;
 
     return this;
 };
 
 Anim.prototype.autoreverse = function(val) {
+    this.checkStarted();
+
     this._autoreverse = val;
 
     return this;
@@ -933,6 +921,8 @@ Anim.prototype.autoreverse = function(val) {
 var timeFuncs = ['linear', 'cubicIn', 'cubicOut', 'cubicInOut'];
 
 Anim.prototype.timeFunc = function (val) {
+    this.checkStarted();
+
     if (timeFuncs.indexOf(value) === -1) {
         throw new Error('unknown time function: ' + val);
     }
@@ -942,15 +932,27 @@ Anim.prototype.timeFunc = function (val) {
     return this;
 };
 
+Anim.prototype.checkStarted = function () {
+    if (this.started) {
+        throw new Error('immutable after start() was called');
+    }
+};
+
 /*
  * Start the animation.
  */
 Anim.prototype.start = function () {
+    if (this.started) {
+        throw new Error('animation already started');
+    }
+
     if (DEBUG) {
         console.log('starting anim');
     }
 
     var self = this;
+
+    this.started = true;
 
     setTimeout (function () {
         if (DEBUG) {
@@ -1197,8 +1199,6 @@ function makeProp(obj, name, val) {
 exports.makeProps = makeProps;
 
 //basic
-exports.Polygon   = amino_core.Polygon;
-exports.Circle    = amino_core.Circle;
 exports.Text      = amino_core.Text;
 exports.ImageView = amino_core.ImageView;
 

@@ -57,6 +57,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
 
     //global template instance
     v8::Local<v8::Function> func = Nan::GetFunction(tpl).ToLocalChecked();
+
     Nan::Set(target, Nan::New(factory->name).ToLocalChecked(), func);
 }
 
