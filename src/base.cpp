@@ -9,9 +9,8 @@ std::vector<AminoNode *> rects;
 //  AminoGfx
 //
 
-AminoGfx::AminoGfx(std::string name): AminoJSObject(name) {
-    //async handling
-    createAsyncQueue();
+AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
+    //empty
 }
 
 AminoGfx::~AminoGfx() {
@@ -554,8 +553,14 @@ void AminoGfx::setRoot(Group *group) {
 /**
  * Add animation.
  */
-void AminoGfx::addAnimation(Anim *anim) {
+bool AminoGfx::addAnimationAsync(Anim *anim) {
+    if (destroyed) {
+        return false;
+    }
+//cbx async
     animations.push_back(anim);
+
+    return true;
 }
 
 /**
@@ -563,9 +568,9 @@ void AminoGfx::addAnimation(Anim *anim) {
  *
  * Note: does not release the instance.
  */
-void AminoGfx::removeAnimation(Anim *anim) {
+void AminoGfx::removeAnimationAsync(Anim *anim) {
     std::vector<Anim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
-
+//cbx async
     if (pos != animations.end()) {
         animations.erase(pos);
     }

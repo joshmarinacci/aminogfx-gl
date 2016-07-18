@@ -108,13 +108,13 @@ class Anim;
  *
  * Note: abstract
  */
-class AminoGfx : public AminoJSObject {
+class AminoGfx : public AminoJSEventObject {
 public:
     AminoGfx(std::string name);
     virtual ~AminoGfx();
 
-    void addAnimation(Anim *anim);
-    void removeAnimation(Anim *anim);
+    bool addAnimationAsync(Anim *anim);
+    void removeAnimationAsync(Anim *anim);
 
 protected:
     bool started = false;
@@ -200,7 +200,6 @@ private:
  */
 class AminoNode : public AminoJSObject {
 public:
-    AminoGfx *amino = NULL;
     int type;
 
     //location
@@ -243,11 +242,9 @@ public:
         v8::Local<v8::Object> jsObj = info[0]->ToObject();
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(jsObj);
 
-        this->amino = obj;
-        Nan::Set(handle(), Nan::New("amino").ToLocalChecked(), jsObj);
-
         //bind to queue
-        this->attachToAsyncQueue(obj);
+        this->setEventHandler(obj);
+        Nan::Set(handle(), Nan::New("amino").ToLocalChecked(), jsObj);
     }
 
     void setup() override {
@@ -268,7 +265,7 @@ public:
     /**
      * Free all resources.
      */
-    virtual void destroy() {
+    void destroy()  override {
         AminoJSObject::destroy();
 
         //to be overwritten
@@ -278,14 +275,14 @@ public:
      * Validate renderer instance. Must be called in JS method handler.
      */
     bool checkRenderer(AminoNode *node) {
-        return checkRenderer(node->amino);
+        return checkRenderer((AminoGfx *)node->eventHandler);
     }
 
     /**
      * Validate renderer instance. Must be called in JS method handler.
      */
     bool checkRenderer(AminoGfx *amino) {
-        if (this->amino != amino) {
+        if (this->eventHandler != amino) {
             Nan::ThrowTypeError("invalid renderer");
             return false;
         }
@@ -414,7 +411,6 @@ public:
  */
 class Anim : public AminoJSObject {
 private:
-    AminoGfx *amino;
     AnyProperty *prop;
 
     bool started = false;
@@ -454,7 +450,7 @@ public:
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
         AminoNode *node = Nan::ObjectWrap::Unwrap<AminoNode>(info[1]->ToObject());
         unsigned int propId = info[2]->Uint32Value();
-//cbx check destroyed
+
         if (!node->checkRenderer(obj)) {
             return;
         }
@@ -467,14 +463,14 @@ public:
             return;
         }
 
-        this->amino = obj;
+        this->setEventHandler(obj);
         this->prop = prop;
 
         //retain property
         prop->retain();
 
         //enqueue
-        obj->addAnimation(this);
+        obj->addAnimationAsync(this);
     }
 
     void destroy() override {
@@ -666,8 +662,8 @@ public:
     void stop() {
         if (!destroyed) {
             //remove animation
-            if (amino) {
-                amino->removeAnimation(this);
+            if (eventHandler) {
+                ((AminoGfx *)eventHandler)->removeAnimationAsync(this);
             }
 
             //free resources

@@ -30,6 +30,8 @@ public:
     virtual AminoJSObject* create();
 };
 
+class AminoJSEventObject;
+
 /**
  * Basic JS object wrapper for Amino classes.
  *
@@ -38,6 +40,7 @@ public:
 class AminoJSObject : public Nan::ObjectWrap {
 protected:
     std::string name;
+    AminoJSEventObject *eventHandler = NULL;
     bool destroyed = false;
 
     AminoJSObject(std::string name);
@@ -48,8 +51,6 @@ protected:
     virtual void destroy();
 
     //properties
-    bool addPropertyWatcher(std::string name, int id, v8::Local<v8::Value> &jsValue);
-
     void updateProperty(std::string name, v8::Local<v8::Value> value);
     void updateProperty(std::string name, double value);
     void updateProperty(std::string name, std::vector<float> value);
@@ -158,12 +159,8 @@ protected:
     Utf8Property* createUtf8Property(std::string name);
 
     //async updates
-    void createAsyncQueue();
-    void attachToAsyncQueue(AminoJSObject *obj);
-    void detachFromAsyncQueue();
-
-    void processAsyncQueue();
-    virtual void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value);
+    void setEventHandler(AminoJSEventObject *handler);
+    virtual bool isEventHandler();
 
     class AnyAsyncUpdate {
     public:
@@ -177,16 +174,17 @@ protected:
     public:
         int id;
         AminoJSObject *obj;
+
+        //values
         AminoJSObject *valueObj = NULL;
+        //cbx method callback
 
         AsyncValueUpdate(int id, AminoJSObject *obj, AminoJSObject *value);
         ~AsyncValueUpdate();
     };
 
     bool enqueueValueUpdate(int id, AminoJSObject *value);
-    bool enqueueValueUpdate(AsyncValueUpdate *update);
-
-    virtual bool handleAsyncUpdate(AsyncValueUpdate *update);
+    virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     //static methods
     static v8::Local<v8::FunctionTemplate> createTemplate(AminoJSObjectFactory* factory);
@@ -197,10 +195,41 @@ private:
     int lastPropertyId = 0;
     std::map<int, AnyProperty *> propertyMap;
 
+    bool addPropertyWatcher(std::string name, int id, v8::Local<v8::Value> &jsValue);
     void addProperty(AnyProperty *prop);
+
+    //async updates
     bool enqueuePropertyUpdate(int id, v8::Local<v8::Value> value);
     static NAN_METHOD(PropertyUpdated);
 
+public:
+    std::string getName();
+
+    void retain();
+    void release();
+
+    AnyProperty* getPropertyWithId(int id);
+
+    virtual void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value);
+    virtual bool handleAsyncUpdate(AsyncValueUpdate *update);
+};
+
+/**
+ * Amino JS Object with event handler.
+ */
+class AminoJSEventObject : public AminoJSObject {
+public:
+    AminoJSEventObject(std::string name);
+    virtual ~AminoJSEventObject();
+
+    bool enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> value);
+    bool enqueueValueUpdate(AsyncValueUpdate *update) override;
+
+protected:
+    bool isEventHandler() override;
+    void processAsyncQueue();
+
+private:
     //async updates
     class AsyncPropertyUpdate : public AnyAsyncUpdate {
     public:
@@ -216,16 +245,6 @@ private:
     };
 
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
-    bool localAsyncUpdatesInstance = false;
-
-public:
-
-    std::string getName();
-
-    void retain();
-    void release();
-
-    AnyProperty* getPropertyWithId(int id);
 };
 
 #endif
