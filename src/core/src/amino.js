@@ -9,8 +9,6 @@ exports.primitives = prims;
 
 //basic
 amino.Text = prims.Text;
-amino.Polygon = prims.Polygon;
-amino.Circle = prims.Circle;
 amino.ImageView = prims.ImageView;
 
 //extended

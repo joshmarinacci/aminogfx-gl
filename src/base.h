@@ -448,7 +448,7 @@ public:
         //params
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
         AminoNode *node = Nan::ObjectWrap::Unwrap<AminoNode>(info[1]->ToObject());
-        int propId = info[2]->Uint32Value();
+        unsigned int propId = info[2]->Uint32Value();
 //cbx check destroyed
         if (!node->checkRenderer(obj)) {
             return;
@@ -862,74 +862,81 @@ public:
 };
 
 /**
+ * Polygon factory.
+ */
+class PolygonFactory : public AminoJSObjectFactory {
+public:
+    PolygonFactory(Nan::FunctionCallback callback);
+
+    AminoJSObject* create() override;
+};
+
+/**
  * Polygon node class.
  */
-class PolyNode : public AminoNode {
-private:
-    std::vector<float> *geometry;
-
+class Polygon : public AminoNode {
 public:
-    float r;
-    float g;
-    float b;
-    int dimension;
-    int filled;
+    //fill
+    FloatProperty *propFillR;
+    FloatProperty *propFillG;
+    FloatProperty *propFillB;
 
-    PolyNode(std::string name): AminoNode(name, POLY) {
-        //color: green
-        r = 0;
-        g = 1;
-        b = 0;
+    //dimension
+    UInt32Property *propDimension;
+    BooleanProperty *propFilled;
 
-        //not filled
-        filled = 0;
+    //points
+    FloatArrayProperty *propGeometry;
 
-        //default: 2D, empty
-        dimension = 2;
-        geometry = new std::vector<float>();
+    Polygon(): AminoNode(getFactory()->name, POLY) {
+        //empty
     }
 
-    virtual ~PolyNode() {
+    virtual ~Polygon() {
+    }
+
+    void setup() override {
+        AminoNode::setup();
+
+        //register native properties
+        propFillR = createFloatProperty("fillR");
+        propFillG = createFloatProperty("fillG");
+        propFillB = createFloatProperty("fillB");
+
+        propDimension = createUInt32Property("dimension");
+        propFilled = createBooleanProperty("filled");
+
+        propGeometry = createFloatArrayProperty("geometry");
+    }
+
+    //creation
+    static PolygonFactory* getFactory() {
+        static PolygonFactory *polygonFactory;
+
+        if (!polygonFactory) {
+            polygonFactory = new PolygonFactory(New);
+        }
+
+        return polygonFactory;
     }
 
     /**
-     * Set list of coordinates.
+     * Initialize Group template.
      */
-    void setGeometry(std::vector<float> *arr) {
-        if (geometry == arr) {
-            return;
-        }
+    static v8::Local<v8::Function> GetInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
-        if (geometry) {
-            delete geometry;
-        }
+        //no methods
 
-        geometry = arr;
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
     }
 
     /**
-     * Get list of coordinates.
+     * JS object construction.
      */
-    std::vector<float>* getGeometry() {
-        return geometry;
-    }
-
-    /**
-     * Free memory.
-     */
-    void destroy() {
-        if (DEBUG_BASE) {
-            printf("PolyNode: destroy()\n");
-        }
-
-        //super
-        AminoNode::destroy();
-
-        //this
-        if (geometry) {
-            delete geometry;
-            geometry = NULL;
-        }
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
     }
 };
 
@@ -1192,44 +1199,10 @@ public:
             if (refresh) {
                 textnode->refreshText();
             }
-        } else if (target->type == POLY) {
-            //poly
-            PolyNode *polynode = (PolyNode *)target;
-
-            switch (property) {
-                case R_PROP:
-                    polynode->r = value;
-                    break;
-
-                case G_PROP:
-                    polynode->g = value;
-                    break;
-
-                case B_PROP:
-                    polynode->b = value;
-                    break;
-
-                case GEOMETRY_PROP:
-                    polynode->setGeometry(arr);
-                    break;
-
-                case DIMENSION_PROP:
-                    polynode->dimension = value;
-                    break;
-
-                case FILLED_PROP:
-                    polynode->filled = value;
-                    break;
-
-                default:
-                    printf("Unknown anim poly update: %i\n", property);
-                    break;
-            }
         }
     }
 };
 
-NAN_METHOD(createPoly);
 NAN_METHOD(createText);
 
 /**
@@ -1251,22 +1224,6 @@ static std::wstring GetWString(v8::Handle<v8::String> str) {
     delete[] buf;
 
     return wstr;
-}
-
-/**
- * Convert v8 float array to float vector.
- *
- * Note: delete after use
- */
-static std::vector<float>* GetFloatArray(v8::Handle<v8::Array> obj) {
-    v8::Handle<v8::Array> oarray = v8::Handle<v8::Array>::Cast(obj);
-    std::vector<float>* carray = new std::vector<float>();
-
-    for (std::size_t i = 0; i < oarray->Length(); i++) {
-        carray->push_back((float)(oarray->Get(i)->ToNumber()->NumberValue()));
-    }
-
-    return carray;
 }
 
 //JavaScript bindings

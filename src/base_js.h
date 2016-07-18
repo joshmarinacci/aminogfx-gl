@@ -50,13 +50,18 @@ protected:
 
     void updateProperty(std::string name, v8::Local<v8::Value> value);
     void updateProperty(std::string name, double value);
+    void updateProperty(std::string name, std::vector<float> value);
     void updateProperty(std::string name, int value);
+    void updateProperty(std::string name, unsigned int value);
     void updateProperty(std::string name, bool value);
     void updateProperty(std::string name, std::string value);
 
-    static const int PROPERTY_FLOAT   = 1;
-    static const int PROPERTY_BOOLEAN = 2;
-    static const int PROPERTY_UTF8    = 3;
+    static const int PROPERTY_FLOAT       = 1;
+    static const int PROPERTY_FLOAT_ARRAY = 2;
+    static const int PROPERTY_INT32       = 3;
+    static const int PROPERTY_UINT32      = 4;
+    static const int PROPERTY_BOOLEAN     = 5;
+    static const int PROPERTY_UTF8        = 6;
 
     class AnyProperty {
     public:
@@ -87,6 +92,39 @@ protected:
         void setValue(float newValue);
     };
 
+    class FloatArrayProperty : public AnyProperty {
+    public:
+        std::vector<float> value;
+
+        FloatArrayProperty(AminoJSObject *obj, std::string name, int id);
+        ~FloatArrayProperty();
+
+        void setValue(v8::Local<v8::Value> &value) override;
+        void setValue(std::vector<float> newValue);
+    };
+
+    class Int32Property : public AnyProperty {
+    public:
+        int value = 0;
+
+        Int32Property(AminoJSObject *obj, std::string name, int id);
+        ~Int32Property();
+
+        void setValue(v8::Local<v8::Value> &value) override;
+        void setValue(int newValue);
+    };
+
+    class UInt32Property : public AnyProperty {
+    public:
+        unsigned int value = 0;
+
+        UInt32Property(AminoJSObject *obj, std::string name, int id);
+        ~UInt32Property();
+
+        void setValue(v8::Local<v8::Value> &value) override;
+        void setValue(unsigned int newValue);
+    };
+
     class BooleanProperty : public AnyProperty {
     public:
         bool value = false;
@@ -111,6 +149,9 @@ protected:
     };
 
     FloatProperty* createFloatProperty(std::string name);
+    FloatArrayProperty* createFloatArrayProperty(std::string name);
+    Int32Property* createInt32Property(std::string name);
+    UInt32Property* createUInt32Property(std::string name);
     BooleanProperty* createBooleanProperty(std::string name);
     Utf8Property* createUtf8Property(std::string name);
 

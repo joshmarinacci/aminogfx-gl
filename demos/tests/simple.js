@@ -53,5 +53,19 @@ gfx.start(function (err) {
         console.log('animation state: ' + value);
     });
 
+    //polygon
+    var poly = this.createPolygon().dimension(2).fill('#00FF00');
+
+    poly.geometry([100, 10, 150, 300, 200, 10]);
+    g.add(poly);
+
+    //circle
+/* FIXME cbx
+    var circle = this.createCircle().radius(50)
+        .fill('#ffcccc').filled(true)
+        .x(200).y(200);
+
+    g.add(circle);
+*/
     //TODO more cbx
 });

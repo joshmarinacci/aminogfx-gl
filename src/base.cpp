@@ -49,6 +49,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
 
     // other
     Nan::SetTemplate(tpl, "Rect", Rect::GetInitFunction());
+    Nan::SetTemplate(tpl, "Polygon", Polygon::GetInitFunction());
     Nan::SetTemplate(tpl, "Anim", Anim::GetInitFunction());
 
     //special: GL object
@@ -604,6 +605,21 @@ RectFactory::RectFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("
 
 AminoJSObject* RectFactory::create() {
     return new Rect(false);
+}
+
+//
+// PolygonFactory
+//
+
+/**
+ * Polygon factory constructor.
+ */
+PolygonFactory::PolygonFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Polygon", callback) {
+    //empty
+}
+
+AminoJSObject* PolygonFactory::create() {
+    return new Polygon();
 }
 
 //
@@ -1184,15 +1200,6 @@ NAN_METHOD(createNativeFont) {
     //TODO glDeleteProgram (on destroy)
 
     info.GetReturnValue().Set(id);
-}
-
-NAN_METHOD(createPoly) {
-    PolyNode *node = new PolyNode("dummy");
-
-    rects.push_back(node);
-
-    //return id
-    info.GetReturnValue().Set((int)rects.size() - 1);
 }
 
 NAN_METHOD(createText) {

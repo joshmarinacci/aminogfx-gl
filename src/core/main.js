@@ -185,8 +185,6 @@ var Core = function () {
 };
 
 exports.Text = amino.Text;
-exports.Polygon = amino.Polygon;
-exports.Circle = amino.Circle;
 exports.ImageView = amino.ImageView;
 
 exports.PixelView    = amino.PixelView;

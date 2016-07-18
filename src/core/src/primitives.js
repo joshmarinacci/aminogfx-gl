@@ -8,18 +8,6 @@ var PImage = require('../../pureimage/pureimage');
 var comp = require('../../richtext/component');
 
 /**
- * Fill value has changed.
- */
-function setFill(val, prop, obj) {
-    var color = parseRGBString(val);
-    var n = amino.getCore().getNative();
-
-    n.updateProperty(obj.handle, 'r', color.r);
-    n.updateProperty(obj.handle, 'g', color.g);
-    n.updateProperty(obj.handle, 'b', color.b);
-}
-
-/**
  * Set text vertical alignment.
  */
 function setVAlign(val, prop, obj) {
@@ -40,7 +28,6 @@ function setWrap(val, prop, obj) {
 //native async updates
 var setters = {};
 
-setters['fill'] = setFill;
 setters['vAlign'] = setVAlign;
 setters['wrap'] = setWrap;
 
@@ -185,7 +172,7 @@ function ImageView() {
         sx: 1,
         sy: 1,
 
-        //texture offset
+        //texture coordinates
         textureLeft:   0,
         textureRight:  1,
         textureTop:    0,
@@ -230,92 +217,8 @@ function ImageView() {
     this.contains = contains;
 }
 
-/**
- * Polygon object.
- */
-function Polygon() {
-    amino.makeProps(this, {
-        id: 'polygon',
-        visible: true,
-
-        //position
-        x: 0,
-        y: 0,
-
-        //scaling
-        sx: 1,
-        sy: 1,
-
-        //properties
-        closed: true,
-        filled: true,
-        fill: '#ff0000',
-        opacity: 1.,
-        dimension: 2, //2D
-        geometry: []
-    });
-
-    //native
-    this.handle = amino.getCore().getNative().createPoly();
-
-    applyNativeBinding(this);
-
-    //methods
-    this.contains = function () {
-        //TODO check polygon
-        return false;
-    };
-
-    return this;
-}
-
-/**
- * Circle object.
- */
-function Circle() {
-    //get polygon properties
-    Polygon.call(this);
-
-    amino.makeProps(this, {
-        radius: 50,
-        steps: 30
-    });
-
-    var self = this;
-
-    /**
-     * Monitor radius updates.
-     */
-    this.radius.watch(function () {
-        var r = self.radius();
-        var points = [];
-        var steps = self.steps();
-
-        for (var i = 0; i < steps; i++) {
-            var theta = Math.PI * 2 / steps * i;
-
-            points.push(Math.sin(theta) * r);
-            points.push(Math.cos(theta) * r);
-        }
-
-        self.geometry(points);
-    });
-
-    /**
-     * Special case for circle.
-     */
-    this.contains = function (pt) {
-        var radius = this.radius();
-        var dist = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
-
-        return dist < radius;
-    };
-}
-
 //exports
 exports.Text = Text;
-exports.Polygon = Polygon;
-exports.Circle = Circle;
 exports.ImageView = ImageView;
 
 /**

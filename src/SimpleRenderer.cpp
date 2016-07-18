@@ -52,7 +52,7 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
             break;
 
         case POLY:
-            this->drawPoly(c, (PolyNode *)root);
+            this->drawPoly(c, (Polygon *)root);
             break;
 
         case TEXT:
@@ -197,14 +197,14 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
     }
 }
 
-void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
+void SimpleRenderer::drawPoly(GLContext *ctx, Polygon *poly) {
     if (DEBUG_RENDERER) {
         printf("-> drawPoly()\n");
     }
 
-    std::vector<float> *geometry = poly->getGeometry();
+    std::vector<float> *geometry = &poly->propGeometry->value;
     int len = geometry->size();
-    int dim = poly->dimension;
+    int dim = poly->propDimension->value;
     GLfloat verts[len][dim];// = malloc(sizeof(GLfloat[2])*len);
 
     for (int i = 0; i < len / dim; i++) {
@@ -221,9 +221,9 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
     GLfloat colors[len][3];
 
     for (int i = 0; i < len / dim; i++) {
-        colors[i][0] = poly->r;
-        colors[i][1] = poly->g;
-        colors[i][2] = poly->b;
+        colors[i][0] = poly->propFillR->value;
+        colors[i][1] = poly->propFillG->value;
+        colors[i][2] = poly->propFillB->value;
     }
 
     ctx->useProgram(colorShader->prog);
@@ -241,16 +241,16 @@ void SimpleRenderer::drawPoly(GLContext *ctx, PolyNode *poly) {
     }
 
     if (dim == 2) {
-        glVertexAttribPointer(colorShader->attr_pos,   2, GL_FLOAT, GL_FALSE, 0, verts);
+        glVertexAttribPointer(colorShader->attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
     } else if (dim == 3) {
-        glVertexAttribPointer(colorShader->attr_pos,   3, GL_FLOAT, GL_FALSE, 0, verts);
+        glVertexAttribPointer(colorShader->attr_pos, 3, GL_FLOAT, GL_FALSE, 0, verts);
     }
 
     glVertexAttribPointer(colorShader->attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
     glEnableVertexAttribArray(colorShader->attr_pos);
     glEnableVertexAttribArray(colorShader->attr_color);
 
-    if (poly->filled == 1) {
+    if (poly->propFilled->value) {
         glDrawArrays(GL_TRIANGLE_FAN, 0, len / dim);
     } else {
         glDrawArrays(GL_LINE_LOOP, 0, len / dim);

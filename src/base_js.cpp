@@ -238,6 +238,33 @@ AminoJSObject::FloatProperty* AminoJSObject::createFloatProperty(std::string nam
     return prop;
 }
 
+AminoJSObject::FloatArrayProperty* AminoJSObject::createFloatArrayProperty(std::string name) {
+    int id = ++lastPropertyId;
+    FloatArrayProperty *prop = new FloatArrayProperty(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
+AminoJSObject::Int32Property* AminoJSObject::createInt32Property(std::string name) {
+    int id = ++lastPropertyId;
+    Int32Property *prop = new Int32Property(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
+AminoJSObject::UInt32Property* AminoJSObject::createUInt32Property(std::string name) {
+    int id = ++lastPropertyId;
+    UInt32Property *prop = new UInt32Property(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
 /**
  * Create boolean property (bound to JS property).
  *
@@ -451,11 +478,38 @@ void AminoJSObject::updateProperty(std::string name, double value) {
 /**
  * Update JS property value.
  */
+void AminoJSObject::updateProperty(std::string name, std::vector<float> value) {
+    //create scope
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Array> arr = Nan::New<v8::Array>();
+    std::size_t count = value.size();
+
+    for (unsigned int i = 0; i < count; i++) {
+        Nan::Set(arr, Nan::New<v8::Uint32>(i), Nan::New<v8::Number>(value[i]));
+    }
+
+    updateProperty(name, arr);
+}
+
+/**
+ * Update JS property value.
+ */
 void AminoJSObject::updateProperty(std::string name, int value) {
     //create scope
     Nan::HandleScope scope;
 
-    updateProperty(name, Nan::New<v8::Integer>(value));
+    updateProperty(name, Nan::New<v8::Int32>(value));
+}
+
+/**
+ * Update JS property value.
+ */
+void AminoJSObject::updateProperty(std::string name, unsigned int value) {
+    //create scope
+    Nan::HandleScope scope;
+
+    updateProperty(name, Nan::New<v8::Uint32>(value));
 }
 
 /**
@@ -663,6 +717,152 @@ void AminoJSObject::FloatProperty::setValue(float newValue) {
 }
 
 //
+// AminoJSObject::FloatArrayProperty
+//
+
+/**
+ * FloatArrayProperty constructor.
+ */
+AminoJSObject::FloatArrayProperty::FloatArrayProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_FLOAT_ARRAY, obj, name, id) {
+    //empty
+}
+
+/**
+ * FloatProperty destructor.
+ */
+AminoJSObject::FloatArrayProperty::~FloatArrayProperty() {
+    //empty
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::FloatArrayProperty::setValue(v8::Local<v8::Value> &value) {
+    v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+
+    this->value.clear();
+
+    std::size_t count = arr->Length();
+
+    for (std::size_t i = 0; i < count; i++) {
+        this->value.push_back((float)(arr->Get(i)->NumberValue()));
+    }
+}
+
+/**
+ * Update the float value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::FloatArrayProperty::setValue(std::vector<float> newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(name, value);
+        }
+    }
+}
+
+//
+// AminoJSObject::Int32Property
+//
+
+/**
+ * Int32Property constructor.
+ */
+AminoJSObject::Int32Property::Int32Property(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_INT32, obj, name, id) {
+    //empty
+}
+
+/**
+ * Int32Property destructor.
+ */
+AminoJSObject::Int32Property::~Int32Property() {
+    //empty
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::Int32Property::setValue(v8::Local<v8::Value> &value) {
+    if (value->IsNumber()) {
+        //UInt32
+        this->value = value->Int32Value();
+
+        //Note: do not call updateProperty(), change is from JS side
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a number!\n");
+        }
+    }
+}
+
+/**
+ * Update the unsigned int value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::Int32Property::setValue(int newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(name, value);
+        }
+    }
+}
+
+//
+// AminoJSObject::UInt32Property
+//
+
+/**
+ * UInt32Property constructor.
+ */
+AminoJSObject::UInt32Property::UInt32Property(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_UINT32, obj, name, id) {
+    //empty
+}
+
+/**
+ * UInt32Property destructor.
+ */
+AminoJSObject::UInt32Property::~UInt32Property() {
+    //empty
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::UInt32Property::setValue(v8::Local<v8::Value> &value) {
+    if (value->IsNumber()) {
+        //UInt32
+        this->value = value->Uint32Value();
+
+        //Note: do not call updateProperty(), change is from JS side
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a number!\n");
+        }
+    }
+}
+
+/**
+ * Update the unsigned int value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::UInt32Property::setValue(unsigned int newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(name, value);
+        }
+    }
+}
+
+//
 // AminoJSObject::BooleanProperty
 //
 
@@ -674,7 +874,7 @@ AminoJSObject::BooleanProperty::BooleanProperty(AminoJSObject *obj, std::string 
 }
 
 /**
- * FloatProperty destructor.
+ * BooleanProperty destructor.
  */
 AminoJSObject::BooleanProperty::~BooleanProperty() {
     //empty

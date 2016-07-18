@@ -18,6 +18,7 @@ var sgtest = require(binding_path);
 
 var shaders = require('./src/shaders.js');
 var fs = require('fs');
+var util =  require('util');
 
 //detect platform
 var OS;
@@ -188,6 +189,20 @@ AminoGfx.prototype.createGroup = function () {
  */
 AminoGfx.prototype.createRect = function () {
     return new AminoGfx.Rect(this);
+};
+
+/**
+ * Create polygon element.
+ */
+AminoGfx.prototype.createPolygon = function () {
+    return new AminoGfx.Polygon(this);
+};
+
+/**
+ * Create circle element.
+ */
+AminoGfx.prototype.createCircle = function () {
+    return new AminoGfx.Circle(this);
 };
 
 AminoGfx.prototype.startTimer = function () {
@@ -499,6 +514,106 @@ function contains(pt) {
     return pt.x >= 0 && pt.x < this.w() &&
            pt.y >= 0 && pt.y < this.h();
 }
+
+//
+// Polygon
+//
+
+var Polygon = AminoGfx.Polygon;
+
+Polygon.prototype.init = function () {
+    //bindings
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //fill
+        fill: '#ff0000',
+        fillR: 1,
+        fillG: 0,
+        fillB: 0,
+        opacity: 1.,
+
+        //properties
+        //closed: true,
+        filled: true,
+
+        dimension: 2, //2D
+        geometry: []
+    });
+
+    this.fill.watch(setFill);
+};
+
+/**
+ * Fill value has changed.
+ */
+function setFill(val, prop, obj) {
+    var color = parseRGBString(val);
+
+    obj.fillR(color.r);
+    obj.fillG(color.g);
+    obj.fillB(color.b);
+}
+
+Polygon.prototype.contains = function () {
+    //TODO check polygon coords
+    return false;
+};
+
+//
+// Circle
+//
+
+function Circle(amino) {
+    //call super
+    Polygon.call(this, amino);
+}
+
+util.inherits(Circle, Polygon);
+
+Circle.prototype.init = function () {
+    //bindings
+    makeProps(this, {
+        radius: 50,
+        steps: 30
+    });
+
+    //Monitor radius updates.
+    this.radius.watch(function (r) {
+        var points = [];
+        var steps = self.steps();
+
+        for (var i = 0; i < steps; i++) {
+            var theta = Math.PI * 2 / steps * i;
+
+            points.push(Math.sin(theta) * r);
+            points.push(Math.cos(theta) * r);
+        }
+
+        self.geometry(points);
+    });
+}
+
+AminoGfx.Circle = Circle;
+
+/**
+ * Special case for circle.
+ */
+Circle.prototype.contains = function (pt) {
+    var radius = this.radius();
+    var dist = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
+
+    return dist < radius;
+};
 
 //
 // AminoImage
