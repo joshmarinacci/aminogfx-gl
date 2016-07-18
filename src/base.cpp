@@ -557,10 +557,19 @@ bool AminoGfx::addAnimationAsync(Anim *anim) {
     if (destroyed) {
         return false;
     }
-//cbx async
-    animations.push_back(anim);
+
+    AminoJSObject::enqueueValueUpdate(anim, (asyncValueCallback)&AminoGfx::addAnimation);
 
     return true;
+}
+
+/**
+ * Add a child node.
+ */
+void AminoGfx::addAnimation(AsyncValueUpdate *update) {
+    Anim *anim = (Anim *)update->valueObj;
+
+    animations.push_back(anim);
 }
 
 /**
@@ -569,8 +578,20 @@ bool AminoGfx::addAnimationAsync(Anim *anim) {
  * Note: does not release the instance.
  */
 void AminoGfx::removeAnimationAsync(Anim *anim) {
+    if (destroyed) {
+        return;
+    }
+
+    AminoJSObject::enqueueValueUpdate(anim, (asyncValueCallback)&AminoGfx::removeAnimation);
+}
+
+/**
+ * Remove animation.
+ */
+void AminoGfx::removeAnimation(AsyncValueUpdate *update) {
+    Anim *anim = (Anim *)update->valueObj;
     std::vector<Anim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
-//cbx async
+
     if (pos != animations.end()) {
         animations.erase(pos);
     }

@@ -170,20 +170,22 @@ protected:
         virtual ~AnyAsyncUpdate();
     };
 
+    class AsyncValueUpdate;
+    typedef void (AminoJSObject::*asyncValueCallback)(AsyncValueUpdate *);
+
     class AsyncValueUpdate : public AnyAsyncUpdate {
     public:
-        int id;
         AminoJSObject *obj;
 
         //values
         AminoJSObject *valueObj = NULL;
-        //cbx method callback
+        asyncValueCallback callback = NULL;
 
-        AsyncValueUpdate(int id, AminoJSObject *obj, AminoJSObject *value);
+        AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback);
         ~AsyncValueUpdate();
     };
 
-    bool enqueueValueUpdate(int id, AminoJSObject *value);
+    bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     //static methods

@@ -191,6 +191,10 @@ private:
 
     //GL
     static v8::Local<v8::Object> createGLObject();
+
+    //animation
+    void addAnimation(AsyncValueUpdate *update);
+    void removeAnimation(AsyncValueUpdate *update);
 };
 
 /**
@@ -1034,16 +1038,18 @@ private:
         }
 
         //handle async
-        group->enqueueValueUpdate(ID_ADD_CHILD, child);
+        group->enqueueValueUpdate(child, (asyncValueCallback)&Group::addChild);
     }
 
     /**
      * Add a child node.
      */
-    void addChild(AminoNode *node) {
+    void addChild(AsyncValueUpdate *update) {
         if (DEBUG_BASE) {
             printf("-> addChild()\n");
         }
+
+        AminoNode *node = (AminoNode *)update->valueObj;
 
         children.push_back(node);
 
@@ -1056,13 +1062,15 @@ private:
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
         //handle async
-        group->enqueueValueUpdate(ID_REMOVE_CHILD, child);
+        group->enqueueValueUpdate(child, (asyncValueCallback)&Group::removeChild);
     }
 
-    void removeChild(AminoNode *node) {
+    void removeChild(AsyncValueUpdate *update) {
         if (DEBUG_BASE) {
             printf("-> removeChild()\n");
         }
+
+        AminoNode *node = (AminoNode *)update->valueObj;
 
         //remove pointer
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
@@ -1073,27 +1081,6 @@ private:
             //remove strong reference
             node->release();
         }
-    }
-
-    /**
-     * Async value handling.
-     */
-    bool handleAsyncUpdate(AsyncValueUpdate *update) override {
-        if (AminoJSObject::handleAsyncUpdate(update)) {
-            return true;
-        }
-
-        switch (update->id) {
-            case ID_ADD_CHILD:
-                addChild((AminoNode *)update->valueObj);
-                return true;
-
-            case ID_REMOVE_CHILD:
-                removeChild((AminoNode *)update->valueObj);
-                return true;
-        }
-
-        return false;
     }
 };
 

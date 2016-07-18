@@ -369,8 +369,8 @@ bool AminoJSObject::isEventHandler() {
 /**
  * Enqueue a value update.
  */
-bool AminoJSObject::enqueueValueUpdate(int id, AminoJSObject *value) {
-    return enqueueValueUpdate(new AsyncValueUpdate(id, this, value));
+bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback) {
+    return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
 }
 
 /**
@@ -409,6 +409,12 @@ void AminoJSObject::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value
  */
 bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
     //overwrite
+
+    if (update->callback) {
+        (this->*update->callback)(update);
+
+        return true;
+    }
 
     return false;
 }
@@ -916,7 +922,7 @@ AminoJSObject::AnyAsyncUpdate::~AnyAsyncUpdate() {
 // AminoJSObject::AsyncValueUpdate
 //
 
-AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(int id, AminoJSObject *obj, AminoJSObject *value): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), id(id), obj(obj), valueObj(value) {
+AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueObj(value), callback(callback) {
     obj->retain();
 
     if (value) {
@@ -997,7 +1003,7 @@ void AminoJSEventObject::processAsyncQueue() {
                     AsyncValueUpdate *valueItem = static_cast<AsyncValueUpdate *>(item);
 
                     if (!valueItem->obj->handleAsyncUpdate(valueItem)) {
-                        printf("unhandled async update %i by %s\n", valueItem->id, valueItem->obj->getName().c_str());
+                        printf("unhandled async update by %s\n", valueItem->obj->getName().c_str());
                     }
                 }
                 break;
@@ -1027,7 +1033,7 @@ bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
 
     //enqueue
     if (DEBUG_BASE) {
-        printf("enqueueValueUpdate: id=%i\n", update->id);
+        printf("enqueueValueUpdate\n");
     }
 
     uv_mutex_lock(&asyncLock);
