@@ -66,7 +66,7 @@ gfx.start(function (err) {
     //circle
     var circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
-        .x(200).y(200);
+        .x(200).y(200).opacity(0.2);
 
     g.add(circle);
 

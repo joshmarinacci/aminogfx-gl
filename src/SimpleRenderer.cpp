@@ -230,12 +230,13 @@ void SimpleRenderer::drawPoly(GLContext *ctx, Polygon *poly) {
     glUniformMatrix4fv(colorShader->u_matrix, 1, GL_FALSE, modelView);
     glUniformMatrix4fv(colorShader->u_trans,  1, GL_FALSE, ctx->globaltx);
 
+    //opacity
     GLfloat opacity = poly->propOpacity->value * ctx->opacity;
 
-    //TODO verify, opacity used twice!
     glUniform1f(colorShader->u_opacity, opacity);
 
     if (opacity != 1.0) {
+        //blend mode needed
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
