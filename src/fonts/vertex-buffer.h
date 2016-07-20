@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -38,24 +38,13 @@
 extern "C" {
 #endif
 
-//#include "opengl.h"
-#ifdef MAC
-#include <GLFW/glfw3.h>
-#endif
-
-#ifdef LINUX
-#include <GL/glfw.h>
-#include <GL/glext.h>
-#endif
-
-#ifdef RPI
-#include <EGL/egl.h>
-#include <GLES2/gl2.h>
-#endif
-
+#include "opengl.h"
 #include "vector.h"
 #include "vertex-attribute.h"
 
+#ifdef __cplusplus
+namespace ftgl {
+#endif
 
 /**
  * @file   vertex-buffer.h
@@ -71,13 +60,18 @@ extern "C" {
 /**
  * Generic vertex buffer.
  */
-typedef struct
+typedef struct vertex_buffer_t
 {
     /** Format of the vertex buffer. */
     char * format;
 
     /** Vector of vertices. */
     vector_t * vertices;
+
+#ifdef FREETYPE_GL_USE_VAO
+    /** GL identity of the Vertex Array Object */
+    GLuint VAO_id;
+#endif
 
     /** GL identity of the vertices buffer. */
     GLuint vertices_id;
@@ -227,7 +221,7 @@ typedef struct
  */
   void
   vertex_buffer_push_back_indices ( vertex_buffer_t *self,
-                                    const GLushort * indices,
+                                    const GLuint * indices,
                                     const size_t icount );
 
 
@@ -261,7 +255,7 @@ typedef struct
   void
   vertex_buffer_insert_indices ( vertex_buffer_t *self,
                                  const size_t index,
-                                 const GLushort *indices,
+                                 const GLuint *indices,
                                  const size_t icount );
 
 
@@ -322,7 +316,7 @@ typedef struct
   size_t
   vertex_buffer_push_back( vertex_buffer_t * self,
                            const void * vertices, const size_t vcount,
-                           const GLushort * indices, const size_t icount );
+                           const GLuint * indices, const size_t icount );
 
 
 /**
@@ -337,9 +331,9 @@ typedef struct
  */
   size_t
   vertex_buffer_insert( vertex_buffer_t * self,
-                        size_t index,
+                        const size_t index,
                         const void * vertices, const size_t vcount,
-                        const GLushort * indices, const size_t icount );
+                        const GLuint * indices, const size_t icount );
 
 /**
  * Erase an item from the vertex buffer.
@@ -354,6 +348,7 @@ typedef struct
 /** @} */
 
 #ifdef __cplusplus
+}
 }
 #endif
 

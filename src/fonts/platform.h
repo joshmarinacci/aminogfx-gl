@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -50,19 +50,23 @@ typedef unsigned __int64 uint64_t;
 
 #ifdef __cplusplus
 extern "C" {
+namespace ftgl {
 #endif
 
 #ifdef __APPLE__
     /* strndup() was only added in OSX lion */
     char * strndup( const char *s1, size_t n);
-#elif defined(_WIN32) || defined(_WIN64) 
+#elif defined(_WIN32) || defined(_WIN64)
     /* does not exist on windows */
     char * strndup( const char *s1, size_t n);
-    double round (float v);
+#	if !defined(_MSC_VER) || _MSC_VER < 1800
+		double round(double v);
+#	endif // _MSC_VER
 #    pragma warning (disable: 4244) // suspend warnings
 #endif // _WIN32 || _WIN64
 
 #ifdef __cplusplus
+}
 }
 #endif // __cplusplus
 

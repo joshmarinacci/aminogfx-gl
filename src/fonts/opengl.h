@@ -31,21 +31,22 @@
  * policies, either expressed or implied, of Nicolas P. Rougier.
  * ============================================================================
  */
-#ifndef __FREETYPE_GL_H__
-#define __FREETYPE_GL_H__
+#ifndef __OPEN_GL_H__
+#define __OPEN_GL_H__
 
-/* Mandatory */
-#include "opengl.h"
+//headers for AminoGfx
 
-#include "vec234.h"
-#include "vector.h"
-#include "texture-atlas.h"
-#include "texture-font.h"
+#ifdef MAC
+#include <GLFW/glfw3.h>
+#endif
 
-#ifdef __cplusplus
-#ifndef NOT_USING_FT_GL_NAMESPACE
-using namespace ftgl;
-#endif /* NOT_USING_FT_GL_NAMESPACE */
-#endif /* __cplusplus */
+#ifdef LINUX
+#include <GL/glfw.h>
+#include <GL/glext.h>
+#endif
 
-#endif /* FREETYPE_GL_H */
+#ifdef RPI
+#include <GLES2/gl2.h>
+#endif
+
+#endif

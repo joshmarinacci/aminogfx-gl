@@ -3,7 +3,7 @@
 // A high quality OpenGL rendering engine for C
 // Copyright (C) 2012 Nicolas P. Rougier. All rights reserved.
 // Contact: Nicolas.Rougier@gmail.com
-//          http://code.google.com/p/gl-agg/
+//          https://github.com/rougier/freetype-gl
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,20 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef MAC
-#include <GLFW/glfw3.h>
-#endif
-
-#ifdef LINUX
-#include <GL/glfw.h>
-#include <GL/glext.h>
-#endif
-
-#ifdef RPI
-#include <GLES2/gl2.h>
-#endif
-
+#include "opengl.h"
 #include "shader.h"
 
 
@@ -111,6 +98,7 @@ shader_load( const char * vert_filename,
         char *vert_source = shader_read( vert_filename );
         GLuint vert_shader = shader_compile( vert_source, GL_VERTEX_SHADER);
         glAttachShader( handle, vert_shader);
+        glDeleteShader( vert_shader );
         free( vert_source );
     }
     if( frag_filename && strlen( frag_filename ) )
@@ -118,6 +106,7 @@ shader_load( const char * vert_filename,
         char *frag_source = shader_read( frag_filename );
         GLuint frag_shader = shader_compile( frag_source, GL_FRAGMENT_SHADER);
         glAttachShader( handle, frag_shader);
+        glDeleteShader( frag_shader );
         free( frag_source );
     }
 

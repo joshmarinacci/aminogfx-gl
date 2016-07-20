@@ -270,7 +270,7 @@ static inline char *TO_CHAR(v8::Handle<v8::Value> val) {
 class TextNode : public AminoNode {
 public:
     //text
-    std::wstring text;
+    std::string text; //UTF-8
 
     //color
     float r;
@@ -301,7 +301,7 @@ public:
         wrap = WRAP_NONE;
 
         //properties
-        text = L"";
+        text = "";
         fontsize = 20;
         fontid = INVALID;
         buffer = NULL;
@@ -1082,27 +1082,6 @@ cbx font
 refresh: w, h, text, fontsize, fontid, vAlign, wrap
 
 */
-
-/**
- * Get wstring from v8 string.
- *
- * Note: automatically free'd
- */
-static std::wstring GetWString(v8::Handle<v8::String> str) {
-    std::wstring wstr = L"";
-    int len = str->Length();
-    uint16_t *buf = new uint16_t[len + 1];
-
-    str->Write(buf);
-
-    for (int i = 0; i < len + 1; i++) {
-        wstr.push_back(buf[i]);
-    }
-
-    delete[] buf;
-
-    return wstr;
-}
 
 //JavaScript bindings
 

@@ -1,6 +1,7 @@
 #include "base.h"
 
 #include "SimpleRenderer.h"
+#include "fonts/utf8-utils.h"
 
 std::map<int, AminoFont *> fontmap;
 std::vector<AminoNode *> rects;
@@ -693,9 +694,10 @@ AminoJSObject* AminoAnimFactory::create() {
 
 // --------------------------------------------------------------- add_text ---
 static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
-               wchar_t *text, vec2 *pen, int wrap, int width, int *lineNr )
+               const char *text, vec2 *pen, int wrap, int width, int *lineNr )
 {
-    size_t len = wcslen(text);
+    //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
+    size_t len = utf8_strlen(text);
 
     *lineNr = 1;
 
@@ -706,17 +708,23 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
     //debug
     //printf("add_text: wrap=%i width=%i\n", wrap, width);
 
-    //add glyphs
+    //add glyphs (by iterating Unicode characters)
+    char *textPos = (char *)text;
+    char *lastTextPos = NULL;
+    uint32_t textUtf32[len];
+
     for (size_t i = 0; i < len; ++i) {
-        wchar_t ch = text[i];
-        texture_glyph_t *glyph = texture_font_get_glyph(font, ch);
+        texture_glyph_t *glyph = texture_font_get_glyph(font, textPos);
 
         if (glyph) {
+            //store
+            textUtf32[i] = glyph->codepoint;
+
             //kerning
             int kerning = 0;
 
             if (linePos > 0) {
-                kerning = texture_glyph_get_kerning(glyph, text[i - 1]);
+                kerning = texture_glyph_get_kerning(glyph, lastTextPos);
             }
 
             //wrap
@@ -726,7 +734,7 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                 bool wordWrap = false;
 
                 //check new line
-                if (ch == '\n') {
+                if (glyph->codepoint == '\n') {
                     //next line
                     newLine = true;
                     skip = true;
@@ -738,13 +746,13 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                     wordWrap = wrap == WRAP_WORD;
 
                     //check space
-                    if (iswspace(ch)) {
+                    if (iswspace((wchar_t)glyph->codepoint)) {
                         skip = true;
                     }
                 }
 
                 //check white space
-                if (!skip && (newLine || lineStart == i) && isspace(ch)) {
+                if (!skip && (newLine || lineStart == i) && iswspace(glyph->codepoint)) {
                     skip = true;
                 }
 
@@ -760,7 +768,7 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
                         int wrapPos = -1;
 
                         for (size_t j = i - 1; j > lineStart; j--) {
-                            if (iswspace(text[j])) {
+                            if (iswspace((wchar_t)textUtf32[j])) {
                                 wrapPos = j;
                                 break;
                             }
@@ -852,14 +860,14 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
             float advance = glyph->advance_x;
 
             //skip special characters
-            if (ch == 0x9d) {
+            if (glyph->codepoint == 0x9d) {
                 //hide
                 x1 = x0;
                 y1 = y0;
                 advance = 0;
             }
 
-            GLushort indices[6] = {0,1,2, 0,2,3};
+            GLuint indices[6] = {0,1,2, 0,2,3};
             vertex_t vertices[4] = { { x0,y0,0,  s0,t0 },
                                      { x0,y1,0,  s0,t1 },
                                      { x1,y1,0,  s1,t1 },
@@ -872,9 +880,22 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
             //next
             pen->x += advance;
         } else {
-            //debug
-            //printf("not a glyph: %lc\n", ch);
+            //not enough space for glyph
+
+            //store
+            uint32_t ch32 = utf8_to_utf32(textPos);
+
+            textUtf32[i] = ch32;
+
+            //show error
+            printf("no space for glyph: %lc\n", (wchar_t)ch32);
         }
+
+        //next glyph pos
+        size_t charLen = utf8_surrogate_len(textPos);
+
+        lastTextPos = textPos;
+        textPos += charLen;
     }
 }
 
@@ -896,7 +917,7 @@ void TextNode::refreshText() {
         }
 
         //add new size
-        font->fonts[fontsize] = texture_font_new(font->atlas, font->filename, fontsize);
+        font->fonts[fontsize] = texture_font_new_from_file(font->atlas, fontsize, font->filename);
 
         if (DEBUG_RESOURCES) {
             printf("created font texture (name=%s, size=%i)\n", font->filename, fontsize);
@@ -909,8 +930,6 @@ void TextNode::refreshText() {
     pen.x = 0;
     pen.y = 0;
 
-    wchar_t *t2 = const_cast<wchar_t *>(text.c_str());
-
     if (buffer) {
         vertex_buffer_clear(buffer);
     } else {
@@ -920,7 +939,7 @@ void TextNode::refreshText() {
     texture_font_t *f = font->fonts[fontsize];
 
     assert(f);
-    add_text(buffer, f, t2, &pen, wrap, w, &lineNr);
+    add_text(buffer, f, text.c_str(), &pen, wrap, w, &lineNr);
 }
 
 NAN_METHOD(getTextLineCount) {
@@ -1072,7 +1091,7 @@ texture_font_t* getFontTexture(int index, int size) {
             printf("loading size %d for font %s\n", size, font->filename);
         }
 
-        font->fonts[size] = texture_font_new(font->atlas, font->filename, size);
+        font->fonts[size] = texture_font_new_from_file(font->atlas, size, font->filename);
     }
 
     return font->fonts[size];
@@ -1112,6 +1131,7 @@ NAN_METHOD(getFontDescender) {
 }
 
 NAN_METHOD(getCharWidth) {
+/* cbx
     std::wstring wstr = GetWString(info[0]->ToString());
     int fontsize  = info[1]->Uint32Value();
     int fontindex = info[2]->Uint32Value();
@@ -1142,6 +1162,7 @@ NAN_METHOD(getCharWidth) {
     }
 
     info.GetReturnValue().Set(w);
+*/
 }
 
 /**
@@ -1159,7 +1180,7 @@ NAN_METHOD(createNativeFont) {
     int id = fontmap.size();
 
     fontmap[id] = afont;
-
+//cbx
     //load font & shader
     afont->filename = TO_CHAR(info[0]);
 
@@ -1178,7 +1199,7 @@ NAN_METHOD(createNativeFont) {
     //printf("shader: vertex=%s fragment=%s\n", vert.c_str(), frag.c_str());
 
     free(shader_base);
-
+//cbx
     afont->atlas = texture_atlas_new(512, 512, 1);
     afont->shader = shader_load(vert.c_str(), frag.c_str());
 
