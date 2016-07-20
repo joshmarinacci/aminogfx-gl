@@ -40,14 +40,14 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
 
     // group
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
-    Nan::SetTemplate(tpl, "Group", Group::GetInitFunction());
-//cbx rename
+    Nan::SetTemplate(tpl, "Group", AminoGroup::GetInitFunction());
+
     // other
-    Nan::SetTemplate(tpl, "Rect", Rect::GetRectInitFunction());
-    Nan::SetTemplate(tpl, "ImageView", Rect::GetImageViewInitFunction());
+    Nan::SetTemplate(tpl, "Rect", AminoRect::GetRectInitFunction());
+    Nan::SetTemplate(tpl, "ImageView", AminoRect::GetImageViewInitFunction());
     Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
-    Nan::SetTemplate(tpl, "Polygon", Polygon::GetInitFunction());
-    Nan::SetTemplate(tpl, "Anim", Anim::GetInitFunction());
+    Nan::SetTemplate(tpl, "Polygon", AminoPolygon::GetInitFunction());
+    Nan::SetTemplate(tpl, "Anim", AminoAnim::GetInitFunction());
 
     //special: GL object
     Nan::SetTemplate(tpl, "GL", createGLObject());
@@ -520,12 +520,12 @@ v8::Local<v8::Object> AminoGfx::createGLObject() {
 
 NAN_METHOD(AminoGfx::SetRoot) {
     //new value
-    Group *group;
+    AminoGroup *group;
 
     if (info[0]->IsNull() || info[0]->IsUndefined()) {
         group = NULL;
     } else {
-        group = Nan::ObjectWrap::Unwrap<Group>(info[0]->ToObject());
+        group = Nan::ObjectWrap::Unwrap<AminoGroup>(info[0]->ToObject());
     }
 
     AminoGfx *obj= Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
@@ -533,7 +533,7 @@ NAN_METHOD(AminoGfx::SetRoot) {
     obj->setRoot(group);
 }
 
-void AminoGfx::setRoot(Group *group) {
+void AminoGfx::setRoot(AminoGroup *group) {
     //validate
     if (group && !group->checkRenderer(this)) {
         return;
@@ -555,7 +555,7 @@ void AminoGfx::setRoot(Group *group) {
 /**
  * Add animation.
  */
-bool AminoGfx::addAnimationAsync(Anim *anim) {
+bool AminoGfx::addAnimationAsync(AminoAnim *anim) {
     if (destroyed) {
         return false;
     }
@@ -569,7 +569,7 @@ bool AminoGfx::addAnimationAsync(Anim *anim) {
  * Add a child node.
  */
 void AminoGfx::addAnimation(AsyncValueUpdate *update) {
-    Anim *anim = (Anim *)update->valueObj;
+    AminoAnim *anim = (AminoAnim *)update->valueObj;
 
     animations.push_back(anim);
 }
@@ -579,7 +579,7 @@ void AminoGfx::addAnimation(AsyncValueUpdate *update) {
  *
  * Note: does not release the instance.
  */
-void AminoGfx::removeAnimationAsync(Anim *anim) {
+void AminoGfx::removeAnimationAsync(AminoAnim *anim) {
     if (destroyed) {
         return;
     }
@@ -591,8 +591,8 @@ void AminoGfx::removeAnimationAsync(Anim *anim) {
  * Remove animation.
  */
 void AminoGfx::removeAnimation(AsyncValueUpdate *update) {
-    Anim *anim = (Anim *)update->valueObj;
-    std::vector<Anim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
+    AminoAnim *anim = (AminoAnim *)update->valueObj;
+    std::vector<AminoAnim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
 
     if (pos != animations.end()) {
         animations.erase(pos);
@@ -628,63 +628,63 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update) {
 }
 
 //
-// GroupFactory
+// AminoGroupFactory
 //
 
 /**
  * Group factory constructor.
  */
-GroupFactory::GroupFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Group", callback) {
+AminoGroupFactory::AminoGroupFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Group", callback) {
     //empty
 }
 
-AminoJSObject* GroupFactory::create() {
-    return new Group();
+AminoJSObject* AminoGroupFactory::create() {
+    return new AminoGroup();
 }
 
 //
-// RectFactory
+// AminoRectFactory
 //
 
 /**
- * Rect factory constructor.
+ * AminoRect factory constructor.
  */
-RectFactory::RectFactory(Nan::FunctionCallback callback, bool hasImage): AminoJSObjectFactory(hasImage ? "ImageView":"Rect", callback), hasImage(hasImage) {
+AminoRectFactory::AminoRectFactory(Nan::FunctionCallback callback, bool hasImage): AminoJSObjectFactory(hasImage ? "ImageView":"Rect", callback), hasImage(hasImage) {
     //empty
 }
 
-AminoJSObject* RectFactory::create() {
-    return new Rect(hasImage);
+AminoJSObject* AminoRectFactory::create() {
+    return new AminoRect(hasImage);
 }
 
 //
-// PolygonFactory
+// AminoPolygonFactory
 //
 
 /**
- * Polygon factory constructor.
+ * AminoPolygon factory constructor.
  */
-PolygonFactory::PolygonFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Polygon", callback) {
+AminoPolygonFactory::AminoPolygonFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Polygon", callback) {
     //empty
 }
 
-AminoJSObject* PolygonFactory::create() {
-    return new Polygon();
+AminoJSObject* AminoPolygonFactory::create() {
+    return new AminoPolygon();
 }
 
 //
-// AnimFactory
+// AminoAnimFactory
 //
 
 /**
  * Animation factory constructor.
  */
-AnimFactory::AnimFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Anim", callback) {
+AminoAnimFactory::AminoAnimFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Anim", callback) {
     //empty
 }
 
-AminoJSObject* AnimFactory::create() {
-    return new Anim();
+AminoJSObject* AminoAnimFactory::create() {
+    return new AminoAnim();
 }
 
 
@@ -1190,13 +1190,4 @@ NAN_METHOD(createNativeFont) {
     //TODO glDeleteProgram (on destroy)
 
     info.GetReturnValue().Set(id);
-}
-
-NAN_METHOD(createText) {
-    TextNode *node = new TextNode("dummy");
-
-    rects.push_back(node);
-
-    //return id
-    info.GetReturnValue().Set((int)rects.size() - 1);
 }

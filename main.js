@@ -1136,8 +1136,7 @@ var gl_native = {
         }
 
         return sgtest.getTextHeight(handle);
-    },
-    createText: function () {           return sgtest.createText();           }
+    }
 };
 
 exports.input = amino_core.input;

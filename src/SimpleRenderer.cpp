@@ -52,15 +52,15 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
     //draw
     switch (root->type) {
         case GROUP:
-            this->drawGroup(c, (Group *)root);
+            this->drawGroup(c, (AminoGroup *)root);
             break;
 
         case RECT:
-            this->drawRect(c, (Rect *)root);
+            this->drawRect(c, (AminoRect *)root);
             break;
 
         case POLY:
-            this->drawPoly(c, (Polygon *)root);
+            this->drawPoly(c, (AminoPolygon *)root);
             break;
 
         case TEXT:
@@ -128,7 +128,7 @@ void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView
     glDisable(GL_BLEND);
 }
 
-void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
+void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
     if (DEBUG_RENDERER) {
         printf("-> drawGroup()\n");
     }
@@ -205,7 +205,7 @@ void SimpleRenderer::drawGroup(GLContext *c, Group *group) {
     }
 }
 
-void SimpleRenderer::drawPoly(GLContext *ctx, Polygon *poly) {
+void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
     if (DEBUG_RENDERER) {
         printf("-> drawPoly()\n");
     }
@@ -273,7 +273,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, Polygon *poly) {
     }
 }
 
-void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
+void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
     if (DEBUG_RENDERER) {
         printf("-> drawRect()\n");
     }

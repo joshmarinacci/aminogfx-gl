@@ -6,8 +6,6 @@
 #include "fonts.h"
 #include "images.h"
 
-using namespace node;
-
 #include <uv.h>
 #include "shaders.h"
 #include "mathutils.h"
@@ -32,57 +30,11 @@ extern "C" {
 }
 
 const int GROUP = 1;
-const int RECT = 2;
-const int TEXT = 3;
-const int ANIM = 4;
-const int POLY = 5;
-const int INVALID = -1;
-
-static const int FOREVER = -1;
-
-//properties
-
-static const int SCALE_X_PROP  =  2;
-static const int SCALE_Y_PROP  =  3;
-static const int ROTATE_Z_PROP =  4;
-static const int R_PROP        =  5;
-static const int G_PROP        =  6;
-static const int B_PROP        =  7;
-static const int TEXID_PROP    =  8;
-static const int TEXT_PROP     =  9;
-static const int W_PROP        = 10;
-static const int H_PROP        = 11;
-static const int FONTSIZE_PROP = 12;
-
-static const int LERP_PROP = 16;
-
-static const int VISIBLE_PROP = 18;
-static const int ROTATE_X_PROP = 19;
-static const int ROTATE_Y_PROP = 20;
-
-static const int X_PROP = 21;
-static const int Y_PROP = 22;
-static const int GEOMETRY_PROP = 24;
-static const int FILLED_PROP = 25;
-
-static const int OPACITY_PROP = 27;
-static const int FONTID_PROP = 28;
-
-static const int COUNT_PROP = 29;
-
-static const int TEXTURE_LEFT_PROP   = 30;
-static const int TEXTURE_RIGHT_PROP  = 31;
-static const int TEXTURE_TOP_PROP    = 32;
-static const int TEXTURE_BOTTOM_PROP = 33;
-
-static const int CLIPRECT_PROP = 34;
-static const int AUTOREVERSE_PROP = 35;
-static const int DIMENSION_PROP = 36;
-static const int THEN_PROP = 37;
-static const int STOP_PROP = 38;
-
-static const int TEXT_VALIGN_PROP = 40;
-static const int TEXT_WRAP_PROP   = 41;
+const int RECT  = 2;
+const int TEXT  = 3;
+const int ANIM  = 4;
+const int POLY  = 5;
+const int INVALID = -1; //font
 
 //property values
 
@@ -97,11 +49,8 @@ static const int WRAP_WORD = 0x2;
 
 extern std::map<int, AminoFont *> fontmap;
 
-#define ID_ADD_CHILD    100
-#define ID_REMOVE_CHILD 101
-
-class Group;
-class Anim;
+class AminoGroup;
+class AminoAnim;
 
 /**
  * Amino main class to call from JavaScript.
@@ -113,8 +62,8 @@ public:
     AminoGfx(std::string name);
     virtual ~AminoGfx();
 
-    bool addAnimationAsync(Anim *anim);
-    void removeAnimationAsync(Anim *anim);
+    bool addAnimationAsync(AminoAnim *anim);
+    void removeAnimationAsync(AminoAnim *anim);
 
     void deleteTextureAsync(GLuint textureId);
 
@@ -124,7 +73,7 @@ protected:
     Nan::Callback *startCallback = NULL;
 
     //renderer
-    Group *root = NULL;
+    AminoGroup *root = NULL;
     int viewportW;
     int viewportH;
     ColorShader *colorShader;
@@ -143,7 +92,7 @@ protected:
     Utf8Property *propTitle;
 
     //animations
-    std::vector<Anim *> animations;
+    std::vector<AminoAnim *> animations;
 
     //creation
     static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
@@ -180,7 +129,7 @@ protected:
     virtual void updateWindowPosition() = 0;
     virtual void updateWindowTitle() = 0;
 
-    void setRoot(Group *group);
+    void setRoot(AminoGroup *group);
 
 private:
     //JS methods
@@ -301,7 +250,7 @@ public:
 };
 
 /**
- * Convert a v8::String to a (char*).
+ * Convert a v8::String to a (char *).
  *
  * Note: Any call to this should later be free'd. Never returns null.
  */
@@ -313,30 +262,6 @@ static inline char *TO_CHAR(v8::Handle<v8::Value> val) {
     strncpy(str, *utf8, len);
 
     return str;
-}
-
-/**
- * Get wide char string.
- *
- * Note: any call to this should later be free'd
- */
-static wchar_t* GetWC(const char *c) {
-    const size_t cSize = strlen(c) + 1;
-    wchar_t *wc = new wchar_t[cSize];
-
-    mbstowcs (wc, c, cSize);
-
-    return wc;
-}
-
-extern std::vector<AminoNode *> rects;
-
-/**
- * Display a warning and exit application.
- */
-static void warnAbort(char const *str) {
-    printf("%s\n", str);
-    exit(-1);
 }
 
 /**
@@ -408,9 +333,9 @@ public:
 /**
  * Animation factory.
  */
-class AnimFactory : public AminoJSObjectFactory {
+class AminoAnimFactory : public AminoJSObjectFactory {
 public:
-    AnimFactory(Nan::FunctionCallback callback);
+    AminoAnimFactory(Nan::FunctionCallback callback);
 
     AminoJSObject* create() override;
 };
@@ -418,7 +343,7 @@ public:
 /**
  * Animation class.
  */
-class Anim : public AminoJSObject {
+class AminoAnim : public AminoJSObject {
 private:
     AnyProperty *prop;
 
@@ -440,17 +365,19 @@ private:
     static const int FORWARD  = 1;
     static const int BACKWARD = 2;
 
+    static const int FOREVER = -1;
+
 public:
     static const int TF_LINEAR       = 0x0;
     static const int TF_CUBIC_IN     = 0x1;
     static const int TF_CUBIC_OUT    = 0x2;
     static const int TF_CUBIC_IN_OUT = 0x3;
 
-    Anim(): AminoJSObject(getFactory()->name) {
+    AminoAnim(): AminoJSObject(getFactory()->name) {
         //empty
     }
 
-    ~Anim() {
+    ~AminoAnim() {
         //see destroy
     }
 
@@ -495,11 +422,11 @@ public:
     }
 
     //creation
-    static AnimFactory* getFactory() {
-        static AnimFactory *animFactory;
+    static AminoAnimFactory* getFactory() {
+        static AminoAnimFactory *animFactory;
 
         if (!animFactory) {
-            animFactory = new AnimFactory(New);
+            animFactory = new AminoAnimFactory(New);
         }
 
         return animFactory;
@@ -527,7 +454,7 @@ public:
     }
 
     static NAN_METHOD(Start) {
-        Anim *obj = Nan::ObjectWrap::Unwrap<Anim>(info.This());
+        AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
         v8::Local<v8::Object> data = info[0]->ToObject();
 
         obj->handleStart(data);
@@ -663,7 +590,7 @@ public:
     //TODO reset (start from beginning)
 
     static NAN_METHOD(Stop) {
-        Anim *obj = Nan::ObjectWrap::Unwrap<Anim>(info.This());
+        AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
 
         obj->stop();
     }
@@ -779,9 +706,9 @@ public:
 /**
  * Rect factory.
  */
-class RectFactory : public AminoJSObjectFactory {
+class AminoRectFactory : public AminoJSObjectFactory {
 public:
-    RectFactory(Nan::FunctionCallback callback, bool hasImage);
+    AminoRectFactory(Nan::FunctionCallback callback, bool hasImage);
 
     AminoJSObject* create() override;
 
@@ -792,7 +719,7 @@ private:
 /**
  * Rectangle node class.
  */
-class Rect : public AminoNode {
+class AminoRect : public AminoNode {
 public:
     bool hasImage;
 
@@ -811,11 +738,11 @@ public:
     FloatProperty *propTop;
     FloatProperty *propBottom;
 
-    Rect(bool hasImage): AminoNode(hasImage ? getImageViewFactory()->name:getRectFactory()->name, RECT) {
+    AminoRect(bool hasImage): AminoNode(hasImage ? getImageViewFactory()->name:getRectFactory()->name, RECT) {
         this->hasImage = hasImage;
     }
 
-    virtual ~Rect() {
+    virtual ~AminoRect() {
         //empty
     }
 
@@ -867,11 +794,11 @@ public:
     }
 
     //creation
-    static RectFactory* getRectFactory() {
-        static RectFactory *rectFactory;
+    static AminoRectFactory* getRectFactory() {
+        static AminoRectFactory *rectFactory;
 
         if (!rectFactory) {
-            rectFactory = new RectFactory(NewRect, false);
+            rectFactory = new AminoRectFactory(NewRect, false);
         }
 
         return rectFactory;
@@ -899,11 +826,11 @@ public:
     //ImageView
 
     //creation
-    static RectFactory* getImageViewFactory() {
-        static RectFactory *rectFactory;
+    static AminoRectFactory* getImageViewFactory() {
+        static AminoRectFactory *rectFactory;
 
         if (!rectFactory) {
-            rectFactory = new RectFactory(NewImageView, true);
+            rectFactory = new AminoRectFactory(NewImageView, true);
         }
 
         return rectFactory;
@@ -932,17 +859,17 @@ public:
 /**
  * Polygon factory.
  */
-class PolygonFactory : public AminoJSObjectFactory {
+class AminoPolygonFactory : public AminoJSObjectFactory {
 public:
-    PolygonFactory(Nan::FunctionCallback callback);
+    AminoPolygonFactory(Nan::FunctionCallback callback);
 
     AminoJSObject* create() override;
 };
 
 /**
- * Polygon node class.
+ * AminoPolygon node class.
  */
-class Polygon : public AminoNode {
+class AminoPolygon : public AminoNode {
 public:
     //fill
     FloatProperty *propFillR;
@@ -956,11 +883,11 @@ public:
     //points
     FloatArrayProperty *propGeometry;
 
-    Polygon(): AminoNode(getFactory()->name, POLY) {
+    AminoPolygon(): AminoNode(getFactory()->name, POLY) {
         //empty
     }
 
-    virtual ~Polygon() {
+    virtual ~AminoPolygon() {
     }
 
     void setup() override {
@@ -978,11 +905,11 @@ public:
     }
 
     //creation
-    static PolygonFactory* getFactory() {
-        static PolygonFactory *polygonFactory;
+    static AminoPolygonFactory* getFactory() {
+        static AminoPolygonFactory *polygonFactory;
 
         if (!polygonFactory) {
-            polygonFactory = new PolygonFactory(New);
+            polygonFactory = new AminoPolygonFactory(New);
         }
 
         return polygonFactory;
@@ -1021,9 +948,9 @@ public:
 /**
  * Group factory.
  */
-class GroupFactory : public AminoJSObjectFactory {
+class AminoGroupFactory : public AminoJSObjectFactory {
 public:
-    GroupFactory(Nan::FunctionCallback callback);
+    AminoGroupFactory(Nan::FunctionCallback callback);
 
     AminoJSObject* create() override;
 };
@@ -1033,7 +960,7 @@ public:
  *
  * Special: supports clipping
  */
-class Group : public AminoNode {
+class AminoGroup : public AminoNode {
 public:
     //internal
     std::vector<AminoNode *> children;
@@ -1041,11 +968,11 @@ public:
     //properties
     BooleanProperty *propCliprect;
 
-    Group(): AminoNode(getFactory()->name, GROUP) {
+    AminoGroup(): AminoNode(getFactory()->name, GROUP) {
         //empty
     }
 
-    ~Group() {
+    ~AminoGroup() {
     }
 
     void setup() override {
@@ -1062,11 +989,11 @@ public:
     }
 
     //creation
-    static GroupFactory* getFactory() {
-        static GroupFactory *groupFactory;
+    static AminoGroupFactory* getFactory() {
+        static AminoGroupFactory *groupFactory;
 
         if (!groupFactory) {
-            groupFactory = new GroupFactory(New);
+            groupFactory = new AminoGroupFactory(New);
         }
 
         return groupFactory;
@@ -1095,7 +1022,7 @@ private:
     }
 
     static NAN_METHOD(Add) {
-        Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
+        AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
         if (!child->checkRenderer(group)) {
@@ -1103,7 +1030,7 @@ private:
         }
 
         //handle async
-        group->enqueueValueUpdate(child, (asyncValueCallback)&Group::addChild);
+        group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::addChild);
     }
 
     /**
@@ -1123,11 +1050,11 @@ private:
     }
 
     static NAN_METHOD(Remove) {
-        Group *group = Nan::ObjectWrap::Unwrap<Group>(info.This());
+        AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
         //handle async
-        group->enqueueValueUpdate(child, (asyncValueCallback)&Group::removeChild);
+        group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::removeChild);
     }
 
     void removeChild(AsyncValueUpdate *update) {
@@ -1149,124 +1076,12 @@ private:
     }
 };
 
-/**
- * Updates for next animation cycle.
- *
- * Note: destroy() has to be called to free memory if parameters were not passed!
- *
- * TODO use better OOP way
- */
-class Update {
-public:
-    int type;
-    int node;
-    int property;
+/*
+cbx font
 
-    //values
-    float value;
-    std::wstring text;
-    std::vector<float> *arr;
-    Nan::Callback *callback;
+refresh: w, h, text, fontsize, fontid, vAlign, wrap
 
-    Update(int Type, int Node, int Property, float Value, std::wstring Text, std::vector<float> *Arr, Nan::Callback *Callback) {
-        type = Type;
-        node = Node;
-        property = Property;
-        value = Value;
-        text = Text;
-        arr = Arr;
-        callback = Callback;
-    }
-
-    ~Update() { }
-
-    /**
-     * Free memory if update() was not called.
-     */
-    void destroy() {
-        if (DEBUG_BASE) {
-            printf("Update: destroy()\n");
-        }
-
-        if (arr) {
-            delete[] arr;
-            arr = NULL;
-        }
-
-        if (callback) {
-            delete callback;
-            callback = NULL;
-        }
-    }
-
-    void apply() {
-        //node
-        AminoNode *target = rects[node];
-
-        if (target->type == TEXT) {
-            //text
-            TextNode *textnode = (TextNode *)target;
-            bool refresh = false;
-
-            switch (property) {
-                case R_PROP:
-                    textnode->r = value;
-                    break;
-
-                case G_PROP:
-                    textnode->g = value;
-                    break;
-
-                case B_PROP:
-                    textnode->b = value;
-                    break;
-
-                case W_PROP:
-                    textnode->w = value;
-                    refresh = true;
-                    break;
-
-                case H_PROP:
-                    textnode->h = value;
-                    break;
-
-                case TEXT_PROP:
-                    textnode->text = text;
-                    refresh = true;
-                    break;
-
-                case FONTSIZE_PROP:
-                    textnode->fontsize = value;
-                    refresh = true;
-                    break;
-
-                case FONTID_PROP:
-                    textnode->fontid = value;
-                    refresh = true;
-                    break;
-
-                case TEXT_VALIGN_PROP:
-                    textnode->vAlign = (int)value;
-                    break;
-
-                case TEXT_WRAP_PROP:
-                    textnode->wrap = (int)value;
-                    refresh = true;
-                    break;
-
-                default:
-                    printf("Unknown anim text update: %i\n", property);
-                    break;
-            }
-
-            if (refresh) {
-                textnode->refreshText();
-            }
-        }
-    }
-};
-
-NAN_METHOD(createText);
+*/
 
 /**
  * Get wstring from v8 string.
@@ -1299,9 +1114,10 @@ NAN_METHOD(createNativeFont);
 NAN_METHOD(getTextLineCount);
 NAN_METHOD(getTextHeight);
 
+//cbx move to fonts
 typedef struct {
     float x, y, z;    // position
-    float s, t;       // texture
+    float s, t;       // texture pos
 } vertex_t;
 
 //OpenGL JavaScript bindings
