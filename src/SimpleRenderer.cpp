@@ -99,7 +99,7 @@ void colorShaderApply(GLContext *ctx, ColorShader* shader, GLfloat modelView[16]
 }
 
 void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], int texid, GLfloat opacity) {
-    //printf("doing texture shader apply %d opacity = %f\n",texid, opacity);
+    //printf("doing texture shader apply %d opacity = %f\n", texid, opacity);
 
     ctx->useProgram(shader->prog);
 
@@ -304,7 +304,7 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
 
     GLfloat opacity = rect->propOpacity->value * c->opacity;
 
-    if (rect->texid != INVALID) {
+    if (rect->textureId != INVALID_TEXTURE) {
         //texture
 
         //image coordinates (fractional world coordinates)
@@ -322,7 +322,7 @@ void SimpleRenderer::drawRect(GLContext *c, Rect *rect) {
         texcoords[4][0] = tx;    texcoords[4][1] = ty2;
         texcoords[5][0] = tx;    texcoords[5][1] = ty;
 
-        textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->texid, opacity);
+        textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->textureId, opacity);
     } else if (!rect->hasImage) {
         //color
         GLfloat colors[6][3];

@@ -357,7 +357,6 @@ void render() {
 
 NAN_MODULE_INIT(InitAll) {
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<FunctionTemplate>(createText)).ToLocalChecked());
-    Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<FunctionTemplate>(getCharWidth)).ToLocalChecked());
     Nan::Set(target, Nan::New("getFontHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<FunctionTemplate>(getFontHeight)).ToLocalChecked());

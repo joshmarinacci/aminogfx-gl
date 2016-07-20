@@ -192,6 +192,20 @@ AminoGfx.prototype.createRect = function () {
 };
 
 /**
+ * Create image view element.
+ */
+AminoGfx.prototype.createImageView = function () {
+    return new AminoGfx.ImageView(this);
+};
+
+/**
+ * Create image view element.
+ */
+AminoGfx.prototype.createTexture = function () {
+    return new AminoGfx.Texture(this);
+};
+
+/**
  * Create polygon element.
  */
 AminoGfx.prototype.createPolygon = function () {
@@ -503,10 +517,9 @@ Rect.prototype.init = function () {
 
     //special
     this.fill.watch(watchFill);
-
-    //methods
-    this.contains = contains;
 };
+
+Rect.prototype.contains = contains;
 
 /**
  * Check if a given point is inside this node.
@@ -522,6 +535,108 @@ function contains(pt) {
     return pt.x >= 0 && pt.x < this.w() &&
            pt.y >= 0 && pt.y < this.h();
 }
+
+//
+// ImageView
+//
+
+var ImageView = AminoGfx.ImageView;
+
+ImageView.prototype.init = function () {
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //positon
+        x: 0,
+        y: 0,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //texture coordinates
+        left:   0,
+        right:  1,
+        top:    0,
+        bottom: 1,
+
+        //image
+        src: null,
+        image: null,
+        opacity: 1.0
+    });
+
+    var self = this;
+
+    //actually load the image
+    this.src.watch(function (src) {
+        if (!src) {
+            self.image(null);
+            return;
+        }
+
+        //load image from source
+        var img = new AminoImage();
+
+        img.onload = function (err) {
+            if (err) {
+                if (DEBUG) {
+                    console.log('could not load image: ' + err.message);
+                }
+
+                cb();
+                return;
+            }
+
+            //debug
+            //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
+
+            //load texture
+            var amino = self.amino;
+            var texture = amino.createTexture(amino);
+
+            texture.loadTexture(img, function (err, texture) {
+                if (err) {
+                    if (DEBUG) {
+                        console.log('could not load texture: ' + err.message);
+                    }
+
+                    return;
+                }
+
+                //use texture
+                self.image(texture);
+            });
+        };
+
+        img.src = src;
+    });
+
+    //when the image is loaded, update the dimensions
+    this.image.watch(function (texture) {
+        //TODO support fit modes cbx
+        if (texture) {
+            self.w(texture.w);
+            self.h(texture.h);
+        }
+    });
+};
+
+ImageView.prototype.contains = contains;
 
 //
 // Polygon
@@ -688,7 +803,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
         //convert buffer
         if (!Buffer.isBuffer(src)) {
             if (this.onload) {
-                this.onload(new Exception('buffer expected!'));
+                this.onload(new Error('buffer expected!'));
             }
 
             return;
@@ -1022,38 +1137,7 @@ var gl_native = {
 
         return sgtest.getTextHeight(handle);
     },
-    createPoly: function ()  {          return sgtest.createPoly();           },
-    createText: function () {           return sgtest.createText();           },
-    loadImage: function (src, cb) {
-        var img = new AminoImage();
-
-        img.onload = function (err) {
-            if (err) {
-                if (DEBUG) {
-                    console.log('could not load image');
-                }
-
-                cb();
-                return;
-            }
-
-            //debug
-            //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
-
-            //load texture
-            var nat = Core.getCore().getNative();
-
-            //TODO refactor (async, must be called in OpenGL loop)
-            nat.loadBufferToTexture(-1, img.w, img.h, img.bpp, img.buffer, function (texture) {
-                cb(texture);
-            });
-        };
-
-        img.src = src;
-    },
-    loadBufferToTexture: function (texid, w, h, bpp, buf, cb) {
-        return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf));
-    }
+    createText: function () {           return sgtest.createText();           }
 };
 
 exports.input = amino_core.input;
@@ -1208,7 +1292,6 @@ exports.makeProps = makeProps;
 
 //basic
 exports.Text      = amino_core.Text;
-exports.ImageView = amino_core.ImageView;
 
 //extended
 exports.PixelView    = amino_core.PixelView;

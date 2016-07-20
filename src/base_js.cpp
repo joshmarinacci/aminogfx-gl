@@ -314,6 +314,20 @@ AminoJSObject::Utf8Property* AminoJSObject::createUtf8Property(std::string name)
     return prop;
 }
 
+/**
+ * Create object property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
+AminoJSObject::ObjectProperty* AminoJSObject::createObjectProperty(std::string name) {
+    int id = ++lastPropertyId;
+    ObjectProperty *prop = new ObjectProperty(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
 void AminoJSObject::addProperty(AnyProperty *prop) {
     int id = prop->id;
     propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
@@ -370,6 +384,13 @@ bool AminoJSObject::isEventHandler() {
  * Enqueue a value update.
  */
 bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback) {
+    return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
+}
+
+/**
+ * Enqueue a value update.
+ */
+bool AminoJSObject::enqueueValueUpdate(unsigned int value, asyncValueCallback callback) {
     return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
 }
 
@@ -907,6 +928,52 @@ void AminoJSObject::Utf8Property::setValue(char *newValue) {
 }
 
 //
+// AminoJSObject::ObjectProperty
+//
+
+/**
+ * ObjectProperty constructor.
+ */
+AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_OBJECT, obj, name, id) {
+    //empty
+}
+
+/**
+ * Utf8Property destructor.
+ */
+AminoJSObject::ObjectProperty::~ObjectProperty() {
+    value.Reset();
+}
+
+/**
+ * Set value.
+ */
+void AminoJSObject::ObjectProperty::setValue(v8::Local<v8::Value> &value) {
+    if (value->IsObject()) {
+        this->value.Reset(value->ToObject());
+    } else {
+        this->value.Reset();
+    }
+}
+
+/**
+ * Update the object value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::ObjectProperty::setValue(v8::Local<v8::Object> &newValue) {
+    v8::Local<v8::Object> value = Nan::New(this->value);
+
+    if (value != newValue) {
+        this->value.Reset(newValue);
+
+        if (connected) {
+            obj->updateProperty(name, newValue);
+        }
+    }
+}
+
+//
 // AminoJSObject::AnyAsyncUpdate
 //
 
@@ -930,6 +997,10 @@ AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, AminoJSObj
     }
 }
 
+AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueUint32(value), callback(callback) {
+    obj->retain();
+}
+
 AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
     obj->release();
 
@@ -945,8 +1016,9 @@ AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
 AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
     asyncUpdates = new std::vector<AnyAsyncUpdate *>();
 
-    if (!uv_mutex_init(&asyncLock)) {
+    if (uv_mutex_init(&asyncLock) != 0) {
         printf("could not create mutex\n");
+        exit(1);
     }
 }
 
@@ -1050,11 +1122,10 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     if (destroyed) {
         return false;
     }
-
-    uv_mutex_lock(&asyncLock);
+//cbx switch to pthread mutex, libuv does not support recursive calls!
+//    uv_mutex_lock(&asyncLock);
     asyncUpdates->push_back(new AsyncPropertyUpdate(prop, value));
-    uv_mutex_unlock(&asyncLock);
-
+//    uv_mutex_unlock(&asyncLock);
     return true;
 }
 

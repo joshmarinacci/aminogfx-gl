@@ -1,11 +1,12 @@
 #include "images.h"
+#include "base.h"
 
 extern "C" {
     #include "nanojpeg.h"
     #include "upng.h"
 }
 
-#define DEBUG_IMAGES false
+#define DEBUG_IMAGES true
 #define DEBUG_IMAGES_CONSOLE true
 
 //
@@ -82,6 +83,7 @@ public:
         if (DEBUG_IMAGES) {
             printf("decodePng()\n");
         }
+
         upng = upng_new_from_bytes((const unsigned char *)buffer, bufferLen);
 
         if (upng == NULL) {
@@ -182,17 +184,22 @@ public:
 
         //result
         v8::Local<v8::Object> obj = GetFromPersistent("object")->ToObject();
-        Nan::MaybeLocal<v8::Object> buff = Nan::CopyBuffer(imgData, imgDataLen);
+        v8::Local<v8::Object> buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
 
         //create object
         Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(imgW));
         Nan::Set(obj, Nan::New("h").ToLocalChecked(),      Nan::New(imgH));
         Nan::Set(obj, Nan::New("alpha").ToLocalChecked(),  Nan::New(imgAlpha));
         Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(imgBPP));
-        Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff.ToLocalChecked());
+        Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff);
 
         //free memory
         freeImageBuffers();
+
+        //store local values
+        AminoImage *img = Nan::ObjectWrap::Unwrap<AminoImage>(obj);
+
+        img->imageLoaded(buff, imgW, imgH, imgAlpha, imgBPP);
 
         //call callback
         v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
@@ -221,6 +228,77 @@ AminoImage::~AminoImage()  {
     if (DEBUG_IMAGES || DEBUG_RESOURCES) {
         printf("AminoImage destructor\n");
     }
+}
+
+/**
+ * Check if image is available.
+ */
+bool AminoImage::hasImage() {
+    return w > 0;
+}
+
+/**
+ * Free all resources.
+ */
+void AminoImage::destroy() {
+    AminoJSObject::destroy();
+
+    buffer.Reset();
+}
+
+/**
+ * Create texture.
+ *
+ * Note: only call from async handler!
+ */
+GLuint AminoImage::createTexture(GLuint textureId) {
+    if (!hasImage()) {
+        return INVALID_TEXTURE;
+    }
+
+    //buffer
+    v8::Local<v8::Object> bufferObj = Nan::New(buffer);
+    char *bufferData = node::Buffer::Data(bufferObj);
+    size_t bufferLength = node::Buffer::Length(bufferObj);
+
+    //debug
+    //printf("buffer length = %d\n", bufferLength);
+
+    assert(w * h * bpp == (int)bufferLength);
+
+    GLuint texture;
+
+    if (textureId != INVALID_TEXTURE) {
+        //use existing texture
+	    texture = textureId;
+    } else {
+        //create new texture
+	    glGenTextures(1, &texture);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    if (bpp == 3) {
+        //RGB (24-bit)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, bufferData);
+    } else if (bpp == 4) {
+        //RGBA (32-bit)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, bufferData);
+    } else if (bpp == 1) {
+        //grayscale (8-bit)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, bufferData);
+    } else {
+        //unsupported
+        printf("unsupported texture format: bpp=%d\n", bpp);
+    }
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    return texture;
 }
 
 /**
@@ -273,6 +351,17 @@ NAN_METHOD(AminoImage::loadImage) {
     AsyncQueueWorker(new AsyncImageWorker(callback, obj, bufferObj));
 }
 
+/**
+ * Create local copy of JS values.
+ */
+void AminoImage::imageLoaded(v8::Local<v8::Object> &buffer, int w, int h, bool alpha, int bpp) {
+    this->buffer.Reset(buffer);
+    this->w = w;
+    this->h = h;
+    this->alpha = alpha;
+    this->bpp = bpp;
+}
+
 //
 //  AminoImageFactory
 //
@@ -289,4 +378,187 @@ AminoImageFactory::AminoImageFactory(Nan::FunctionCallback callback): AminoJSObj
  */
 AminoJSObject* AminoImageFactory::create() {
     return new AminoImage();
+}
+
+//
+// AminoTexture
+//
+
+/**
+ * Constructor.
+ */
+AminoTexture::AminoTexture(): AminoJSObject(getFactory()->name) {
+    if (DEBUG_IMAGES) {
+        printf("AminoTexture constructor\n");
+    }
+}
+
+/**
+ * Destructor.
+ */
+AminoTexture::~AminoTexture()  {
+    if (DEBUG_IMAGES || DEBUG_RESOURCES) {
+        printf("AminoTexture destructor\n");
+    }
+}
+
+void AminoTexture::destroy() {
+    AminoJSObject::destroy();
+
+    if (callback) {
+        delete callback;
+        callback = NULL;
+    }
+
+    if (textureId != INVALID_TEXTURE && eventHandler) {
+        ((AminoGfx *)eventHandler)->deleteTextureAsync(textureId);
+    }
+}
+
+/**
+ * Get factory instance.
+ */
+AminoTextureFactory* AminoTexture::getFactory() {
+    static AminoTextureFactory *aminoTextureFactory;
+
+    if (!aminoTextureFactory) {
+        aminoTextureFactory = new AminoTextureFactory(New);
+    }
+
+    return aminoTextureFactory;
+}
+
+/**
+ * Initialize Texture template.
+ */
+v8::Local<v8::Function> AminoTexture::GetInitFunction() {
+    v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+
+    //methods
+    Nan::SetPrototypeMethod(tpl, "loadTexture", loadTexture);
+
+    //template function
+    return Nan::GetFunction(tpl).ToLocalChecked();
+}
+
+/**
+ * JS object construction.
+ */
+NAN_METHOD(AminoTexture::New) {
+    AminoJSObject::createInstance(info, getFactory());
+}
+
+/**
+ * Init amino binding.
+ */
+void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
+    if (DEBUG_IMAGES) {
+        printf("-> preInit()\n");
+    }
+
+    //set amino instance
+    v8::Local<v8::Object> jsObj = info[0]->ToObject();
+    AminoJSEventObject *obj = Nan::ObjectWrap::Unwrap<AminoJSEventObject>(jsObj);
+
+    //bind to queue
+    setEventHandler(obj);
+    Nan::Set(handle(), Nan::New("amino").ToLocalChecked(), jsObj);
+}
+
+/**
+ * Load texture asynchronously.
+ *
+ * loadTexte(img, callback)
+ */
+NAN_METHOD(AminoTexture::loadTexture) {
+    if (DEBUG_IMAGES) {
+        printf("-> loadTexture()\n");
+    }
+
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+    v8::Local<v8::Function> callback = info[1].As<v8::Function>();
+
+    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+        //already set
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
+
+        callback->Call(info.This(), argc, argv);
+        return;
+    }
+
+    //image
+    AminoImage *img = Nan::ObjectWrap::Unwrap<AminoImage>(info[0]->ToObject());
+
+    if (!img->hasImage()) {
+        //missing image
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error("image not loaded") };
+
+        callback->Call(info.This(), argc, argv);
+        return;
+    }
+
+    //async loading
+    obj->callback = new Nan::Callback(callback);
+    obj->enqueueValueUpdate(img, (asyncValueCallback)&AminoTexture::createTexture);
+}
+
+/**
+ * Create texture.
+ */
+void AminoTexture::createTexture(AsyncValueUpdate *update) {
+    if (DEBUG_IMAGES) {
+        printf("-> createTexture()\n");
+    }
+
+    AminoImage *img = (AminoImage *)update->valueObj;
+    GLuint textureId = img->createTexture(INVALID_TEXTURE);
+
+    if (textureId == INVALID_TEXTURE) {
+        //failed
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
+
+        callback->Call(handle(), argc, argv);
+        return;
+    }
+
+    //set values
+    this->textureId = textureId;
+    w = img->w;
+    h = img->h;
+
+    v8::Local<v8::Object> obj = handle();
+
+    Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+    Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+
+    //callback
+    if (callback) {
+        int argc = 2;
+        v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
+
+        callback->Call(obj, argc, argv);
+        delete callback;
+        callback = NULL;
+    }
+}
+
+//
+//  AminoTextureFactory
+//
+
+/**
+ * Create AminoTexture factory.
+ */
+AminoTextureFactory::AminoTextureFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Texture", callback) {
+    //empty
+}
+
+/**
+ * Create AminoGfx instance.
+ */
+AminoJSObject* AminoTextureFactory::create() {
+    return new AminoTexture();
 }

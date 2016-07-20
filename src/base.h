@@ -116,6 +116,8 @@ public:
     bool addAnimationAsync(Anim *anim);
     void removeAnimationAsync(Anim *anim);
 
+    void deleteTextureAsync(GLuint textureId);
+
 protected:
     bool started = false;
     bool rendering = false;
@@ -195,6 +197,9 @@ private:
     //animation
     void addAnimation(AsyncValueUpdate *update);
     void removeAnimation(AsyncValueUpdate *update);
+
+    //texture
+    void deleteTexture(AsyncValueUpdate *update);
 };
 
 /**
@@ -776,9 +781,12 @@ public:
  */
 class RectFactory : public AminoJSObjectFactory {
 public:
-    RectFactory(Nan::FunctionCallback callback);
+    RectFactory(Nan::FunctionCallback callback, bool hasImage);
 
     AminoJSObject* create() override;
+
+private:
+    bool hasImage;
 };
 
 /**
@@ -786,24 +794,24 @@ public:
  */
 class Rect : public AminoNode {
 public:
+    bool hasImage;
+
     //color
     FloatProperty *propR;
     FloatProperty *propG;
     FloatProperty *propB;
 
-    //offset
+    //image
+    ObjectProperty *propTexture;
+    GLuint textureId = INVALID_TEXTURE;
+
+    //  offset
     FloatProperty *propLeft;
     FloatProperty *propRight;
     FloatProperty *propTop;
     FloatProperty *propBottom;
 
-    //image
-    bool hasImage;
-    int texid;
-
-    Rect(bool hasImage): AminoNode(getFactory()->name, RECT) {
-        //image
-        texid = INVALID;
+    Rect(bool hasImage): AminoNode(hasImage ? getImageViewFactory()->name:getRectFactory()->name, RECT) {
         this->hasImage = hasImage;
     }
 
@@ -821,34 +829,59 @@ public:
         propOriginX = createFloatProperty("originX");
         propOriginY = createFloatProperty("originY");
 
-        propR = createFloatProperty("r");
-        propG = createFloatProperty("g");
-        propB = createFloatProperty("b");
-
         if (hasImage) {
+            propTexture = createObjectProperty("image");
+
             propLeft = createFloatProperty("left");
             propRight = createFloatProperty("right");
             propTop = createFloatProperty("top");
             propBottom = createFloatProperty("bottom");
+        } else {
+            propR = createFloatProperty("r");
+            propG = createFloatProperty("g");
+            propB = createFloatProperty("b");
+        }
+    }
+
+    /**
+     * Handle async property updates.
+     */
+    void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override {
+        //default: set value
+        AminoJSObject::handleAsyncUpdate(property, value);
+
+        //texture
+        if (property == propTexture) {
+            if (propTexture->value.IsEmpty()) {
+                textureId = INVALID_TEXTURE;
+            } else {
+                v8::Local<v8::Object> obj = Nan::New(propTexture->value);
+                AminoTexture *texture = Nan::ObjectWrap::Unwrap<AminoTexture>(obj);
+
+                textureId = texture->textureId;
+            }
+
+            //debug
+            //printf("-> use texture %i\n", textureId);
         }
     }
 
     //creation
-    static RectFactory* getFactory() {
+    static RectFactory* getRectFactory() {
         static RectFactory *rectFactory;
 
         if (!rectFactory) {
-            rectFactory = new RectFactory(New);
+            rectFactory = new RectFactory(NewRect, false);
         }
 
         return rectFactory;
     }
 
     /**
-     * Initialize Group template.
+     * Initialize Rect template.
      */
-    static v8::Local<v8::Function> GetInitFunction() {
-        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+    static v8::Local<v8::Function> GetRectInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getRectFactory());
 
         //no methods
 
@@ -859,8 +892,40 @@ public:
     /**
      * JS object construction.
      */
-    static NAN_METHOD(New) {
-        AminoJSObject::createInstance(info, getFactory());
+    static NAN_METHOD(NewRect) {
+        AminoJSObject::createInstance(info, getRectFactory());
+    }
+
+    //ImageView
+
+    //creation
+    static RectFactory* getImageViewFactory() {
+        static RectFactory *rectFactory;
+
+        if (!rectFactory) {
+            rectFactory = new RectFactory(NewImageView, true);
+        }
+
+        return rectFactory;
+    }
+
+    /**
+     * Initialize ImageView template.
+     */
+    static v8::Local<v8::Function> GetImageViewInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getImageViewFactory());
+
+        //no methods
+
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
+    }
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(NewImageView) {
+        AminoJSObject::createInstance(info, getImageViewFactory());
     }
 };
 
@@ -1226,7 +1291,6 @@ static std::wstring GetWString(v8::Handle<v8::String> str) {
 
 //JavaScript bindings
 
-NAN_METHOD(loadBufferToTexture);
 NAN_METHOD(getFontHeight);
 NAN_METHOD(getFontAscender);
 NAN_METHOD(getFontDescender);

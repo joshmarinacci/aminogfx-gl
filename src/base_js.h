@@ -65,6 +65,7 @@ protected:
     static const int PROPERTY_UINT32      = 4;
     static const int PROPERTY_BOOLEAN     = 5;
     static const int PROPERTY_UTF8        = 6;
+    static const int PROPERTY_OBJECT      = 7;
 
     class AnyProperty {
     public:
@@ -151,12 +152,24 @@ protected:
         void setValue(char *newValue);
     };
 
+    class ObjectProperty : public AnyProperty {
+    public:
+        Nan::Persistent<v8::Object> value;
+
+        ObjectProperty(AminoJSObject *obj, std::string name, int id);
+        ~ObjectProperty();
+
+        void setValue(v8::Local<v8::Value> &value) override;
+        void setValue(v8::Local<v8::Object> &newValue);
+    };
+
     FloatProperty* createFloatProperty(std::string name);
     FloatArrayProperty* createFloatArrayProperty(std::string name);
     Int32Property* createInt32Property(std::string name);
     UInt32Property* createUInt32Property(std::string name);
     BooleanProperty* createBooleanProperty(std::string name);
     Utf8Property* createUtf8Property(std::string name);
+    ObjectProperty* createObjectProperty(std::string name);
 
     //async updates
     void setEventHandler(AminoJSEventObject *handler);
@@ -179,13 +192,17 @@ protected:
 
         //values
         AminoJSObject *valueObj = NULL;
+        unsigned int valueUint32 = 0;
+
         asyncValueCallback callback = NULL;
 
         AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback);
+        AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback);
         ~AsyncValueUpdate();
     };
 
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
+    bool enqueueValueUpdate(unsigned int value, asyncValueCallback callback);
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     //static methods

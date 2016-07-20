@@ -548,7 +548,6 @@ NAN_MODULE_INIT(InitAll) {
 
     //TODO cleanup
     Nan::Set(target, Nan::New("createText").ToLocalChecked(),       Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createText)).ToLocalChecked());
-    Nan::Set(target, Nan::New("loadBufferToTexture").ToLocalChecked(),  Nan::GetFunction(Nan::New<v8::FunctionTemplate>(loadBufferToTexture)).ToLocalChecked());
     Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createNativeFont)).ToLocalChecked());
     Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getCharWidth)).ToLocalChecked());
     Nan::Set(target, Nan::New("getFontHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getFontHeight)).ToLocalChecked());

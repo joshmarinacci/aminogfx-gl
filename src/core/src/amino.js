@@ -9,7 +9,6 @@ exports.primitives = prims;
 
 //basic
 amino.Text = prims.Text;
-amino.ImageView = prims.ImageView;
 
 //extended
 amino.PixelView    = prims.PixelView;

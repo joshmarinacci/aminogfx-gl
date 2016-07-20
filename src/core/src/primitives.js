@@ -152,74 +152,8 @@ function Text() {
     this.fontSize.watch(this.updateFont);
 }
 
-/**
- * ImageView object.
- */
-function ImageView() {
-    amino.makeProps(this, {
-        id: '',
-        visible: true,
-
-        //positon
-        x: 0,
-        y: 0,
-
-        //size
-        w: 100,
-        h: 100,
-
-        //scaling
-        sx: 1,
-        sy: 1,
-
-        //texture coordinates
-        textureLeft:   0,
-        textureRight:  1,
-        textureTop:    0,
-        textureBottom: 1,
-
-        //image
-        src: null,
-        image: null,
-        opacity: 1.0
-    });
-
-    var self = this;
-
-    //actually load the image
-    this.src.watch(function (src) {
-        amino.getCore().getNative().loadImage(src, function (imageref) {
-            self.image(imageref);
-        });
-    });
-
-    //native
-    this.handle = amino.getCore().getNative().createRect(true);
-
-    applyNativeBinding(this);
-
-    //when the image is loaded, update the texture id and dimensions
-    this.image.watch(function (image) {
-        var texid;
-
-        if (image) {
-            self.w(image.w);
-            self.h(image.h);
-
-            texid = image.texid;
-        } else {
-            textid = -1;
-        }
-
-        amino.getCore().getNative().updateProperty(self.handle, 'texid', texid);
-    });
-
-    this.contains = contains;
-}
-
 //exports
 exports.Text = Text;
-exports.ImageView = ImageView;
 
 /**
  * PixelView object.

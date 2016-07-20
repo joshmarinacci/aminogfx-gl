@@ -41,9 +41,11 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // group
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
     Nan::SetTemplate(tpl, "Group", Group::GetInitFunction());
-
+//cbx rename
     // other
-    Nan::SetTemplate(tpl, "Rect", Rect::GetInitFunction());
+    Nan::SetTemplate(tpl, "Rect", Rect::GetRectInitFunction());
+    Nan::SetTemplate(tpl, "ImageView", Rect::GetImageViewInitFunction());
+    Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
     Nan::SetTemplate(tpl, "Polygon", Polygon::GetInitFunction());
     Nan::SetTemplate(tpl, "Anim", Anim::GetInitFunction());
 
@@ -597,6 +599,34 @@ void AminoGfx::removeAnimation(AsyncValueUpdate *update) {
     }
 }
 
+/**
+ * Delete texture.
+ */
+void AminoGfx::deleteTextureAsync(GLuint textureId) {
+    if (destroyed) {
+        return;
+    }
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //enqueue
+    AminoJSObject::enqueueValueUpdate(textureId, (asyncValueCallback)&AminoGfx::deleteTexture);
+}
+
+/**
+ * Delete texture.
+ */
+void AminoGfx::deleteTexture(AsyncValueUpdate *update) {
+    GLuint textureId = update->valueUint32;
+
+    if (DEBUG_RESOURCES) {
+        printf("-> deleting texture %i\n", textureId);
+    }
+
+    glDeleteTextures(1, &textureId);
+}
+
 //
 // GroupFactory
 //
@@ -619,12 +649,12 @@ AminoJSObject* GroupFactory::create() {
 /**
  * Rect factory constructor.
  */
-RectFactory::RectFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Rect", callback) {
+RectFactory::RectFactory(Nan::FunctionCallback callback, bool hasImage): AminoJSObjectFactory(hasImage ? "ImageView":"Rect", callback), hasImage(hasImage) {
     //empty
 }
 
 AminoJSObject* RectFactory::create() {
-    return new Rect(false);
+    return new Rect(hasImage);
 }
 
 //
@@ -1021,66 +1051,6 @@ NAN_METHOD(node_glGetUniformLocation) {
     int loc = glGetUniformLocation(prog, *name);
 
     info.GetReturnValue().Set(loc);
-}
-
-NAN_METHOD(loadBufferToTexture) {
-    int texid = info[0]->Uint32Value();
-    int w     = info[1]->Uint32Value();
-    int h     = info[2]->Uint32Value();
-    int bpp   = info[3]->Uint32Value(); // this is *bytes* per pixel. usually 3 or 4
-
-    //printf("got w=%d h=%d bpp=%d\n", w, h, bpp);
-
-    //buffer
-    v8::Local<v8::Object> bufferObj = info[4]->ToObject();
-    char *bufferData = Buffer::Data(bufferObj);
-    size_t bufferLength = Buffer::Length(bufferObj);
-
-    //printf("buffer length = %d\n", bufferLength);
-
-    assert(w * h * bpp == (int)bufferLength);
-
-    GLuint texture;
-
-    if (texid >= 0) {
-        //use existing texture
-	    texture = texid;
-    } else {
-        //create new texture
-	    glGenTextures(1, &texture);
-    }
-
-    //FIXME glDeleteTextures(1, &texture) never called
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    if (bpp == 3) {
-        //RGB (24-bit)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, bufferData);
-    } else if (bpp == 4) {
-        //RGBA (32-bit)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, bufferData);
-    } else if (bpp == 1) {
-        //grayscale (8-bit)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, bufferData);
-    } else {
-        //unsupported
-        printf("unsupported texture format: bpp=%d\n", bpp);
-    }
-
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    //create object
-    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-
-    Nan::Set(obj, Nan::New("texid").ToLocalChecked(), Nan::New(texture));
-    Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
-    Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
-
-    info.GetReturnValue().Set(obj);
 }
 
 /**

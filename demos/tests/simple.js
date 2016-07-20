@@ -1,6 +1,7 @@
 'use strict';
 
 const amino = require('../../main.js');
+const path = require('path');
 
 //func call test (must fail)
 //console.log('res: ' + amino.AminoGfx());
@@ -50,7 +51,7 @@ gfx.start(function (err) {
     g.add(r);
 
     //animation
-    r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(1).then(animDone).start();
+//    r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(1).then(animDone).start();
     r.b.watch((value) => {
         console.log('animation state: ' + value);
     });
@@ -71,6 +72,12 @@ gfx.start(function (err) {
         .x(200).y(200).opacity(0.2);
 
     g.add(circle);
+
+    //image
+    var iv = this.createImageView().x(300).y(300).sx(2).sy(2);
+
+    iv.src(path.join(__dirname, '../images/tree.png'));
+    g.add(iv);
 
     //TODO more cbx
 });
