@@ -109,7 +109,47 @@ texture_font_load_face(texture_font_t *self, float size,
         goto cleanup_face;
     }
 
+    /*
+     * Find exact pixel size.
+     *
+     * Addition to Freetype GL.
+     *
+     */
+    float sizePx = size;
+    float currSize = size;
+
+    while (1) {
+        error = FT_Set_Pixel_Sizes(*face, (int)(currSize * HRES), (int)currSize);
+
+        if (error) {
+            fprintf(stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
+                __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+            goto cleanup_face;
+        }
+
+        //check size
+        FT_Size_Metrics metrics = (*face)->size->metrics;
+        float ascender = metrics.ascender >> 6;
+        float descender = metrics.descender >> 6;
+        float height = ascender - descender;
+
+        //printf("wanted=%f got=%f\n", sizePx, height);
+
+        if (height <= sizePx) {
+            break;
+        }
+
+        //smaller font size
+        currSize--;
+
+        if (currSize <= 0) {
+            //keep smallest size
+            break;
+        }
+    }
+
     /* Set char size */
+    /*
     error = FT_Set_Char_Size(*face, (int)(size * HRES), 0, DPI * HRES, DPI);
 
     if(error) {
@@ -117,6 +157,7 @@ texture_font_load_face(texture_font_t *self, float size,
                 __LINE__, FT_Errors[error].code, FT_Errors[error].message);
         goto cleanup_face;
     }
+    */
 
     /* Set transform matrix */
     FT_Set_Transform(*face, &matrix, NULL);
@@ -419,7 +460,7 @@ texture_font_load_glyph( texture_font_t * self,
     int ft_glyph_left = 0;
 
     ivec4 region;
-    size_t missed = 0;
+    //size_t missed = 0;
 
 
     if (!texture_font_load_face(self, self->size, &library, &face))
@@ -449,7 +490,7 @@ texture_font_load_glyph( texture_font_t * self,
         if ( region.x < 0 )
         {
             fprintf( stderr, "Texture atlas is full (line %d)\n",  __LINE__ );
-            return NULL;
+            return 0;
         }
         texture_atlas_set_region( self->atlas, region.x, region.y, 4, 4, data, 0 );
         glyph->codepoint = -1;
