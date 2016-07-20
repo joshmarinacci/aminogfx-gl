@@ -288,6 +288,9 @@ GLuint AminoImage::createTexture(GLuint textureId) {
     } else if (bpp == 1) {
         //grayscale (8-bit)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, w, h, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, bufferData);
+    } else if (bpp == 2) {
+        //grayscale & alpha (16-bit)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, w, h, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, bufferData);
     } else {
         //unsupported
         printf("unsupported texture format: bpp=%d\n", bpp);
