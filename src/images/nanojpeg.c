@@ -1,5 +1,5 @@
 // NanoJPEG -- KeyJ's Tiny Baseline JPEG Decoder
-// version 1.3 (2012-03-05)
+// version 1.3.2 (2014-02-02)
 // by Martin J. Fiedler <martin.fiedler@gmx.net>
 //
 // This software is published under the terms of KeyJ's Research License,
@@ -549,11 +549,10 @@ NJ_INLINE void njDecodeSOF(void) {
     nj.mbheight = (nj.height + nj.mbsizey - 1) / nj.mbsizey;
     for (i = 0, c = nj.comp;  i < nj.ncomp;  ++i, ++c) {
         c->width = (nj.width * c->ssx + ssxmax - 1) / ssxmax;
-        c->stride = (c->width + 7) & 0x7FFFFFF8;
         c->height = (nj.height * c->ssy + ssymax - 1) / ssymax;
-        c->stride = nj.mbwidth * nj.mbsizex * c->ssx / ssxmax;
+        c->stride = nj.mbwidth * c->ssx << 3;
         if (((c->width < 3) && (c->ssx != ssxmax)) || ((c->height < 3) && (c->ssy != ssymax))) njThrow(NJ_UNSUPPORTED);
-        if (!(c->pixels = njAllocMem(c->stride * (nj.mbheight * nj.mbsizey * c->ssy / ssymax)))) njThrow(NJ_OUT_OF_MEM);
+        if (!(c->pixels = njAllocMem(c->stride * nj.mbheight * c->ssy << 3))) njThrow(NJ_OUT_OF_MEM);
     }
     if (nj.ncomp == 3) {
         nj.rgb = njAllocMem(nj.width * nj.height * nj.ncomp);
@@ -798,7 +797,7 @@ NJ_INLINE void njUpsample(nj_component_t* c) {
 
 #endif
 
-NJ_INLINE void njConvert() {
+NJ_INLINE void njConvert(void) {
     int i;
     nj_component_t* c;
     for (i = 0, c = nj.comp;  i < nj.ncomp;  ++i, ++c) {
