@@ -1016,10 +1016,12 @@ AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
 AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
     asyncUpdates = new std::vector<AnyAsyncUpdate *>();
 
-    if (uv_mutex_init(&asyncLock) != 0) {
-        printf("could not create mutex\n");
-        exit(1);
-    }
+    //recursive mutex needed
+    pthread_mutexattr_t attr;
+
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&asyncLock, &attr);
 }
 
 AminoJSEventObject::~AminoJSEventObject() {
@@ -1032,7 +1034,7 @@ AminoJSEventObject::~AminoJSEventObject() {
     }
 
     delete asyncUpdates;
-    uv_mutex_destroy(&asyncLock);
+    pthread_mutex_destroy(&asyncLock);
 }
 
 /**
@@ -1054,7 +1056,7 @@ void AminoJSEventObject::processAsyncQueue() {
     Nan::HandleScope scope;
 
     //iterate
-    uv_mutex_lock(&asyncLock);
+    pthread_mutex_lock(&asyncLock);
 
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
         AnyAsyncUpdate *item = (*asyncUpdates)[i];
@@ -1092,7 +1094,7 @@ void AminoJSEventObject::processAsyncQueue() {
     //clear
     asyncUpdates->clear();
 
-    uv_mutex_unlock(&asyncLock);
+    pthread_mutex_unlock(&asyncLock);
 }
 
 /**
@@ -1108,9 +1110,9 @@ bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
         printf("enqueueValueUpdate\n");
     }
 
-    uv_mutex_lock(&asyncLock);
+    pthread_mutex_lock(&asyncLock);
     asyncUpdates->push_back(update);
-    uv_mutex_unlock(&asyncLock);
+    pthread_mutex_unlock(&asyncLock);
 
     return true;
 }
@@ -1122,10 +1124,11 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     if (destroyed) {
         return false;
     }
-//cbx switch to pthread mutex, libuv does not support recursive calls!
-//    uv_mutex_lock(&asyncLock);
+
+    pthread_mutex_lock(&asyncLock);
     asyncUpdates->push_back(new AsyncPropertyUpdate(prop, value));
-//    uv_mutex_unlock(&asyncLock);
+    pthread_mutex_unlock(&asyncLock);
+
     return true;
 }
 

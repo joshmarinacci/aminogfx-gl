@@ -6,6 +6,7 @@
 #include <nan.h>
 #include <map>
 #include <memory>
+#include <pthread.h>
 
 #define ASYNC_UPDATE_PROPERTY   0
 #define ASYNC_UPDATE_VALUE      1
@@ -264,7 +265,7 @@ private:
     };
 
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
-    uv_mutex_t asyncLock;
+    pthread_mutex_t asyncLock;
 };
 
 #endif
