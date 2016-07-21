@@ -577,7 +577,8 @@ ImageView.prototype.init = function () {
         //image
         src: null,
         image: null,
-        opacity: 1.0
+        opacity: 1.0,
+        size: 'resize'
     });
 
     var self = this;
@@ -628,12 +629,72 @@ ImageView.prototype.init = function () {
 
     //when the image is loaded, update the dimensions
     this.image.watch(function (texture) {
-        //TODO support fit modes cbx
-        if (texture) {
-            self.w(texture.w);
-            self.h(texture.h);
-        }
+        //set size
+        applySize(texture, self.size());
     });
+
+    this.size.watch(function (mode) {
+        applySize(self.image(), mode);
+    });
+
+    function applySize(texture, mode) {
+        switch (mode) {
+            case 'resize':
+                if (texture) {
+                    self.w(texture.w);
+                    self.h(texture.h);
+                }
+                break;
+
+            case 'stretch':
+                //keep size
+                break;
+
+            case 'cover':
+            case 'contain':
+                //cover
+                if (texture) {
+                    var w = self.w();
+                    var h = self.h();
+                    var imgW = texture.w;
+                    var imgH = texture.h;
+
+                    //fit width
+                    imgH *= w / imgW;
+                    imgW = w;
+
+                    if (mode == 'cover') {
+                        if (imgH < h) {
+                            //stretch height
+                            imgW *= h / imgH;
+                            imgH = h;
+                        }
+                    } else {
+                        if (imgH > h) {
+                            var fac = h / imgH;
+
+                            imgW *= fac;
+                            imgH *= fac;
+                        }
+                    }
+
+                    //debug
+                    //console.log('fit ' + imgW + 'x' + imgH + ' to ' + w + 'x' + h);
+
+                    //center texture
+                    var horz = (imgW - w) / 2 / imgW;
+
+                    self.left(horz);
+                    self.right(1 - horz);
+
+                    var vert = (imgH - h) / 2 / imgH;
+
+                    self.top(vert);
+                    self.bottom(1 - vert);
+                }
+                break;
+        }
+    }
 };
 
 ImageView.prototype.contains = contains;

@@ -74,9 +74,26 @@ gfx.start(function (err) {
     g.add(circle);
 
     //image
-    var iv = this.createImageView().x(300).y(300).sx(2).sy(2);
+    var iv = this.createImageView().x(300).y(300);
 
     iv.src(path.join(__dirname, '../images/tree.png'));
+
+    // 1) stretch
+    iv.size('stretch');
+
+    // 2) resize
+    //iv.size('resize');
+
+    // 3) cover
+    /*
+    iv.w(100).h(50);
+    iv.size('cover');
+    */
+
+    // 4) contain
+    iv.w(100).h(50);
+    iv.size('contain');
+
     g.add(iv);
 
     //TODO more cbx
