@@ -41,6 +41,9 @@ gfx.start(function (err) {
     //create group
     const g = this.createGroup();
 
+    g.w.bindto(this.w);
+    g.h.bindto(this.h);
+
     this.setRoot(g);
 
     //add rect
@@ -96,5 +99,34 @@ gfx.start(function (err) {
 
     g.add(iv);
 
+    //GC tests
+    //FIXME does not work
+    testImages(g);
+
     //TODO more cbx
 });
+
+function testImages(g) {
+    let items = [];
+    let w = g.w();
+    let h = g.h();
+    let img = path.join(__dirname, '../images/tree.png');
+
+    //FIXME 10000: Too many open files in system
+    const count = 1000;
+
+    for (let i = 0; i < count; i++) {
+        var iv = gfx.createImageView().x(Math.random() * w).y(Math.random() * h);
+
+        iv.src(img);
+
+        items.push(iv);
+        g.add(iv);
+    }
+
+    setTimeout(() => {
+        items.forEach((item) => {
+            g.remove(item);
+        });
+    }, 4000);
+}

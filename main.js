@@ -1333,13 +1333,18 @@ function makeProp(obj, name, val) {
     prop.bindto = function (prop, fun) {
         var set = this;
 
-        prop.listeners.push(function (v) {
+        function watcher(v) {
             if (fun) {
                 set(fun(v));
             } else {
                 set(v);
             }
-        });
+        }
+
+        prop.listeners.push(watcher);
+
+        //apply current value
+        watcher(prop());
 
         return this;
     };
