@@ -17,16 +17,8 @@ console.log('screen: ' + JSON.stringify(gfx.screen));
 //default size
 console.log('default size: ' + gfx.w() + 'x' + gfx.h());
 
-//default font
-amino.fonts.getFont(null, function (err, font) {
-    if (err) {
-        console.log('could not load font: ' + err.message);
-        return;
-    }
-
-    console.log('default font: ' + JSON.stringify(font));
-})
-return; //cbx
+//fonts
+testFont();
 
 //start
 gfx.start(function (err) {
@@ -140,4 +132,34 @@ function testImages(g) {
             g.remove(item);
         });
     }, 4000);
+}
+
+function testFont() {
+    //default font
+    amino.fonts.getFont(null, function (err, font) {
+        if (err) {
+            console.log('could not load font: ' + err.message);
+            return;
+        }
+
+        console.log('default font: ' + JSON.stringify(font));
+        console.log('font metrics: ' + JSON.stringify(font.getFontMetrics()));
+
+        //width
+        const startTime = (new Date()).getTime();
+
+        font.calcTextWidth('The quick brown fox jumps over the lazy dog. Pack meinen Kasten mit fünf Dutzend Alkoholkrügen.', function (err, width) {
+            if (err) {
+                console.log('could not get text width: ' + err.message);
+                return;
+            }
+
+            console.log('width: ' + width);
+
+            const endTime = (new Date()).getTime();
+
+            console.log(' -> in ' + (endTime - startTime) + ' ms');
+        });
+
+    });
 }

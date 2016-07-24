@@ -1076,102 +1076,12 @@ NAN_METHOD(node_glGetUniformLocation) {
 }
 
 /**
- * Get font texture.
- *
- * Note: creates font size if it did not exist before.
- */
-texture_font_t* getFontTexture(int index, int size) {
-/*
-    AminoFont *font = fontmap[index];
-
-    assert(font);
-
-    std::map<int, texture_font_t *>::iterator it = font->fonts.find(size);
-
-    if (it == font->fonts.end()) {
-        //create font size
-        if (DEBUG_RESOURCES) {
-            printf("Font is missing glyphs for size %d\n", size);
-            printf("loading size %d for font %s\n", size, font->filename);
-        }
-
-        font->fonts[size] = texture_font_new_from_file(font->atlas, size, font->filename);
-    }
-
-    return font->fonts[size];
-*/
-}
-
-/**
- * Get the font height.
- */
-NAN_METHOD(getFontHeight) {
-/*
-    int fontsize   = info[0]->Uint32Value();
-    int fontindex  = info[1]->Uint32Value();
-//cbx getFontHeight
-    //get font
-    texture_font_t *tf = getFontTexture(fontindex, fontsize);
-
-    info.GetReturnValue().Set(tf->ascender - tf->descender);
-*/
-}
-
-NAN_METHOD(getCharWidth) {
-/* cbx
-    std::wstring wstr = GetWString(info[0]->ToString());
-    int fontsize  = info[1]->Uint32Value();
-    int fontindex = info[2]->Uint32Value();
-
-    //get font
-    texture_font_t *tf = getFontTexture(fontindex, fontsize);
-    float w = 0;
-
-    //length seems to include the null string
-    std::size_t len = wstr.length();
-
-    for (std::size_t i = 0; i < len; i++) {
-        wchar_t ch  = wstr.c_str()[i]; //TODO cache
-
-        //skip null terminators
-        if (ch == '\0') {
-            continue;
-        }
-
-        //FIXME kerning
-        texture_glyph_t *glyph = texture_font_get_glyph(tf, wstr.c_str()[i]);
-
-        if (glyph == 0) {
-            printf("WARNING. Got empty glyph from texture_font_get_glyph");
-        }
-
-        w += glyph->advance_x;
-    }
-
-    info.GetReturnValue().Set(w);
-*/
-}
-
-/**
  * Create native font and shader.
  */
 NAN_METHOD(createNativeFont) {
 /*
-    if (DEBUG_BASE) {
-        printf("createNativeFont()\n");
-    }
-
-    //create font object
-    AminoFont *afont = new AminoFont();
-
-    //store
-    int id = fontmap.size();
-
-    fontmap[id] = afont;
 //cbx createNativeFont
     //load font & shader
-    afont->filename = TO_CHAR(info[0]);
-
     char *shader_base = TO_CHAR(info[1]);
 
     if (DEBUG_BASE) {
@@ -1187,17 +1097,10 @@ NAN_METHOD(createNativeFont) {
     //printf("shader: vertex=%s fragment=%s\n", vert.c_str(), frag.c_str());
 
     free(shader_base);
-//cbx
-    afont->atlas = texture_atlas_new(512, 512, 1);
-    afont->shader = shader_load(vert.c_str(), frag.c_str());
 
-    if (DEBUG_RESOURCES) {
-        printf("created font shader\n");
-    }
+    afont->shader = shader_load(vert.c_str(), frag.c_str());
 
     //TODO reuse shader (create only once)
     //TODO glDeleteProgram (on destroy)
-
-    info.GetReturnValue().Set(id);
 */
 }

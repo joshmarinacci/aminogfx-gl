@@ -1096,6 +1096,16 @@ AminoFont.prototype.getSize = function (size, callback) {
     callback(null, fontSize);
 };
 
+//
+// AminoFonts.FontSize
+//
+
+var AminoFontSize = AminoFonts.FontSize;
+
+AminoFontSize.prototype.calcTextWidth = function (text, callback) {
+    callback(null, this._calcTextWidth(text));
+};
+
 //cbx AminoGfx.Text
 
 /**

@@ -1,5 +1,7 @@
 #include "fonts.h"
 
+#include "fonts/utf8-utils.h"
+
 #include <cmath>
 
 //
@@ -229,11 +231,8 @@ v8::Local<v8::Function> AminoFontSize::GetInitFunction() {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
     //methods
-    /* TODO cbx
-    Nan::SetPrototypeMethod(tpl, "calcWidth", Start);
-    Nan::SetPrototypeMethod(tpl, "getHeight", Stop);
-    Nan::SetPrototypeMethod(tpl, "getMetrics", Stop);
-    */
+    Nan::SetPrototypeMethod(tpl, "_calcTextWidth", CalcTextWidth);
+    Nan::SetPrototypeMethod(tpl, "getFontMetrics", GetFontMetrics);
 
     //template function
     return Nan::GetFunction(tpl).ToLocalChecked();
@@ -264,8 +263,61 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     Nan::Set(obj, Nan::New("size").ToLocalChecked(), Nan::New<v8::Number>(size));
     Nan::Set(obj, Nan::New("weight").ToLocalChecked(), Nan::New<v8::Number>(parent->weight));
     Nan::Set(obj, Nan::New("style").ToLocalChecked(), Nan::New<v8::String>(parent->style).ToLocalChecked());
+}
 
-    //cbx metrics
+NAN_METHOD(AminoFontSize::CalcTextWidth) {
+    AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
+    v8::String::Utf8Value str(info[0]);
+
+    info.GetReturnValue().Set(obj->getTextWidth(*str));
+}
+
+/**
+ * Calculate text width.
+ */
+float AminoFontSize::getTextWidth(const char *text) {
+    size_t len = utf8_strlen(text);
+    char *textPos = (char *)text;
+    char *lastTextPos = NULL;
+    float w = 0;
+
+    for (std::size_t i = 0; i < len; i++) {
+        texture_glyph_t *glyph = texture_font_get_glyph(fontTexture, textPos);
+
+        if (!glyph) {
+            printf("Error: got empty glyph from texture_font_get_glyph\n");
+            continue;
+        }
+
+        //kerning
+        if (lastTextPos) {
+            w += texture_glyph_get_kerning(glyph, lastTextPos);
+        }
+
+        //char width
+        w += glyph->advance_x;
+
+        //next
+        size_t charLen = utf8_surrogate_len(textPos);
+
+        lastTextPos = textPos;
+        textPos += charLen;
+    }
+
+    return w;
+}
+
+NAN_METHOD(AminoFontSize::GetFontMetrics) {
+    AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
+
+    //metrics
+    v8::Local<v8::Object> metricsObj = Nan::New<v8::Object>();
+
+    Nan::Set(metricsObj, Nan::New("height").ToLocalChecked(), Nan::New<v8::Number>(obj->fontTexture->ascender - obj->fontTexture->descender));
+    Nan::Set(metricsObj, Nan::New("ascender").ToLocalChecked(), Nan::New<v8::Number>(obj->fontTexture->ascender));
+    Nan::Set(metricsObj, Nan::New("descender").ToLocalChecked(), Nan::New<v8::Number>(obj->fontTexture->descender));
+
+    info.GetReturnValue().Set(metricsObj);
 }
 
 //

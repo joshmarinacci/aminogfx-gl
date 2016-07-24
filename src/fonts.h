@@ -97,6 +97,8 @@ public:
     AminoFontSize();
     ~AminoFontSize();
 
+    float getTextWidth(const char *text);
+
     //creation
     static AminoFontSizeFactory* getFactory();
 
@@ -109,6 +111,10 @@ private:
 
     //JS constructor
     static NAN_METHOD(New);
+
+    //JS methods
+    static NAN_METHOD(CalcTextWidth);
+    static NAN_METHOD(GetFontMetrics);
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 };
