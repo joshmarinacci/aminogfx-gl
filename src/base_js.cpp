@@ -96,7 +96,7 @@ void AminoJSObject::retain() {
     Ref();
 
     if (DEBUG_REFERENCES) {
-        printf("--- %s referenes: %i (+1)\n", name.c_str(), refs_);
+        printf("--- %s references: %i (+1)\n", name.c_str(), refs_);
     }
 }
 
@@ -107,7 +107,7 @@ void AminoJSObject::release() {
     Unref();
 
     if (DEBUG_REFERENCES) {
-        printf("--- %s referenes: %i (-1)\n", name.c_str(), refs_);
+        printf("--- %s references: %i (-1)\n", name.c_str(), refs_);
     }
 }
 

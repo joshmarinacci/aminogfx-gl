@@ -394,18 +394,14 @@ AminoJSObject* AminoImageFactory::create() {
  * Constructor.
  */
 AminoTexture::AminoTexture(): AminoJSObject(getFactory()->name) {
-    if (DEBUG_IMAGES) {
-        printf("AminoTexture constructor\n");
-    }
+    //empty
 }
 
 /**
  * Destructor.
  */
 AminoTexture::~AminoTexture()  {
-    if (DEBUG_IMAGES || DEBUG_RESOURCES) {
-        printf("AminoTexture destructor\n");
-    }
+    //empty
 }
 
 void AminoTexture::destroy() {

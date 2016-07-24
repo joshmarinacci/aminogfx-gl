@@ -103,7 +103,6 @@ gfx.start(function (err) {
     g.add(iv);
 
     //GC tests
-    //FIXME does not work
     testImages(g);
 
     //TODO more cbx
@@ -132,6 +131,15 @@ function testImages(g) {
             g.remove(item);
         });
     }, 4000);
+
+    /*
+     * References:
+     *
+     * - ImageView (gets zero -> deallocated)
+     * - Group (gets reduced)
+     * - AminoImage (temporary, will be freed first -> deallocated)
+     * - Texture (-> deallocated last)
+     */
 }
 
 function testFont() {
