@@ -1103,31 +1103,11 @@ texture_font_t* getFontTexture(int index, int size) {
 NAN_METHOD(getFontHeight) {
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
-
+//cbx getFontHeight
     //get font
     texture_font_t *tf = getFontTexture(fontindex, fontsize);
 
     info.GetReturnValue().Set(tf->ascender - tf->descender);
-}
-
-NAN_METHOD(getFontAscender) {
-    int fontsize   = info[0]->Uint32Value();
-    int fontindex  = info[1]->Uint32Value();
-
-    //get font
-    texture_font_t *tf = getFontTexture(fontindex, fontsize);
-
-    info.GetReturnValue().Set(tf->ascender);
-}
-
-NAN_METHOD(getFontDescender) {
-    int fontsize   = info[0]->Uint32Value();
-    int fontindex  = info[1]->Uint32Value();
-
-    //get font
-    texture_font_t *tf = getFontTexture(fontindex, fontsize);
-
-    info.GetReturnValue().Set(tf->descender);
 }
 
 NAN_METHOD(getCharWidth) {

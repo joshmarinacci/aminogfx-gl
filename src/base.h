@@ -1086,8 +1086,6 @@ refresh: w, h, text, fontsize, fontid, vAlign, wrap
 //JavaScript bindings
 
 NAN_METHOD(getFontHeight);
-NAN_METHOD(getFontAscender);
-NAN_METHOD(getFontDescender);
 NAN_METHOD(getCharWidth);
 NAN_METHOD(createNativeFont);
 NAN_METHOD(getTextLineCount);

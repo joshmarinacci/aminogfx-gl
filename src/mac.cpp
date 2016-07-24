@@ -547,12 +547,6 @@ NAN_MODULE_INIT(InitAll) {
     AminoImage::Init(target);
 
     //TODO cleanup
-    Nan::Set(target, Nan::New("createNativeFont").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(createNativeFont)).ToLocalChecked());
-    Nan::Set(target, Nan::New("getCharWidth").ToLocalChecked(),     Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getCharWidth)).ToLocalChecked());
-    Nan::Set(target, Nan::New("getFontHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getFontHeight)).ToLocalChecked());
-    Nan::Set(target, Nan::New("getFontAscender").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getFontAscender)).ToLocalChecked());
-    Nan::Set(target, Nan::New("getFontDescender").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getFontDescender)).ToLocalChecked());
-    //TODO other platforms
     Nan::Set(target, Nan::New("getTextLineCount").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getTextLineCount)).ToLocalChecked());
     Nan::Set(target, Nan::New("getTextHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getTextHeight)).ToLocalChecked());
 }

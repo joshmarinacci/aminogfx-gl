@@ -15,6 +15,7 @@
 //FIXME
 #define DEBUG_BASE true
 #define DEBUG_RESOURCES true
+#define DEBUG_REFERENCES false
 
 class AminoJSObject;
 
@@ -227,6 +228,7 @@ public:
 
     void retain();
     void release();
+    int getReferenceCount();
 
     AnyProperty* getPropertyWithId(int id);
 

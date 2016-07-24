@@ -94,6 +94,10 @@ void AminoJSObject::destroy() {
  */
 void AminoJSObject::retain() {
     Ref();
+
+    if (DEBUG_REFERENCES) {
+        printf("--- %s referenes: %i (+1)\n", name.c_str(), refs_);
+    }
 }
 
 /**
@@ -101,6 +105,17 @@ void AminoJSObject::retain() {
  */
 void AminoJSObject::release() {
     Unref();
+
+    if (DEBUG_REFERENCES) {
+        printf("--- %s referenes: %i (-1)\n", name.c_str(), refs_);
+    }
+}
+
+/**
+ * Get reference counter.
+ */
+int AminoJSObject::getReferenceCount() {
+    return refs_;
 }
 
 /**
@@ -619,16 +634,20 @@ AminoJSObject::AnyProperty::~AnyProperty() {
 
 /**
  * Retain base object instance.
+ *
+ * Note: has to be called on v8 thread!
  */
 void AminoJSObject::AnyProperty::retain() {
-    obj->Ref();
+    obj->retain();
 }
 
 /**
  * Release base object instance.
+ *
+ * Note: has to be called on v8 thread!
  */
 void AminoJSObject::AnyProperty::release() {
-    obj->Unref();
+    obj->release();
 }
 
 //
