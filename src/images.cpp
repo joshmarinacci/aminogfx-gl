@@ -216,18 +216,14 @@ public:
  * Constructor.
  */
 AminoImage::AminoImage(): AminoJSObject(getFactory()->name) {
-    if (DEBUG_IMAGES) {
-        printf("AminoImage constructor\n");
-    }
+    //empty
 }
 
 /**
  * Destructor.
  */
 AminoImage::~AminoImage()  {
-    if (DEBUG_IMAGES || DEBUG_RESOURCES) {
-        printf("AminoImage destructor\n");
-    }
+    //empty
 }
 
 /**
@@ -384,7 +380,7 @@ AminoImageFactory::AminoImageFactory(Nan::FunctionCallback callback): AminoJSObj
 }
 
 /**
- * Create AminoGfx instance.
+ * Create AminoImage instance.
  */
 AminoJSObject* AminoImageFactory::create() {
     return new AminoImage();

@@ -21,7 +21,7 @@ public:
     int bpp = 0;
 
     AminoImage();
-    virtual ~AminoImage();
+    ~AminoImage();
 
     bool hasImage();
     void destroy() override;

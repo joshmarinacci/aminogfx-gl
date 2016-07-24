@@ -617,6 +617,17 @@ void AminoJSObject::updateProperty(std::string name, std::string value) {
     updateProperty(name, Nan::New<v8::String>(value).ToLocalChecked());
 }
 
+/**
+ * Convert a JS value to a string.
+ */
+std::string AminoJSObject::toString(v8::Local<v8::Value> &value) {
+    //convert anything to a string
+    v8::String::Utf8Value str(value);
+
+    //convert it to string
+    return std::string(*str);
+}
+
 //
 // AminoJSObject::AnyProperty
 //
@@ -915,11 +926,8 @@ AminoJSObject::Utf8Property::~Utf8Property() {
  * Set value.
  */
 void AminoJSObject::Utf8Property::setValue(v8::Local<v8::Value> &value) {
-    //convert anything to a string
-    v8::String::Utf8Value str(value);
-
-    //convert it to string
-    this->value = std::string(*str);
+    //convert to string
+    this->value = AminoJSObject::toString(value);
 }
 
 /**

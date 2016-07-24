@@ -357,7 +357,7 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     if (DEBUG_RENDERER) {
         printf("-> drawText()\n");
     }
-
+/* cbx font
     if (fontmap.empty()) {
         return;
     }
@@ -430,4 +430,5 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     vertex_buffer_render(text->buffer, GL_TRIANGLES);
 
     c->restore();
+*/
 }

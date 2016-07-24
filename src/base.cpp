@@ -3,9 +3,6 @@
 #include "SimpleRenderer.h"
 #include "fonts/utf8-utils.h"
 
-std::map<int, AminoFont *> fontmap;
-std::vector<AminoNode *> rects;
-
 //
 //  AminoGfx
 //
@@ -903,6 +900,7 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
  * Update the rendered text.
  */
 void TextNode::refreshText() {
+/* cbx TextNode
     if (fontid == INVALID) {
         return;
     }
@@ -940,22 +938,27 @@ void TextNode::refreshText() {
 
     assert(f);
     add_text(buffer, f, text.c_str(), &pen, wrap, w, &lineNr);
+*/
 }
 
 NAN_METHOD(getTextLineCount) {
+/*
     int textHandle = info[0]->Uint32Value();
     TextNode *node = (TextNode *)rects[textHandle];
 
     info.GetReturnValue().Set(node->lineNr);
+*/
 }
 
 NAN_METHOD(getTextHeight) {
+/*
     int textHandle = info[0]->Uint32Value();
     TextNode *node = (TextNode *)rects[textHandle];
     AminoFont *font = fontmap[node->fontid];
     texture_font_t *texture = font->fonts[node->fontsize];
 
     info.GetReturnValue().Set(node->lineNr * texture->height);
+*/
 }
 
 NAN_METHOD(node_glCreateShader) {
@@ -1078,6 +1081,7 @@ NAN_METHOD(node_glGetUniformLocation) {
  * Note: creates font size if it did not exist before.
  */
 texture_font_t* getFontTexture(int index, int size) {
+/*
     AminoFont *font = fontmap[index];
 
     assert(font);
@@ -1095,12 +1099,14 @@ texture_font_t* getFontTexture(int index, int size) {
     }
 
     return font->fonts[size];
+*/
 }
 
 /**
  * Get the font height.
  */
 NAN_METHOD(getFontHeight) {
+/*
     int fontsize   = info[0]->Uint32Value();
     int fontindex  = info[1]->Uint32Value();
 //cbx getFontHeight
@@ -1108,6 +1114,7 @@ NAN_METHOD(getFontHeight) {
     texture_font_t *tf = getFontTexture(fontindex, fontsize);
 
     info.GetReturnValue().Set(tf->ascender - tf->descender);
+*/
 }
 
 NAN_METHOD(getCharWidth) {
@@ -1149,6 +1156,7 @@ NAN_METHOD(getCharWidth) {
  * Create native font and shader.
  */
 NAN_METHOD(createNativeFont) {
+/*
     if (DEBUG_BASE) {
         printf("createNativeFont()\n");
     }
@@ -1160,7 +1168,7 @@ NAN_METHOD(createNativeFont) {
     int id = fontmap.size();
 
     fontmap[id] = afont;
-//cbx
+//cbx createNativeFont
     //load font & shader
     afont->filename = TO_CHAR(info[0]);
 
@@ -1191,4 +1199,5 @@ NAN_METHOD(createNativeFont) {
     //TODO glDeleteProgram (on destroy)
 
     info.GetReturnValue().Set(id);
+*/
 }

@@ -61,6 +61,8 @@ protected:
     void updateProperty(std::string name, bool value);
     void updateProperty(std::string name, std::string value);
 
+    static std::string toString(v8::Local<v8::Value> &value);
+
     static const int PROPERTY_FLOAT       = 1;
     static const int PROPERTY_FLOAT_ARRAY = 2;
     static const int PROPERTY_INT32       = 3;

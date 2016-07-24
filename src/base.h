@@ -47,8 +47,6 @@ static const int WRAP_NONE = 0x0;
 static const int WRAP_END  = 0x1;
 static const int WRAP_WORD = 0x2;
 
-extern std::map<int, AminoFont *> fontmap;
-
 class AminoGroup;
 class AminoAnim;
 

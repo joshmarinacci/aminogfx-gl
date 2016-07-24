@@ -11,8 +11,12 @@
                 "src/fonts/vertex-attribute.c",
                 "src/fonts/texture-atlas.c",
                 "src/fonts/texture-font.c",
+                "src/fonts/utf8-utils.c",
+                "src/fonts/distance-field.c",
+                "src/fonts/edtaa3func.c",
                 "src/fonts/shader.c",
                 "src/fonts/mat4.c",
+                "src/fonts.cpp",
 
                 "src/images/nanojpeg.c",
                 "src/images/upng.c",

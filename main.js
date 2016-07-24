@@ -7,14 +7,13 @@ if (DEBUG) {
     console.log('inside of the aminogfx main.js');
 }
 
-//var amino_core = require('aminogfx'); //NPM module
 var amino_core = require('./src/core/main'); //modified code
 
 //load native module
 var binary = require('node-pre-gyp');
 var path = require('path');
 var binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
-var sgtest = require(binding_path);
+var native = require(binding_path);
 
 var shaders = require('./src/shaders.js');
 var fs = require('fs');
@@ -34,7 +33,7 @@ if (process.platform == 'darwin') {
 //
 //  AminoGfx
 //
-var AminoGfx = sgtest.AminoGfx;
+var AminoGfx = native.AminoGfx;
 
 /**
  * Initialize AminoGfx instance.
@@ -68,17 +67,6 @@ AminoGfx.prototype.init = function () {
     });
 
     this.fill.watch(watchFill);
-
-    //TODO more
-    //cbx
-
-    //fonts
-    /*
-    fontmap['source']  = new JSFont(defaultFonts['source']);
-    fontmap['awesome'] = new JSFont(defaultFonts['awesome']);
-
-    core.defaultFont = fontmap['source'];
-    */
 
     //root wrapper
     this.setRoot(this.createGroup());
@@ -831,7 +819,7 @@ Circle.prototype.contains = function (pt) {
 // AminoImage
 //
 
-var AminoImage = sgtest.AminoImage;
+var AminoImage = native.AminoImage;
 
 Object.defineProperty(AminoImage.prototype, 'src', {
     set: function (src) {
@@ -877,13 +865,21 @@ Object.defineProperty(AminoImage.prototype, 'src', {
 
 exports.AminoImage = AminoImage;
 
-var Core = amino_core.Core;
+//
+// AminoFonts
+//
 
-//Fonts
+var AminoFonts = native.AminoFonts;
 
-var fontmap = {};
-var defaultFonts = {
-    'source': {
+AminoFonts.prototype.init = function () {
+    this.fonts = {};
+    this.cache = {};
+
+    //shader
+    this.shaderPath = path.join(__dirname, '/resources/shaders');
+
+    //default fonts
+    this.registerFont({
         name: 'source',
         weights: {
             200: {
@@ -912,16 +908,195 @@ var defaultFonts = {
                 italic: 'SourceSansPro-BlackItalic.ttf'
             }
         }
-    },
-    'awesome': {
+    });
+
+    this.registerFont({
         name: 'awesome',
         weights: {
             400: {
                 normal: 'fontawesome-webfont.ttf'
             }
         }
-    }
+    });
+
+    //default
+    this.defaultFont = this.fonts.source;
 };
+
+AminoFonts.prototype.registerFont = function (font) {
+    this.fonts[font.name] = font;
+
+    //collect weights
+    var weightList = [];
+
+    for (var weight in font.weights) {
+        weightList.push(weight);
+    }
+
+    weightList.sort();
+    font.weightList = weightList;
+
+    return this;
+};
+
+AminoFonts.prototype.getFont = function (descr, callback) {
+    if (!descr) {
+        descr = {};
+    }
+
+    var name = descr.name || this.defaultFont.name;
+    var size = Math.round(descr.size || 20);
+    var weight = descr.weight || 400;
+    var style = descr.style || 'normal';
+
+    //get font descriptor
+    var font = this.fonts[name];
+
+    if (!font) {
+        callback(new Error('font ' + name + ' not found'));
+        return this;
+    }
+
+    if (!size) {
+        callback(new Error('invalid font size'));
+        return;
+    }
+
+    //find weight
+    var weightDesc = font.weights[weight];
+
+    if (!weightDesc) {
+        //find closest
+        var closest = null;
+        var diff = 0;
+
+        for (var item in font.weights) {
+            var diff2 = Math.abs(weight - item);
+
+            if (!closest || diff2 < diff) {
+                closest = item;
+                diff = diff2;
+            }
+        }
+
+        if (!closest) {
+            callback(new Error('no font weights found for ' + name));
+            return this;
+        }
+
+        weightDesc = font.weights[closest];
+        weight = closest;
+    }
+
+    //find style
+    var styleDesc = weightDesc[style];
+
+    if (!styleDesc) {
+        //fallback to normal
+        styleDesc = weightDesc.normal;
+
+        if (!styleDesc) {
+            callback(new Error('no nornal style found: ' + name + ' weight=' + weight + ' style=' + style));
+            return this;
+        }
+
+        style = 'normal';
+    }
+
+    //check cache
+    var key = name + '-' + weight + '-' + style + '-' + size;
+    var cached = this.cache[key];
+
+    if (cached) {
+        if (cached instanceof Promise) {
+            cached.then(function (font) {
+                font.getSize(size, callback);
+            }, function (err) {
+                callback(err);
+            });
+        } else {
+            callback(null, cached);
+        }
+
+        return this;
+    }
+
+    //path
+    var dir = font.path;
+
+    if (!dir) {
+        //internal default path
+        dir = path.join(__dirname, 'resources/');
+    }
+
+    //load file
+    var file = path.join(dir, styleDesc);
+    var self = this;
+
+    var promise = new Promise(function (resolve, reject) {
+        fs.readFile(file, function (err, data) {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            //throws exception on error
+            var font = new AminoFonts.Font(self, {
+                data: data,
+                file: file,
+
+                name: name,
+                weight: weight,
+                style: style
+            });
+
+            resolve(font);
+        });
+    });
+
+    this.cache[key] = promise;
+
+    promise.then(function (font) {
+        self.cache[key] = font;
+
+        font.getSize(size, callback);
+    }, function (err) {
+        callback(err);
+    });
+
+    return this;
+};
+
+var fonts = new AminoFonts();
+
+exports.fonts = fonts;
+
+//
+// AminoFonts.Font
+//
+
+var AminoFont = AminoFonts.Font;
+
+AminoFont.prototype.init = function () {
+    this.sizes = {};
+};
+
+/**
+ * Load font size.
+ */
+AminoFont.prototype.getSize = function (size, callback) {
+    //check cache
+    var fontSize = this.sizes[size];
+
+    if (!fontSize) {
+        fontSize = new AminoFonts.FontSize(this, size);
+        this.sizes[size] = fontSize;
+    }
+
+    callback(null, fontSize);
+};
+
+//cbx AminoGfx.Text
 
 /**
  * Vertial text alignment property values.
@@ -941,90 +1116,6 @@ var textWrapHash = {
     end:  0x1,
     word: 0x2
 };
-
-/**
- * JSFont constructor.
- */
-function JSFont(desc) {
-    this.name = desc.name;
-
-    //regular
-    var reg = desc.weights[400];
-
-    //properties
-    this.desc = desc;
-    this.weights = {};
-    this.filepaths = {};
-
-    //path
-    var aminodir = path.join(__dirname, 'resources/');
-
-    if (desc.path) {
-        aminodir = desc.path;
-    }
-
-    //iterate weights
-    for (var weight in desc.weights) {
-        //load normal style
-        //FIXME style not used
-        var filepath = path.join(aminodir, desc.weights[weight].normal);
-
-        if (!fs.existsSync(filepath)) {
-            throw new Error('WARNING. File not found: ' + filepath);
-        }
-
-        this.weights[weight] = Core.getCore().getNative().createNativeFont(filepath);
-        this.filepaths[weight] = filepath;
-    }
-
-    this.getNative = function (size, weight, style) {
-        //FIXME style not used; size not used
-        if (this.weights[weight]) {
-            return this.weights[weight];
-        }
-
-        console.log('ERROR. COULDN\'T find the native for ' + size + ' ' + weight + ' ' + style);
-
-        //return regular
-        return this.weights[400];
-    };
-
-    /**
-     * @func calcStringWidth(string, size, weight, style)
-     *
-     * returns the width of the specified string rendered at the specified size
-     */
-    this.calcStringWidth = function (str, size, weight, style) {
-        return sgtest.getCharWidth(str, size, this.getNative(size, weight, style));
-    };
-
-    /**
-     * Get font height.
-     */
-    this.getHeight = function (size, weight, style) {
-        if (!size) {
-            throw new Error('SIZE IS UNDEFINED');
-        }
-
-        return sgtest.getFontHeight(size, this.getNative(size, weight, style));
-    };
-
-    /**
-     * Get font height metrics.
-     *
-     * Returns ascender & descender values.
-     */
-    this.getHeightMetrics = function (size, weight, style) {
-        if (!size) {
-            throw new Error('SIZE IS UNDEFINED');
-        }
-
-        return {
-            ascender: sgtest.getFontAscender(size, this.getNative(size, weight, style)),
-            descender: sgtest.getFontDescender(size, this.getNative(size, weight, style))
-        };
-    };
-}
 
 //
 // Anim
@@ -1170,18 +1261,6 @@ Anim.prototype.start = function () {
 //native bindings
 
 var gl_native = {
-    createNativeFont: function (filename) {
-        return sgtest.createNativeFont(filename, path.join(__dirname, '/resources/shaders'));
-    },
-    registerFont: function (args) {
-        fontmap[args.name] = new JSFont(args);
-    },
-    getRegisteredFonts: function () {
-        return fontmap;
-    },
-    getFont: function (name) {
-        return fontmap[name];
-    },
     textVAlignHash: textVAlignHash,
     textWrapHash: textWrapHash,
     getTextLineCount: function (handle) {

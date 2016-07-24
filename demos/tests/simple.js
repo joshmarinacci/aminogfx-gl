@@ -17,6 +17,17 @@ console.log('screen: ' + JSON.stringify(gfx.screen));
 //default size
 console.log('default size: ' + gfx.w() + 'x' + gfx.h());
 
+//default font
+amino.fonts.getFont(null, function (err, font) {
+    if (err) {
+        console.log('could not load font: ' + err.message);
+        return;
+    }
+
+    console.log('default font: ' + JSON.stringify(font));
+})
+return; //cbx
+
 //start
 gfx.start(function (err) {
     if (err) {
