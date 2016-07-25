@@ -417,6 +417,13 @@ public:
         }
 
         if (property == propFont) {
+            //create scope
+            Nan::HandleScope scope;
+
+            if (propFont->value.IsEmpty()) {
+                return;
+            }
+
             v8::Local<v8::Object> obj = Nan::New(propFont->value);
 
             if (obj->IsNull()) {
@@ -437,6 +444,7 @@ public:
             fontSize->retain();
 
             updated = true;
+            return;
         }
     }
 

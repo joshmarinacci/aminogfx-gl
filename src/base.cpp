@@ -722,11 +722,19 @@ AminoJSObject* AminoTextFactory::create() {
 //
 
 GLuint AminoText::updateTexture() {
+    //printf("updateTexture()\n");
+
+    assert(fontSize);
+    assert(fontSize->fontTexture);
+    assert(fontSize->fontTexture->atlas);
+
     if (textureId == INVALID_TEXTURE) {
         //create texture (for atlas)
         texture_atlas_t *atlas = fontSize->fontTexture->atlas;
 
         textureId = getAminoGfx()->getAtlasTexture(atlas);
+
+        assert(textureId != INVALID_TEXTURE);
     } else {
         if (!textureUpdated) {
             return textureId;
@@ -738,9 +746,13 @@ GLuint AminoText::updateTexture() {
 
     glBindTexture(GL_TEXTURE_2D, textureId);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas->width, atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, atlas->data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
 
     textureUpdated = false;
+
+    //printf("updateTexture() done\n");
+
+    return textureId;
 }
 
 /**
@@ -955,8 +967,18 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
  * Update the rendered text.
  */
 bool AminoText::layoutText() {
-    if (!fontSize || !updated) {
+    //printf("layoutText()\n");
+
+    if (!fontSize) {
+        //printf("-> no font\n");
+
         return false;
+    }
+
+    if (!updated) {
+        //printf("layoutText() done\n");
+
+        return true;
     }
 
     updated = false;
@@ -969,9 +991,10 @@ bool AminoText::layoutText() {
     }
 
     texture_font_t *f = fontSize->fontTexture;
-    size_t lastGlyphCount = vector_size(f->glyphs);
 
     assert(f);
+
+    size_t lastGlyphCount = f->glyphs->size;
 
     vec2 pen;
 
@@ -981,9 +1004,11 @@ bool AminoText::layoutText() {
     add_text(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
 
     //update texture
-    if (vector_size(f->glyphs) != lastGlyphCount) {
+    if (f->glyphs->size != lastGlyphCount) {
         textureUpdated = true;
     }
+
+    //printf("layoutText() done\n");
 
     return true;
 }

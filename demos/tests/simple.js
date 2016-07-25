@@ -105,6 +105,19 @@ gfx.start(function (err) {
     //GC tests
     testImages(g);
 
+    //text
+    var text = this.createText()
+        .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
+        .fontSize(80)
+        .x(0).y(0)
+        .vAlign('top')
+        .w(300)
+        .h(160)
+        .wrap('word')
+        .fill('#ffff00');
+
+    g.add(text);
+
     //TODO more cbx
 });
 

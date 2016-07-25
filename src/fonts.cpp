@@ -181,7 +181,10 @@ texture_font_t *AminoFont::getFontWithSize(int size) {
 
         //Note: has texture id but we use our own handling
         fontSize = texture_font_new_from_memory(atlas, size, buffer, bufferLen);
-        fontSizes[size] = fontSize;
+
+        if (fontSize) {
+            fontSizes[size] = fontSize;
+        }
     } else {
         fontSize = it->second;
     }
@@ -264,7 +267,7 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
         Nan::ThrowTypeError("could not create font size");
     }
 
-    //metrics
+    //font properties
     v8::Local<v8::Object> obj = handle();
 
     Nan::Set(obj, Nan::New("name").ToLocalChecked(), Nan::New<v8::String>(parent->name).ToLocalChecked());

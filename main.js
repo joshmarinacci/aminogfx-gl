@@ -960,6 +960,8 @@ AminoFonts.prototype.getFont = function (descr, callback) {
     var weight = descr.weight || 400;
     var style = descr.style || 'normal';
 
+    //console.log('getFont() ' + name + ' ' + size + ' ' + weight + ' ' + style);
+
     //get font descriptor
     var font = this.fonts[name];
 
@@ -970,7 +972,7 @@ AminoFonts.prototype.getFont = function (descr, callback) {
 
     if (!size) {
         callback(new Error('invalid font size'));
-        return;
+        return this;
     }
 
     //find weight
@@ -1007,7 +1009,7 @@ AminoFonts.prototype.getFont = function (descr, callback) {
         styleDesc = weightDesc.normal;
 
         if (!styleDesc) {
-            callback(new Error('no nornal style found: ' + name + ' weight=' + weight + ' style=' + style));
+            callback(new Error('no normal style found: ' + name + ' weight=' + weight + ' style=' + style));
             return this;
         }
 
@@ -1015,7 +1017,7 @@ AminoFonts.prototype.getFont = function (descr, callback) {
     }
 
     //check cache
-    var key = name + '-' + weight + '-' + style + '-' + size;
+    var key = name + '-' + weight + '-' + style;
     var cached = this.cache[key];
 
     if (cached) {
@@ -1026,7 +1028,7 @@ AminoFonts.prototype.getFont = function (descr, callback) {
                 callback(err);
             });
         } else {
-            callback(null, cached);
+            cached.getSize(size, callback);
         }
 
         return this;
@@ -1089,7 +1091,7 @@ exports.fonts = fonts;
 var AminoFont = AminoFonts.Font;
 
 AminoFont.prototype.init = function () {
-    //empty
+    this.fontSizes = {};
 };
 
 /**
@@ -1163,6 +1165,9 @@ Text.prototype.init = function () {
         font:       null,
 
         //color
+        r: 1,
+        g: 1,
+        b: 1,
         opacity: 1.0,
         fill: '#ffffff',
 
@@ -1171,45 +1176,50 @@ Text.prototype.init = function () {
         wrap:   'none'
     });
 
-    //update font
-    this.updateFont();
-
-    //watchers
-    this.fontName.watch(this.updateFont);
-    this.fontWeight.watch(this.updateFont);
-    this.fontSize.watch(this.updateFont);
+    this.fill.watch(watchFill);
 
     //TODO lines
     //TODO textHeight
 };
 
+Text.prototype.initDone = function () {
+    //update font
+    this.updateFont(null, null, this);
+
+    //watchers
+    this.fontName.watch(this.updateFont);
+    this.fontWeight.watch(this.updateFont);
+    this.fontSize.watch(this.updateFont);
+};
+
 /**
  * Load the font.
  */
-Text.prototype.updateFont = function () {
+Text.prototype.updateFont = function (val, prop, obj) {
     //get font
-    var self = this;
-
     fonts.getFont({
-        name: this.fontName(),
-        size: this.fontSize(),
-        weight: this.fontWeight(),
-        style: this.fontStyle()
+        name: obj.fontName(),
+        size: obj.fontSize(),
+        weight: obj.fontWeight(),
+        style: obj.fontStyle()
     }, function (err, font) {
         if (err) {
             console.log('could not load font: ' + err.message);
 
             //try default font
             fonts.getFont({
-                size: this.fontSize()
+                size: obj.fontSize()
             }, function (err, font) {
                 if (font) {
-                    self.font(font);
+                    obj.font(font);
                 }
             });
+            return;
         }
 
-        self.font(font);
+        //console.log('got font: ' + JSON.stringify(font));
+
+        obj.font(font);
     });
 };
 
@@ -1509,9 +1519,6 @@ exports.makeProps = makeProps;
 
 //input
 exports.input = amino_core.input;
-
-//basic
-exports.Text      = amino_core.Text;
 
 //extended
 exports.PixelView    = amino_core.PixelView;
