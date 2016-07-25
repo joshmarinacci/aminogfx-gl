@@ -744,12 +744,15 @@ GLuint AminoText::updateTexture() {
     //update texture
     texture_atlas_t *atlas = fontSize->fontTexture->atlas;
 
+    assert(atlas->depth == 1);
+
     glBindTexture(GL_TEXTURE_2D, textureId);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
 
     textureUpdated = false;
 
+    //printf("font texture updated\n");
     //printf("updateTexture() done\n");
 
     return textureId;

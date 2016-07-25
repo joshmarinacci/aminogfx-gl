@@ -383,13 +383,20 @@ GLuint AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
         //create new one
         GLuint id;
 
+        //see https://webcache.googleusercontent.com/search?q=cache:EZ3HLutV3zwJ:https://github.com/rougier/freetype-gl/blob/master/texture-atlas.c+&cd=1&hl=de&ct=clnk&gl=ch
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_2D, id);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+        //subpixel error on Mac retina display at edges
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+        //worse on retina but no pixel errors
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
         atlasTextures[atlas] = id;
 

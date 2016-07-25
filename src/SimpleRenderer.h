@@ -9,11 +9,11 @@ public:
     GLfloat *globaltx;
     GLfloat opacity;
     int prevProg;
-    int prevtex;
+    GLuint prevTex;
 
     GLContext() {
         prevProg = -1;
-        prevtex = -1;
+        prevTex = INVALID_TEXTURE;
 
         opacity = 1;
 
@@ -104,21 +104,20 @@ public:
     }
 
     void useProgram(int prog) {
-//        if(prog == prevProg) {
-//        } else {
+        if (prog != prevProg) {
             glUseProgram(prog);
-//        }
-        prevProg = prog;
+
+            prevProg = prog;
+        }
     }
 
     void bindTexture(int tex) {
-//        if(prevtex == tex) {
-//        } else {
-            glBindTexture( GL_TEXTURE_2D, tex);
-//        }
-        prevtex = tex;
-    }
+        if (prevTex != tex) {
+            glBindTexture(GL_TEXTURE_2D, tex);
 
+            prevTex = tex;
+        }
+    }
 };
 
 class SimpleRenderer {
