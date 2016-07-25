@@ -241,10 +241,10 @@ private:
 
         if (action == GLFW_RELEASE) {
             //release
-            Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("keyrelease").ToLocalChecked());
+            Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("key.release").ToLocalChecked());
         } else if (action == GLFW_PRESS || action == GLFW_REPEAT) {
             //press or repeat
-            Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("keypress").ToLocalChecked());
+            Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("key.press").ToLocalChecked());
         }
 
         //key codes
@@ -273,7 +273,7 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),  Nan::New("mouseposition").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),  Nan::New("mouse.position").ToLocalChecked());
         Nan::Set(event_obj, Nan::New("x").ToLocalChecked(),     Nan::New(x));
         Nan::Set(event_obj, Nan::New("y").ToLocalChecked(),     Nan::New(y));
 
@@ -301,7 +301,7 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousebutton").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mouse.button").ToLocalChecked());
         Nan::Set(event_obj, Nan::New("button").ToLocalChecked(), Nan::New(button));
         Nan::Set(event_obj, Nan::New("state").ToLocalChecked(),  Nan::New(action));
 
@@ -324,7 +324,7 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousewheelv").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("mousewheel.v").ToLocalChecked());
         Nan::Set(event_obj, Nan::New("xoff").ToLocalChecked(),   Nan::New(xoff));
         Nan::Set(event_obj, Nan::New("yoff").ToLocalChecked(),   Nan::New(yoff));
 
@@ -376,7 +376,7 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("windowsize").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),   Nan::New("window.size").ToLocalChecked());
         Nan::Set(event_obj, Nan::New("width").ToLocalChecked(),  Nan::New(propW->value));
         Nan::Set(event_obj, Nan::New("height").ToLocalChecked(), Nan::New(propH->value));
 
@@ -426,7 +426,7 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("windowpos").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("window.pos").ToLocalChecked());
         Nan::Set(event_obj, Nan::New("x").ToLocalChecked(),    Nan::New(propX->value));
         Nan::Set(event_obj, Nan::New("y").ToLocalChecked(),    Nan::New(propY->value));
 
@@ -452,7 +452,7 @@ private:
         //create object
         v8::Local<v8::Object> event_obj = Nan::New<v8::Object>();
 
-        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(),     Nan::New("windowclose").ToLocalChecked());
+        Nan::Set(event_obj, Nan::New("type").ToLocalChecked(), Nan::New("window.close").ToLocalChecked());
 
         //fire
         obj->fireEvent(event_obj);

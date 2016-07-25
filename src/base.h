@@ -75,9 +75,9 @@ protected:
     AminoGroup *root = NULL;
     int viewportW;
     int viewportH;
-    ColorShader *colorShader;
-    TextureShader *textureShader;
-    AminoFontShader *fontShader;
+    ColorShader *colorShader = NULL;
+    TextureShader *textureShader = NULL;
+    AminoFontShader *fontShader = NULL;
     GLfloat *modelView;
 
     //properties

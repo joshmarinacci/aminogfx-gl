@@ -224,7 +224,7 @@ exports.RichTextView = function () {
             rte.relayout();
             rte.redraw();
 
-            amino.getCore().on('keypress', piv, function (e) {
+            amino.getCore().on('key.press', piv, function (e) {
                 rte.processKeyEvent(e);
             });
 

@@ -19,7 +19,7 @@ amino.start(function (core, stage) {
     rect.acceptsMouseEvents = true;
     rect.acceptsKeyboardEvents = true;
 
-    core.on('keypress', rect, function (e) {
+    core.on('key.press', rect, function (e) {
         console.log('key was pressed', e.keycode, e.printable, e.char);
     });
 

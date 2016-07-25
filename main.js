@@ -7,8 +7,6 @@ if (DEBUG) {
     console.log('inside of the aminogfx main.js');
 }
 
-var amino_core = require('./src/core/main'); //modified code
-
 //load native module
 var binary = require('node-pre-gyp');
 var path = require('path');
@@ -247,13 +245,18 @@ AminoGfx.prototype.startTimer = function () {
     this.timer = setImmediate(immediateLoop);
 };
 
+/**
+ * Handle an event.
+ */
 AminoGfx.prototype.handleEvent = function (evt) {
     //debug
     //console.log('Event: ' + JSON.stringify(evt));
 
+    //add timestamp
     evt.time = new Date().getTime();
 
-    exports.input.processEvent(this, evt);
+    //pass to event processor
+    input.processEvent(this, evt);
 };
 
 AminoGfx.prototype.destroy = function () {
@@ -287,6 +290,173 @@ AminoGfx.prototype.find = function (id) {
     }
 
     return findNodeById(id, this.getRoot());
+};
+
+/**
+ * Find a node at a certain position with an optional filter callback.
+ */
+AminoGfx.prototype.findNodesAtXY = function (pt, filter) {
+    return findNodesAtXY_helper(this.root, pt, filter, '');
+};
+
+function findNodesAtXY_helper(root, pt, filter, tab) {
+    //verify
+    if (!root) {
+        return [];
+    }
+
+    if (!root.visible()) {
+        return [];
+    }
+
+    //console.log(tab + "   xy",pt.x,pt.y, root.id());
+
+    var tpt = pt.minus(root.x(), root.y()).divide(root.sx(), root.sy());
+
+    //handle children first, then the parent/root
+    var res = [];
+
+    if (filter) {
+        if (!filter(root)) {
+            return res;
+        }
+    }
+
+    if (root.children && root.children.length && root.children.length > 0) {
+        for (var i = root.children.length - 1; i >= 0; i--) {
+            var node = root.children[i];
+            var found = findNodesAtXY_helper(node, tpt, filter, tab + '  ');
+
+            res = res.concat(found);
+        }
+    }
+
+    if (root.contains && root.contains(tpt)) {
+        res = res.concat([root]);
+    }
+
+    return res;
+}
+
+/**
+ * Find a node at a certain position.
+ */
+AminoGfx.prototype.findNodeAtXY = function (x, y) {
+    return findNodeAtXY_helper(this.root, x, y, '');
+};
+
+function findNodeAtXY_helper(root, x, y, tab) {
+    if (!root) {
+        return null;
+    }
+
+    if (!root.visible()) {
+        return null;
+    }
+
+    var tx = x - root.x();
+    var ty = y - root.y();
+
+    tx /= root.sx();
+    ty /= root.sy();
+
+    //console.log(tab + "   xy="+tx+","+ty);
+
+    if (root.cliprect && root.cliprect()) {
+        if (tx < 0) {
+            return false;
+        }
+
+        if (tx > root.w()) {
+            return false;
+        }
+
+        if (ty < 0) {
+            return false;
+        }
+
+        if (ty > root.h()) {
+            return false;
+        }
+    }
+
+    if (root.children) {
+        //console.log(tab+"children = ",root.children.length);
+
+        for (var i = root.children.length - 1; i >= 0; i--) {
+            var node = root.children[i];
+            var found = this.findNodeAtXY_helper(node, tx, ty, tab+ '  ');
+
+            if (found) {
+                return found;
+            }
+        }
+    }
+
+    //console.log(tab+"contains " + tx+' '+ty);
+
+    if (root.contains && root.contains(tx, ty)) {
+        //console.log(tab,"inside!",root.getId());
+
+        return root;
+    }
+
+    return null;
+};
+
+AminoGfx.prototype.globalToLocal = function (pt, node) {
+    return globalToLocal_helper(pt,node);
+};
+
+function globalToLocal_helper(pt, node) {
+    if (node.parent) {
+    	pt = globalToLocal_helper(pt,node.parent);
+    }
+
+    return input.makePoint(
+        (pt.x - node.x()) / node.sx(),
+        (pt.y - node.y()) / node.sy()
+    );
+};
+
+/*
+function calcGlobalToLocalTransform(node) {
+    if (node.parent) {
+        var trans = calcGlobalToLocalTransform(node.parent);
+
+        if (node.getScalex() != 1) {
+            trans.x /= node.sx();
+            trans.y /= node.sy();
+        }
+
+        trans.x -= node.x();
+        trans.y -= node.y();
+
+        return trans;
+    }
+
+    return {
+        x: -node.x(),
+        y: -node.y()
+    };
+}
+*/
+
+AminoGfx.prototype.localToGlobal = function (pt, node) {
+    pt = {
+        x: pt.x + node.x() * node.sx(),
+        y: pt.y + node.y() * node.sx()
+    };
+
+    if (node.parent) {
+        return this.localToGlobal(pt, node.parent);
+    } else {
+        return pt;
+    }
+};
+
+AminoGfx.prototype.on = function (name, target, listener) {
+    input.on(name, target, listener);
 };
 
 exports.AminoGfx = AminoGfx;
@@ -1518,14 +1688,16 @@ function makeProp(obj, name, val) {
 exports.makeProps = makeProps;
 
 //input
-exports.input = amino_core.input;
+var input = require('./src/core/aminoinput');
+
+// initialize input handler
+input.init(OS);
+
+exports.input = input;
 
 //extended
-exports.PixelView    = amino_core.PixelView;
-exports.RichTextView = amino_core.RichTextView;
-
-//initialize input handler
-exports.input.init(OS);
+//exports.PixelView    = amino_core.PixelView;
+//exports.RichTextView = amino_core.RichTextView;
 
 //exports.PureImageView = amino.primitives.PureImageView;
 //exports.ConstraintSolver = require('./src/ConstraintSolver');

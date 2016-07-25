@@ -8,24 +8,11 @@
 
 var DEBUG = false;
 
-/*
-todos:
-
-//key press, key release
-//shift/control/etc. keys
-//keyboard focus management  (do we need multiple of these?)
-//focusgain/focuslose events
-//browser support
-
-repeating keys
-direct keystate query
-mouse move event, required on rpi for a cursor
-windowclose event
-windowsizing event
-*/
-
 var IE = require('./inputevents');
 
+/**
+ * Create a point.
+ */
 function makePoint(x, y) {
     return {
         x: x,
@@ -51,6 +38,9 @@ function makePoint(x, y) {
 
 exports.makePoint = makePoint;
 
+/**
+ * Initialize this module.
+ */
 exports.init = function (OS) {
     if (DEBUG) {
         console.log('initializing input for OS', OS);
@@ -85,22 +75,20 @@ var statusobjects = {
 };
 
 var handlers = {
-    validate: function () { },
-
-    mouseposition: function (core, evt) {
+    'mouse.position': function (gfx, evt) {
         var s = statusobjects.pointer;
 
         s.prevpt = s.pt;
-        s.pt = makePoint(evt.x,evt.y);
+        s.pt = makePoint(evt.x, evt.y);
 
         var target = focusobjects.pointer.target;
 
         if (target != null && statusobjects.pointer.state == 1) {
-            sendDragEvent(core,evt);
+            sendDragEvent(gfx, evt);
         }
     },
 
-    mousebutton: function (core, evt) {
+    'mouse.button': function (gfx, evt) {
         if (evt.button == 0) {
             if (DEBUG) {
                 console.log('left mousebutton event');
@@ -115,8 +103,8 @@ var handlers = {
                     console.log('-> pressed');
                 }
 
-                setupPointerFocus(core, pts.pt);
-                sendPressEvent(core,evt);
+                setupPointerFocus(gfx, pts.pt);
+                sendPressEvent(gfx,evt);
                 return;
             }
 
@@ -125,21 +113,21 @@ var handlers = {
                     console.log('-> released');
                 }
 
-                sendReleaseEvent(core, evt);
+                sendReleaseEvent(gfx, evt);
                 stopPointerFocus();
                 return;
             }
         }
     },
 
-    mousewheelv: function (core, evt) {
+    'mousewheel.v': function (gfx, evt) {
         var pts = statusobjects.pointer;
 
-        setupScrollFocus(core, pts.pt);
-        sendScrollEvent(core, evt);
+        setupScrollFocus(gfx, pts.pt);
+        sendScrollEvent(gfx, evt);
     },
 
-    keypress: function (core, evt) {
+    'key.press': function (gfx, evt) {
         statusobjects.keyboard.state[evt.keycode] = true;
 
         var evt2;
@@ -150,19 +138,19 @@ var handlers = {
             evt2 = IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state);
         }
 
-        sendKeyboardPressEvent(core, evt2);
+        sendKeyboardPressEvent(gfx, evt2);
     },
 
-    keyrelease: function (core, evt) {
+    'key.release': function (gfx, evt) {
         statusobjects.keyboard.state[evt.keycode] = false;
-        sendKeyboardReleaseEvent(core,IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state));
+        sendKeyboardReleaseEvent(gfx, IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state));
     }
 };
 
 /**
- * Process a event.
+ * Process an event.
  */
-exports.processEvent = function (core, evt) {
+exports.processEvent = function (gfx, evt) {
     if (DEBUG) {
         console.log('processEvent() ' + JSON.stringify(evt));
     }
@@ -170,7 +158,7 @@ exports.processEvent = function (core, evt) {
     var handler = handlers[evt.type];
 
     if (handler) {
-        return handler(core, evt);
+        return handler(gfx, evt);
     }
 
     //console.log('unhandled event', evt);
@@ -208,20 +196,22 @@ exports.on = function (name, target, listener) {
 /**
  * Set pointer focus on node.
  */
-function setupPointerFocus(core, pt) {
+function setupPointerFocus(gfx, pt) {
     if (DEBUG) {
         console.log('setupPointerFocus()');
     }
 
-    var nodes = core.findNodesAtXYFiltered(pt, function (node) {
-        if (node.children && typeof node.acceptsMouseEvents !== 'undefined' && node.acceptsMouseEvents === false) {
+    var nodes = gfx.findNodesAtXY(pt, function (node) {
+        if (node.children && node.acceptsMouseEvents === false) {
             return false;
         }
 
         return true;
     });
 
-    var pressnodes = nodes.filter(function (n) { return n.acceptsMouseEvents === true; });
+    var pressnodes = nodes.filter(function (n) {
+        return n.acceptsMouseEvents === true;
+    });
 
     if (pressnodes.length > 0) {
         focusobjects.pointer.target = pressnodes[0];
@@ -229,25 +219,27 @@ function setupPointerFocus(core, pt) {
         focusobjects.pointer.target = null;
     }
 
-    var keyboardnodes = nodes.filter(function (n) { return n.acceptsKeyboardEvents === true; });
+    var keyboardnodes = nodes.filter(function (n) {
+        return n.acceptsKeyboardEvents === true;
+    });
 
     if (keyboardnodes.length > 0) {
         if (focusobjects.keyboard.target) {
             fireEventAtTarget(focusobjects.keyboard.target, {
-                type: 'focuslose',
+                type: 'focus.lose',
                 target: focusobjects.keyboard.target,
             });
         }
 
         focusobjects.keyboard.target = keyboardnodes[0];
         fireEventAtTarget(focusobjects.keyboard.target, {
-            type: 'focusgain',
+            type: 'focus.gain',
             target: focusobjects.keyboard.target,
         });
     } else {
         if (focusobjects.keyboard.target) {
             fireEventAtTarget(focusobjects.keyboard.target, {
-                type: 'focuslose',
+                type: 'focus.lose',
                 target: focusobjects.keyboard.target,
             });
         }
@@ -261,14 +253,14 @@ function stopPointerFocus() {
     focusobjects.pointer.target = null;
 }
 
-function sendPressEvent(core, e) {
+function sendPressEvent(gfx, e) {
     var node = focusobjects.pointer.target;
 
     if (node == null) {
         return;
     }
 
-    var pt = core.globalToLocal(statusobjects.pointer.pt, node);
+    var pt = gfx.globalToLocal(statusobjects.pointer.pt, node);
 
     fireEventAtTarget(node, {
         type: 'press',
@@ -276,17 +268,16 @@ function sendPressEvent(core, e) {
         point: pt,
         target: node
     });
-
 }
 
-function sendReleaseEvent(core, e) {
+function sendReleaseEvent(gfx, e) {
     var node = focusobjects.pointer.target;
 
     if (node == null) {
         return;
     }
 
-    var pt = core.globalToLocal(statusobjects.pointer.pt, node);
+    var pt = gfx.globalToLocal(statusobjects.pointer.pt, node);
 
     fireEventAtTarget(node, {
         type: 'release',
@@ -305,7 +296,7 @@ function sendReleaseEvent(core, e) {
     }
 }
 
-function sendDragEvent(core, e) {
+function sendDragEvent(gfx, e) {
     var node = focusobjects.pointer.target;
     var s = statusobjects.pointer;
 
@@ -313,8 +304,8 @@ function sendDragEvent(core, e) {
         return;
     }
 
-    var localpt = core.globalToLocal(s.pt, node);
-    var localprev = core.globalToLocal(s.prevpt, node);
+    var localpt = gfx.globalToLocal(s.pt, node);
+    var localprev = gfx.globalToLocal(s.prevpt, node);
 
     fireEventAtTarget(node, {
         type: 'drag',
@@ -325,9 +316,11 @@ function sendDragEvent(core, e) {
     });
 }
 
-function setupScrollFocus(core, pt) {
-    var nodes = core.findNodesAtXY(pt);
-    var nodes = nodes.filter(function (n) { return n.acceptsScrollEvents === true; });
+function setupScrollFocus(gfx, pt) {
+    var nodes = gfx.findNodesAtXY(pt);
+    var nodes = nodes.filter(function (n) {
+        return n.acceptsScrollEvents === true;
+    });
 
     if (nodes.length > 0) {
         focusobjects.scroll.target = nodes[0];
@@ -336,7 +329,7 @@ function setupScrollFocus(core, pt) {
     }
 }
 
-function sendScrollEvent(core, e) {
+function sendScrollEvent(gfx, e) {
     var target = focusobjects.scroll.target;
 
     if (target == null) {
@@ -350,22 +343,22 @@ function sendScrollEvent(core, e) {
     });
 }
 
-function sendKeyboardPressEvent(core, event) {
+function sendKeyboardPressEvent(gfx, event) {
     if (focusobjects.keyboard.target === null) {
         return;
     }
 
-    event.type = 'keypress';
+    event.type = 'key.press';
     event.target = focusobjects.keyboard.target;
     fireEventAtTarget(event.target, event);
 }
 
-function sendKeyboardReleaseEvent(core, event) {
+function sendKeyboardReleaseEvent(gfx, event) {
     if (focusobjects.keyboard.target === null) {
         return;
     }
 
-    event.type = 'keyrelease';
+    event.type = 'key.release';
     event.target = focusobjects.keyboard.target;
     fireEventAtTarget(event.target, event);
 }

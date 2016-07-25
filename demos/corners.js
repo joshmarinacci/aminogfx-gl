@@ -42,7 +42,7 @@ amino.start(function (core, stage) {
     addClickHandler(core, rectBR, '#00ffff');
 
     //resize
-    core.on('windowsize', function () {
+    core.on('window.size', function () {
         //move corners
         rectTR.x(stage.w() - rectW);
         rectBL.y(stage.h() - rectH);

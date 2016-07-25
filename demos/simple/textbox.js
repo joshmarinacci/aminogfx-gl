@@ -16,11 +16,11 @@ amino.start(function (core, stage) {
     rect.acceptsKeyboardEvents = true;
     root.add(rect);
 
-    core.on('focusgain', rect, function () {
+    core.on('focus.gain', rect, function () {
         rect.fill('#ffffff');
     });
 
-    core.on('focuslose', rect, function () {
+    core.on('focus.lose', rect, function () {
         rect.fill('#cccccc');
     });
 
@@ -34,7 +34,7 @@ amino.start(function (core, stage) {
 
     root.add(label);
 
-    core.on('keypress', rect, function (e) {
+    core.on('key.press', rect, function (e) {
         console.log('got keyboard event', e.printable, e.key, e.keycode, e.char);
 
         if (e.printable === true) {

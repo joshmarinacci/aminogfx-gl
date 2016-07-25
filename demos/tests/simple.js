@@ -116,6 +116,8 @@ gfx.start(function (err) {
         .wrap('word')
         .fill('#ffff00');
 
+    //text.text('äöü');
+
     g.add(text);
 
     //TODO more cbx

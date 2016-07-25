@@ -58,8 +58,8 @@ amino.start(function (core, stage) {
 
     overlay.acceptsKeyboardEvents = true;
 
-    core.on('keypress', overlay, function (e) {
-        console.log('keypress event', e.keycode, e.printable, e.char);
+    core.on('key.press', overlay, function (e) {
+        console.log('key.press event', e.keycode, e.printable, e.char);
     });
 
 });
