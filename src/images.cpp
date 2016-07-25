@@ -554,7 +554,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update) {
 /**
  * Create AminoTexture factory.
  */
-AminoTextureFactory::AminoTextureFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Texture", callback) {
+AminoTextureFactory::AminoTextureFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoTexture", callback) {
     //empty
 }
 

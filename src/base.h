@@ -64,6 +64,7 @@ public:
     void removeAnimationAsync(AminoAnim *anim);
 
     void deleteTextureAsync(GLuint textureId);
+    GLuint getAtlasTexture(texture_atlas_t *atlas);
 
 protected:
     bool started = false;
@@ -76,6 +77,7 @@ protected:
     int viewportH;
     ColorShader *colorShader;
     TextureShader *textureShader;
+    AminoFontShader *fontShader;
     GLfloat *modelView;
 
     //properties
@@ -136,6 +138,7 @@ private:
     static NAN_METHOD(Tick);
     static NAN_METHOD(InitColorShader);
     static NAN_METHOD(InitTextureShader);
+    static NAN_METHOD(InitFontShader);
     static NAN_METHOD(SetRoot);
 
     //GL
@@ -227,11 +230,15 @@ public:
         //to be overwritten
     }
 
+    AminoGfx *getAminoGfx() {
+        return (AminoGfx *)eventHandler;
+    }
+
     /**
      * Validate renderer instance. Must be called in JS method handler.
      */
     bool checkRenderer(AminoNode *node) {
-        return checkRenderer((AminoGfx *)node->eventHandler);
+        return checkRenderer(node->getAminoGfx());
     }
 
     /**
@@ -248,75 +255,58 @@ public:
 };
 
 /**
- * Convert a v8::String to a (char *).
- *
- * Note: Any call to this should later be free'd. Never returns null.
+ * Text factory.
  */
-static inline char *TO_CHAR(v8::Handle<v8::Value> val) {
-    v8::String::Utf8Value utf8(val);
-    int len = utf8.length() + 1;
-    char *str = (char *)calloc(sizeof(char), len);
+class AminoTextFactory : public AminoJSObjectFactory {
+public:
+    AminoTextFactory(Nan::FunctionCallback callback);
 
-    strncpy(str, *utf8, len);
-
-    return str;
-}
+    AminoJSObject* create() override;
+};
 
 /**
  * Text node class.
  */
-class TextNode : public AminoNode {
+class AminoText : public AminoNode {
 public:
     //text
-    std::string text; //UTF-8
+    Utf8Property *propText;
 
     //color
-    float r;
-    float g;
-    float b;
+    FloatProperty *propR;
+    FloatProperty *propG;
+    FloatProperty *propB;
 
     //box
-    float w;
-    float h;
-    int wrap;
+    FloatProperty *propW;
+    FloatProperty *propH;
+
+    Utf8Property *propWrap;
+    int wrap = WRAP_NONE;
 
     //font
-    int fontid;
-    int fontsize;
-    vertex_buffer_t *buffer;
-    int vAlign;
-    int lineNr;
+    ObjectProperty *propFont;
+    AminoFontSize *fontSize = NULL;
+    vertex_buffer_t *buffer = NULL;
+    bool updated = false;
+    bool textureUpdated = false;
 
-    TextNode(std::string name): AminoNode(name, TEXT) {
-        //white color
-        r = 1.0;
-        g = 1.0;
-        b = 1.0;
+    //alignment
+    Utf8Property *propVAlign;
+    int vAlign = VALIGN_BASELINE;
+    int lineNr = 1;
 
-        //box
-        w = 0;
-        h = 0;
-        wrap = WRAP_NONE;
-
-        //properties
-        text = "";
-        fontsize = 20;
-        fontid = INVALID;
-        buffer = NULL;
-        vAlign = VALIGN_BASELINE;
+    AminoText(): AminoNode(getFactory()->name, TEXT) {
+        //empty
     }
 
-    virtual ~TextNode() {
+    virtual ~AminoText() {
+        //empty
     }
 
-    /**
-     * Update the rendered text.
-     */
-    void refreshText();
-
-    void destroy() {
+    void destroy() override {
         if (DEBUG_BASE) {
-            printf("TextNode: destroy()\n");
+            printf("AminoText: destroy()\n");
         }
 
         AminoNode::destroy();
@@ -325,6 +315,149 @@ public:
             vertex_buffer_delete(buffer);
             buffer = NULL;
         }
+    }
+
+    void setup() override {
+        AminoNode::setup();
+
+        //register native properties
+        propText = createUtf8Property("text");
+
+        propR = createFloatProperty("r");
+        propG = createFloatProperty("g");
+        propB = createFloatProperty("b");
+
+        propW = createFloatProperty("w");
+        propH = createFloatProperty("h");
+
+        propOriginX = createFloatProperty("originX");
+        propOriginY = createFloatProperty("originY");
+
+        propWrap = createUtf8Property("wrap");
+        propVAlign = createUtf8Property("vAlign");
+        propFont = createObjectProperty("font");
+    }
+
+    //creation
+    static AminoTextFactory* getFactory() {
+        static AminoTextFactory *textFactory;
+
+        if (!textFactory) {
+            textFactory = new AminoTextFactory(New);
+        }
+
+        return textFactory;
+    }
+
+    /**
+     * Initialize Group template.
+     */
+    static v8::Local<v8::Function> GetInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+
+        //prototype methods
+        // -> none
+
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
+    }
+
+    /**
+     * Handle async property updates.
+     */
+    void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override {
+        //default: set value
+        AminoJSObject::handleAsyncUpdate(property, value);
+
+        //check font updates
+        if (property == propW || property == propH || property == propText) {
+            updated = true;
+        }
+
+        if (property == propWrap) {
+            std::string str = propWrap->value;
+            int oldWrap = wrap;
+
+            if (str == "none") {
+                wrap = WRAP_NONE;
+            } else if (str == "word") {
+                wrap = WRAP_WORD;
+            } else if (str == "end") {
+                wrap = WRAP_END;
+            } else {
+                //error
+                printf("unknown wrap mode: %s\n", str.c_str());
+            }
+
+            updated = wrap != oldWrap;
+
+            return;
+        }
+
+        if (property == propVAlign) {
+            std::string str = propVAlign->value;
+            int oldVAlign = vAlign;
+
+            if (str == "top") {
+                vAlign = VALIGN_TOP;
+            } else if (str == "middle") {
+                vAlign = VALIGN_MIDDLE;
+            } else if (str == "baseline") {
+                vAlign = VALIGN_BASELINE;
+            } else if (str == "bottom") {
+                vAlign = VALIGN_BOTTOM;
+            } else {
+                //error
+                printf("unknown vAlign mode: %s\n", str.c_str());
+            }
+
+            updated = vAlign != oldVAlign;
+
+            return;
+        }
+
+        if (property == propFont) {
+            v8::Local<v8::Object> obj = Nan::New(propFont->value);
+
+            if (obj->IsNull()) {
+                return;
+            }
+
+            AminoFontSize *fs = Nan::ObjectWrap::Unwrap<AminoFontSize>(obj);
+
+            if (fontSize == fs) {
+                return;
+            }
+
+            if (fontSize) {
+                fontSize->release();
+            }
+
+            fontSize = fs;
+            fontSize->retain();
+
+            updated = true;
+        }
+    }
+
+    /**
+     * Update the rendered text.
+     */
+    bool layoutText();
+
+    /**
+     * Create or update a font texture.
+     */
+    GLuint updateTexture();
+
+private:
+    GLuint textureId = INVALID_TEXTURE;
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
     }
 };
 
@@ -1074,20 +1207,8 @@ private:
     }
 };
 
-/*
-cbx font
+//font shader
 
-refresh: w, h, text, fontsize, fontid, vAlign, wrap
-
-*/
-
-//JavaScript bindings
-
-NAN_METHOD(createNativeFont);
-NAN_METHOD(getTextLineCount);
-NAN_METHOD(getTextHeight);
-
-//cbx move to fonts
 typedef struct {
     float x, y, z;    // position
     float s, t;       // texture pos

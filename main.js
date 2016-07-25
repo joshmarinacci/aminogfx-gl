@@ -137,9 +137,10 @@ AminoGfx.prototype.start = function (done) {
                 return;
             }
 
-            //init shaders
+            //init shaders (in current context)
             self.GL = AminoGfx.GL;
             shaders.init(self, OS);
+            self.initFontShader(path.join(__dirname, '/resources/shaders'));
 
             //ready (Note: this points to the instance)
             done.call(self, err);
@@ -205,6 +206,13 @@ AminoGfx.prototype.createPolygon = function () {
  */
 AminoGfx.prototype.createCircle = function () {
     return new AminoGfx.Circle(this);
+};
+
+/**
+ * Create text element.
+ */
+AminoGfx.prototype.createText = function () {
+    return new AminoGfx.Text(this);
 };
 
 AminoGfx.prototype.startTimer = function () {
@@ -875,9 +883,6 @@ AminoFonts.prototype.init = function () {
     this.fonts = {};
     this.cache = {};
 
-    //shader
-    this.shaderPath = path.join(__dirname, '/resources/shaders');
-
     //default fonts
     this.registerFont({
         name: 'source',
@@ -923,6 +928,9 @@ AminoFonts.prototype.init = function () {
     this.defaultFont = this.fonts.source;
 };
 
+/**
+ * Register a font.
+ */
 AminoFonts.prototype.registerFont = function (font) {
     this.fonts[font.name] = font;
 
@@ -939,6 +947,9 @@ AminoFonts.prototype.registerFont = function (font) {
     return this;
 };
 
+/**
+ * Get a font.
+ */
 AminoFonts.prototype.getFont = function (descr, callback) {
     if (!descr) {
         descr = {};
@@ -1078,7 +1089,7 @@ exports.fonts = fonts;
 var AminoFont = AminoFonts.Font;
 
 AminoFont.prototype.init = function () {
-    this.sizes = {};
+    //empty
 };
 
 /**
@@ -1086,11 +1097,11 @@ AminoFont.prototype.init = function () {
  */
 AminoFont.prototype.getSize = function (size, callback) {
     //check cache
-    var fontSize = this.sizes[size];
+    var fontSize = this.fontSizes[size];
 
     if (!fontSize) {
         fontSize = new AminoFonts.FontSize(this, size);
-        this.sizes[size] = fontSize;
+        this.fontSizes[size] = fontSize;
     }
 
     callback(null, fontSize);
@@ -1106,25 +1117,100 @@ AminoFontSize.prototype.calcTextWidth = function (text, callback) {
     callback(null, this._calcTextWidth(text));
 };
 
-//cbx AminoGfx.Text
+//
+// AminoGfx.Text
+//
 
-/**
- * Vertial text alignment property values.
- */
-var textVAlignHash = {
-    baseline: 0x0,
-    top:      0x1,
-    middle:   0x2,
-    bottom:   0x3
+var Text = AminoGfx.Text;
+
+Text.prototype.init = function () {
+    if (DEBUG) {
+        console.log('Rect.init()');
+    }
+
+    //properties
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+
+        //size
+        w: 0,
+        h: 0,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //font
+        text:       '',
+        fontSize:   20,
+        fontName:   'source',
+        fontWeight: 400,
+        fontStyle:  'normal',
+        font:       null,
+
+        //color
+        opacity: 1.0,
+        fill: '#ffffff',
+
+        //alignment
+        vAlign: 'baseline',
+        wrap:   'none'
+    });
+
+    //update font
+    this.updateFont();
+
+    //watchers
+    this.fontName.watch(this.updateFont);
+    this.fontWeight.watch(this.updateFont);
+    this.fontSize.watch(this.updateFont);
+
+    //TODO lines
+    //TODO textHeight
 };
 
 /**
- * Text wrapping property values.
+ * Load the font.
  */
-var textWrapHash = {
-    none: 0x0,
-    end:  0x1,
-    word: 0x2
+Text.prototype.updateFont = function () {
+    //get font
+    var self = this;
+
+    fonts.getFont({
+        name: this.fontName(),
+        size: this.fontSize(),
+        weight: this.fontWeight(),
+        style: this.fontStyle()
+    }, function (err, font) {
+        if (err) {
+            console.log('could not load font: ' + err.message);
+
+            //try default font
+            fonts.getFont({
+                size: this.fontSize()
+            }, function (err, font) {
+                if (font) {
+                    self.font(font);
+                }
+            });
+        }
+
+        self.font(font);
+    });
 };
 
 //
@@ -1267,29 +1353,6 @@ Anim.prototype.start = function () {
 
     return this;
 };
-
-//native bindings
-
-var gl_native = {
-    textVAlignHash: textVAlignHash,
-    textWrapHash: textWrapHash,
-    getTextLineCount: function (handle) {
-        if (handle == undefined) {
-            throw new Error('Can\'t set a property on an undefined handle!!');
-        }
-
-        return sgtest.getTextLineCount(handle);
-    },
-    getTextHeight: function (handle) {
-        if (handle == undefined) {
-            throw new Error('Can\'t set a property on an undefined handle!!');
-        }
-
-        return sgtest.getTextHeight(handle);
-    }
-};
-
-exports.input = amino_core.input;
 
 /**
  * Create properties.
@@ -1443,6 +1506,9 @@ function makeProp(obj, name, val) {
 };
 
 exports.makeProps = makeProps;
+
+//input
+exports.input = amino_core.input;
 
 //basic
 exports.Text      = amino_core.Text;

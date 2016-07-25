@@ -94,6 +94,8 @@ class AminoFontSizeFactory;
  */
 class AminoFontSize : public AminoJSObject {
 public:
+    texture_font_t *fontTexture = NULL;
+
     AminoFontSize();
     ~AminoFontSize();
 
@@ -107,7 +109,6 @@ public:
 
 private:
     AminoFont *parent = NULL;
-    texture_font_t *fontTexture = NULL;
 
     //JS constructor
     static NAN_METHOD(New);
@@ -129,63 +130,28 @@ public:
     AminoJSObject* create() override;
 };
 
-class AminoGLFonts {
-    //TODO
-};
-
 /**
- * Font class.
+ * Amino OpenGL font handler.
  */
-class AminoFontOld {
+class AminoFontShader {
 public:
-    int id;
-
-    //font
-    texture_atlas_t *atlas;
-    std::map<int, texture_font_t *> fonts; //by font size
-    const char *filename;
-//cbx
     //shader
     GLuint shader;
-    GLint texuni;
-    GLint mvpuni;
-    GLint transuni;
-    GLint coloruni;
+    GLint texUni;
+    GLint mvpUni;
+    GLint transUni;
+    GLint colorUni;
 
-    AminoFontOld() {
-        texuni = -1;
-    }
+    //textures (Note: never destroyed)
+    std::map<texture_atlas_t *, GLuint> atlasTextures;
 
-    virtual ~AminoFontOld() {
-        //destroy (if not called before)
-        destroy();
-    }
+    AminoFontShader(std::string shaderPath);
+    virtual ~AminoFontShader();
 
-    /**
-     * Free all resources.
-     */
-    virtual void destroy() {
-        //textures
-        for (std::map<int, texture_font_t *>::iterator it = fonts.begin(); it != fonts.end(); it++) {
-            if (DEBUG_RESOURCES) {
-                printf("freeing font texture\n");
-            }
+    GLuint getAtlasTexture(texture_atlas_t *atlas);
 
-            texture_font_delete(it->second);
-        }
-
-        fonts.clear();
-
-        //atlas
-        if (atlas) {
-            if (DEBUG_RESOURCES) {
-                printf("freeing font\n");
-            }
-
-            texture_atlas_delete(atlas);
-            atlas = NULL;
-        }
-    }
+private:
+    void loadShader(std::string shaderPath);
 };
 
 #endif

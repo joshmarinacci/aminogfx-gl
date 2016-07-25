@@ -35,6 +35,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // shader
     Nan::SetPrototypeMethod(tpl, "initColorShader", InitColorShader);
     Nan::SetPrototypeMethod(tpl, "initTextureShader", InitTextureShader);
+    Nan::SetPrototypeMethod(tpl, "initFontShader", InitFontShader);
 
     // group
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
@@ -45,6 +46,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetTemplate(tpl, "ImageView", AminoRect::GetImageViewInitFunction());
     Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
     Nan::SetTemplate(tpl, "Polygon", AminoPolygon::GetInitFunction());
+    Nan::SetTemplate(tpl, "Text", AminoText::GetInitFunction());
     Nan::SetTemplate(tpl, "Anim", AminoAnim::GetInitFunction());
 
     //special: GL object
@@ -203,6 +205,15 @@ NAN_METHOD(AminoGfx::InitTextureShader) {
 
     textureShader->attr_pos       = info[4]->Uint32Value();
     textureShader->attr_texcoords = info[5]->Uint32Value();
+}
+
+NAN_METHOD(AminoGfx::InitFontShader) {
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+    v8::String::Utf8Value path(info[0]);
+
+    assert(!obj->fontShader);
+
+    obj->fontShader = new AminoFontShader(*path);
 }
 
 /**
@@ -374,7 +385,7 @@ void AminoGfx::renderScene() {
         return;
     }
 
-    SimpleRenderer *renderer = new SimpleRenderer(colorShader, textureShader, modelView);
+    SimpleRenderer *renderer = new SimpleRenderer(fontShader, colorShader, textureShader, modelView);
 
     renderer->startRender(root);
     delete renderer;
@@ -625,6 +636,12 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update) {
     glDeleteTextures(1, &textureId);
 }
 
+GLuint AminoGfx::getAtlasTexture(texture_atlas_t *atlas) {
+    assert(fontShader);
+
+    return fontShader->getAtlasTexture(atlas);
+}
+
 //
 // AminoGroupFactory
 //
@@ -632,7 +649,7 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update) {
 /**
  * Group factory constructor.
  */
-AminoGroupFactory::AminoGroupFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Group", callback) {
+AminoGroupFactory::AminoGroupFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoGroup", callback) {
     //empty
 }
 
@@ -647,7 +664,7 @@ AminoJSObject* AminoGroupFactory::create() {
 /**
  * AminoRect factory constructor.
  */
-AminoRectFactory::AminoRectFactory(Nan::FunctionCallback callback, bool hasImage): AminoJSObjectFactory(hasImage ? "ImageView":"Rect", callback), hasImage(hasImage) {
+AminoRectFactory::AminoRectFactory(Nan::FunctionCallback callback, bool hasImage): AminoJSObjectFactory(hasImage ? "AminoImageView":"AminoRect", callback), hasImage(hasImage) {
     //empty
 }
 
@@ -662,7 +679,7 @@ AminoJSObject* AminoRectFactory::create() {
 /**
  * AminoPolygon factory constructor.
  */
-AminoPolygonFactory::AminoPolygonFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Polygon", callback) {
+AminoPolygonFactory::AminoPolygonFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoPolygon", callback) {
     //empty
 }
 
@@ -677,7 +694,7 @@ AminoJSObject* AminoPolygonFactory::create() {
 /**
  * Animation factory constructor.
  */
-AminoAnimFactory::AminoAnimFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("Anim", callback) {
+AminoAnimFactory::AminoAnimFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoAnim", callback) {
     //empty
 }
 
@@ -685,14 +702,52 @@ AminoJSObject* AminoAnimFactory::create() {
     return new AminoAnim();
 }
 
+//
+// AminoTextFactory
+//
 
+/**
+ * Text factory constructor.
+ */
+AminoTextFactory::AminoTextFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoText", callback) {
+    //empty
+}
 
+AminoJSObject* AminoTextFactory::create() {
+    return new AminoText();
+}
 
+//
+// AminoText
+//
 
-// --------------------------------------------------------------- add_text ---
-static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
-               const char *text, vec2 *pen, int wrap, int width, int *lineNr )
-{
+GLuint AminoText::updateTexture() {
+    if (textureId == INVALID_TEXTURE) {
+        //create texture (for atlas)
+        texture_atlas_t *atlas = fontSize->fontTexture->atlas;
+
+        textureId = getAminoGfx()->getAtlasTexture(atlas);
+    } else {
+        if (!textureUpdated) {
+            return textureId;
+        }
+    }
+
+    //update texture
+    texture_atlas_t *atlas = fontSize->fontTexture->atlas;
+
+    glBindTexture(GL_TEXTURE_2D, textureId);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas->width, atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, atlas->data);
+
+    textureUpdated = false;
+}
+
+/**
+ * Render text to vertices.
+ */
+static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
+               const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
 
@@ -899,66 +954,38 @@ static void add_text( vertex_buffer_t *buffer, texture_font_t *font,
 /**
  * Update the rendered text.
  */
-void TextNode::refreshText() {
-/* cbx TextNode
-    if (fontid == INVALID) {
-        return;
+bool AminoText::layoutText() {
+    if (!fontSize || !updated) {
+        return false;
     }
 
-    //get font with size
-    AminoFont *font = fontmap[fontid];
-    std::map<int, texture_font_t *>::iterator it = font->fonts.find(fontsize);
-
-    if (it == font->fonts.end()) {
-        if (DEBUG_BASE) {
-            printf("loading size %d for font %s\n", fontsize, font->filename);
-        }
-
-        //add new size
-        font->fonts[fontsize] = texture_font_new_from_file(font->atlas, fontsize, font->filename);
-
-        if (DEBUG_RESOURCES) {
-            printf("created font texture (name=%s, size=%i)\n", font->filename, fontsize);
-        }
-    }
+    updated = false;
 
     //render text
-    vec2 pen;
-
-    pen.x = 0;
-    pen.y = 0;
-
     if (buffer) {
         vertex_buffer_clear(buffer);
     } else {
         buffer = vertex_buffer_new("vertex:3f,tex_coord:2f");
     }
 
-    texture_font_t *f = font->fonts[fontsize];
+    texture_font_t *f = fontSize->fontTexture;
+    size_t lastGlyphCount = vector_size(f->glyphs);
 
     assert(f);
-    add_text(buffer, f, text.c_str(), &pen, wrap, w, &lineNr);
-*/
-}
 
-NAN_METHOD(getTextLineCount) {
-/*
-    int textHandle = info[0]->Uint32Value();
-    TextNode *node = (TextNode *)rects[textHandle];
+    vec2 pen;
 
-    info.GetReturnValue().Set(node->lineNr);
-*/
-}
+    pen.x = 0;
+    pen.y = 0;
 
-NAN_METHOD(getTextHeight) {
-/*
-    int textHandle = info[0]->Uint32Value();
-    TextNode *node = (TextNode *)rects[textHandle];
-    AminoFont *font = fontmap[node->fontid];
-    texture_font_t *texture = font->fonts[node->fontsize];
+    add_text(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
 
-    info.GetReturnValue().Set(node->lineNr * texture->height);
-*/
+    //update texture
+    if (vector_size(f->glyphs) != lastGlyphCount) {
+        textureUpdated = true;
+    }
+
+    return true;
 }
 
 NAN_METHOD(node_glCreateShader) {
@@ -1073,34 +1100,4 @@ NAN_METHOD(node_glGetUniformLocation) {
     int loc = glGetUniformLocation(prog, *name);
 
     info.GetReturnValue().Set(loc);
-}
-
-/**
- * Create native font and shader.
- */
-NAN_METHOD(createNativeFont) {
-/*
-//cbx createNativeFont
-    //load font & shader
-    char *shader_base = TO_CHAR(info[1]);
-
-    if (DEBUG_BASE) {
-        printf("loading font file %s\n", afont->filename);
-        printf("shader base = %s\n", shader_base);
-    }
-
-    std::string str ("");
-    std::string str2 = str + shader_base;
-    std::string vert = str2 + "/v3f-t2f.vert";
-    std::string frag = str2 + "/v3f-t2f.frag";
-
-    //printf("shader: vertex=%s fragment=%s\n", vert.c_str(), frag.c_str());
-
-    free(shader_base);
-
-    afont->shader = shader_load(vert.c_str(), frag.c_str());
-
-    //TODO reuse shader (create only once)
-    //TODO glDeleteProgram (on destroy)
-*/
 }

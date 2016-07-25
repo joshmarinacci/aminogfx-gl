@@ -2,7 +2,7 @@
 
 #define DEBUG_RENDERER false
 
-SimpleRenderer::SimpleRenderer(ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): colorShader(colorShader), textureShader(textureShader), modelView(modelView) {
+SimpleRenderer::SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): fontShader(fontShader), colorShader(colorShader), textureShader(textureShader), modelView(modelView) {
     if (DEBUG_RENDERER) {
         printf("created SimpleRenderer\n");
     }
@@ -64,7 +64,7 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
             break;
 
         case TEXT:
-            this->drawText(c, (TextNode *)root);
+            this->drawText(c, (AminoText *)root);
             break;
 
         default:
@@ -353,20 +353,14 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
 /**
  * Render text.
  */
-void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
+void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
     if (DEBUG_RENDERER) {
         printf("-> drawText()\n");
     }
-/* cbx font
-    if (fontmap.empty()) {
+
+    if (!text->layoutText()) {
         return;
     }
-
-    if (text->fontid == INVALID) {
-        return;
-    }
-
-    AminoFont *font = fontmap[text->fontid];
 
     c->save();
 
@@ -374,7 +368,7 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     c->scale(1, -1);
 
     //baseline at top/left
-    texture_font_t *tf = font->fonts[text->fontsize];
+    texture_font_t *tf = text->fontSize->fontTexture;
 
     //debug
     //sprintf("font: size=%f height=%f ascender=%f descender=%f\n", tf->size, tf->height, tf->ascender, tf->descender);
@@ -385,11 +379,11 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
             break;
 
         case VALIGN_BOTTOM:
-            c->translate(0,  - text->h - tf->descender + (text->lineNr - 1) * tf->height);
+            c->translate(0,  - text->propH->value - tf->descender + (text->lineNr - 1) * tf->height);
             break;
 
         case VALIGN_MIDDLE:
-            c->translate(0, - tf->ascender - (text->h - text->lineNr * tf->height) / 2);
+            c->translate(0, - tf->ascender - (text->propH->value - text->lineNr * tf->height) / 2);
             break;
 
         case VALIGN_BASELINE:
@@ -398,37 +392,28 @@ void SimpleRenderer::drawText(GLContext *c, TextNode *text) {
     }
 
     //use texture
+    GLuint texture = text->updateTexture();
+
     glActiveTexture(GL_TEXTURE0);
-    c->bindTexture(font->atlas->id);
+    c->bindTexture(texture);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    c->useProgram(font->shader);
-
-    //by only doing this init work once we save almost 80% of the time for drawing text
-    if (font->texuni == -1) {
-        font->texuni   = glGetUniformLocation(font->shader, "texture");
-        font->mvpuni   = glGetUniformLocation(font->shader, "mvp");
-        font->transuni = glGetUniformLocation(font->shader, "trans");
-        font->coloruni = glGetUniformLocation(font->shader, "color");
-    }
+    c->useProgram(fontShader->shader);
 
     //color & opacity
-    GLfloat color[4] = {text->r, text->g, text->b, c->opacity * text->propOpacity->value};
+    GLfloat color[4] = { text->propR->value, text->propG->value, text->propB->value, c->opacity * text->propOpacity->value };
 
-    glUniform4fv(font->coloruni, 1, color);
-
-    glUniform1i(font->texuni, 0); //GL_TEXTURE0
-
-    glUniformMatrix4fv(font->mvpuni, 1, 0, modelView);
+    glUniform4fv(fontShader->colorUni, 1, color);
+    glUniform1i(fontShader->texUni, 0); //GL_TEXTURE0
+    glUniformMatrix4fv(fontShader->mvpUni, 1, 0, modelView);
 
     //only the global transform will change each time
-    glUniformMatrix4fv(font->transuni, 1, 0, c->globaltx);
+    glUniformMatrix4fv(fontShader->transUni, 1, 0, c->globaltx);
 
     //render
     vertex_buffer_render(text->buffer, GL_TRIANGLES);
 
     c->restore();
-*/
 }

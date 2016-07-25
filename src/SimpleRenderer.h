@@ -123,7 +123,7 @@ public:
 
 class SimpleRenderer {
 public:
-    SimpleRenderer(ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView);
+    SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView);
     virtual ~SimpleRenderer() { }
 
     virtual void startRender(AminoNode *node);
@@ -132,9 +132,10 @@ public:
     virtual void drawGroup(GLContext *c, AminoGroup *group);
     virtual void drawRect(GLContext *c, AminoRect *rect);
     virtual void drawPoly(GLContext *c, AminoPolygon *poly);
-    virtual void drawText(GLContext *c, TextNode *text);
+    virtual void drawText(GLContext *c, AminoText *text);
 
 private:
+    AminoFontShader *fontShader;
     ColorShader *colorShader;
     TextureShader *textureShader;
     GLfloat *modelView;

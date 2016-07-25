@@ -548,10 +548,6 @@ NAN_MODULE_INIT(InitAll) {
 
     //fonts class
     AminoFonts::Init(target);
-
-    //TODO cleanup
-    Nan::Set(target, Nan::New("getTextLineCount").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getTextLineCount)).ToLocalChecked());
-    Nan::Set(target, Nan::New("getTextHeight").ToLocalChecked(),    Nan::GetFunction(Nan::New<v8::FunctionTemplate>(getTextHeight)).ToLocalChecked());
 }
 
 //entry point

@@ -7,9 +7,6 @@ var prims = require('./primitives');
 exports.input = input;
 exports.primitives = prims;
 
-//basic
-amino.Text = prims.Text;
-
 //extended
 amino.PixelView    = prims.PixelView;
 amino.RichTextView = prims.RichTextView;

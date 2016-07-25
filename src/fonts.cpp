@@ -1,6 +1,7 @@
 #include "fonts.h"
 
 #include "fonts/utf8-utils.h"
+#include "fonts/shader.h"
 
 #include <cmath>
 
@@ -86,14 +87,20 @@ AminoFont::~AminoFont() {
 void AminoFont::destroy() {
     AminoJSObject::destroy();
 
+    //font sizes
+    for (std::map<int, texture_font_t *>::iterator it = fontSizes.begin(); it != fontSizes.end(); it++) {
+        texture_font_delete(it->second);
+    }
+
+    fontSizes.clear();
+
+    //atlas
     if (atlas) {
-        //Note: frees all sizes too
         texture_atlas_delete(atlas);
     }
 
+    //font data
     fontData.Reset();
-
-    fontSizes.clear();
 }
 
 /**
@@ -172,6 +179,7 @@ texture_font_t *AminoFont::getFontWithSize(int size) {
         char *buffer = node::Buffer::Data(bufferObj);
         size_t bufferLen = node::Buffer::Length(bufferObj);
 
+        //Note: has texture id but we use our own handling
         fontSize = texture_font_new_from_memory(atlas, size, buffer, bufferLen);
         fontSizes[size] = fontSize;
     } else {
@@ -336,4 +344,54 @@ AminoFontSizeFactory::AminoFontSizeFactory(Nan::FunctionCallback callback): Amin
  */
 AminoJSObject* AminoFontSizeFactory::create() {
     return new AminoFontSize();
+}
+
+//
+// AminoFontShader
+//
+
+AminoFontShader::AminoFontShader(std::string shaderPath) {
+    loadShader(shaderPath);
+}
+
+AminoFontShader::~AminoFontShader() {
+    glDeleteProgram(shader);
+}
+
+void AminoFontShader::loadShader(std::string shaderPath) {
+    std::string vert = shaderPath + "/v3f-t2f.vert";
+    std::string frag = shaderPath + "/v3f-t2f.frag";
+
+    //printf("shader: vertex=%s fragment=%s\n", vert.c_str(), frag.c_str());
+
+    shader = shader_load(vert.c_str(), frag.c_str());
+
+    //get uniforms
+    texUni   = glGetUniformLocation(shader, "texture");
+    mvpUni   = glGetUniformLocation(shader, "mvp");
+    transUni = glGetUniformLocation(shader, "trans");
+    colorUni = glGetUniformLocation(shader, "color");
+}
+
+GLuint AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
+    std::map<texture_atlas_t *, GLuint>::iterator it = atlasTextures.find(atlas);
+
+    if (it == atlasTextures.end()) {
+        //create new one
+        GLuint id;
+
+        glGenTextures(1, &id);
+        glBindTexture(GL_TEXTURE_2D, id);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+        atlasTextures[atlas] = id;
+
+        return id;
+    }
+
+    return it->second;
 }

@@ -184,7 +184,5 @@ var Core = function () {
     };
 };
 
-exports.Text = amino.Text;
-
 exports.PixelView    = amino.PixelView;
 exports.RichTextView = amino.RichTextView;
