@@ -98,7 +98,7 @@ void colorShaderApply(GLContext *ctx, ColorShader* shader, GLfloat modelView[16]
     glDisableVertexAttribArray(shader->attr_color);
 }
 
-void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], int texid, GLfloat opacity) {
+void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], GLuint texid, GLfloat opacity) {
     //printf("doing texture shader apply %d opacity = %f\n", texid, opacity);
 
     ctx->useProgram(shader->prog);

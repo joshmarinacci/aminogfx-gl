@@ -186,3 +186,34 @@ function testFont() {
 
     });
 }
+
+function testWindow(title) {
+    const gfx = new amino.AminoGfx();
+
+    gfx.w(200);
+    gfx.h(200);
+    gfx.title(title);
+
+    gfx.start(function (err) {
+        if (err) {
+            console.log('start failed: ' + err.message);
+        }
+
+        const g = this.createGroup();
+        const text = this.createText().text(title).vAlign('top');
+
+        g.add(text);
+        this.setRoot(g);
+    });
+
+    gfx.on('window.close', function () {
+        console.log('closing window');
+
+        gfx.destroy();
+    });
+
+    return gfx;
+}
+
+testWindow('Window 1').x(0).y(0);
+testWindow('Window 2').x(200).y(0);

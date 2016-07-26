@@ -144,6 +144,10 @@ var handlers = {
     'key.release': function (gfx, evt) {
         statusobjects.keyboard.state[evt.keycode] = false;
         sendKeyboardReleaseEvent(gfx, IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state));
+    },
+
+    'window.close': function (gfx, evt) {
+        fireEventAtTarget(null, evt);
     }
 };
 
@@ -179,7 +183,7 @@ exports.on = function (name, target, listener) {
         listeners[name] = [];
     }
 
-    //special case (e.g. windowsize handler)
+    //special case (e.g. window.size handler)
     if (!listener) {
         //two parameters set
         listener = target;
@@ -369,7 +373,7 @@ function fireEventAtTarget(target, event) {
     }
 
     if (!event.type) {
-        console.log('WARNING. Event has no type!');
+        console.log('Warning: event has no type!');
     }
 
     var funcs = listeners[event.type];

@@ -8,11 +8,11 @@ public:
     std::stack<void *> matrixStack;
     GLfloat *globaltx;
     GLfloat opacity;
-    int prevProg;
+    GLuint prevProg;
     GLuint prevTex;
 
     GLContext() {
-        prevProg = -1;
+        prevProg = INVALID_PROGRAM;
         prevTex = INVALID_TEXTURE;
 
         opacity = 1;
@@ -103,7 +103,7 @@ public:
         this->matrixStack.pop();
     }
 
-    void useProgram(int prog) {
+    void useProgram(GLuint prog) {
         if (prog != prevProg) {
             glUseProgram(prog);
 
@@ -111,7 +111,7 @@ public:
         }
     }
 
-    void bindTexture(int tex) {
+    void bindTexture(GLuint tex) {
         if (prevTex != tex) {
             glBindTexture(GL_TEXTURE_2D, tex);
 

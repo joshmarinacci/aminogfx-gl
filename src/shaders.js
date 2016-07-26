@@ -106,8 +106,8 @@ var Shader = {
     useProgram: function() {
         this.GL.glUseProgram(this.prog);
     },
-    attribs:{},
-    uniforms:{},
+    attribs: {},
+    uniforms: {},
 
     locateAttrib: function (name) {
         this.attribs[name] = this.GL.glGetAttribLocation(this.prog, name);

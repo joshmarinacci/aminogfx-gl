@@ -1103,13 +1103,13 @@ NAN_METHOD(node_glDeleteShader) {
 }
 
 NAN_METHOD(node_glLinkProgram) {
-    int prog     = info[0]->Uint32Value();
+    GLuint prog = info[0]->Uint32Value();
 
     glLinkProgram(prog);
 }
 
 NAN_METHOD(node_glUseProgram) {
-    int prog     = info[0]->Uint32Value();
+    GLuint prog  = info[0]->Uint32Value();
 
     glUseProgram(prog);
 }

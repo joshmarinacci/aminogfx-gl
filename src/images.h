@@ -4,8 +4,6 @@
 #include "base_js.h"
 #include "gfx.h"
 
-#define INVALID_TEXTURE 0
-
 class AminoImageFactory;
 
 /**

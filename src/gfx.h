@@ -1,6 +1,9 @@
 #ifndef _AMINOGFX_H
 #define _AMINOGFX_H
 
+#define INVALID_TEXTURE 0
+#define INVALID_PROGRAM 0
+
 /*
  * Platform specific headers.
  *

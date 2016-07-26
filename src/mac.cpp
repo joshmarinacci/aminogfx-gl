@@ -207,7 +207,7 @@ private:
 
         //activate context
         glfwMakeContextCurrent(window);
-
+//cbx dettach later
         //set bindings
         glfwSetKeyCallback(window, handleKeyEvents);
         glfwSetCursorPosCallback(window, handleMouseMoveEvents);
