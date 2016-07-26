@@ -103,7 +103,7 @@ gfx.start(function (err) {
     g.add(iv);
 
     //GC tests
-    testImages(g);
+//    testImages(g);
 
     //text
     var text = this.createText()

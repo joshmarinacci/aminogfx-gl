@@ -51,60 +51,80 @@ exports.init = function (OS) {
     IE.init();
 };
 
-var listeners = {};
-var focusobjects = {
-    pointer: {
-        target: null
-    },
-    scroll: {
-        target: null
-    },
-    keyboard: {
-        target: null
-    }
-};
+//
+// AminoEvents
+//
 
-var statusobjects = {
-    pointer: {
-        pt: makePoint(-1, -1),
-        prevpt: makePoint(-1, -1)
-    },
-    keyboard: {
-        state: {}
+function AminoEvents(gfx) {
+    this.gfx = gfx;
+
+    //properties
+    this.listeners = {};
+    this.focusObjects = {
+        pointer: {
+            target: null
+        },
+        scroll: {
+            target: null
+        },
+        keyboard: {
+            target: null
+        }
+    };
+
+    this.statusObjects = {
+        pointer: {
+            pt: makePoint(-1, -1),
+            prevPt: makePoint(-1, -1)
+        },
+        keyboard: {
+            state: {}
+        }
+    };
+}
+
+/**
+ * Create new instance.
+ */
+exports.createEventHandler = function (gfx) {
+    if (DEBUG) {
+        console.log('createEventHandler()');
     }
+
+    return new AminoEvents(gfx);
 };
 
 var handlers = {
-    'mouse.position': function (gfx, evt) {
-        var s = statusobjects.pointer;
+    'mouse.position': function (obj, evt) {
+        var s = obj.statusObjects.pointer;
 
-        s.prevpt = s.pt;
+        s.prevPt = s.pt;
         s.pt = makePoint(evt.x, evt.y);
 
-        var target = focusobjects.pointer.target;
+        var target = obj.focusObjects.pointer.target;
 
-        if (target != null && statusobjects.pointer.state == 1) {
-            sendDragEvent(gfx, evt);
+        if (target != null && obj.statusObjects.pointer.state == 1) {
+            obj.sendDragEvent(evt);
         }
     },
 
-    'mouse.button': function (gfx, evt) {
+    'mouse.button': function (obj, evt) {
         if (evt.button == 0) {
             if (DEBUG) {
                 console.log('left mousebutton event');
             }
 
-            statusobjects.pointer.state = evt.state;
+            obj.statusObjects.pointer.state = evt.state;
 
             if (evt.state == 1) {
-                var pts = statusobjects.pointer;
+                var pts = obj.statusObjects.pointer;
 
                 if (DEBUG) {
                     console.log('-> pressed');
                 }
 
-                setupPointerFocus(gfx, pts.pt);
-                sendPressEvent(gfx,evt);
+                obj.setupPointerFocus(pts.pt);
+                obj.sendPressEvent(evt);
                 return;
             }
 
@@ -113,48 +133,48 @@ var handlers = {
                     console.log('-> released');
                 }
 
-                sendReleaseEvent(gfx, evt);
-                stopPointerFocus();
+                obj.sendReleaseEvent(evt);
+                obj.stopPointerFocus();
                 return;
             }
         }
     },
 
-    'mousewheel.v': function (gfx, evt) {
-        var pts = statusobjects.pointer;
+    'mousewheel.v': function (obj, evt) {
+        var pts = obj.statusObjects.pointer;
 
-        setupScrollFocus(gfx, pts.pt);
-        sendScrollEvent(gfx, evt);
+        obj.setupScrollFocus(pts.pt);
+        obj.sendScrollEvent(evt);
     },
 
-    'key.press': function (gfx, evt) {
-        statusobjects.keyboard.state[evt.keycode] = true;
+    'key.press': function (obj, evt) {
+        obj.statusObjects.keyboard.state[evt.keycode] = true;
 
         var evt2;
 
         if (this.OS == 'BROWSER') {
-            evt2 = IE.fromBrowserKeyboardEvent(evt, statusobjects.keyboard.state);
+            evt2 = IE.fromBrowserKeyboardEvent(evt, obj.statusObjects.keyboard.state);
         } else {
-            evt2 = IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state);
+            evt2 = IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state);
         }
 
-        sendKeyboardPressEvent(gfx, evt2);
+        obj.sendKeyboardPressEvent(evt2);
     },
 
-    'key.release': function (gfx, evt) {
-        statusobjects.keyboard.state[evt.keycode] = false;
-        sendKeyboardReleaseEvent(gfx, IE.fromAminoKeyboardEvent(evt, statusobjects.keyboard.state));
+    'key.release': function (obj, evt) {
+        obj.statusObjects.keyboard.state[evt.keycode] = false;
+        obj.sendKeyboardReleaseEvent(IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state));
     },
 
-    'window.close': function (gfx, evt) {
-        fireEventAtTarget(null, evt);
+    'window.close': function (obj, evt) {
+        obj.fireEventAtTarget(null, evt);
     }
 };
 
 /**
  * Process an event.
  */
-exports.processEvent = function (gfx, evt) {
+AminoEvents.prototype.processEvent = function (evt) {
     if (DEBUG) {
         console.log('processEvent() ' + JSON.stringify(evt));
     }
@@ -162,7 +182,7 @@ exports.processEvent = function (gfx, evt) {
     var handler = handlers[evt.type];
 
     if (handler) {
-        return handler(gfx, evt);
+        return handler(this, evt);
     }
 
     //console.log('unhandled event', evt);
@@ -171,7 +191,7 @@ exports.processEvent = function (gfx, evt) {
 /**
  * Register event handler.
  */
-exports.on = function (name, target, listener) {
+AminoEvents.prototype.on = function (name, target, listener) {
     //name
     if (!name) {
         throw new Error('missing name');
@@ -179,8 +199,8 @@ exports.on = function (name, target, listener) {
 
     name = name.toLowerCase();
 
-    if (!listeners[name]) {
-        listeners[name] = [];
+    if (!this.listeners[name]) {
+        this.listeners[name] = [];
     }
 
     //special case (e.g. window.size handler)
@@ -191,7 +211,7 @@ exports.on = function (name, target, listener) {
     }
 
     //add
-    listeners[name].push({
+    this.listeners[name].push({
         target: target,
         func: listener
     });
@@ -200,12 +220,12 @@ exports.on = function (name, target, listener) {
 /**
  * Set pointer focus on node.
  */
-function setupPointerFocus(gfx, pt) {
+AminoEvents.prototype.setupPointerFocus = function (pt) {
     if (DEBUG) {
         console.log('setupPointerFocus()');
     }
 
-    var nodes = gfx.findNodesAtXY(pt, function (node) {
+    var nodes = this.gfx.findNodesAtXY(pt, function (node) {
         if (node.children && node.acceptsMouseEvents === false) {
             return false;
         }
@@ -213,77 +233,77 @@ function setupPointerFocus(gfx, pt) {
         return true;
     });
 
-    var pressnodes = nodes.filter(function (n) {
+    var pressNodes = nodes.filter(function (n) {
         return n.acceptsMouseEvents === true;
     });
 
-    if (pressnodes.length > 0) {
-        focusobjects.pointer.target = pressnodes[0];
+    if (pressNodes.length > 0) {
+        this.focusObjects.pointer.target = pressNodes[0];
     } else {
-        focusobjects.pointer.target = null;
+        this.focusObjects.pointer.target = null;
     }
 
-    var keyboardnodes = nodes.filter(function (n) {
+    var keyboardNodes = nodes.filter(function (n) {
         return n.acceptsKeyboardEvents === true;
     });
 
-    if (keyboardnodes.length > 0) {
-        if (focusobjects.keyboard.target) {
-            fireEventAtTarget(focusobjects.keyboard.target, {
+    if (keyboardNodes.length > 0) {
+        if (this.focusObjects.keyboard.target) {
+            fireEventAtTarget(this.focusObjects.keyboard.target, {
                 type: 'focus.lose',
-                target: focusobjects.keyboard.target,
+                target: this.focusObjects.keyboard.target,
             });
         }
 
-        focusobjects.keyboard.target = keyboardnodes[0];
-        fireEventAtTarget(focusobjects.keyboard.target, {
+        this.focusObjects.keyboard.target = keyboardNodes[0];
+
+        fireEventAtTarget(this.focusObjects.keyboard.target, {
             type: 'focus.gain',
-            target: focusobjects.keyboard.target,
+            target: this.focusObjects.keyboard.target,
         });
     } else {
-        if (focusobjects.keyboard.target) {
-            fireEventAtTarget(focusobjects.keyboard.target, {
+        if (this.focusObjects.keyboard.target) {
+            fireEventAtTarget(this.focusObjects.keyboard.target, {
                 type: 'focus.lose',
-                target: focusobjects.keyboard.target,
+                target: this.focusObjects.keyboard.target,
             });
         }
 
-        focusobjects.keyboard.target = null;
+        this.focusObjects.keyboard.target = null;
     }
+};
 
-}
+AminoEvents.prototype.stopPointerFocus = function () {
+    this.focusObjects.pointer.target = null;
+};
 
-function stopPointerFocus() {
-    focusobjects.pointer.target = null;
-}
-
-function sendPressEvent(gfx, e) {
-    var node = focusobjects.pointer.target;
+AminoEvents.prototype.sendPressEvent = function (e) {
+    var node = this.focusObjects.pointer.target;
 
     if (node == null) {
         return;
     }
 
-    var pt = gfx.globalToLocal(statusobjects.pointer.pt, node);
+    var pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
 
-    fireEventAtTarget(node, {
+    this.fireEventAtTarget(node, {
         type: 'press',
         button: e.button,
         point: pt,
         target: node
     });
-}
+};
 
-function sendReleaseEvent(gfx, e) {
-    var node = focusobjects.pointer.target;
+AminoEvents.prototype.sendReleaseEvent = function (e) {
+    var node = this.focusObjects.pointer.target;
 
     if (node == null) {
         return;
     }
 
-    var pt = gfx.globalToLocal(statusobjects.pointer.pt, node);
+    var pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
 
-    fireEventAtTarget(node, {
+    this.fireEventAtTarget(node, {
         type: 'release',
         button: e.button,
         point: pt,
@@ -291,83 +311,85 @@ function sendReleaseEvent(gfx, e) {
     });
 
     if (node.contains(pt)) {
-        fireEventAtTarget(node, {
+        this.fireEventAtTarget(node, {
             type: 'click',
             button: e.button,
             point: pt,
             target: node,
         });
     }
-}
+};
 
-function sendDragEvent(gfx, e) {
-    var node = focusobjects.pointer.target;
-    var s = statusobjects.pointer;
+AminoEvents.prototype.sendDragEvent = function (e) {
+    var node = this.focusObjects.pointer.target;
+    var s = this.statusObjects.pointer;
 
     if (node == null) {
         return;
     }
 
-    var localpt = gfx.globalToLocal(s.pt, node);
-    var localprev = gfx.globalToLocal(s.prevpt, node);
+    var localpt = this.gfx.globalToLocal(s.pt, node);
+    var localprev = this.gfx.globalToLocal(s.prevPt, node);
 
-    fireEventAtTarget(node, {
+    this.fireEventAtTarget(node, {
         type: 'drag',
         button: e.button,
         point: localpt,
         delta: localpt.minus(localprev),
         target: node
     });
-}
+};
 
-function setupScrollFocus(gfx, pt) {
-    var nodes = gfx.findNodesAtXY(pt);
+AminoEvents.prototype.setupScrollFocus = function (pt) {
+    var nodes = this.gfx.findNodesAtXY(pt);
     var nodes = nodes.filter(function (n) {
         return n.acceptsScrollEvents === true;
     });
 
     if (nodes.length > 0) {
-        focusobjects.scroll.target = nodes[0];
+        this.focusObjects.scroll.target = nodes[0];
     } else {
-        focusobjects.scroll.target = null;
+        this.focusObjects.scroll.target = null;
     }
-}
+};
 
-function sendScrollEvent(gfx, e) {
-    var target = focusobjects.scroll.target;
+AminoEvents.prototype.sendScrollEvent = function (e) {
+    var target = this.focusObjects.scroll.target;
 
     if (target == null) {
         return;
     }
 
-    fireEventAtTarget(target, {
+    this.fireEventAtTarget(target, {
         type: 'scroll',
         target: target,
         position: e.position,
     });
-}
+};
 
-function sendKeyboardPressEvent(gfx, event) {
-    if (focusobjects.keyboard.target === null) {
+AminoEvents.prototype.sendKeyboardPressEvent = function (event) {
+    if (this.focusObjects.keyboard.target === null) {
         return;
     }
 
     event.type = 'key.press';
-    event.target = focusobjects.keyboard.target;
-    fireEventAtTarget(event.target, event);
-}
+    event.target = this.focusObjects.keyboard.target;
 
-function sendKeyboardReleaseEvent(gfx, event) {
-    if (focusobjects.keyboard.target === null) {
+    this.fireEventAtTarget(event.target, event);
+};
+
+AminoEvents.prototype.sendKeyboardReleaseEvent = function (event) {
+    if (this.focusObjects.keyboard.target === null) {
         return;
     }
 
     event.type = 'key.release';
-    event.target = focusobjects.keyboard.target;
-    fireEventAtTarget(event.target, event);
-}
+    event.target = this.focusObjects.keyboard.target;
 
-function fireEventAtTarget(target, event) {
+    this.fireEventAtTarget(event.target, event);
+};
+
+AminoEvents.prototype.fireEventAtTarget = function (target, event) {
     if (DEBUG) {
         console.log('firing an event at target:', event.type, target ? target.id():'');
     }
@@ -376,7 +398,7 @@ function fireEventAtTarget(target, event) {
         console.log('Warning: event has no type!');
     }
 
-    var funcs = listeners[event.type];
+    var funcs = this.listeners[event.type];
 
     if (funcs) {
         funcs.forEach(function (l) {

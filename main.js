@@ -68,6 +68,9 @@ AminoGfx.prototype.init = function () {
 
     //root wrapper
     this.setRoot(this.createGroup());
+
+    //input handler
+    this.inputHandler = input.createEventHandler(this);
 };
 
 /**
@@ -256,7 +259,7 @@ AminoGfx.prototype.handleEvent = function (evt) {
     evt.time = new Date().getTime();
 
     //pass to event processor
-    input.processEvent(this, evt);
+    this.inputHandler.processEvent(evt);
 };
 
 AminoGfx.prototype.destroy = function () {
@@ -456,7 +459,7 @@ AminoGfx.prototype.localToGlobal = function (pt, node) {
 };
 
 AminoGfx.prototype.on = function (name, target, listener) {
-    input.on(name, target, listener);
+    this.inputHandler.on(name, target, listener);
 };
 
 exports.AminoGfx = AminoGfx;
