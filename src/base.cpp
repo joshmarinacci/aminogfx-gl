@@ -406,16 +406,18 @@ void AminoGfx::renderScene() {
 NAN_METHOD(AminoGfx::Destroy) {
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
 
-    if (obj->started) {
+    if (obj->started && !obj->destroyed) {
         obj->destroy();
     }
 }
 
 /**
  * Stop rendering and free resources.
+ *
+ * Note: has to run on main thread.
  */
 void AminoGfx::destroy() {
-//cbx join renderer thread
+    //cbx join renderer thread
 
     //bind context
     bindContext();
@@ -434,10 +436,12 @@ void AminoGfx::destroy() {
         modelView = NULL;
     }
 
-    if (root) {
-        root->release();
-        root = NULL;
-    }
+    //unbind root
+    setRoot(NULL);
+
+    //free async
+    clearAsyncQueue();
+    handleAsyncDeletes();
 }
 
 /**

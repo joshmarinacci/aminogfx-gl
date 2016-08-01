@@ -265,6 +265,9 @@ AminoGfx.prototype.handleEvent = function (evt) {
     this.inputHandler.processEvent(evt);
 };
 
+/**
+ * Destroy renderer.
+ */
 AminoGfx.prototype.destroy = function () {
     if (this.timer) {
         clearImmediate(this.timer);
@@ -272,6 +275,15 @@ AminoGfx.prototype.destroy = function () {
     }
 
     this._destroy();
+
+/*
+    //call async (outside event handler callbacks)
+    var self = this;
+
+    setImmediate(function () {
+        self._destroy();
+    });
+*/
 };
 
 AminoGfx.prototype.find = function (id) {

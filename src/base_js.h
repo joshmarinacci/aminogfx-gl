@@ -353,6 +353,7 @@ public:
 protected:
     bool isEventHandler() override;
     void processAsyncQueue();
+    void clearAsyncQueue();
     void handleAsyncDeletes();
 
 private:

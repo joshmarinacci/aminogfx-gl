@@ -1401,14 +1401,7 @@ AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
 
 AminoJSEventObject::~AminoJSEventObject() {
     //asyncUpdates
-    std::size_t count = asyncUpdates->size();
-
-    for (std::size_t i = 0; i < count; i++) {
-        AnyAsyncUpdate *item = (*asyncUpdates)[i];
-
-        delete item;
-    }
-
+    clearAsyncQueue();
     delete asyncUpdates;
 
     //asyncDeletes
@@ -1420,9 +1413,26 @@ AminoJSEventObject::~AminoJSEventObject() {
 }
 
 /**
+ * Clear async updates.
+ */
+void AminoJSEventObject::clearAsyncQueue() {
+    assert(asyncUpdates);
+
+    std::size_t count = asyncUpdates->size();
+
+    for (std::size_t i = 0; i < count; i++) {
+        AnyAsyncUpdate *item = (*asyncUpdates)[i];
+
+        delete item;
+    }
+}
+
+/**
  * Free async updates on main thread.
  */
 void AminoJSEventObject::handleAsyncDeletes() {
+    assert(asyncDeletes);
+
     std::size_t count = asyncDeletes->size();
 
     for (std::size_t i = 0; i < count; i++) {
@@ -1460,6 +1470,8 @@ void AminoJSEventObject::processAsyncQueue() {
 
     //iterate
     pthread_mutex_lock(&asyncLock);
+
+    assert(asyncUpdates);
 
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
         AnyAsyncUpdate *item = (*asyncUpdates)[i];
@@ -1519,6 +1531,8 @@ bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
     if (DEBUG_BASE) {
         printf("enqueueValueUpdate\n");
     }
+
+    assert(asyncUpdates);
 
     pthread_mutex_lock(&asyncLock);
     asyncUpdates->push_back(update);
