@@ -86,7 +86,7 @@ private:
     //JS methods
     static NAN_METHOD(loadTexture);
 
-    void createTexture(AsyncValueUpdate *update);
+    void createTexture(AsyncValueUpdate *update, int state);
 };
 
 /**

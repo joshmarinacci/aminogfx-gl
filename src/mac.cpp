@@ -1,6 +1,6 @@
 #include "mac.h"
 
-#define DEBUG_GLFW false
+#define DEBUG_GLFW true
 #define DEBUG_RENDER false
 
 /**
@@ -40,7 +40,7 @@ private:
     static std::map<GLFWwindow *, AminoGfxMac *> *windowMap;
 
     //GLFW window
-    GLFWwindow *window;
+    GLFWwindow *window = NULL;
     bool resizing = false;
 
     static AminoGfxMac* windowToInstance(GLFWwindow *window) {
@@ -91,6 +91,7 @@ private:
      * Destroy GLFW instance.
      */
     void destroy() override {
+        //destroy basic instance
         AminoGfx::destroy();
 
         //GLFW
@@ -101,6 +102,10 @@ private:
         }
 
         instanceCount--;
+
+        if (DEBUG_GLFW) {
+            printf("Destroyed GLFW instance. Left=%i\n", instanceCount);
+        }
 
         if (instanceCount == 0) {
             glfwTerminate();
@@ -205,9 +210,9 @@ private:
             printf("framebuffer size: %ix%i\n", viewportW, viewportH);
         }
 
-        //activate context
+        //activate context (needed by JS code to create shaders)
         glfwMakeContextCurrent(window);
-//cbx dettach later
+
         //set bindings
         glfwSetKeyCallback(window, handleKeyEvents);
         glfwSetCursorPosCallback(window, handleMouseMoveEvents);
@@ -220,6 +225,8 @@ private:
 
     /**
      * Key event.
+     *
+     * Note: called on main thread.
      */
     static void handleKeyEvents(GLFWwindow *window, int key, int scancode, int action, int mods) {
         //TODO Unicode character support: http://www.glfw.org/docs/latest/group__input.html#gabf24451c7ceb1952bc02b17a0d5c3e5f
@@ -256,6 +263,8 @@ private:
 
     /**
      * Mouse moved.
+     *
+     * Note: called on main thread.
      */
     static void handleMouseMoveEvents(GLFWwindow *window, double x, double y) {
         AminoGfxMac *obj = windowToInstance(window);
@@ -282,6 +291,8 @@ private:
 
     /**
      * Mouse click event.
+     *
+     * Note: called on main thread.
      */
     static void handleMouseClickEvents(GLFWwindow *window, int button, int action, int mods) {
         AminoGfxMac *obj = windowToInstance(window);
@@ -310,6 +321,8 @@ private:
 
     /**
      * Mouse wheel event.
+     *
+     * Note: called on main thread.
      */
     static void handleMouseWheelEvents(GLFWwindow *window, double xoff, double yoff) {
         AminoGfxMac *obj = windowToInstance(window);
@@ -348,6 +361,11 @@ private:
         obj->handleWindowSizeChanged(newWidth, newHeight);
     }
 
+    /**
+     * Internal event handler.
+     *
+     * Note: called on main thread.
+     */
     void handleWindowSizeChanged(int newWidth, int newHeight) {
     	//check size
         if (propW->value == newWidth && propH->value == newHeight) {
@@ -381,6 +399,7 @@ private:
         Nan::Set(event_obj, Nan::New("height").ToLocalChecked(), Nan::New(propH->value));
 
         //render
+        //TODO no longer needed in threaded implementation
         resizing = true;
         render();
         resizing = false;
@@ -406,6 +425,11 @@ private:
         obj->handleWindowPosChanged(newX, newY);
     }
 
+    /**
+     * Internal event handler.
+     *
+     * Note: called on main thread.
+     */
     void handleWindowPosChanged(int newX, int newY) {
         //check size
         if (propX->value == newX && propY->value == newY) {
@@ -437,6 +461,7 @@ private:
     /**
      * Window close event.
      *
+     * Note: called on main thread.
      * Note: window stays open.
      */
     static void handleWindowCloseEvent(GLFWwindow *window) {
@@ -461,6 +486,9 @@ private:
     void start() override {
         //ready to get control back to JS code
         ready();
+
+        //detach context from main thread
+        glfwMakeContextCurrent(NULL);
     }
 
     void bindContext() override {
@@ -476,6 +504,7 @@ private:
         glfwSwapBuffers(window);
 
         //handle events
+        //TODO send event to handle events on main thread
         if (!resizing) {
             glfwPollEvents();
         }
@@ -483,10 +512,16 @@ private:
 
     /**
      * Update the window size.
+     *
+     * Note: has to be called on main thread
      */
     void updateWindowSize() override {
         //debug
-        //printf("updateWindowSize\n");
+        //printf("updateWindowSize()\n");
+
+        if (!window) {
+            return;
+        }
 
         //Note: getting size changed event
         glfwSetWindowSize(window, propW->value, propH->value);
@@ -502,15 +537,27 @@ private:
 
     /**
      * Update the window position.
+     *
+     * Note: has to be called on main thread
      */
     void updateWindowPosition() override {
+        if (!window) {
+            return;
+        }
+
         glfwSetWindowPos(window, propX->value, propY->value);
     }
 
     /**
      * Update the title.
+     *
+     * Note: has to be called on main thread
      */
     void updateWindowTitle() override {
+        if (!window) {
+            return;
+        }
+
         glfwSetWindowTitle(window, propTitle->value.c_str());
     }
 };

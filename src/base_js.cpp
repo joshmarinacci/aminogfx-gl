@@ -1,5 +1,7 @@
 #include "base_js.h"
 
+#include <sstream>
+
 //
 //  AminoJSObjectFactory
 //
@@ -83,10 +85,8 @@ void AminoJSObject::setup() {
 void AminoJSObject::destroy() {
     destroyed = true;
 
-    if (eventHandler) {
-        eventHandler->release();
-        eventHandler = NULL;
-    }
+    //event handler
+    clearEventHandler();
 }
 
 /**
@@ -353,7 +353,12 @@ void AminoJSObject::addProperty(AnyProperty *prop) {
         prop->connected = true;
 
         //set default value
-        prop->setValue(value);
+        void *data = prop->getAsyncData(value);
+
+        if (data) {
+            prop->setAsyncData(NULL, data);
+            prop->freeAsyncData(data);
+        }
     }
 }
 
@@ -384,8 +389,19 @@ void AminoJSObject::setEventHandler(AminoJSEventObject *handler) {
         }
 
         this->eventHandler = handler;
-        handler->retain();
+
+        //retain handler instance (in addition to 'amino' JS property)
+        if (handler) {
+            handler->retain();
+        }
     }
+}
+
+/**
+ * Remove event handler.
+ */
+void AminoJSObject::clearEventHandler() {
+    setEventHandler(NULL);
 }
 
 /**
@@ -397,6 +413,8 @@ bool AminoJSObject::isEventHandler() {
 
 /**
  * Enqueue a value update.
+ *
+ * Note: called on main thread.
  */
 bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback) {
     return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
@@ -404,6 +422,8 @@ bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback 
 
 /**
  * Enqueue a value update.
+ *
+ * Note: called on main thread.
  */
 bool AminoJSObject::enqueueValueUpdate(unsigned int value, asyncValueCallback callback) {
     return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
@@ -411,6 +431,8 @@ bool AminoJSObject::enqueueValueUpdate(unsigned int value, asyncValueCallback ca
 
 /**
  * Enqueue a value update.
+ *
+ * Note: called on main thread.
  */
 bool AminoJSObject::enqueueValueUpdate(AsyncValueUpdate *update) {
     if (eventHandler) {
@@ -425,18 +447,27 @@ bool AminoJSObject::enqueueValueUpdate(AsyncValueUpdate *update) {
 }
 
 /**
+ * Handly property update on main thread (optional).
+ */
+bool AminoJSObject::handleSyncUpdate(AnyProperty *property, void *data) {
+    //no default handling
+    return false;
+}
+
+/**
  * Default implementation sets the value received from JS.
  */
-void AminoJSObject::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) {
+void AminoJSObject::handleAsyncUpdate(AsyncPropertyUpdate *update) {
     //overwrite for extended handling
 
     //default: update value
-    property->setValue(value);
+    update->apply();
 
     if (DEBUG_BASE) {
-        v8::String::Utf8Value str(value);
+        AnyProperty *property = update->property;
+        std::string str = property->toString();
 
-        printf("-> updated %s in %s to %s\n", property->name.c_str(), property->obj->name.c_str(), *str);
+        printf("-> updated %s in %s to %s\n", property->name.c_str(), property->obj->name.c_str(), str.c_str());
     }
 }
 
@@ -447,7 +478,7 @@ bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
     //overwrite
 
     if (update->callback) {
-        (this->*update->callback)(update);
+        update->apply();
 
         return true;
     }
@@ -457,8 +488,10 @@ bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
 
 /**
  * Enqueue a property update.
+ *
+ * Note: called on main thread.
  */
-bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
+bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
     //check queue exists
     AminoJSEventObject *eventHandler = this->eventHandler;
 
@@ -482,7 +515,7 @@ bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> value) {
         return false;
     }
 
-    //enqueue
+    //enqueue (in event handler)
     if (DEBUG_BASE) {
         printf("enqueuePropertyUpdate: %s (id=%i)\n", prop->name.c_str(), id);
     }
@@ -506,6 +539,8 @@ AminoJSObject::AnyProperty* AminoJSObject::getPropertyWithId(int id) {
 
 /**
  * Update JS property value.
+ *
+ * Note: has to be called on main thread.
  */
 void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value) {
     if (DEBUG_BASE) {
@@ -551,70 +586,28 @@ void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value)
 }
 
 /**
- * Update JS property value.
+ * Update a property value.
+ *
+ * Note: call is thread-safe.
  */
-void AminoJSObject::updateProperty(std::string name, double value) {
-    //create scope
-    Nan::HandleScope scope;
+void AminoJSObject::updateProperty(AnyProperty *property) {
+    //debug
+    //printf("updateProperty() %s of %s\n", property->name.c_str(), name.c_str());
 
-    updateProperty(name, Nan::New<v8::Number>(value));
-}
+    AminoJSEventObject *eventHandler = this->eventHandler;
 
-/**
- * Update JS property value.
- */
-void AminoJSObject::updateProperty(std::string name, std::vector<float> value) {
-    //create scope
-    Nan::HandleScope scope;
-
-    v8::Local<v8::Array> arr = Nan::New<v8::Array>();
-    std::size_t count = value.size();
-
-    for (unsigned int i = 0; i < count; i++) {
-        Nan::Set(arr, Nan::New<v8::Uint32>(i), Nan::New<v8::Number>(value[i]));
+    if (!eventHandler && isEventHandler()) {
+        eventHandler = (AminoJSEventObject *)this;
     }
 
-    updateProperty(name, arr);
-}
+    assert(eventHandler);
 
-/**
- * Update JS property value.
- */
-void AminoJSObject::updateProperty(std::string name, int value) {
-    //create scope
-    Nan::HandleScope scope;
-
-    updateProperty(name, Nan::New<v8::Int32>(value));
-}
-
-/**
- * Update JS property value.
- */
-void AminoJSObject::updateProperty(std::string name, unsigned int value) {
-    //create scope
-    Nan::HandleScope scope;
-
-    updateProperty(name, Nan::New<v8::Uint32>(value));
-}
-
-/**
- * Update JS property value.
- */
-void AminoJSObject::updateProperty(std::string name, bool value) {
-    //create scope
-    Nan::HandleScope scope;
-
-    updateProperty(name, Nan::New<v8::Boolean>(value));
-}
-
-/**
- * Update JS property value.
- */
-void AminoJSObject::updateProperty(std::string name, std::string value) {
-    //create scope
-    Nan::HandleScope scope;
-
-    updateProperty(name, Nan::New<v8::String>(value).ToLocalChecked());
+    if (eventHandler->isMainThread()) {
+        updateProperty(property->name, property->toValue());
+    } else {
+        //cbx sync handler
+        assert(false);
+    }
 }
 
 /**
@@ -626,6 +619,19 @@ std::string AminoJSObject::toString(v8::Local<v8::Value> &value) {
 
     //convert it to string
     return std::string(*str);
+}
+
+/**
+ * Convert a JS value to a string.
+ *
+ * Note: instance has to be deleted!
+ */
+std::string* AminoJSObject::toNewString(v8::Local<v8::Value> &value) {
+    //convert anything to a string
+    v8::String::Utf8Value str(value);
+
+    //convert it to string
+    return new std::string(*str);
 }
 
 //
@@ -680,22 +686,6 @@ AminoJSObject::FloatProperty::~FloatProperty() {
 }
 
 /**
- * Set value.
- */
-void AminoJSObject::FloatProperty::setValue(v8::Local<v8::Value> &value) {
-    if (value->IsNumber()) {
-        //double to float
-        this->value = value->NumberValue();
-
-        //Note: do not call updateProperty(), change is from JS side
-    } else {
-        if (DEBUG_BASE) {
-            printf("-> default value not a number!\n");
-        }
-    }
-}
-
-/**
  * Update the float value.
  *
  * Note: only updates the JS value if modified!
@@ -705,9 +695,61 @@ void AminoJSObject::FloatProperty::setValue(float newValue) {
         value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, value);
+            obj->updateProperty(this);
         }
     }
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::FloatProperty::toString() {
+    return std::to_string(value);
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::FloatProperty::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    return Nan::New<v8::Number>(value);
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::FloatProperty::getAsyncData(v8::Local<v8::Value> &value) {
+    if (value->IsNumber()) {
+        //double to float
+        float f = value->NumberValue();
+        float *res = new float[1];
+
+        *res = f;
+
+        return res;
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a number!\n");
+        }
+
+        return NULL;
+    }
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::FloatProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    value = *((float *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::FloatProperty::freeAsyncData(void *data) {
+    delete[] (float *)data;
 }
 
 //
@@ -729,21 +771,6 @@ AminoJSObject::FloatArrayProperty::~FloatArrayProperty() {
 }
 
 /**
- * Set value.
- */
-void AminoJSObject::FloatArrayProperty::setValue(v8::Local<v8::Value> &value) {
-    v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
-
-    this->value.clear();
-
-    std::size_t count = arr->Length();
-
-    for (std::size_t i = 0; i < count; i++) {
-        this->value.push_back((float)(arr->Get(i)->NumberValue()));
-    }
-}
-
-/**
  * Update the float value.
  *
  * Note: only updates the JS value if modified!
@@ -753,9 +780,86 @@ void AminoJSObject::FloatArrayProperty::setValue(std::vector<float> newValue) {
         value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, value);
+            obj->updateProperty(this);
         }
     }
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::FloatArrayProperty::toString() {
+    std::ostringstream ss;
+    std::size_t count = value.size();
+
+    ss << "[";
+
+    for (unsigned int i = 0; i < count; i++) {
+        if (i > 0) {
+            ss << ", ";
+        }
+
+        ss << value[i];
+    }
+
+    ss << "]";
+
+    return std::string(ss.str());
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::FloatArrayProperty::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    v8::Local<v8::Array> arr = Nan::New<v8::Array>();
+    std::size_t count = value.size();
+
+    for (unsigned int i = 0; i < count; i++) {
+        Nan::Set(arr, Nan::New<v8::Uint32>(i), Nan::New<v8::Number>(value[i]));
+    }
+
+    return arr;
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::FloatArrayProperty::getAsyncData(v8::Local<v8::Value> &value) {
+    if (value->IsNull()) {
+        return NULL;
+    }
+
+    v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+    std::vector<float> *vector = new std::vector<float>();
+    std::size_t count = arr->Length();
+
+    for (std::size_t i = 0; i < count; i++) {
+        vector->push_back((float)(arr->Get(i)->NumberValue()));
+    }
+
+    return vector;
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::FloatArrayProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    if (!data) {
+        value.clear();
+        return;
+    }
+
+    value = *((std::vector<float> *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::FloatArrayProperty::freeAsyncData(void *data) {
+    delete (std::vector<float> *)data;
 }
 
 //
@@ -777,22 +881,6 @@ AminoJSObject::Int32Property::~Int32Property() {
 }
 
 /**
- * Set value.
- */
-void AminoJSObject::Int32Property::setValue(v8::Local<v8::Value> &value) {
-    if (value->IsNumber()) {
-        //UInt32
-        this->value = value->Int32Value();
-
-        //Note: do not call updateProperty(), change is from JS side
-    } else {
-        if (DEBUG_BASE) {
-            printf("-> default value not a number!\n");
-        }
-    }
-}
-
-/**
  * Update the unsigned int value.
  *
  * Note: only updates the JS value if modified!
@@ -802,9 +890,61 @@ void AminoJSObject::Int32Property::setValue(int newValue) {
         value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, value);
+            obj->updateProperty(this);
         }
     }
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::Int32Property::toString() {
+    return std::to_string(value);
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::Int32Property::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    return Nan::New<v8::Int32>(value);
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::Int32Property::getAsyncData(v8::Local<v8::Value> &value) {
+    if (value->IsNumber()) {
+        //UInt32
+        int i = value->Int32Value();
+        int *res = new int[1];
+
+        *res = i;
+
+        return res;
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a number!\n");
+        }
+
+        return NULL;
+    }
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::Int32Property::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    value = *((int *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::Int32Property::freeAsyncData(void *data) {
+    delete[] (int *)data;
 }
 
 //
@@ -826,22 +966,6 @@ AminoJSObject::UInt32Property::~UInt32Property() {
 }
 
 /**
- * Set value.
- */
-void AminoJSObject::UInt32Property::setValue(v8::Local<v8::Value> &value) {
-    if (value->IsNumber()) {
-        //UInt32
-        this->value = value->Uint32Value();
-
-        //Note: do not call updateProperty(), change is from JS side
-    } else {
-        if (DEBUG_BASE) {
-            printf("-> default value not a number!\n");
-        }
-    }
-}
-
-/**
  * Update the unsigned int value.
  *
  * Note: only updates the JS value if modified!
@@ -851,9 +975,61 @@ void AminoJSObject::UInt32Property::setValue(unsigned int newValue) {
         value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, value);
+            obj->updateProperty(this);
         }
     }
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::UInt32Property::toString() {
+    return std::to_string(value);
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::UInt32Property::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    return Nan::New<v8::Uint32>(value);
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::UInt32Property::getAsyncData(v8::Local<v8::Value> &value) {
+    if (value->IsNumber()) {
+        //UInt32
+        unsigned int ui = value->Uint32Value();
+        unsigned int *res = new unsigned int[1];
+
+        *res = ui;
+
+        return res;
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a number!\n");
+        }
+
+        return NULL;
+    }
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::UInt32Property::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    value = *((unsigned int *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::UInt32Property::freeAsyncData(void *data) {
+    delete[] (unsigned int *)data;
 }
 
 //
@@ -875,21 +1051,6 @@ AminoJSObject::BooleanProperty::~BooleanProperty() {
 }
 
 /**
- * Set value.
- */
-void AminoJSObject::BooleanProperty::setValue(v8::Local<v8::Value> &value) {
-    if (value->IsBoolean()) {
-        this->value = value->BooleanValue();
-
-        //Note: do not call updateProperty(), change is from JS side
-    } else {
-        if (DEBUG_BASE) {
-            printf("-> default value not a boolean!\n");
-        }
-    }
-}
-
-/**
  * Update the float value.
  *
  * Note: only updates the JS value if modified!
@@ -899,13 +1060,64 @@ void AminoJSObject::BooleanProperty::setValue(bool newValue) {
         value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, value);
+            obj->updateProperty(this);
         }
     }
 }
 
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::BooleanProperty::toString() {
+    return value ? "true":"false";
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::BooleanProperty::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    return Nan::New<v8::Boolean>(value);
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::BooleanProperty::getAsyncData(v8::Local<v8::Value> &value) {
+    if (value->IsBoolean()) {
+        bool b = value->BooleanValue();
+        bool *res = new bool[1];
+
+        *res = b;
+
+        return res;
+    } else {
+        if (DEBUG_BASE) {
+            printf("-> default value not a boolean!\n");
+        }
+
+        return NULL;
+    }
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::BooleanProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    value = *((bool *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::BooleanProperty::freeAsyncData(void *data) {
+    delete[] (bool *)data;
+}
+
 //
-// AminoJSObject::BooleanProperty
+// AminoJSObject::Utf8Property
 //
 
 /**
@@ -923,14 +1135,6 @@ AminoJSObject::Utf8Property::~Utf8Property() {
 }
 
 /**
- * Set value.
- */
-void AminoJSObject::Utf8Property::setValue(v8::Local<v8::Value> &value) {
-    //convert to string
-    this->value = AminoJSObject::toString(value);
-}
-
-/**
  * Update the string value.
  *
  * Note: only updates the JS value if modified!
@@ -940,7 +1144,7 @@ void AminoJSObject::Utf8Property::setValue(std::string newValue) {
         value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, value);
+            obj->updateProperty(this);
         }
     }
 }
@@ -952,6 +1156,47 @@ void AminoJSObject::Utf8Property::setValue(std::string newValue) {
  */
 void AminoJSObject::Utf8Property::setValue(char *newValue) {
     setValue(std::string(newValue));
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::Utf8Property::toString() {
+    return value;
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::Utf8Property::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    return Nan::New<v8::String>(value).ToLocalChecked();
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::Utf8Property::getAsyncData(v8::Local<v8::Value> &value) {
+    //convert to string
+    std::string *str = AminoJSObject::toNewString(value);
+
+    return str;
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::Utf8Property::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    value = *((std::string *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::Utf8Property::freeAsyncData(void *data) {
+    delete (std::string *)data;
 }
 
 //
@@ -969,17 +1214,9 @@ AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string na
  * Utf8Property destructor.
  */
 AminoJSObject::ObjectProperty::~ObjectProperty() {
-    value.Reset();
-}
-
-/**
- * Set value.
- */
-void AminoJSObject::ObjectProperty::setValue(v8::Local<v8::Value> &value) {
-    if (value->IsObject()) {
-        this->value.Reset(value->ToObject());
-    } else {
-        this->value.Reset();
+    //release
+    if (value) {
+        value->release();
     }
 }
 
@@ -988,16 +1225,90 @@ void AminoJSObject::ObjectProperty::setValue(v8::Local<v8::Value> &value) {
  *
  * Note: only updates the JS value if modified!
  */
-void AminoJSObject::ObjectProperty::setValue(v8::Local<v8::Object> &newValue) {
-    v8::Local<v8::Object> value = Nan::New(this->value);
-
+void AminoJSObject::ObjectProperty::setValue(AminoJSObject *newValue) {
     if (value != newValue) {
-        this->value.Reset(newValue);
+        value = newValue;
 
         if (connected) {
-            obj->updateProperty(name, newValue);
+            obj->updateProperty(this);
         }
     }
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::ObjectProperty::toString() {
+    return value ? value->name.c_str():"null";
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::ObjectProperty::toValue() {
+    //create scope
+    Nan::HandleScope scope;
+
+    if (value) {
+        return value->handle();
+    } else {
+        return Nan::Null();
+    }
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::ObjectProperty::getAsyncData(v8::Local<v8::Value> &value) {
+    if (value->IsObject()) {
+        v8::Local<v8::Object> jsObj = value->ToObject();
+        AminoJSObject *obj = Nan::ObjectWrap::Unwrap<AminoJSObject>(jsObj);
+
+        //retain reference on main thread
+        obj->retain();
+
+        return obj;
+    } else {
+        return NULL;
+    }
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::ObjectProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    AminoJSObject *obj = (AminoJSObject *)data;
+
+    if (obj != value) {
+        //release old instance
+        if (value) {
+            if (update) {
+                update->releaseLater = value;
+            } else {
+                //on main thread
+                value->release();
+            }
+        }
+
+        //keep new instance
+        if (obj) {
+            if (update) {
+                update->retainLater = obj;
+            } else {
+                //on main thread
+                obj->retain();
+            }
+        }
+
+        value = obj;
+    }
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::ObjectProperty::freeAsyncData(void *data) {
+    //nothing to free
 }
 
 //
@@ -1017,22 +1328,55 @@ AminoJSObject::AnyAsyncUpdate::~AnyAsyncUpdate() {
 //
 
 AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueObj(value), callback(callback) {
+    //retain objects on main thread
     obj->retain();
 
     if (value) {
         value->retain();
     }
+
+    //init (on main thread)
+    if (callback) {
+        (obj->*callback)(this, STATE_CREATE);
+    }
 }
 
 AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueUint32(value), callback(callback) {
+    //retain objects on main thread
     obj->retain();
+
+    //init (on main thread)
+    if (callback) {
+        (obj->*callback)(this, STATE_CREATE);
+    }
 }
 
 AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
+    //additional retains
+    if (releaseLater) {
+        releaseLater->release();
+    }
+
+    //call cleanup handler
+    if (callback) {
+        (obj->*callback)(this, STATE_DELETE);
+    }
+
+    //release objects on main thread
     obj->release();
 
     if (valueObj) {
         valueObj->release();
+    }
+}
+
+/**
+ * Apply async value.
+ */
+void AminoJSObject::AsyncValueUpdate::apply() {
+    //on async thread
+    if (callback) {
+        (obj->*callback)(this, AsyncValueUpdate::STATE_APPLY);
     }
 }
 
@@ -1042,6 +1386,10 @@ AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
 
 AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
     asyncUpdates = new std::vector<AnyAsyncUpdate *>();
+    asyncDeletes = new std::vector<AnyAsyncUpdate *>();
+
+    //main thread
+    mainThread = uv_thread_self();
 
     //recursive mutex needed
     pthread_mutexattr_t attr;
@@ -1052,6 +1400,7 @@ AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
 }
 
 AminoJSEventObject::~AminoJSEventObject() {
+    //asyncUpdates
     std::size_t count = asyncUpdates->size();
 
     for (std::size_t i = 0; i < count; i++) {
@@ -1061,7 +1410,37 @@ AminoJSEventObject::~AminoJSEventObject() {
     }
 
     delete asyncUpdates;
+
+    //asyncDeletes
+    handleAsyncDeletes();
+    delete asyncDeletes;
+
+    //mutex
     pthread_mutex_destroy(&asyncLock);
+}
+
+/**
+ * Free async updates on main thread.
+ */
+void AminoJSEventObject::handleAsyncDeletes() {
+    std::size_t count = asyncDeletes->size();
+
+    for (std::size_t i = 0; i < count; i++) {
+        AnyAsyncUpdate *item = (*asyncDeletes)[i];
+
+        delete item;
+    }
+
+    asyncDeletes->clear();
+}
+
+/**
+ * Check if running on main thread.
+ */
+bool AminoJSEventObject::isMainThread() {
+    uv_thread_t thread = uv_thread_self();
+
+    return uv_thread_equal(&mainThread, &thread);
 }
 
 /**
@@ -1079,9 +1458,6 @@ void AminoJSEventObject::processAsyncQueue() {
         return;
     }
 
-    //create scope
-    Nan::HandleScope scope;
-
     //iterate
     pthread_mutex_lock(&asyncLock);
 
@@ -1094,7 +1470,8 @@ void AminoJSEventObject::processAsyncQueue() {
                 {
                     AsyncPropertyUpdate *propItem = static_cast<AsyncPropertyUpdate *>(item);
 
-                    propItem->property->obj->handleAsyncUpdate(propItem->property, propItem->getValue());
+                    //call local handler
+                    propItem->property->obj->handleAsyncUpdate(propItem);
                 }
                 break;
 
@@ -1103,6 +1480,7 @@ void AminoJSEventObject::processAsyncQueue() {
                 {
                     AsyncValueUpdate *valueItem = static_cast<AsyncValueUpdate *>(item);
 
+                    //call local handler
                     if (!valueItem->obj->handleAsyncUpdate(valueItem)) {
                         printf("unhandled async update by %s\n", valueItem->obj->getName().c_str());
                     }
@@ -1115,7 +1493,7 @@ void AminoJSEventObject::processAsyncQueue() {
         }
 
         //free item
-        delete item;
+        asyncDeletes->push_back(item);
     }
 
     //clear
@@ -1129,6 +1507,11 @@ void AminoJSEventObject::processAsyncQueue() {
  */
 bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
     if (!update || destroyed) {
+        //free local objects
+        if (update->obj == this) {
+            delete update;
+        }
+
         return false;
     }
 
@@ -1146,14 +1529,34 @@ bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
 
 /**
  * Enqueue a property update.
+ *
+ * Note: called on main thread.
  */
-bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> value) {
+bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> &value) {
     if (destroyed) {
         return false;
     }
 
+    //create
+    void *data = prop->getAsyncData(value);
+
+    if (!data) {
+        return false;
+    }
+
+    //call sync handler
+    if (prop->obj->handleSyncUpdate(prop, data)) {
+        if (DEBUG_BASE) {
+            printf("-> sync update\n");
+        }
+
+        prop->freeAsyncData(data);
+        return true;
+    }
+
+    //async handling
     pthread_mutex_lock(&asyncLock);
-    asyncUpdates->push_back(new AsyncPropertyUpdate(prop, value));
+    asyncUpdates->push_back(new AsyncPropertyUpdate(prop, data));
     pthread_mutex_unlock(&asyncLock);
 
     return true;
@@ -1166,28 +1569,36 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
 /**
  * Constructor.
  */
-AminoJSEventObject::AsyncPropertyUpdate::AsyncPropertyUpdate(AnyProperty *property, v8::Local<v8::Value> value): AnyAsyncUpdate(ASYNC_UPDATE_PROPERTY), property(property) {
-    //store persistent reference
-    this->value.Reset(value);
-
+AminoJSEventObject::AsyncPropertyUpdate::AsyncPropertyUpdate(AnyProperty *property, void *data): AnyAsyncUpdate(ASYNC_UPDATE_PROPERTY), property(property), data(data) {
     //retain instance
     property->retain();
 }
 
 /**
  * Destructor.
+ *
+ * Note: called on main thread.
  */
 AminoJSEventObject::AsyncPropertyUpdate::~AsyncPropertyUpdate() {
-    //free persistent reference
-    value.Reset();
+    //retain/release
+    if (retainLater) {
+        retainLater->retain();
+    }
+
+    if (releaseLater) {
+        releaseLater->release();
+    }
+
+    //free data
+    property->freeAsyncData(data);
 
     //release instance
     property->release();
 }
 
 /**
- * Get local value.
+ * Set new value.
  */
-v8::Local<v8::Value> AminoJSEventObject::AsyncPropertyUpdate::getValue() {
-    return Nan::New(value);
+void AminoJSEventObject::AsyncPropertyUpdate::apply() {
+    property->setAsyncData(this, data);
 }

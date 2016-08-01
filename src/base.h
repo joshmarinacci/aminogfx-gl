@@ -34,18 +34,6 @@ const int RECT  = 2;
 const int TEXT  = 3;
 const int ANIM  = 4;
 const int POLY  = 5;
-const int INVALID = -1; //font
-
-//property values
-
-static const int VALIGN_BASELINE = 0x0;
-static const int VALIGN_TOP      = 0x1;
-static const int VALIGN_MIDDLE   = 0x2;
-static const int VALIGN_BOTTOM   = 0x3;
-
-static const int WRAP_NONE = 0x0;
-static const int WRAP_END  = 0x1;
-static const int WRAP_WORD = 0x2;
 
 class AminoGroup;
 class AminoAnim;
@@ -124,7 +112,7 @@ protected:
 
     void fireEvent(v8::Local<v8::Object> &obj);
 
-    void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override;
+    bool handleSyncUpdate(AnyProperty *prop, void *data) override;
     virtual void updateWindowSize() = 0;
     virtual void updateWindowPosition() = 0;
     virtual void updateWindowTitle() = 0;
@@ -145,11 +133,11 @@ private:
     static v8::Local<v8::Object> createGLObject();
 
     //animation
-    void addAnimation(AsyncValueUpdate *update);
-    void removeAnimation(AsyncValueUpdate *update);
+    void addAnimation(AsyncValueUpdate *update, int state);
+    void removeAnimation(AsyncValueUpdate *update, int state);
 
     //texture
-    void deleteTexture(AsyncValueUpdate *update);
+    void deleteTexture(AsyncValueUpdate *update, int state);
 };
 
 /**
@@ -296,6 +284,15 @@ public:
     int vAlign = VALIGN_BASELINE;
     int lineNr = 1;
 
+    static const int VALIGN_BASELINE = 0x0;
+    static const int VALIGN_TOP      = 0x1;
+    static const int VALIGN_MIDDLE   = 0x2;
+    static const int VALIGN_BOTTOM   = 0x3;
+
+    static const int WRAP_NONE = 0x0;
+    static const int WRAP_END  = 0x1;
+    static const int WRAP_WORD = 0x2;
+
     AminoText(): AminoNode(getFactory()->name, TEXT) {
         //empty
     }
@@ -365,11 +362,13 @@ public:
     /**
      * Handle async property updates.
      */
-    void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override {
+    void handleAsyncUpdate(AsyncPropertyUpdate *update) override {
         //default: set value
-        AminoJSObject::handleAsyncUpdate(property, value);
+        AminoJSObject::handleAsyncUpdate(update);
 
         //check font updates
+        AnyProperty *property = update->property;
+
         if (property == propW || property == propH || property == propText) {
             updated = true;
         }
@@ -399,13 +398,13 @@ public:
             int oldVAlign = vAlign;
 
             if (str == "top") {
-                vAlign = VALIGN_TOP;
+                vAlign = AminoText::VALIGN_TOP;
             } else if (str == "middle") {
-                vAlign = VALIGN_MIDDLE;
+                vAlign = AminoText::VALIGN_MIDDLE;
             } else if (str == "baseline") {
-                vAlign = VALIGN_BASELINE;
+                vAlign = AminoText::VALIGN_BASELINE;
             } else if (str == "bottom") {
-                vAlign = VALIGN_BOTTOM;
+                vAlign = AminoText::VALIGN_BOTTOM;
             } else {
                 //error
                 printf("unknown vAlign mode: %s\n", str.c_str());
@@ -417,31 +416,13 @@ public:
         }
 
         if (property == propFont) {
-            //create scope
-            Nan::HandleScope scope;
-
-            if (propFont->value.IsEmpty()) {
-                return;
-            }
-
-            v8::Local<v8::Object> obj = Nan::New(propFont->value);
-
-            if (obj->IsNull()) {
-                return;
-            }
-
-            AminoFontSize *fs = Nan::ObjectWrap::Unwrap<AminoFontSize>(obj);
+            AminoFontSize *fs = (AminoFontSize *)propFont->value;
 
             if (fontSize == fs) {
                 return;
             }
 
-            if (fontSize) {
-                fontSize->release();
-            }
-
             fontSize = fs;
-            fontSize->retain();
 
             updated = true;
             return;
@@ -538,6 +519,7 @@ public:
             return;
         }
 
+        //bind to queue (retains reference)
         this->setEventHandler(obj);
         this->prop = prop;
 
@@ -549,6 +531,8 @@ public:
     }
 
     void destroy() override {
+        AminoJSObject::destroy();
+
         if (prop) {
             prop->release();
             prop = NULL;
@@ -762,7 +746,7 @@ public:
 
             //create scope
             Nan::HandleScope scope;
-
+//cbx enqueueSyncUpdate
             //call
             then->Call(handle(), 0, NULL);
         }
@@ -912,18 +896,19 @@ public:
     /**
      * Handle async property updates.
      */
-    void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) override {
+    void handleAsyncUpdate(AsyncPropertyUpdate *update) override {
         //default: set value
-        AminoJSObject::handleAsyncUpdate(property, value);
+        AminoJSObject::handleAsyncUpdate(update);
 
         //texture
+        AnyProperty *property = update->property;
+
         if (property == propTexture) {
-            if (propTexture->value.IsEmpty()) {
+            AminoTexture *texture = (AminoTexture *)propTexture->value;
+
+            if (!texture) {
                 textureId = INVALID_TEXTURE;
             } else {
-                v8::Local<v8::Object> obj = Nan::New(propTexture->value);
-                AminoTexture *texture = Nan::ObjectWrap::Unwrap<AminoTexture>(obj);
-
                 textureId = texture->textureId;
             }
 
@@ -1175,17 +1160,21 @@ private:
     /**
      * Add a child node.
      */
-    void addChild(AsyncValueUpdate *update) {
-        if (DEBUG_BASE) {
-            printf("-> addChild()\n");
+    void addChild(AsyncValueUpdate *update, int state) {
+        if (state != AsyncValueUpdate::STATE_APPLY) {
+            return;
         }
 
         AminoNode *node = (AminoNode *)update->valueObj;
 
-        children.push_back(node);
+        //keep retained instance
+        update->valueObj = NULL;
 
-        //strong reference
-        node->retain();
+        if (DEBUG_BASE) {
+            printf("-> addChild()\n");
+        }
+
+        children.push_back(node);
     }
 
     static NAN_METHOD(Remove) {
@@ -1196,7 +1185,11 @@ private:
         group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::removeChild);
     }
 
-    void removeChild(AsyncValueUpdate *update) {
+    void removeChild(AsyncValueUpdate *update, int state) {
+        if (state != AsyncValueUpdate::STATE_APPLY) {
+            return;
+        }
+
         if (DEBUG_BASE) {
             printf("-> removeChild()\n");
         }
@@ -1209,8 +1202,8 @@ private:
         if (pos != children.end()) {
             children.erase(pos);
 
-            //remove strong reference
-            node->release();
+            //remove strong reference (on main thread)
+            update->releaseLater = node;
         }
     }
 };

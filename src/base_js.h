@@ -54,14 +54,9 @@ protected:
 
     //properties
     void updateProperty(std::string name, v8::Local<v8::Value> value);
-    void updateProperty(std::string name, double value);
-    void updateProperty(std::string name, std::vector<float> value);
-    void updateProperty(std::string name, int value);
-    void updateProperty(std::string name, unsigned int value);
-    void updateProperty(std::string name, bool value);
-    void updateProperty(std::string name, std::string value);
 
     static std::string toString(v8::Local<v8::Value> &value);
+    static std::string* toNewString(v8::Local<v8::Value> &value);
 
     static const int PROPERTY_FLOAT       = 1;
     static const int PROPERTY_FLOAT_ARRAY = 2;
@@ -70,6 +65,8 @@ protected:
     static const int PROPERTY_BOOLEAN     = 5;
     static const int PROPERTY_UTF8        = 6;
     static const int PROPERTY_OBJECT      = 7;
+
+    class AsyncPropertyUpdate;
 
     class AnyProperty {
     public:
@@ -82,7 +79,15 @@ protected:
         AnyProperty(int type, AminoJSObject *obj, std::string name, int id);
         virtual ~AnyProperty();
 
-        virtual void setValue(v8::Local<v8::Value> &value) = 0;
+        virtual std::string toString() = 0;
+
+        //sync handling
+        virtual v8::Local<v8::Value> toValue() = 0;
+
+        //async handling
+        virtual void* getAsyncData(v8::Local<v8::Value> &value) = 0;
+        virtual void setAsyncData(AsyncPropertyUpdate *update, void *data) = 0;
+        virtual void freeAsyncData(void *data) = 0;
 
         //weak reference control
         void retain();
@@ -96,8 +101,17 @@ protected:
         FloatProperty(AminoJSObject *obj, std::string name, int id);
         ~FloatProperty();
 
-        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(float newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
 
     class FloatArrayProperty : public AnyProperty {
@@ -107,8 +121,17 @@ protected:
         FloatArrayProperty(AminoJSObject *obj, std::string name, int id);
         ~FloatArrayProperty();
 
-        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(std::vector<float> newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
 
     class Int32Property : public AnyProperty {
@@ -118,8 +141,17 @@ protected:
         Int32Property(AminoJSObject *obj, std::string name, int id);
         ~Int32Property();
 
-        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(int newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
 
     class UInt32Property : public AnyProperty {
@@ -129,8 +161,17 @@ protected:
         UInt32Property(AminoJSObject *obj, std::string name, int id);
         ~UInt32Property();
 
-        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(unsigned int newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
 
     class BooleanProperty : public AnyProperty {
@@ -140,8 +181,17 @@ protected:
         BooleanProperty(AminoJSObject *obj, std::string name, int id);
         ~BooleanProperty();
 
-        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(bool newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
 
     class Utf8Property : public AnyProperty {
@@ -151,21 +201,41 @@ protected:
         Utf8Property(AminoJSObject *obj, std::string name, int id);
         ~Utf8Property();
 
-        void setValue(v8::Local<v8::Value> &value) override;
         void setValue(std::string newValue);
         void setValue(char *newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
 
     class ObjectProperty : public AnyProperty {
     public:
-        Nan::Persistent<v8::Object> value;
+        AminoJSObject *value = NULL;
 
         ObjectProperty(AminoJSObject *obj, std::string name, int id);
         ~ObjectProperty();
 
-        void setValue(v8::Local<v8::Value> &value) override;
-        void setValue(v8::Local<v8::Object> &newValue);
+        void setValue(AminoJSObject *newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
     };
+
+    void updateProperty(AnyProperty *property);
 
     FloatProperty* createFloatProperty(std::string name);
     FloatArrayProperty* createFloatArrayProperty(std::string name);
@@ -177,6 +247,7 @@ protected:
 
     //async updates
     void setEventHandler(AminoJSEventObject *handler);
+    void clearEventHandler();
     virtual bool isEventHandler();
 
     class AnyAsyncUpdate {
@@ -185,14 +256,32 @@ protected:
 
         AnyAsyncUpdate(int type);
         virtual ~AnyAsyncUpdate();
+
+        virtual void apply() = 0;
+    };
+
+    class AsyncPropertyUpdate : public AnyAsyncUpdate {
+    public:
+        AnyProperty *property;
+        void *data;
+
+        //helpers
+        AminoJSObject *retainLater = NULL;
+        AminoJSObject *releaseLater = NULL;
+
+        AsyncPropertyUpdate(AnyProperty *property, void *data);
+        ~AsyncPropertyUpdate();
+
+        void apply();
     };
 
     class AsyncValueUpdate;
-    typedef void (AminoJSObject::*asyncValueCallback)(AsyncValueUpdate *);
+    typedef void (AminoJSObject::*asyncValueCallback)(AsyncValueUpdate *, int state);
 
     class AsyncValueUpdate : public AnyAsyncUpdate {
     public:
         AminoJSObject *obj;
+        void *data;
 
         //values
         AminoJSObject *valueObj = NULL;
@@ -200,9 +289,18 @@ protected:
 
         asyncValueCallback callback = NULL;
 
+        //helpers
+        AminoJSObject *releaseLater = NULL;
+
+        static const int STATE_CREATE = 0;
+        static const int STATE_APPLY  = 1;
+        static const int STATE_DELETE = 2;
+
         AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback);
         AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback);
         ~AsyncValueUpdate();
+
+        void apply() override;
     };
 
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
@@ -222,7 +320,7 @@ private:
     void addProperty(AnyProperty *prop);
 
     //async updates
-    bool enqueuePropertyUpdate(int id, v8::Local<v8::Value> value);
+    bool enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value);
     static NAN_METHOD(PropertyUpdated);
 
 public:
@@ -234,7 +332,8 @@ public:
 
     AnyProperty* getPropertyWithId(int id);
 
-    virtual void handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value);
+    virtual bool handleSyncUpdate(AnyProperty *property, void *data);
+    virtual void handleAsyncUpdate(AsyncPropertyUpdate *update);
     virtual bool handleAsyncUpdate(AsyncValueUpdate *update);
 };
 
@@ -246,29 +345,21 @@ public:
     AminoJSEventObject(std::string name);
     virtual ~AminoJSEventObject();
 
-    bool enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> value);
+    bool enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> &value);
     bool enqueueValueUpdate(AsyncValueUpdate *update) override;
+
+    bool isMainThread();
 
 protected:
     bool isEventHandler() override;
     void processAsyncQueue();
+    void handleAsyncDeletes();
 
 private:
-    //async updates
-    class AsyncPropertyUpdate : public AnyAsyncUpdate {
-    public:
-        AnyProperty *property;
-
-        AsyncPropertyUpdate(AnyProperty *property, v8::Local<v8::Value> value);
-        ~AsyncPropertyUpdate();
-
-        v8::Local<v8::Value> getValue();
-
-    private:
-        Nan::Persistent<v8::Value> value;
-    };
-
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
+    std::vector<AnyAsyncUpdate *> *asyncDeletes = NULL;
+//cbx sync
+    uv_thread_t mainThread;
     pthread_mutex_t asyncLock;
 };
 

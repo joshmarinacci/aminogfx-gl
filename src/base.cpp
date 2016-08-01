@@ -282,6 +282,12 @@ void AminoGfx::ready() {
         delete startCallback;
         startCallback = NULL;
     }
+
+    if (DEBUG_BASE) {
+        printf("-> started\n");
+    }
+
+    //TODO create rendering thread cbx
 }
 
 /**
@@ -315,6 +321,9 @@ void AminoGfx::render() {
     //done
     renderingDone();
     rendering = false;
+
+    //cbx move to main thread
+    handleAsyncDeletes();
 }
 
 /**
@@ -406,6 +415,11 @@ NAN_METHOD(AminoGfx::Destroy) {
  * Stop rendering and free resources.
  */
 void AminoGfx::destroy() {
+//cbx join renderer thread
+
+    //bind context
+    bindContext();
+
     //renderer (shader programs)
     if (colorShader) {
         colorShader->destroy();
@@ -448,6 +462,8 @@ void AminoGfx::updatePosition(int x, int y) {
 
 /**
  * Fire runtime specific event.
+ *
+ * Note: has to be called on main thread!
  */
 void AminoGfx::fireEvent(v8::Local<v8::Object> &evt) {
     //event handler
@@ -470,30 +486,41 @@ void AminoGfx::fireEvent(v8::Local<v8::Object> &evt) {
 }
 
 /**
- * Handle async property updates.
+ * Handle sync property updates.
  */
-void AminoGfx::handleAsyncUpdate(AnyProperty *property, v8::Local<v8::Value> value) {
+bool AminoGfx::handleSyncUpdate(AnyProperty *property, void *data) {
+    //debug
+    //printf("handleSyncUpdate() %s\n", property->name.c_str());
+
     //default: set value
-    AminoJSObject::handleAsyncUpdate(property, value);
+    AminoJSObject::handleSyncUpdate(property, data);
 
     //size changes
     if (property == propW || property == propH) {
+        property->setAsyncData(NULL, data);
         updateWindowSize();
-        return;
+
+        return true;
     }
 
     //position changes
 
     if (property == propX || property == propY) {
+        property->setAsyncData(NULL, data);
         updateWindowPosition();
-        return;
+
+        return true;
     }
 
     //title
     if (property == propTitle) {
+        property->setAsyncData(NULL, data);
         updateWindowTitle();
-        return;
+
+        return true;
     }
+
+    return false;
 }
 
 /**
@@ -575,9 +602,14 @@ bool AminoGfx::addAnimationAsync(AminoAnim *anim) {
 }
 
 /**
- * Add a child node.
+ * Add an animation.
  */
-void AminoGfx::addAnimation(AsyncValueUpdate *update) {
+void AminoGfx::addAnimation(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    //Note: event handler retains instance
     AminoAnim *anim = (AminoAnim *)update->valueObj;
 
     animations.push_back(anim);
@@ -599,7 +631,11 @@ void AminoGfx::removeAnimationAsync(AminoAnim *anim) {
 /**
  * Remove animation.
  */
-void AminoGfx::removeAnimation(AsyncValueUpdate *update) {
+void AminoGfx::removeAnimation(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
     AminoAnim *anim = (AminoAnim *)update->valueObj;
     std::vector<AminoAnim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
 
@@ -610,14 +646,13 @@ void AminoGfx::removeAnimation(AsyncValueUpdate *update) {
 
 /**
  * Delete texture.
+ *
+ * Note: has to be called on main thread.
  */
 void AminoGfx::deleteTextureAsync(GLuint textureId) {
     if (destroyed) {
         return;
     }
-
-    //create scope
-    Nan::HandleScope scope;
 
     //enqueue
     AminoJSObject::enqueueValueUpdate(textureId, (asyncValueCallback)&AminoGfx::deleteTexture);
@@ -626,7 +661,11 @@ void AminoGfx::deleteTextureAsync(GLuint textureId) {
 /**
  * Delete texture.
  */
-void AminoGfx::deleteTexture(AsyncValueUpdate *update) {
+void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
     GLuint textureId = update->valueUint32;
 
     if (DEBUG_RESOURCES) {
@@ -795,7 +834,7 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
             }
 
             //wrap
-            if (wrap != WRAP_NONE) {
+            if (wrap != AminoText::WRAP_NONE) {
                 bool newLine = false;
                 bool skip = false;
                 bool wordWrap = false;
@@ -810,7 +849,7 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
 
                     //next line
                     newLine = true;
-                    wordWrap = wrap == WRAP_WORD;
+                    wordWrap = wrap == AminoText::WRAP_WORD;
 
                     //check space
                     if (iswspace((wchar_t)glyph->codepoint)) {

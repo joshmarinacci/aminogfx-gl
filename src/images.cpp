@@ -413,6 +413,7 @@ void AminoTexture::destroy() {
     }
 
     if (textureId != INVALID_TEXTURE && eventHandler) {
+        //Note: we are on the main thread
         ((AminoGfx *)eventHandler)->deleteTextureAsync(textureId);
     }
 }
@@ -509,41 +510,50 @@ NAN_METHOD(AminoTexture::loadTexture) {
 /**
  * Create texture.
  */
-void AminoTexture::createTexture(AsyncValueUpdate *update) {
-    if (DEBUG_IMAGES) {
-        printf("-> createTexture()\n");
-    }
+void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
+    if (state == AsyncValueUpdate::STATE_APPLY) {
+        //create texture on OpenGL thread
 
-    AminoImage *img = (AminoImage *)update->valueObj;
-    GLuint textureId = img->createTexture(INVALID_TEXTURE);
+        if (DEBUG_IMAGES) {
+            printf("-> createTexture()\n");
+        }
 
-    if (textureId == INVALID_TEXTURE) {
-        //failed
-        int argc = 1;
-        v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
+        AminoImage *img = (AminoImage *)update->valueObj;
+        GLuint textureId = img->createTexture(INVALID_TEXTURE);
 
-        callback->Call(handle(), argc, argv);
-        return;
-    }
+        if (textureId != INVALID_TEXTURE) {
+            //set values
+            this->textureId = textureId;
 
-    //set values
-    this->textureId = textureId;
-    w = img->w;
-    h = img->h;
+            w = img->w;
+            h = img->h;
+        }
+    } else if (state == AsyncValueUpdate::STATE_DELETE) {
+        //on main thread
 
-    v8::Local<v8::Object> obj = handle();
+        if (this->textureId == INVALID_TEXTURE) {
+            //failed
+            int argc = 1;
+            v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-    Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
-    Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+            callback->Call(handle(), argc, argv);
+            return;
+        }
 
-    //callback
-    if (callback) {
-        int argc = 2;
-        v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
+        v8::Local<v8::Object> obj = handle();
 
-        callback->Call(obj, argc, argv);
-        delete callback;
-        callback = NULL;
+        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+
+        //callback
+        if (callback) {
+            int argc = 2;
+            v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
+
+            callback->Call(obj, argc, argv);
+            delete callback;
+            callback = NULL;
+        }
     }
 }
 

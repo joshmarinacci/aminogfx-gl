@@ -18,6 +18,11 @@ var Shader = {
         var GL = this.GL;
         var vertShader = GL.glCreateShader(GL.GL_VERTEX_SHADER);
 
+        if (!vertShader) {
+            console.log('Error: could not create vertex shader!');
+            process.exit(1);
+        }
+
         GL.glShaderSource(vertShader, 1, text, null);
         GL.glCompileShader(vertShader);
 
@@ -38,6 +43,11 @@ var Shader = {
         var GL = this.GL;
         var fragShader = GL.glCreateShader(GL.GL_FRAGMENT_SHADER);
 
+        if (!fragShader) {
+            console.log('Error: could not create fragment shader!');
+            process.exit(1);
+        }
+
         GL.glShaderSource(fragShader, 1, text, null);
         GL.glCompileShader(fragShader);
 
@@ -45,7 +55,7 @@ var Shader = {
 
         if (!stat) {
             //exit
-            console.log('Error: fragment shader did not compile!\n');
+            console.log('Error: fragment shader did not compile!');
             process.exit(1);
         }
 

@@ -121,6 +121,9 @@ function parseRGBString(Fill) {
     return Fill;
 }
 
+/**
+ * Start renderer.
+ */
 AminoGfx.prototype.start = function (done) {
     var self = this;
 

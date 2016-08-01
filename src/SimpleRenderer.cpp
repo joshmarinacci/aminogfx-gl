@@ -374,19 +374,19 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
     //sprintf("font: size=%f height=%f ascender=%f descender=%f\n", tf->size, tf->height, tf->ascender, tf->descender);
 
     switch (text->vAlign) {
-        case VALIGN_TOP:
+        case AminoText::VALIGN_TOP:
             c->translate(0, -tf->ascender);
             break;
 
-        case VALIGN_BOTTOM:
+        case AminoText::VALIGN_BOTTOM:
             c->translate(0,  - text->propH->value - tf->descender + (text->lineNr - 1) * tf->height);
             break;
 
-        case VALIGN_MIDDLE:
+        case AminoText::VALIGN_MIDDLE:
             c->translate(0, - tf->ascender - (text->propH->value - text->lineNr * tf->height) / 2);
             break;
 
-        case VALIGN_BASELINE:
+        case AminoText::VALIGN_BASELINE:
         default:
             break;
     }
