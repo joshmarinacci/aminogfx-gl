@@ -32,7 +32,10 @@
                 "src/fonts/",
                 "src/images/"
             ],
-            "cflags": [ "-Wall" ],
+            "cflags": [
+                "-Wall",
+                "-std=c++11"
+            ],
 
             'conditions': [
                 ['OS=="mac"', {
@@ -54,7 +57,17 @@
                         "MAC",
                         "GLFW_NO_GLU",
                         "GLFW_INCLUDE_GL3",
-                    ]
+                    ],
+                    "xcode_settings": {
+                        "OTHER_CPLUSPLUSFLAGS": [
+                            "-std=c++11",
+                            "-stdlib=libc++"
+                        ],
+                        "OTHER_LDFLAGS": [
+                            "-stdlib=libc++"
+                        ],
+                        "MACOSX_DEPLOYMENT_TARGET": "10.7"
+                    }
                 }],
 
                 ['OS=="linux"', {
