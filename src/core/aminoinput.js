@@ -38,15 +38,17 @@ function makePoint(x, y) {
 
 exports.makePoint = makePoint;
 
+var OS;
+
 /**
  * Initialize this module.
  */
-exports.init = function (OS) {
+exports.init = function (os) {
     if (DEBUG) {
         console.log('initializing input for OS', OS);
     }
 
-    this.OS = OS;
+    OS = os;
 
     IE.init();
 };
@@ -152,7 +154,7 @@ var handlers = {
 
         var evt2;
 
-        if (this.OS == 'BROWSER') {
+        if (OS === 'BROWSER') {
             evt2 = IE.fromBrowserKeyboardEvent(evt, obj.statusObjects.keyboard.state);
         } else {
             evt2 = IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state);
