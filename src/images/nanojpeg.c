@@ -136,6 +136,9 @@ int njGetWidth(void);
 // image. If njDecode() failed, the result of njGetHeight() is undefined.
 int njGetHeight(void);
 
+// njGetBPP: Get number of components per pixel (1 or 3).
+int njGetBPP(void);
+
 // njIsColor: Return 1 if the most recently decoded image is a color image
 // (RGB) or 0 if it is a grayscale image. If njDecode() failed, the result
 // of njGetWidth() is undefined.
@@ -892,6 +895,7 @@ nj_result_t njDecode(const void* jpeg, const int size) {
 
 int njGetWidth(void)            { return nj.width; }
 int njGetHeight(void)           { return nj.height; }
+int njGetBPP(void)              { return nj.ncomp; } //@appamics.CB: extension
 int njIsColor(void)             { return (nj.ncomp != 1); }
 unsigned char* njGetImage(void) { return (nj.ncomp == 1) ? nj.comp[0].pixels : nj.rgb; }
 int njGetImageSize(void)        { return nj.width * nj.height * nj.ncomp; }

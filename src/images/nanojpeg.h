@@ -38,6 +38,9 @@ int njGetWidth(void);
 // image. If njDecode() failed, the result of njGetHeight() is undefined.
 int njGetHeight(void);
 
+// njGetBPP: Get number of components per pixel (1 or 3).
+int njGetBPP(void);
+
 // njIsColor: Return 1 if the most recently decoded image is a color image
 // (RGB) or 0 if it is a grayscale image. If njDecode() failed, the result
 // of njGetWidth() is undefined.

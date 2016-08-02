@@ -89,6 +89,10 @@ public:
         if (upng == NULL) {
             SetErrorMessage("error decoding PNG file");
 
+            if (DEBUG_IMAGES) {
+                printf("-> failed\n");
+            }
+
             //console
             if (DEBUG_IMAGES_CONSOLE) {
                 printf("error decoding PNG file\n");
@@ -114,6 +118,10 @@ public:
         imgH = upng_get_height(upng);
         imgAlpha = upng_get_components(upng) == 4; //RGBA
         imgBPP = upng_get_bpp(upng) / 8;
+
+        if (DEBUG_IMAGES) {
+            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
+        }
     }
 
     /**
@@ -131,6 +139,10 @@ public:
         if (njDecode(buffer, bufferLen)) {
             SetErrorMessage("error decoding PNG file");
 
+            if (DEBUG_IMAGES) {
+                printf("-> failed\n");
+            }
+
             //console
             if (DEBUG_IMAGES_CONSOLE) {
                 printf("Error decoding the PNG file.\n");
@@ -143,7 +155,7 @@ public:
 
         if (DEBUG_IMAGES) {
             printf("-> got an image %d %d\n", njGetWidth(), njGetHeight());
-            printf("-> size = %d\n", njGetImageSize());
+            printf("-> data size = %d\n", njGetImageSize());
         }
 
         imgDataLen = njGetImageSize();
@@ -152,7 +164,11 @@ public:
         imgW = njGetWidth();
         imgH = njGetHeight();
         imgAlpha = false;
-        imgBPP = njIsColor() ? 1:3;
+        imgBPP = njGetBPP();
+
+        if (DEBUG_IMAGES) {
+            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
+        }
 
         isJpeg = true;
     }
@@ -258,7 +274,9 @@ GLuint AminoImage::createTexture(GLuint textureId) {
     size_t bufferLength = node::Buffer::Length(bufferObj);
 
     //debug
-    //printf("buffer length = %d\n", bufferLength);
+    if (DEBUG_IMAGES) {
+        printf("createTexture(): buffer=%d, size=%ix%i, bpp=%i\n", (int)bufferLength, w, h, bpp);
+    }
 
     assert(w * h * bpp == (int)bufferLength);
 

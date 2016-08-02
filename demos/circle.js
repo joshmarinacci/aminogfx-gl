@@ -3,38 +3,45 @@
 var path = require('path');
 var amino = require('../main.js');
 
-amino.start(function (core, stage) {
+var gfx = new amino.AminoGfx();
+
+gfx.start(function (err) {
+    if (err) {
+        console.log('Start failed: ' + err.message);
+        return;
+    }
+
     //green background
-    stage.fill('#00ff00');
+    this.fill('#00ff00');
 
     //setup root
-    var root = new amino.Group();
+    var root = this.createGroup();
 
-    stage.setRoot(root);
+    this.setRoot(root);
 
     //blue rectangle (at 0/0)
-    var rect = new amino.Rect().w(200).h(250).x(0).y(0).fill("#0000ff");
+    var rect = this.createRect().w(200).h(250).x(0).y(0).fill('#0000ff');
 
     root.add(rect);
     rect.acceptsMouseEvents = true;
     rect.acceptsKeyboardEvents = true;
 
-    core.on('key.press', rect, function (e) {
+    this.on('key.press', rect, function (e) {
         console.log('key was pressed', e.keycode, e.printable, e.char);
     });
 
-    core.on('click', rect, function () {
+    this.on('click', rect, function () {
         console.log('clicked on the rect');
     });
 
     //circle (at 100/100)
-    var circle = new amino.Circle().radius(50)
+    var circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(100).y(100);
 
     circle.acceptsMouseEvents = true;
 
-    core.on('click', circle, function () {
+    this.on('click', circle, function () {
         console.log('clicked on the circle');
     });
 
@@ -43,14 +50,14 @@ amino.start(function (core, stage) {
     //images
 
     //tree at 0/0
-    var iv = new amino.ImageView();
+    var iv = this.createImageView();
 
     iv.src(path.join(__dirname, '/images/tree.png'));
     iv.sx(4).sy(4);
     root.add(iv);
 
     //yosemite animated
-    var iv2 = new amino.ImageView();
+    var iv2 = this.createImageView();
 
     iv2.src(path.join(__dirname, '/images/yose.jpg'));
     iv2.sx(4).sy(4);
