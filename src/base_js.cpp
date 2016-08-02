@@ -210,9 +210,6 @@ bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::V
         printf("addPropertyWatcher(): %s\n", name.c_str());
     }
 
-    //create scope
-    Nan::HandleScope scope;
-
     //get property object
     Nan::MaybeLocal<v8::Value> prop = Nan::Get(handle(), Nan::New<v8::String>(name).ToLocalChecked());
 
@@ -343,6 +340,11 @@ AminoJSObject::ObjectProperty* AminoJSObject::createObjectProperty(std::string n
     return prop;
 }
 
+/**
+ * Bind a property to a watcher.
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
 void AminoJSObject::addProperty(AnyProperty *prop) {
     int id = prop->id;
     propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
