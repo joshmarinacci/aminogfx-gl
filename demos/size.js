@@ -40,5 +40,3 @@ gfx.start(function (err) {
 
     root.add(circle);
 });
-
-//cbx crash on Mac resize

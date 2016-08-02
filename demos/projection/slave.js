@@ -92,7 +92,7 @@ gfx.start(function (err) {
     console.log('waiting for messages');
 
     process.on('message', function (m) {
-        console.log('message: ' + JSON.stringify(m)); //cbx
+        console.log('message: ' + JSON.stringify(m));
 
         switch (m.command) {
             case 'configure':
