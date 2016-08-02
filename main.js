@@ -967,27 +967,11 @@ Polygon.prototype.contains = function () {
 // Circle
 //
 
-var Circle = extendNative(Polygon);
+class Circle extends Polygon {
+    //see below
+}
 
 AminoGfx.Circle = Circle;
-
-/**
- * Extend a native rendering object.
- *
- * Note: JavaScript does not allow extending native template. Therefore a new template instance has to be created first.
- */
-function extendNative(constr) {
-    var templ = constr.newTemplate();
-
-    for (var item in constr.prototype) {
-        //debug
-        //console.log('copying: ' + item);
-
-        templ[item] = constr.prototype[item];
-    }
-
-    return templ;
-}
 
 Circle.prototype.init = function () {
     //get Polygon properties

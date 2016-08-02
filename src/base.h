@@ -1070,9 +1070,6 @@ public:
 
         //no methods
 
-        //Polygon properties
-        Nan::SetTemplate(tpl, "newTemplate", Nan::New<v8::Function>(NewTemplate));
-
         //template function
         return Nan::GetFunction(tpl).ToLocalChecked();
     }
@@ -1082,13 +1079,6 @@ public:
      */
     static NAN_METHOD(New) {
         AminoJSObject::createInstance(info, getFactory());
-    }
-
-    /**
-     * Create derivative template (e.g. for circle).
-     */
-    static NAN_METHOD(NewTemplate) {
-        info.GetReturnValue().Set(GetInitFunction());
     }
 };
 
