@@ -1,5 +1,7 @@
 'use strict';
 
+//FIXME not yet supported
+
 function lerp(a, b, t) {
     return a + t * (b - a);
 }

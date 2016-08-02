@@ -3,40 +3,47 @@
 var path = require('path');
 var amino = require('../../main.js');
 
-amino.start(function (core, stage) {
-    //fonts
-    core.registerFont({
-        name: 'Oswald',
-        path: path.join(__dirname, 'resources/oswald/'),
-        weights: {
-            200: {
-                normal: 'Oswald-Light.ttf'
-            },
-            400: {
-                normal: 'Oswald-Regular.ttf'
-            },
-            800: {
-                normal: 'Oswald-Bold.ttf'
-            }
+var gfx = new amino.AminoGfx();
+
+//fonts
+amino.fonts.registerFont({
+    name: 'Oswald',
+    path: path.join(__dirname, 'resources/oswald/'),
+    weights: {
+        200: {
+            normal: 'Oswald-Light.ttf'
+        },
+        400: {
+            normal: 'Oswald-Regular.ttf'
+        },
+        800: {
+            normal: 'Oswald-Bold.ttf'
         }
-    });
+    }
+});
+
+gfx.start(function (err) {
+    if (err) {
+        console.log('Start failed: ' + err.message);
+        return;
+    }
 
     //root
-    var root = new amino.Group();
+    var root = this.createGroup();
 
-    stage.w(600);
-    stage.h(800);
+    this.w(600);
+    this.h(800);
 
-    stage.setRoot(root);
+    this.setRoot(root);
 
     //rects
-    var rect = new amino.Rect().x(0).y(0).w(600).h(80).fill('#ffffff');
-    var rect2 = new amino.Rect().x(0).y(80).w(600).h(80).fill('#dddddd');
+    var rect = this.createRect().x(0).y(0).w(600).h(80).fill('#ffffff');
+    var rect2 = this.createRect().x(0).y(80).w(600).h(80).fill('#dddddd');
 
     root.add(rect, rect2);
 
     //text
-    var text = new amino.Text().fontName('Oswald')
+    var text = this.createText().fontName('Oswald')
         .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
         //.text('Aaaaaaaaa_ Bbbbbbbbb_ Ccccccccc_ Ddddddddd_ Eeeeeeeee_ Fffffffff_')
         .fontSize(80)

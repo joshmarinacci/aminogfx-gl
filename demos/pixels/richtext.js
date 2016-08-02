@@ -1,5 +1,7 @@
 'use strict';
 
+//FIXME not yet supported
+
 var amino = require('../../main.js');
 var comp = require('../../src/richtext/component');
 var Document = comp.Document;

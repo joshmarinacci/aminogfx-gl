@@ -1,5 +1,7 @@
 'use strict';
 
+//FIXME not yet supported
+
 var amino = require('../../main.js');
 
 amino.start(function (core, stage) {

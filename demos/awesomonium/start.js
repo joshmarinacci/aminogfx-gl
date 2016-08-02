@@ -26,6 +26,9 @@ amino.fonts.registerFont({
 
 var gfx = new amino.AminoGfx();
 
+gfx.w(w);
+gfx.h(h);
+
 gfx.start(function (err) {
     if (err) {
         console.log('Start failed: ' + err.message);

@@ -1,5 +1,7 @@
 'use strict';
 
+//FIXME not yet supported
+
 var path = require('path');
 var amino = require('../../main.js');
 var child = require('child_process');

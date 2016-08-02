@@ -10,34 +10,40 @@ var sh = 720;
 parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
     var titles = new CircularBuffer(titles);
 
-    amino.start(function (core, stage) {
-        //setup
-	    console.log("stage = ", stage.w(), stage.h());
+    var gfx = new amino.AminoGfx();
 
-	    if (stage.w() > 100) {
-		    sw = stage.w();
-		    sh = stage.h();
+    gfx.start(function (err) {
+        if (err) {
+            console.log('Start failed: ' + err.message);
+            return;
+        }
+        //setup
+	    console.log("stage = ", this.w(), this.h());
+
+	    if (this.w() > 100) {
+		    sw = this.w();
+		    sh = this.h();
 	    }
 
         //root
-        var root = new amino.Group();
+        var root = this.createGroup();
 
-        stage.w(sw);
-        stage.h(sh);
-        stage.setRoot(root);
+        this.w(sw);
+        this.h(sh);
+        this.setRoot(root);
 
         //background
-        var bg = new amino.Group();
+        var bg = this.createGroup();
 
         root.add(bg);
 
         //text group
-        var textgroup = new amino.Group();
+        var textgroup = this.createGroup();
 
         root.add(textgroup);
 
-        var line1 = new amino.Text().x(50).y(200).fill('#ffffff').fontSize(80);
-        var line2 = new amino.Text().x(50).y(300).fill('#ffffff').fontSize(80);
+        var line1 = this.createText().x(50).y(200).fill('#ffffff').fontSize(80);
+        var line2 = this.createText().x(50).y(300).fill('#ffffff').fontSize(80);
 
         textgroup.add(line1, line2);
 
@@ -66,9 +72,9 @@ parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
         rotateIn();
 
         //three rects that fill the screen: red, green, blue.  50% translucent
-        var rect1 = new amino.Rect().w(sw).h(sh).opacity(0.5).fill('#ff0000');
-        var rect2 = new amino.Rect().w(sw).h(sh).opacity(0.5).fill('#00ff00');
-        var rect3 = new amino.Rect().w(sw).h(sh).opacity(0.5).fill('#0000ff');
+        var rect1 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#ff0000');
+        var rect2 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#00ff00');
+        var rect3 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#0000ff');
 
         bg.add(rect1, rect2, rect3);
 
