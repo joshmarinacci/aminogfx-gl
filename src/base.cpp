@@ -236,7 +236,11 @@ void AminoGfx::addRuntimeProperty() {
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     Nan::Set(obj, Nan::New("maxTextureSize").ToLocalChecked(), Nan::New(maxTextureSize));
 
-    //cbx GL_MAX_TEXTURE_IMAGE_UNITS
+    // 3) texture units
+    GLint maxTextureImageUnits;
+
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureImageUnits);
+    Nan::Set(obj, Nan::New("maxTextureImageUnits").ToLocalChecked(), Nan::New(maxTextureImageUnits));
 
     // 3) platform specific
     populateRuntimeProperties(obj);
