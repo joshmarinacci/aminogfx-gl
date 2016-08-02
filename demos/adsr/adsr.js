@@ -1,45 +1,48 @@
 var amino = require('../../main.js');
-var Group = amino.Group;
-var Rect =  amino.Rect;
-var Text =  amino.Text;
-var Polygon = amino.Polygon;
 
 function Adsr() {
     amino.makeProps(this, {
-        a:100,
-        d:200,
-        s:50,
-        r:300
+        a: 100,
+        d: 200,
+        s: 50,
+        r: 300
     });
 
     return this;
 };
 
-amino.start(function (core, stage) {
+var gfx = new amino.AminoGfx();
+
+gfx.start(function (err) {
+    if (err) {
+        console.log('Start failed: ' + err.message);
+        return;
+    }
+
     //create the model
     var adsr = new Adsr();
 
     //root for the whole window
-    var root = new Group();
+    var root = this.createGroup();
 
-    stage.setRoot(root);
+    this.setRoot(root);
 
     //group for the polygons and controls (not the text labels)
-    var g = new Group();
+    var g = this.createGroup();
 
     root.add(g);
 
     //4 polygons, each a different color
-    var aPoly = new amino.Polygon().fill('#00eecc');
-    var dPoly = new Polygon().fill('#00cccc');
-    var sPoly = new Polygon().fill('#00aacc');
-    var rPoly = new Polygon().fill('#0088aa');
+    var aPoly = this.createPolygon().fill('#00eecc');
+    var dPoly = this.createPolygon().fill('#00cccc');
+    var sPoly = this.createPolygon().fill('#00aacc');
+    var rPoly = this.createPolygon().fill('#0088aa');
 
     g.add(aPoly, dPoly, sPoly, rPoly);
     g.find('Polygon').filled(true);
 
     //5th polygon for the border, not filled
-    var border = new Polygon().fill('#ffffff').filled(false);
+    var border = this.createPolygon().fill('#ffffff').filled(false);
 
     g.add(border);
 
@@ -88,51 +91,50 @@ amino.start(function (core, stage) {
     };
 
     //make a handle bound to the adsr.a value
-    var A = new Rect().y(50 - 10);
+    var A = this.createRect().y(50 - 10);
 
     A.acceptsMouseEvents = true;
 
     A.x.bindto(adsr.a, minus(10));
 
-    core.on('press', A, function( e) {
+    this.on('press', A, function( e) {
         //adsr.a(e.target.x());
     });
 
-    core.on('drag', A, function (e) {
+    this.on('drag', A, function (e) {
         adsr.a(adsr.a() + e.delta.x);
     });
 
     //make a handle bound to the adsr.d value
-    var D = new Rect();
+    var D = this.createRect();
 
     D.acceptsMouseEvents = true;
     D.x.bindto(adsr.d, minus(10));
     D.y.bindto(adsr.s, minus(10));
 
-    core.on('press', D, function (e) {
+    this.on('press', D, function (e) {
         //adsr.d(e.target.x());
         //adsr.s(e.target.y());
     });
 
-    core.on('drag', D, function (e) {
+    this.on('drag', D, function (e) {
         adsr.d(adsr.d() + e.delta.x);
         adsr.s(adsr.s() + e.delta.y);
     });
 
-
     //make a handle bound to the adsr.r value
-    var R = new Rect();
+    var R = this.createRect();
 
     R.acceptsMouseEvents = true;
     R.y.bindto(adsr.s, minus(10));
     R.x.bindto(adsr.r, minus(10));
 
-    core.on('press', R, function (e) {
+    this.on('press', R, function (e) {
         //adsr.s(e.target.y());
         //adsr.r(e.target.x());
     });
 
-    core.on('drag', R, function (e) {
+    this.on('drag', R, function (e) {
         adsr.s(adsr.s() + e.delta.y);
         adsr.r(adsr.r() + e.delta.x);
     });
@@ -149,19 +151,19 @@ amino.start(function (core, stage) {
     }
 
     //make 4 text labels, each bound to an adsr value
-    var label1 = new Text().y(50 * 1);
+    var label1 = this.createText().y(50 * 1);
 
     label1.text.bindto(adsr.a, format('A: %'));
 
-    var label2 = new Text().y(50 * 2);
+    var label2 = this.createText().y(50 * 2);
 
     label2.text.bindto(adsr.d, format('D: %'));
 
-    var label3 = new Text().y(50 * 3);
+    var label3 = this.createText().y(50 * 3);
 
     label3.text.bindto(adsr.s, format('S: %'));
 
-    var label4 = new Text().y(50 * 4);
+    var label4 = this.createText().y(50 * 4);
 
     label4.text.bindto(adsr.r, format('R: %'));
 

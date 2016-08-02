@@ -56,7 +56,7 @@ gfx.start(function (err) {
         rectBR.x(gfx.w() - rectW).y(gfx.h() - rectH);
 
         //debug
-        console.log('resized ' + gfx.w() + '/' + gfx.h()); //cbx
+        //console.log('resized ' + gfx.w() + '/' + gfx.h());
     });
 
 });

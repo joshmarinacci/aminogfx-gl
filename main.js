@@ -485,6 +485,9 @@ exports.AminoGfx = AminoGfx;
 
 var Group = AminoGfx.Group;
 
+/**
+ * Initializer.
+ */
 Group.prototype.init = function () {
     if (DEBUG) {
         console.log('Group.init()');
@@ -527,6 +530,9 @@ Group.prototype.init = function () {
     this.children = [];
 };
 
+/**
+ * Add one or more children to this group.
+ */
 Group.prototype.add = function () {
     var count = arguments.length;
 
@@ -553,6 +559,9 @@ Group.prototype.add = function () {
     return this;
 };
 
+/**
+ * Remove one or more children from this group.
+ */
 Group.prototype.remove = function (child) {
     var n = this.children.indexOf(child);
 
@@ -565,6 +574,9 @@ Group.prototype.remove = function (child) {
     return this;
 };
 
+/**
+ * Remove all children.
+ */
 Group.prototype.clear = function () {
     var count = this.children.length;
 
@@ -577,6 +589,9 @@ Group.prototype.clear = function () {
     return this;
 };
 
+/**
+ * Bring child to top.
+ */
 Group.prototype.raiseToTop = function (node) {
     if (!node) {
         throw new Error('can\'t move a null child');
@@ -588,6 +603,9 @@ Group.prototype.raiseToTop = function (node) {
     return this;
 };
 
+/**
+ * Find children.
+ */
 Group.prototype.find = function (pattern) {
     var results = new FindResults();
 
@@ -599,8 +617,11 @@ Group.prototype.find = function (pattern) {
             return (child.id().toLowerCase() == id);
         });
     } else {
+        //look for class name (e.g. AminoRect)
+        pattern = 'amino' + pattern.toLowerCase();
+
         results.children = treeSearch(this, false, function (child) {
-            return child.constructor.name.toLowerCase() == pattern.toLowerCase();
+            return child.constructor.name.toLowerCase() == pattern;
         });
     }
 
