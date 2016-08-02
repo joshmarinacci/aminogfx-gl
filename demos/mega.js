@@ -4,35 +4,41 @@ var moment = require('moment');
 var path = require('path');
 var amino = require('../main.js');
 
-exports.go = function (canvas) {
-	//amino.setCanvas(canvas);
-	amino.start(function (core, stage){
-		//output width
-		console.log('width = ', stage.w());
+//register font
+amino.fonts.registerFont({
+	name: 'Oswald',
+	path: path.join(__dirname, '/oswald/'),
+	weights: {
+	    200: {
+	        normal: 'Oswald-Light.ttf'
+	    },
+	    400: {
+	        normal: 'Oswald-Regular.ttf'
+	    },
+	    800: {
+	        normal: 'Oswald-Bold.ttf'
+	    }
+	}
+});
 
-		//register font
-	    core.registerFont({
-	        name: 'Oswald',
-	        path: path.join(__dirname, '/oswald/'),
-	        weights: {
-	            200: {
-	                normal: 'Oswald-Light.ttf'
-	            },
-	            400: {
-	                normal: 'Oswald-Regular.ttf'
-	            },
-	            800: {
-	                normal: 'Oswald-Bold.ttf'
-	            }
-	        }
-	    });
+exports.go = function () {
+	var gfx = new amino.AminoGfx();
+
+	gfx.start(function (err) {
+		if (err) {
+        	console.log('Start failed: ' + err.message);
+        	return;
+    	}
+
+		//output width
+		console.log('width = ', this.w());
 
 		//root
-		var root = new amino.Group();
+		var root = this.createGroup();
 
 		function simpleTests() {
 			//add rect
-			var rect1 = new amino.Rect().w(100).h(50).fill('#ff00ff');
+			var rect1 = gfx.createRect().w(100).h(50).fill('#ff00ff');
 
 			root.add(rect1);
 
@@ -41,14 +47,14 @@ exports.go = function (canvas) {
 			//loop animate the opacity of the rect
 
 			//plain text
-			var text1 = new amino.Text().text('some green text')
+			var text1 = gfx.createText().text('some green text')
 				.fontSize(20)
 				.fill('#00ff00').x(20).y(20);
 
 			root.add(text1);
 
 			//text with custom font
-			var text2 = new amino.Text().text('a custom font')
+			var text2 = gfx.createText().text('a custom font')
 				.fontSize(30)
 				.fontName('Oswald')
 				.x(20).y(120);
@@ -64,30 +70,30 @@ exports.go = function (canvas) {
 		 * press drag under an overlay
 		 */
 		function pressDragReleaseTest() {
-			var g = new amino.Group();
+			var g = gfx.createGroup();
 
 			//text
-			var t = new amino.Text().text('press to turn blue, then drag').x(20).y(20).fontSize(20);
+			var t = gfx.createText().text('press to turn blue, then drag').x(20).y(20).fontSize(20);
 
             g.add(t);
 
 			//green rect
-			var r = new amino.Rect().w(50).h(50).fill('#00ff00').x(50).y(50);
+			var r = gfx.createRect().w(50).h(50).fill('#00ff00').x(50).y(50);
 
 			r.acceptsMouseEvents = true;
 
-			core.on('press', r, function () {
+			gfx.on('press', r, function () {
 				//turn blue
 				r.fill('#0000ff');
 			});
 
-			core.on('drag', r, function (e) {
+			gfx.on('drag', r, function (e) {
 				//move
 				r.x(r.x() + e.delta.x);
 				r.y(r.y() + e.delta.y);
 			});
 
-			core.on('release', r, function () {
+			gfx.on('release', r, function () {
 				//reset color
 				r.fill('#00ff00');
 			});
@@ -95,14 +101,14 @@ exports.go = function (canvas) {
 			g.add(r);
 
 			//overlay rect
-			var overlay = new amino.Rect().w(100).h(100).fill('#cccccc').x(20).y(100);
+			var overlay = gfx.createRect().w(100).h(100).fill('#cccccc').x(20).y(100);
 
 			overlay.opacity(0.6);
 			overlay.acceptsMouseEvents = true;
 			g.add(overlay);
 
 			//text
-			var tt = new amino.Text().text('mouse blocking overlay').x(20).y(100).fontSize(20);
+			var tt = gfx.createText().text('mouse blocking overlay').x(20).y(100).fontSize(20);
 
 			g.add(tt);
 			g.x(250).y(20);
@@ -117,7 +123,7 @@ exports.go = function (canvas) {
 		 */
 		function imageSwappingTests() {
 			//image 1
-			var iv = new amino.ImageView();
+			var iv = gfx.createImageView();
 			var im1 = null;
 
 			iv.image.watch(function () {
@@ -134,7 +140,7 @@ exports.go = function (canvas) {
 			iv.sx(4).sy(4);
 
 			//group (animation: rotation)
-			var g = new amino.Group();
+			var g = gfx.createGroup();
 
 			g.add(iv);
             g.rz.anim().from(0).to(360 * 4).dur(10000).loop(-1).start();
@@ -142,7 +148,7 @@ exports.go = function (canvas) {
 			root.add(g);
 
 			//image 2
-			var iv2 = new amino.ImageView();
+			var iv2 = gfx.createImageView();
 			var im2 = null;
 
 			iv2.image.watch(function () {
@@ -181,7 +187,7 @@ exports.go = function (canvas) {
 		 */
 		function imageAnimTests() {
 			//create image view
-            var i1 = new amino.ImageView().src(path.join(__dirname, '/images/tree.png'));
+            var i1 = gfx.createImageView().src(path.join(__dirname, '/images/tree.png'));
 
 			//animate x position
 			i1.x.anim().from(0).to(100).dur(1000).loop(-1).autoreverse(true).start();
@@ -190,7 +196,7 @@ exports.go = function (canvas) {
 			i1.opacity.anim().from(0).to(1.0).dur(1000).loop(-1).autoreverse(true).start();
 
 			//group
-			var g = new amino.Group().x(20).y(500).add(i1);
+			var g = gfx.createGroup().x(20).y(500).add(i1);
 
 			root.add(g);
 		}
@@ -198,15 +204,15 @@ exports.go = function (canvas) {
 		imageAnimTests();
 
 		//done
-		stage.setRoot(root);
+		this.setRoot(root);
 
 		//stage background & opacity
 		setTimeout(function () {
-			stage.fill('#ff0000');
+			gfx.fill('#ff0000');
 		}, 2000);
 
 		setTimeout(function () {
-            stage.opacity(0.1);
+            gfx.opacity(0.1);
 		}, 4000);
 
 	});
