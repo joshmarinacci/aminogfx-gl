@@ -5,8 +5,6 @@
 var amino = require('../../main.js');
 var fs = require('fs');
 var path = require('path');
-var Group = amino.Group;
-var ImageView = amino.ImageView;
 
 if (process.argv.length < 3) {
     console.log('you must provide a directory to use');
@@ -31,22 +29,24 @@ function CircularBuffer(arr) {
 //wrap files in a circular buffer
 var files = new CircularBuffer(filelist);
 
-amino.start(function (core, stage) {
+var gfx = new amino.AminoGfx();
+
+gfx.start(function (err) {
     //setup size
-    stage.w(800);
-    stage.h(600);
+    this.w(800);
+    this.h(600);
 
     //init root
-    var root = new Group();
+    var root = this.createGroup();
 
-    stage.setRoot(root);
+    this.setRoot(root);
 
-    var sw = stage.w();
-    var sh = stage.h();
+    var sw = this.w();
+    var sh = this.h();
 
     //create two image views
-    var iv1 = new ImageView().x(0);
-    var iv2 = new ImageView().x(1000);
+    var iv1 = this.createImageView().x(0);
+    var iv2 = this.createImageView().x(1000);
 
     //add to the scene
     root.add(iv1, iv2);

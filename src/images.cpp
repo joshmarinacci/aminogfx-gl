@@ -1,6 +1,8 @@
 #include "images.h"
 #include "base.h"
 
+#include <uv.h>
+
 extern "C" {
     #include "nanojpeg.h"
     #include "upng.h"
@@ -34,6 +36,10 @@ private:
     upng_t *upng = NULL;
     bool isJpeg = false;
 
+    //mutex
+    static uv_mutex_t jpegMutex;
+    static bool jpegMutexInitalized;
+
 public:
     AsyncImageWorker(Nan::Callback *callback, v8::Local<v8::Object> &obj, v8::Local<v8::Value> &bufferObj) : AsyncWorker(callback) {
         SaveToPersistent("object", obj);
@@ -43,6 +49,12 @@ public:
 
         buffer = node::Buffer::Data(bufferObj);
         bufferLen = node::Buffer::Length(bufferObj);
+
+        //mutex
+        if (!jpegMutexInitalized) {
+            jpegMutexInitalized = true;
+            uv_mutex_init(&jpegMutex);
+        }
     }
 
     /**
@@ -70,7 +82,10 @@ public:
         if (isPng) {
             decodePng();
         } else {
+            //Note: libuv uses thread-pool, therefore use mutex to prevent parallel execution of JPEG decoder (parallel execution would be better in future using thread-safe code)
+            uv_mutex_lock(&jpegMutex);
             decodeJpeg();
+            uv_mutex_unlock(&jpegMutex);
         }
     }
 
@@ -134,10 +149,17 @@ public:
             printf("decodeJpeg()\n");
         }
 
+        //check thread
+        /*
+        uv_thread_t threadId = uv_thread_self();
+
+        printf("JPEG thread: %lu\n", threadId);
+        */
+
         njInit();
 
         if (njDecode(buffer, bufferLen)) {
-            SetErrorMessage("error decoding PNG file");
+            SetErrorMessage("error decoding JPEG file");
 
             if (DEBUG_IMAGES) {
                 printf("-> failed\n");
@@ -145,7 +167,7 @@ public:
 
             //console
             if (DEBUG_IMAGES_CONSOLE) {
-                printf("Error decoding the PNG file.\n");
+                printf("Error decoding the JPEG file.\n");
             }
 
             njDone();
@@ -223,6 +245,9 @@ public:
         callback->Call(2, argv);
     }
 };
+
+uv_mutex_t AsyncImageWorker::jpegMutex;
+bool AsyncImageWorker::jpegMutexInitalized = false;
 
 //
 // AminoImage
