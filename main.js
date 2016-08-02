@@ -804,7 +804,8 @@ ImageView.prototype.init = function () {
                     console.log('could not load image: ' + err.message);
                 }
 
-                cb();
+                //set texture to null
+                self.image(null);
                 return;
             }
 
