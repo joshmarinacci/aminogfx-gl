@@ -4,19 +4,28 @@ console.log('I am the slave. :(');
 
 var amino = require('../../main.js');
 
-amino.start(function (core, stage) {
-    var root = new amino.Group();
+var gfx = new amino.AminoGfx();
 
-    stage.w(400);
-    stage.h(400);
-    stage.setRoot(root);
+gfx.start(function (err) {
+    if (err) {
+        console.log('Start failed: ' + err.message);
+        return;
+    }
+
+    var root = this.createGroup();
+
+    this.w(400);
+    this.h(400);
+    this.setRoot(root);
 
     function configure(m) {
         console.log('SLAVE: configuring', m);
 
         if (m.props.w) {
-            stage.w(m.props.w);
-            stage.h(m.props.h);
+            gfx.w(m.props.w);
+            gfx.h(m.props.h);
+            gfx.x(m.props.x);
+            gfx.y(m.props.y);
         }
 
         if (m.props.dx) {
@@ -30,7 +39,7 @@ amino.start(function (core, stage) {
 
     function make(m) {
         if (m.target == 'amino.Rect') {
-            var obj = new amino.Rect();
+            var obj = gfx.createRect();
 
             for (var name in m.props) {
                 obj[name](m.props[name]);
@@ -48,6 +57,8 @@ amino.start(function (core, stage) {
                 return child;
             }
         }
+
+        return null;
     }
 
     /**
@@ -78,7 +89,11 @@ amino.start(function (core, stage) {
     }
 
     //process messages
+    console.log('waiting for messages');
+
     process.on('message', function (m) {
+        console.log('message: ' + JSON.stringify(m)); //cbx
+
         switch (m.command) {
             case 'configure':
                 configure(m);
@@ -101,4 +116,7 @@ amino.start(function (core, stage) {
                 break;
         }
     });
+
+    //send ready
+    process.send({ command: 'ready' });
 });

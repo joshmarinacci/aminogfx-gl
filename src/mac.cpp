@@ -549,6 +549,10 @@ private:
             return;
         }
 
+        if (DEBUG_GLFW) {
+            printf("updateWindowPosition() %i %i\n", (int)propX->value, (int)propY->value);
+        }
+
         glfwSetWindowPos(window, propX->value, propY->value);
     }
 

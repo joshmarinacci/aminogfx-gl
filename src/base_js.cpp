@@ -1565,7 +1565,7 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     //call sync handler
     if (prop->obj->handleSyncUpdate(prop, data)) {
         if (DEBUG_BASE) {
-            printf("-> sync update\n");
+            printf("-> sync update (value=%s)\n", toString(value).c_str());
         }
 
         prop->freeAsyncData(data);

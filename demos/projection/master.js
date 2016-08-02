@@ -5,11 +5,31 @@ var amino = require('../../main.js');
 
 console.log('I am the master!');
 
+//create children
 var children = [];
+var readyCount = 0;
 
-children.push(cp.fork('demos/projection/slave.js'));
-children.push(cp.fork('demos/projection/slave.js'));
-//children.push(cp.fork('demos/projection/slave.js'));
+function createChild() {
+    var child = cp.fork('demos/projection/slave.js');
+
+    children.push(child);
+
+    //receive child messages
+    child.on('message', function (m) {
+        console.log('Message from child: ' + JSON.stringify(m));
+
+        if (m.command == 'ready') {
+            readyCount++;
+
+            if (readyCount == 2) {
+                start();
+            }
+        }
+    });
+}
+
+createChild();
+createChild();
 
 function projectProp(val, prop, obj) {
     var props = {};
@@ -47,24 +67,6 @@ function make(target, props) {
         });
     });
 }
-
-//configure the child windows
-for (var i = 0; i < children.length; i++) {
-    children[i].send({
-        command: 'configure',
-        props: {
-            w: 400,
-            h: 400,
-            dx: i * -400,
-            dy: 0,
-        }
-    });
-}
-
-//create rect
-var rect = new Rect();
-
-make('amino.Rect', { id: rect.id() });
 
 /**
  * Animation proxy.
@@ -107,9 +109,33 @@ function anim(id, prop) {
     };
 }
 
-setTimeout(function () {
-    rect.w(200);
-    rect.h(200);
-    rect.fill('#00ffcc');
-    anim(rect.id(), 'x').from(0).to(1000).dur(1000).loop(-1).send();
-}, 3000);
+function start() {
+    //configure the child windows
+    console.log('configuring...');
+
+    for (var i = 0; i < children.length; i++) {
+        children[i].send({
+            command: 'configure',
+            props: {
+                w: 400,
+                h: 400,
+                dx: i * -400,
+                dy: 0,
+                x: i * 400,
+                y: 0
+            }
+        });
+    }
+
+    //create rect
+    var rect = new Rect();
+
+    make('amino.Rect', { id: rect.id() });
+
+    setTimeout(function () {
+        rect.w(200);
+        rect.h(200);
+        rect.fill('#00ffcc');
+        anim(rect.id(), 'x').from(0).to(1000).dur(1000).loop(-1).send();
+    }, 3000);
+}
