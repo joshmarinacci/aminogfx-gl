@@ -1401,16 +1401,23 @@ Text.prototype.initDone = function () {
     this.fontSize.watch(this.updateFont);
 };
 
+var fontId = 0;
+
 /**
  * Load the font.
  */
 Text.prototype.updateFont = function (val, prop, obj) {
+    //prevent race condition (earlier font is loaded later)
+    var id = fontId++;
+
+    obj.latestFontId = id;
+
     //get font
     fonts.getFont({
         name: obj.fontName(),
         size: obj.fontSize(),
         weight: obj.fontWeight(),
-        style: obj.fontStyle()
+        style: obj.fontStyle(),
     }, function (err, font) {
         if (err) {
             console.log('could not load font: ' + err.message);
@@ -1419,7 +1426,9 @@ Text.prototype.updateFont = function (val, prop, obj) {
             fonts.getFont({
                 size: obj.fontSize()
             }, function (err, font) {
-                if (font) {
+                if (font && obj.latestFontId === id) {
+                    obj.latestFontId = undefined;
+
                     obj.font(font);
                 }
             });
@@ -1428,8 +1437,14 @@ Text.prototype.updateFont = function (val, prop, obj) {
 
         //console.log('got font: ' + JSON.stringify(font));
 
-        obj.font(font);
+        if (obj.latestFontId === id) {
+            obj.latestFontId = undefined;
+
+            obj.font(font);
+        }
     });
+
+    fontId++;
 };
 
 //
