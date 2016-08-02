@@ -8,29 +8,46 @@ var fs = require('fs');
 var path = require('path');
 var cities = JSON.parse(fs.readFileSync(path.join(__dirname, 'cities.json')).toString());
 
-var w = 1280;//1920;
-var h = 768;//1080;
+var w = 1280; //1920;
+var h = 768;  //1080;
 var radius = w / 6;
+var animated = true;
 
-amino.start(function (core, stage) {
-    //setup
-    if (stage.w() > 100) {
-	    w = stage.w();
-	    h = stage.h();
+amino.fonts.registerFont({
+    name: 'mech',
+    path: path.join(__dirname, 'resources/'),
+    weights: {
+        400: {
+            normal: 'MechEffects1BB_reg.ttf',
+            italic: 'MechEffects1BB_ital.ttf'
+        }
+    }
+});
+
+var gfx = new amino.AminoGfx();
+
+gfx.start(function (err) {
+    if (err) {
+        console.log('Start failed: ' + err.message);
+        return;
     }
 
-    setupFont(core);
+    //setup
+    if (this.w() > 100) {
+	    w = this.w();
+	    h = this.h();
+    }
 
-    stage.w(w);
-    stage.h(h);
+    this.w(w);
+    this.h(h);
 
     //root
-    var root = new amino.Group();
+    var root = this.createGroup();
 
-    stage.setRoot(root);
+    this.setRoot(root);
 
     //the globe
-    var group = new amino.Group();
+    var group = this.createGroup();
 
     root.add(group);
 
@@ -51,17 +68,17 @@ amino.start(function (core, stage) {
 });
 
 function buildDashboard() {
-    var group = new amino.Group();
+    var group = gfx.createGroup();
 
     function addLine(text, x, y, glyph) {
-        group.add(new amino.Rect()
+        group.add(gfx.createRect()
             .x(x + 5)
             .y(y - 25)
             .w(200)
             .h(32)
             .fill('#ea5036')
         );
-        group.add(new amino.Text()
+        group.add(gfx.createText()
             .text(text)
             .fill('#fcfbcf')
             .fontName('mech')
@@ -70,7 +87,7 @@ function buildDashboard() {
             .y(y)
         );
         if (glyph) {
-            group.add(new amino.Text()
+            group.add(gfx.createText()
                 .text(glyph)
                 .fill('#fcfbcf')
                 .fontName('awesome')
@@ -82,7 +99,7 @@ function buildDashboard() {
     }
 
     function addSmallLine(text, x, y) {
-        group.add(new amino.Text()
+        group.add(gfx.createText()
             .text(text)
             .fill('#fcfbcf')
             .fontName('mech')
@@ -150,10 +167,10 @@ function buildDashboard() {
 
 function makeFooterSymbols(root) {
     for (var i = 0; i < 7; i++)  {
-        var sun = new amino.Group().x(w / 2 - 300 + i * 100).y(h - 25).rz(30);
+        var sun = gfx.createGroup().x(w / 2 - 300 + i * 100).y(h - 25).rz(30);
 
         //see http://fontawesome.io/icon/caret-up/
-        sun.add(new amino.Text()
+        sun.add(gfx.createText()
             .fontName('awesome').fontSize(80).text('\uf0d8')
             .x(-25).y(25).fill('#fcfbcf')
         );
@@ -161,17 +178,19 @@ function makeFooterSymbols(root) {
         var start = Math.random() * 90 - 45;
         var len = Math.random() * 5000 + 5000;
 
-        sun.rz.anim().from(start).to(start + 90).dur(len).loop(-1).autoreverse(true).start();
+        if (animated) {
+            sun.rz.anim().from(start).to(start + 90).dur(len).loop(-1).autoreverse(true).start();
+        }
+
         root.add(sun);
     }
-
 }
 
 function makeHeader(root) {
     var fontH = 70;
 
-    root.add(new amino.Rect().fill('#ff0000').w(w).h(100).opacity(0.5));
-    root.add(new amino.Text()
+    root.add(gfx.createRect().fill('#ff0000').w(w).h(100).opacity(0.5));
+    root.add(gfx.createText()
         .text('Awesomonium Levels')
         .fontSize(fontH)
         .fontName('mech')
@@ -181,7 +200,7 @@ function makeHeader(root) {
     );
     root.add(createBar1(50, 100, 5, '#fcfbcf').x(400).y(75).rz(-90));
     /*
-    root.add(new amino.Text()
+    root.add(gfx.createText()
         .text('Atomization')
         .fontSize(fontH)
         .fontName('mech')
@@ -192,7 +211,7 @@ function makeHeader(root) {
     */
 
     //beaker symbol
-    root.add(new amino.Text()
+    root.add(gfx.createText()
         .fontName('awesome').text('\uf0c3').fontSize(80)
         .x(w - 85).y(70).fill('#fcfbcf')
     );
@@ -218,7 +237,7 @@ function buildGlobe(group) {
         for (var i = 0; i < nz.borders.length; i++) {
             var border = nz.borders[i];
             var points = [];
-            var poly = new amino.Polygon();
+            var poly = gfx.createPolygon();
 
             for (var j = 0; j < border.length; j++) {
                 var point = border[j];
@@ -243,7 +262,7 @@ function buildGlobe(group) {
     // NOTE: on Raspberry pi we can't just make a line.
     // A polygon needs at least two segments.
     function addLine(lat, lon, el, color) {
-        var poly = new amino.Polygon();
+        var poly = gfx.createPolygon();
         var pt1 = latlon2xyz(lat, lon, radius);
         var pt2 = latlon2xyz(lat, lon, radius + el);
         var pt3 = latlon2xyz(lat, lon, radius);
@@ -275,16 +294,18 @@ function buildGlobe(group) {
     group.rz(0);
 
     // spin it forever
-    group.rz.anim().from(0).to(360).dur(60 * 1000).loop(-1).start();
+    if (animated) {
+        group.rz.anim().from(0).to(360).dur(60 * 1000).loop(-1).start();
+    }
 }
 
 function createBar1(w, h, count, color) {
-    var gr = new amino.Group();
+    var gr = gfx.createGroup();
     var rects = [];
     var barw = w / count;
 
-    for(var i = 0; i < count; i++) {
-        var rect = new amino.Rect()
+    for (var i = 0; i < count; i++) {
+        var rect = gfx.createRect()
             .x(i * barw).y(0)
             .w(barw - 5)
             .h(30)
@@ -300,24 +321,13 @@ function createBar1(w, h, count, color) {
         });
     }
 
-    setInterval(update, 100);
+    if (animated) {
+        setInterval(update, 100);
+    }
 
     return gr;
 }
 
 function frand(min, max) {
     return Math.random() * (max - min) + min;
-}
-
-function setupFont(core) {
-    core.registerFont({
-        name: 'mech',
-        path: path.join(__dirname, 'resources/'),
-        weights: {
-            400: {
-                normal: 'MechEffects1BB_reg.ttf',
-                italic: 'MechEffects1BB_ital.ttf'
-            },
-        }
-    });
 }

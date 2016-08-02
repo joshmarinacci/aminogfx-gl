@@ -47,9 +47,9 @@ class AminoFontFactory;
  */
 class AminoFont : public AminoJSObject {
 public:
-    std::string name;
-    int weight;
-    std::string style;
+    std::string fontName;
+    int fontWeight;
+    std::string fontStyle;
 
     AminoFont();
     ~AminoFont();
@@ -95,6 +95,7 @@ class AminoFontSizeFactory;
 class AminoFontSize : public AminoJSObject {
 public:
     texture_font_t *fontTexture = NULL;
+    AminoFont *parent = NULL;
 
     AminoFontSize();
     ~AminoFontSize();
@@ -108,8 +109,6 @@ public:
     static v8::Local<v8::Function> GetInitFunction();
 
 private:
-    AminoFont *parent = NULL;
-
     //JS constructor
     static NAN_METHOD(New);
 

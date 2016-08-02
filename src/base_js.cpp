@@ -382,7 +382,7 @@ NAN_METHOD(AminoJSObject::PropertyUpdated) {
 /**
  * Set the event handler instance.
  *
- * Note: retains the object instance.
+ * Note: retains the new event handler object instance.
  */
 void AminoJSObject::setEventHandler(AminoJSEventObject *handler) {
     if (this->eventHandler != handler) {
@@ -1191,6 +1191,8 @@ void AminoJSObject::Utf8Property::freeAsyncData(void *data) {
 
 /**
  * ObjectProperty constructor.
+ *
+ * Note: retains the reference automatically.
  */
 AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_OBJECT, obj, name, id) {
     //empty
@@ -1200,9 +1202,21 @@ AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string na
  * Utf8Property destructor.
  */
 AminoJSObject::ObjectProperty::~ObjectProperty() {
-    //release
+    //release instance
     if (value) {
         value->release();
+    }
+}
+
+/**
+ * Free retained object value.
+ *
+ * Note: has to be called on main thread.
+ */
+void AminoJSObject::ObjectProperty::destroy() {
+    if (value) {
+        value->release();
+        value = NULL;
     }
 }
 
@@ -1210,6 +1224,8 @@ AminoJSObject::ObjectProperty::~ObjectProperty() {
  * Update the object value.
  *
  * Note: only updates the JS value if modified!
+ *
+ * !!! Attention: object must be retained and previous value must be released before calling this function!!!
  */
 void AminoJSObject::ObjectProperty::setValue(AminoJSObject *newValue) {
     if (value != newValue) {
@@ -1291,7 +1307,12 @@ void AminoJSObject::ObjectProperty::setAsyncData(AsyncPropertyUpdate *update, vo
  * Free async data.
  */
 void AminoJSObject::ObjectProperty::freeAsyncData(void *data) {
-    //nothing to free
+    AminoJSObject *obj = (AminoJSObject *)data;
+
+    //release reference on main thread
+    if (obj) {
+        obj->release();
+    }
 }
 
 //
@@ -1567,7 +1588,7 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
  * Constructor.
  */
 AminoJSEventObject::AsyncPropertyUpdate::AsyncPropertyUpdate(AnyProperty *property, void *data): AnyAsyncUpdate(ASYNC_UPDATE_PROPERTY), property(property), data(data) {
-    //retain instance
+    //retain instance to target object
     property->retain();
 }
 
@@ -1589,7 +1610,7 @@ AminoJSEventObject::AsyncPropertyUpdate::~AsyncPropertyUpdate() {
     //free data
     property->freeAsyncData(data);
 
-    //release instance
+    //release instance to target object
     property->release();
 }
 

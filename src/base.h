@@ -302,16 +302,15 @@ public:
     }
 
     void destroy() override {
-        if (DEBUG_BASE) {
-            printf("AminoText: destroy()\n");
-        }
-
         AminoNode::destroy();
 
         if (buffer) {
             vertex_buffer_delete(buffer);
             buffer = NULL;
         }
+
+        //release object values
+        propFont->destroy();
     }
 
     void setup() override {
@@ -422,7 +421,11 @@ public:
                 return;
             }
 
+            //new font
             fontSize = fs;
+
+            //debug
+            //printf("-> use font: %s\n", fs->parent->fontName.c_str());
 
             updated = true;
             return;
@@ -519,7 +522,7 @@ public:
             return;
         }
 
-        //bind to queue (retains reference)
+        //bind to queue (retains AminoGfx reference)
         this->setEventHandler(obj);
         this->prop = prop;
 
@@ -718,6 +721,11 @@ public:
         obj->stop();
     }
 
+    /**
+     * Stop animation.
+     *
+     * Note: has to be called on main thread!
+     */
     void stop() {
         if (!destroyed) {
             //remove animation
@@ -730,6 +738,9 @@ public:
         }
     }
 
+    /**
+     * End the animation.
+     */
     void endAnimation() {
         if (DEBUG_BASE) {
             printf("Anim: endAnimation()\n");
@@ -752,6 +763,7 @@ public:
         }
 
         //stop
+//cbx move to main thread (marked as stopped now)
         stop();
     }
 
@@ -869,6 +881,13 @@ public:
         //empty
     }
 
+    void destroy() override {
+        AminoNode::destroy();
+
+        //release object values
+        propTexture->destroy();
+    }
+
     void setup() override {
         AminoNode::setup();
 
@@ -904,6 +923,7 @@ public:
         AnyProperty *property = update->property;
 
         if (property == propTexture) {
+            //Note: texture object retain by propTexture
             AminoTexture *texture = (AminoTexture *)propTexture->value;
 
             if (!texture) {

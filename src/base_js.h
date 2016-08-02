@@ -89,7 +89,7 @@ protected:
         virtual void setAsyncData(AsyncPropertyUpdate *update, void *data) = 0;
         virtual void freeAsyncData(void *data) = 0;
 
-        //weak reference control
+        //weak reference control (obj)
         void retain();
         void release();
     };
@@ -221,6 +221,8 @@ protected:
 
         ObjectProperty(AminoJSObject *obj, std::string name, int id);
         ~ObjectProperty();
+
+        void destroy();
 
         void setValue(AminoJSObject *newValue);
 

@@ -594,12 +594,15 @@ void AminoGfx::setRoot(AminoGroup *group) {
 
 /**
  * Add animation.
+ *
+ * Note: called on main thread.
  */
 bool AminoGfx::addAnimationAsync(AminoAnim *anim) {
     if (destroyed) {
         return false;
     }
 
+    //retains anim instance
     AminoJSObject::enqueueValueUpdate(anim, (asyncValueCallback)&AminoGfx::addAnimation);
 
     return true;
@@ -607,14 +610,18 @@ bool AminoGfx::addAnimationAsync(AminoAnim *anim) {
 
 /**
  * Add an animation.
+ *
+ * Note: called on OpenGL thread.
  */
 void AminoGfx::addAnimation(AsyncValueUpdate *update, int state) {
     if (state != AsyncValueUpdate::STATE_APPLY) {
         return;
     }
 
-    //Note: event handler retains instance
     AminoAnim *anim = (AminoAnim *)update->valueObj;
+
+    //keep retained instance
+    update->valueObj = NULL;
 
     animations.push_back(anim);
 }
@@ -622,13 +629,14 @@ void AminoGfx::addAnimation(AsyncValueUpdate *update, int state) {
 /**
  * Remove animation.
  *
- * Note: does not release the instance.
+ * Note: called on main thread.
  */
 void AminoGfx::removeAnimationAsync(AminoAnim *anim) {
     if (destroyed) {
         return;
     }
 
+    //so far retains another instance
     AminoJSObject::enqueueValueUpdate(anim, (asyncValueCallback)&AminoGfx::removeAnimation);
 }
 
@@ -645,6 +653,9 @@ void AminoGfx::removeAnimation(AsyncValueUpdate *update, int state) {
 
     if (pos != animations.end()) {
         animations.erase(pos);
+
+        //free instance
+        update->releaseLater = anim;
     }
 }
 
@@ -1067,8 +1078,8 @@ NAN_METHOD(node_glCreateShader) {
 }
 
 NAN_METHOD(node_glShaderSource) {
-  int shader   = info[0]->Uint32Value();
-  int count    = info[1]->Uint32Value();
+  int shader = info[0]->Uint32Value();
+  int count  = info[1]->Uint32Value();
   v8::String::Utf8Value jsource(info[2]);
   const char *source = *jsource;
 
@@ -1076,13 +1087,13 @@ NAN_METHOD(node_glShaderSource) {
 }
 
 NAN_METHOD(node_glCompileShader) {
-  int shader   = info[0]->Uint32Value();
+  int shader = info[0]->Uint32Value();
 
   glCompileShader(shader);
 }
 
 NAN_METHOD(node_glGetShaderiv) {
-  int shader   = info[0]->Uint32Value();
+  int shader = info[0]->Uint32Value();
   int flag   = info[1]->Uint32Value();
   GLint status;
 
@@ -1092,8 +1103,8 @@ NAN_METHOD(node_glGetShaderiv) {
 }
 
 NAN_METHOD(node_glGetProgramiv) {
-  int prog   = info[0]->Uint32Value();
-  int flag   = info[1]->Uint32Value();
+  int prog = info[0]->Uint32Value();
+  int flag = info[1]->Uint32Value();
   GLint status;
 
   glGetProgramiv(prog, flag, &status);
@@ -1102,7 +1113,7 @@ NAN_METHOD(node_glGetProgramiv) {
 }
 
 NAN_METHOD(node_glGetShaderInfoLog) {
-  int shader   = info[0]->Uint32Value();
+  int shader = info[0]->Uint32Value();
   char buffer[513];
 
   glGetShaderInfoLog(shader, 512, NULL, buffer);
@@ -1111,7 +1122,7 @@ NAN_METHOD(node_glGetShaderInfoLog) {
 }
 
 NAN_METHOD(node_glGetProgramInfoLog) {
-  int shader   = info[0]->Uint32Value();
+  int shader = info[0]->Uint32Value();
   char buffer[513];
 
   glGetProgramInfoLog(shader, 512, NULL, buffer);
@@ -1126,21 +1137,21 @@ NAN_METHOD(node_glCreateProgram) {
 }
 
 NAN_METHOD(node_glAttachShader) {
-  int prog     = info[0]->Uint32Value();
-  int shader   = info[1]->Uint32Value();
+  int prog   = info[0]->Uint32Value();
+  int shader = info[1]->Uint32Value();
 
   glAttachShader(prog, shader);
 }
 
 NAN_METHOD(node_glDetachShader) {
-  int prog     = info[0]->Uint32Value();
-  int shader   = info[1]->Uint32Value();
+  int prog   = info[0]->Uint32Value();
+  int shader = info[1]->Uint32Value();
 
   glDetachShader(prog, shader);
 }
 
 NAN_METHOD(node_glDeleteShader) {
-  int shader   = info[0]->Uint32Value();
+  int shader = info[0]->Uint32Value();
 
   glDeleteShader(shader);
 }
@@ -1152,13 +1163,13 @@ NAN_METHOD(node_glLinkProgram) {
 }
 
 NAN_METHOD(node_glUseProgram) {
-    GLuint prog  = info[0]->Uint32Value();
+    GLuint prog = info[0]->Uint32Value();
 
     glUseProgram(prog);
 }
 
 NAN_METHOD(node_glGetAttribLocation) {
-  int prog                 = info[0]->Uint32Value();
+  int prog = info[0]->Uint32Value();
   v8::String::Utf8Value name(info[1]);
   int loc = glGetAttribLocation(prog, *name);
 
@@ -1166,7 +1177,7 @@ NAN_METHOD(node_glGetAttribLocation) {
 }
 
 NAN_METHOD(node_glGetUniformLocation) {
-    int prog                 = info[0]->Uint32Value();
+    int prog = info[0]->Uint32Value();
     v8::String::Utf8Value name(info[1]);
     int loc = glGetUniformLocation(prog, *name);
 

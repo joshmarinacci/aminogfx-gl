@@ -5,6 +5,8 @@
 
 #include <cmath>
 
+#define DEBUG_FONTS true
+
 //
 // AminoFonts
 //
@@ -84,6 +86,9 @@ AminoFont::~AminoFont() {
     //empty
 }
 
+/**
+ * Destroy font data.
+ */
 void AminoFont::destroy() {
     AminoJSObject::destroy();
 
@@ -97,6 +102,7 @@ void AminoFont::destroy() {
     //atlas
     if (atlas) {
         texture_atlas_delete(atlas);
+        atlas = NULL;
     }
 
     //font data
@@ -135,6 +141,9 @@ NAN_METHOD(AminoFont::New) {
     AminoJSObject::createInstance(info, getFactory());
 }
 
+/**
+ * Initialize fonts instance.
+ */
 void AminoFont::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     AminoFonts *parent = Nan::ObjectWrap::Unwrap<AminoFonts>(info[0]->ToObject());
     v8::Local<v8::Object> fontData = info[1]->ToObject();
@@ -158,9 +167,13 @@ void AminoFont::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     v8::Local<v8::Value> nameValue = Nan::Get(fontData, Nan::New<v8::String>("name").ToLocalChecked()).ToLocalChecked();
     v8::Local<v8::Value> styleValue = Nan::Get(fontData, Nan::New<v8::String>("style").ToLocalChecked()).ToLocalChecked();
 
-    name = AminoJSObject::toString(nameValue);
-    weight = Nan::Get(fontData, Nan::New<v8::String>("weight").ToLocalChecked()).ToLocalChecked()->NumberValue();
-    style = AminoJSObject::toString(styleValue);
+    fontName = AminoJSObject::toString(nameValue);
+    fontWeight = Nan::Get(fontData, Nan::New<v8::String>("weight").ToLocalChecked()).ToLocalChecked()->NumberValue();
+    fontStyle = AminoJSObject::toString(styleValue);
+
+    if (DEBUG_FONTS) {
+        printf("-> new font: name=%s, style=%s, weight=%i\n", fontName.c_str(), fontStyle.c_str(), fontWeight);
+    }
 }
 
 /**
@@ -184,6 +197,10 @@ texture_font_t *AminoFont::getFontWithSize(int size) {
 
         if (fontSize) {
             fontSizes[size] = fontSize;
+        }
+
+        if (DEBUG_FONTS) {
+            printf("-> new font size: %i (%s/%s/%i)\n", size, fontName.c_str(), fontStyle.c_str(), fontWeight);
         }
     } else {
         fontSize = it->second;
@@ -270,10 +287,10 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     //font properties
     v8::Local<v8::Object> obj = handle();
 
-    Nan::Set(obj, Nan::New("name").ToLocalChecked(), Nan::New<v8::String>(parent->name).ToLocalChecked());
+    Nan::Set(obj, Nan::New("name").ToLocalChecked(), Nan::New<v8::String>(parent->fontName).ToLocalChecked());
     Nan::Set(obj, Nan::New("size").ToLocalChecked(), Nan::New<v8::Number>(size));
-    Nan::Set(obj, Nan::New("weight").ToLocalChecked(), Nan::New<v8::Number>(parent->weight));
-    Nan::Set(obj, Nan::New("style").ToLocalChecked(), Nan::New<v8::String>(parent->style).ToLocalChecked());
+    Nan::Set(obj, Nan::New("weight").ToLocalChecked(), Nan::New<v8::Number>(parent->fontWeight));
+    Nan::Set(obj, Nan::New("style").ToLocalChecked(), Nan::New<v8::String>(parent->fontStyle).ToLocalChecked());
 }
 
 NAN_METHOD(AminoFontSize::CalcTextWidth) {
