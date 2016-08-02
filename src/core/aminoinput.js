@@ -249,7 +249,7 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
 
     if (keyboardNodes.length > 0) {
         if (this.focusObjects.keyboard.target) {
-            fireEventAtTarget(this.focusObjects.keyboard.target, {
+            this.fireEventAtTarget(this.focusObjects.keyboard.target, {
                 type: 'focus.lose',
                 target: this.focusObjects.keyboard.target,
             });
@@ -257,13 +257,13 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
 
         this.focusObjects.keyboard.target = keyboardNodes[0];
 
-        fireEventAtTarget(this.focusObjects.keyboard.target, {
+        this.fireEventAtTarget(this.focusObjects.keyboard.target, {
             type: 'focus.gain',
             target: this.focusObjects.keyboard.target,
         });
     } else {
         if (this.focusObjects.keyboard.target) {
-            fireEventAtTarget(this.focusObjects.keyboard.target, {
+            this.fireEventAtTarget(this.focusObjects.keyboard.target, {
                 type: 'focus.lose',
                 target: this.focusObjects.keyboard.target,
             });
