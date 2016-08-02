@@ -547,9 +547,6 @@ void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value)
         printf("updateProperty(): %s\n", name.c_str());
     }
 
-    //create scope
-    Nan::HandleScope scope;
-
     //get property function
     v8::Local<v8::Object> obj = handle();
     Nan::MaybeLocal<v8::Value> prop = Nan::Get(obj, Nan::New<v8::String>(name).ToLocalChecked());
@@ -581,7 +578,9 @@ void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value)
     updateFunc->Call(obj, argc, argv);
 
     if (DEBUG_BASE) {
-        printf("-> updated property: %s\n", name.c_str());
+        std::string str = toString(value);
+
+        printf("-> updated property: %s to %s\n", name.c_str(), str.c_str());
     }
 }
 
@@ -603,6 +602,9 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
     assert(eventHandler);
 
     if (eventHandler->isMainThread()) {
+        //create scope
+        Nan::HandleScope scope;
+
         updateProperty(property->name, property->toValue());
     } else {
         //cbx sync handler
@@ -711,9 +713,6 @@ std::string AminoJSObject::FloatProperty::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::FloatProperty::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     return Nan::New<v8::Number>(value);
 }
 
@@ -811,9 +810,6 @@ std::string AminoJSObject::FloatArrayProperty::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::FloatArrayProperty::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     v8::Local<v8::Array> arr = Nan::New<v8::Array>();
     std::size_t count = value.size();
 
@@ -906,9 +902,6 @@ std::string AminoJSObject::Int32Property::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::Int32Property::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     return Nan::New<v8::Int32>(value);
 }
 
@@ -991,9 +984,6 @@ std::string AminoJSObject::UInt32Property::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::UInt32Property::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     return Nan::New<v8::Uint32>(value);
 }
 
@@ -1076,9 +1066,6 @@ std::string AminoJSObject::BooleanProperty::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::BooleanProperty::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     return Nan::New<v8::Boolean>(value);
 }
 
@@ -1169,9 +1156,6 @@ std::string AminoJSObject::Utf8Property::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::Utf8Property::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     return Nan::New<v8::String>(value).ToLocalChecked();
 }
 
@@ -1246,9 +1230,6 @@ std::string AminoJSObject::ObjectProperty::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::ObjectProperty::toValue() {
-    //create scope
-    Nan::HandleScope scope;
-
     if (value) {
         return value->handle();
     } else {

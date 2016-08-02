@@ -166,6 +166,10 @@ var handlers = {
         obj.sendKeyboardReleaseEvent(IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state));
     },
 
+    'window.size': function (obj, evt) {
+        obj.fireEventAtTarget(null, evt);
+    },
+
     'window.close': function (obj, evt) {
         obj.fireEventAtTarget(null, evt);
     }
