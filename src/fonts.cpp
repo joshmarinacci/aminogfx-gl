@@ -145,10 +145,10 @@ NAN_METHOD(AminoFont::New) {
  * Initialize fonts instance.
  */
 void AminoFont::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
-    AminoFonts *parent = Nan::ObjectWrap::Unwrap<AminoFonts>(info[0]->ToObject());
+    AminoFonts *fonts = Nan::ObjectWrap::Unwrap<AminoFonts>(info[0]->ToObject());
     v8::Local<v8::Object> fontData = info[1]->ToObject();
 
-    this->parent = parent;
+    this->fonts = fonts;
 
     //store font (in memory)
     v8::Local<v8::Object> bufferObj =  Nan::Get(fontData, Nan::New<v8::String>("data").ToLocalChecked()).ToLocalChecked()->ToObject();
@@ -274,11 +274,11 @@ NAN_METHOD(AminoFontSize::New) {
 }
 
 void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
-    AminoFont *parent = Nan::ObjectWrap::Unwrap<AminoFont>(info[0]->ToObject());
+    AminoFont *font = Nan::ObjectWrap::Unwrap<AminoFont>(info[0]->ToObject());
     int size = (int)round(info[1]->NumberValue());
 
-    this->parent = parent;
-    fontTexture = parent->getFontWithSize(size);
+    this->font = font;
+    fontTexture = font->getFontWithSize(size);
 
     if (!fontTexture) {
         Nan::ThrowTypeError("could not create font size");
@@ -287,10 +287,10 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     //font properties
     v8::Local<v8::Object> obj = handle();
 
-    Nan::Set(obj, Nan::New("name").ToLocalChecked(), Nan::New<v8::String>(parent->fontName).ToLocalChecked());
+    Nan::Set(obj, Nan::New("name").ToLocalChecked(), Nan::New<v8::String>(font->fontName).ToLocalChecked());
     Nan::Set(obj, Nan::New("size").ToLocalChecked(), Nan::New<v8::Number>(size));
-    Nan::Set(obj, Nan::New("weight").ToLocalChecked(), Nan::New<v8::Number>(parent->fontWeight));
-    Nan::Set(obj, Nan::New("style").ToLocalChecked(), Nan::New<v8::String>(parent->fontStyle).ToLocalChecked());
+    Nan::Set(obj, Nan::New("weight").ToLocalChecked(), Nan::New<v8::Number>(font->fontWeight));
+    Nan::Set(obj, Nan::New("style").ToLocalChecked(), Nan::New<v8::String>(font->fontStyle).ToLocalChecked());
 }
 
 NAN_METHOD(AminoFontSize::CalcTextWidth) {

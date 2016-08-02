@@ -425,7 +425,7 @@ public:
             fontSize = fs;
 
             //debug
-            //printf("-> use font: %s\n", fs->parent->fontName.c_str());
+            //printf("-> use font: %s\n", fs->font->fontName.c_str());
 
             updated = true;
             return;

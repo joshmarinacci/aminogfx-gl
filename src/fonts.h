@@ -69,7 +69,7 @@ private:
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 
 protected:
-    AminoFonts *parent = NULL;
+    AminoFonts *fonts = NULL;
     texture_atlas_t *atlas = NULL;
     Nan::Persistent<v8::Object> fontData;
     std::map<int, texture_font_t *> fontSizes;
@@ -95,7 +95,7 @@ class AminoFontSizeFactory;
 class AminoFontSize : public AminoJSObject {
 public:
     texture_font_t *fontTexture = NULL;
-    AminoFont *parent = NULL;
+    AminoFont *font = NULL;
 
     AminoFontSize();
     ~AminoFontSize();
