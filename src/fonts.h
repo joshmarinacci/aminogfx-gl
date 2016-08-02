@@ -129,6 +129,11 @@ public:
     AminoJSObject* create() override;
 };
 
+struct amino_atlas_t {
+    GLuint textureId;
+    size_t lastGlyphUpdate;
+};
+
 /**
  * Amino OpenGL font handler.
  */
@@ -142,12 +147,12 @@ public:
     GLint colorUni;
 
     //textures (Note: never destroyed)
-    std::map<texture_atlas_t *, GLuint> atlasTextures;
+    std::map<texture_atlas_t *, amino_atlas_t> atlasTextures;
 
     AminoFontShader(std::string shaderPath);
     virtual ~AminoFontShader();
 
-    GLuint getAtlasTexture(texture_atlas_t *atlas);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
 
 private:
     void loadShader(std::string shaderPath);

@@ -393,8 +393,8 @@ void AminoFontShader::loadShader(std::string shaderPath) {
     colorUni = glGetUniformLocation(shader, "color");
 }
 
-GLuint AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
-    std::map<texture_atlas_t *, GLuint>::iterator it = atlasTextures.find(atlas);
+amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
+    std::map<texture_atlas_t *, amino_atlas_t>::iterator it = atlasTextures.find(atlas);
 
     if (it == atlasTextures.end()) {
         //create new one
@@ -415,9 +415,17 @@ GLuint AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-        atlasTextures[atlas] = id;
+        amino_atlas_t item;
 
-        return id;
+        item.textureId = id;
+        item.lastGlyphUpdate = 0;
+
+        atlasTextures[atlas] = item;
+
+        //debug
+        //printf("create new atlas texture: %i\n", id);
+
+        return item;
     }
 
     return it->second;

@@ -236,6 +236,8 @@ void AminoGfx::addRuntimeProperty() {
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     Nan::Set(obj, Nan::New("maxTextureSize").ToLocalChecked(), Nan::New(maxTextureSize));
 
+    //cbx GL_MAX_TEXTURE_IMAGE_UNITS
+
     // 3) platform specific
     populateRuntimeProperties(obj);
 }
@@ -690,7 +692,10 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
     glDeleteTextures(1, &textureId);
 }
 
-GLuint AminoGfx::getAtlasTexture(texture_atlas_t *atlas) {
+/**
+ * Get texture for atlas.
+ */
+amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas) {
     assert(fontShader);
 
     return fontShader->getAtlasTexture(atlas);
@@ -775,41 +780,46 @@ AminoJSObject* AminoTextFactory::create() {
 // AminoText
 //
 
+/**
+ * Update texture (if modified).
+ */
 GLuint AminoText::updateTexture() {
-    //printf("updateTexture()\n");
-
     assert(fontSize);
     assert(fontSize->fontTexture);
     assert(fontSize->fontTexture->atlas);
 
-    if (textureId == INVALID_TEXTURE) {
-        //create texture (for atlas)
-        texture_atlas_t *atlas = fontSize->fontTexture->atlas;
-
-        textureId = getAminoGfx()->getAtlasTexture(atlas);
-
-        assert(textureId != INVALID_TEXTURE);
-    } else {
-        if (!textureUpdated) {
-            return textureId;
-        }
-    }
-
-    //update texture
     texture_atlas_t *atlas = fontSize->fontTexture->atlas;
 
     assert(atlas->depth == 1);
 
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    if (texture.textureId == INVALID_TEXTURE) {
+        //create texture (for atlas)
+        texture_atlas_t *atlas = fontSize->fontTexture->atlas;
+
+        texture = getAminoGfx()->getAtlasTexture(atlas);
+
+        assert(texture.textureId != INVALID_TEXTURE);
+    } else {
+        if (texture.lastGlyphUpdate == fontSize->fontTexture->glyphs->size) {
+            return texture.textureId;
+        }
+    }
+
+    //update texture
+    if (DEBUG_BASE) {
+        printf("-> updateTexture()\n");
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture.textureId);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
 
-    textureUpdated = false;
+    texture.lastGlyphUpdate = fontSize->fontTexture->glyphs->size;
 
     //printf("font texture updated\n");
     //printf("updateTexture() done\n");
 
-    return textureId;
+    return texture.textureId;
 }
 
 /**
@@ -1051,8 +1061,6 @@ bool AminoText::layoutText() {
 
     assert(f);
 
-    size_t lastGlyphCount = f->glyphs->size;
-
     vec2 pen;
 
     pen.x = 0;
@@ -1060,12 +1068,9 @@ bool AminoText::layoutText() {
 
     add_text(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
 
-    //update texture
-    if (f->glyphs->size != lastGlyphCount) {
-        textureUpdated = true;
+    if (DEBUG_BASE) {
+        printf("-> layoutText() done\n");
     }
-
-    //printf("layoutText() done\n");
 
     return true;
 }

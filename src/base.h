@@ -52,7 +52,7 @@ public:
     void removeAnimationAsync(AminoAnim *anim);
 
     void deleteTextureAsync(GLuint textureId);
-    GLuint getAtlasTexture(texture_atlas_t *atlas);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
 
 protected:
     bool started = false;
@@ -277,7 +277,6 @@ public:
     AminoFontSize *fontSize = NULL;
     vertex_buffer_t *buffer = NULL;
     bool updated = false;
-    bool textureUpdated = false;
 
     //alignment
     Utf8Property *propVAlign;
@@ -387,7 +386,9 @@ public:
                 printf("unknown wrap mode: %s\n", str.c_str());
             }
 
-            updated = wrap != oldWrap;
+            if (wrap != oldWrap) {
+                updated = true;
+            }
 
             return;
         }
@@ -409,7 +410,9 @@ public:
                 printf("unknown vAlign mode: %s\n", str.c_str());
             }
 
-            updated = vAlign != oldVAlign;
+            if (vAlign != oldVAlign) {
+                updated = true;
+            }
 
             return;
         }
@@ -443,7 +446,7 @@ public:
     GLuint updateTexture();
 
 private:
-    GLuint textureId = INVALID_TEXTURE;
+    amino_atlas_t texture = { INVALID_TEXTURE, 0 };
 
     /**
      * JS object construction.
