@@ -868,7 +868,6 @@ public:
 
     //image
     ObjectProperty *propTexture;
-    GLuint textureId = INVALID_TEXTURE;
 
     //  offset
     FloatProperty *propLeft;
@@ -912,31 +911,6 @@ public:
             propR = createFloatProperty("r");
             propG = createFloatProperty("g");
             propB = createFloatProperty("b");
-        }
-    }
-
-    /**
-     * Handle async property updates.
-     */
-    void handleAsyncUpdate(AsyncPropertyUpdate *update) override {
-        //default: set value
-        AminoJSObject::handleAsyncUpdate(update);
-
-        //texture
-        AnyProperty *property = update->property;
-
-        if (property == propTexture) {
-            //Note: texture object retain by propTexture
-            AminoTexture *texture = (AminoTexture *)propTexture->value;
-
-            if (!texture) {
-                textureId = INVALID_TEXTURE;
-            } else {
-                textureId = texture->textureId;
-            }
-
-            //debug
-            //printf("-> use texture %i\n", textureId);
         }
     }
 

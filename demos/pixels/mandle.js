@@ -1,7 +1,5 @@
 'use strict';
 
-//FIXME not yet supported
-
 var path = require('path');
 var amino = require('../../main.js');
 var child = require('child_process');
@@ -28,14 +26,21 @@ var Workman = {
     }
 };
 
-amino.start(function (core, stage) {
-    var root = new amino.Group().x(0).y(0);
-    var pv = new amino.PixelView().pw(500).w(500).ph(500).h(500);
+var gfx = new amino.AminoGfx();
+
+gfx.start(function (err) {
+    if (err) {
+        console.log('Start failed: ' + err.message);
+        return;
+    }
+
+    var root = this.createGroup().x(0).y(0);
+    var pv = this.createPixelView().pw(500).w(500).ph(500).h(500);
 
     root.add(pv);
-    stage.setRoot(root);
-    stage.w(500);
-    stage.h(500);
+    this.setRoot(root);
+    this.w(500);
+    this.h(500);
 
     function generateMandlebrot() {
         var w = pv.pw();
@@ -60,12 +65,12 @@ amino.start(function (core, stage) {
         for (var y = 0; y < h; y++) {
             var py = (y - h / 2) * 0.01;
             var msg = {
-                x0:(-w/2)*0.01,
-                x1:(+w/2)*0.01,
-                y:py,
+                x0: (- w / 2) * 0.01,
+                x1: (+ w / 2) * 0.01,
+                y: py,
                 iw: w,
-                iy:y,
-                iter:100000,
+                iy: y,
+                iter: 100000,
             };
 
             workman.sendWork(msg);

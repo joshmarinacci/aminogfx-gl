@@ -24,6 +24,7 @@ public:
     bool hasImage();
     void destroy() override;
     GLuint createTexture(GLuint textureId);
+    static GLuint createTexture(GLuint textureId, char *bufferData, size_t bufferLength, int w, int h, int bpp);
 
     void imageLoaded(v8::Local<v8::Object> &buffer, int w, int h, bool alpha, int bpp);
 
@@ -84,9 +85,11 @@ private:
     static NAN_METHOD(New);
 
     //JS methods
-    static NAN_METHOD(loadTexture);
+    static NAN_METHOD(LoadTextureFromImage);
+    static NAN_METHOD(LoadTextureFromBuffer);
 
     void createTexture(AsyncValueUpdate *update, int state);
+    void createTextureFromBuffer(AsyncValueUpdate *update, int state);
 };
 
 /**

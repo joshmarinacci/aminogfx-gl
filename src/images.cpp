@@ -303,6 +303,15 @@ GLuint AminoImage::createTexture(GLuint textureId) {
         printf("createTexture(): buffer=%d, size=%ix%i, bpp=%i\n", (int)bufferLength, w, h, bpp);
     }
 
+    return createTexture(textureId, bufferData, bufferLength, w, h, bpp);
+}
+
+/**
+ * Create texture.
+ *
+ * Note: only call from async handler!
+ */
+GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t bufferLength, int w, int h, int bpp) {
     assert(w * h * bpp == (int)bufferLength);
 
     GLuint texture;
@@ -481,7 +490,8 @@ v8::Local<v8::Function> AminoTexture::GetInitFunction() {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
     //methods
-    Nan::SetPrototypeMethod(tpl, "loadTexture", loadTexture);
+    Nan::SetPrototypeMethod(tpl, "loadTextureFromImage", LoadTextureFromImage);
+    Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
 
     //template function
     return Nan::GetFunction(tpl).ToLocalChecked();
@@ -514,11 +524,11 @@ void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
 /**
  * Load texture asynchronously.
  *
- * loadTexte(img, callback)
+ * loadTextureFromImage(img, callback)
  */
-NAN_METHOD(AminoTexture::loadTexture) {
+NAN_METHOD(AminoTexture::LoadTextureFromImage) {
     if (DEBUG_IMAGES) {
-        printf("-> loadTexture()\n");
+        printf("-> loadTextureFromImage()\n");
     }
 
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
@@ -597,6 +607,104 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
             delete callback;
             callback = NULL;
         }
+    }
+}
+
+typedef struct {
+    char *bufferData;
+    size_t bufferLen;
+    int w;
+    int h;
+    int bpp;
+    Nan::Callback *callback;
+} amino_texture_t;
+
+NAN_METHOD(AminoTexture::LoadTextureFromBuffer) {
+    if (DEBUG_IMAGES) {
+        printf("-> loadTextureFromBuffer()\n");
+    }
+
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    //data
+    v8::Local<v8::Object> data = info[0]->ToObject();
+    v8::Local<v8::Object> bufferObj = Nan::Get(data, Nan::New<v8::String>("buffer").ToLocalChecked()).ToLocalChecked()->ToObject();
+    amino_texture_t *textureData = new amino_texture_t();
+
+    textureData->bufferData = node::Buffer::Data(bufferObj);
+    textureData->bufferLen = node::Buffer::Length(bufferObj);
+    textureData->w = Nan::Get(data, Nan::New<v8::String>("w").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+    textureData->h = Nan::Get(data, Nan::New<v8::String>("h").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+    textureData->bpp = Nan::Get(data, Nan::New<v8::String>("bpp").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+
+    //callback
+    v8::Local<v8::Function> callback = info[1].As<v8::Function>();
+
+    textureData->callback = new Nan::Callback(callback);
+
+    //async loading
+    obj->enqueueValueUpdate(data, textureData, (asyncValueCallback)&AminoTexture::createTextureFromBuffer);
+}
+
+/**
+ * Create texture.
+ */
+void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) {
+    if (state == AsyncValueUpdate::STATE_APPLY) {
+        //create texture on OpenGL thread
+
+        if (DEBUG_IMAGES) {
+            printf("-> createTextureFromBuffer()\n");
+        }
+
+        amino_texture_t *textureData = (amino_texture_t *)update->data;
+
+        assert(textureData);
+
+        GLuint textureId = AminoImage::createTexture(this->textureId, textureData->bufferData, textureData->bufferLen, textureData->w, textureData->h, textureData->bpp);
+
+        if (textureId != INVALID_TEXTURE) {
+            //set values
+            this->textureId = textureId;
+
+            w = textureData->w;
+            h = textureData->h;
+        }
+    } else if (state == AsyncValueUpdate::STATE_DELETE) {
+        //on main thread
+        amino_texture_t *textureData = (amino_texture_t *)update->data;
+
+        assert(textureData);
+
+        if (this->textureId == INVALID_TEXTURE) {
+            //failed
+
+            if (textureData->callback) {
+                int argc = 1;
+                v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
+
+                textureData->callback->Call(handle(), argc, argv);
+            }
+
+            return;
+        }
+
+        v8::Local<v8::Object> obj = handle();
+
+        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+
+        //callback
+        if (textureData->callback) {
+            int argc = 2;
+            v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
+
+            textureData->callback->Call(obj, argc, argv);
+        }
+
+        //free
+        delete textureData;
+        update->data = NULL;
     }
 }
 

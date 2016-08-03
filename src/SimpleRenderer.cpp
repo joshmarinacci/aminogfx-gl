@@ -303,8 +303,9 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
     verts[5][1] = y;
 
     GLfloat opacity = rect->propOpacity->value * c->opacity;
+    AminoTexture *texture = (AminoTexture *)rect->propTexture->value;
 
-    if (rect->textureId != INVALID_TEXTURE) {
+    if (texture && texture->textureId != INVALID_TEXTURE) {
         //texture
 
         //image coordinates (fractional world coordinates)
@@ -322,7 +323,7 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
         texcoords[4][0] = tx;    texcoords[4][1] = ty2;
         texcoords[5][0] = tx;    texcoords[5][1] = ty;
 
-        textureShaderApply(c, textureShader, modelView, verts, texcoords, rect->textureId, opacity);
+        textureShaderApply(c, textureShader, modelView, verts, texcoords, texture->textureId, opacity);
     } else if (!rect->hasImage) {
         //color
         GLfloat colors[6][3];

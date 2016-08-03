@@ -192,6 +192,13 @@ AminoGfx.prototype.createImageView = function () {
 };
 
 /**
+ * Create pixel view element.
+ */
+AminoGfx.prototype.createPixelView = function () {
+    return new AminoGfx.PixelView(this);
+};
+
+/**
  * Create image view element.
  */
 AminoGfx.prototype.createTexture = function () {
@@ -816,7 +823,7 @@ ImageView.prototype.init = function () {
             var amino = self.amino;
             var texture = amino.createTexture(amino);
 
-            texture.loadTexture(img, function (err, texture) {
+            texture.loadTextureFromImage(img, function (err, texture) {
                 if (err) {
                     if (DEBUG) {
                         console.log('could not load texture: ' + err.message);
@@ -906,6 +913,112 @@ ImageView.prototype.init = function () {
 ImageView.prototype.contains = contains;
 
 //
+// PixelView
+//
+
+class PixelView extends ImageView {
+    /**
+     * Constructor.
+     */
+    constructor(amino) {
+        super(amino);
+    }
+}
+
+AminoGfx.PixelView = PixelView;
+
+PixelView.prototype.init = function () {
+    //get Rect properties
+    ImageView.prototype.init.call(this);
+
+    //bindings
+    makeProps(this, {
+        pw: 100,
+        ph: 100,
+        bpp: 4
+    });
+};
+
+PixelView.prototype.initDone = function () {
+    this.pw.watch(rebuildBuffer);
+    this.ph.watch(rebuildBuffer);
+
+    var self = this;
+
+    function rebuildBuffer() {
+        var w = self.pw();
+        var h = self.ph();
+        var len = w * h * 4;
+
+        if (!self.buf || self.buf.length != len) {
+            self.buf = new Buffer(len);
+        }
+
+        var c1 = [0, 0, 0];
+        var c2 = [255, 255, 255];
+        var buf = self.buf;
+
+        for (var x = 0; x < w; x++) {
+            for (var y = 0; y < h; y++) {
+                var i = (x + y * w) * 4;
+                var c;
+
+                if (x % 3 == 0) {
+                    c = c1;
+                } else {
+                    c = c2;
+                }
+
+                buf[i + 0] = c[0];
+                buf[i + 1] = c[1];
+                buf[i + 2] = c[2];
+                buf[i + 3] = 255;
+            }
+        }
+
+        self.updateTexture();
+    };
+
+    //texture
+    this.texture = this.amino.createTexture();
+    this.image(this.texture);
+
+    rebuildBuffer();
+};
+
+PixelView.prototype.updateTexture = function () {
+    this.texture.loadTextureFromBuffer({
+        buffer: this.buf,
+        w: this.pw(),
+        h: this.ph(),
+        bpp: this.bpp()
+    }, function (err) {
+        if (err) {
+            console.log('Could not create texture!');
+        }
+    });
+};
+
+PixelView.prototype.setPixel = function (x, y, r, g, b, a) {
+    var w = this.pw();
+    var i = (x + y * w) * 4;
+
+    var buf = this.buf;
+
+    buf[i + 0] = r;
+    buf[i + 1] = g;
+    buf[i + 2] = b;
+    buf[i + 3] = a;
+};
+
+PixelView.prototype.setPixeli32 = function (x, y, int) {
+    var w = this.pw();
+    var i = (x + y * w) * 4;
+
+    this.buf.writeUInt32BE(int, i);
+};
+
+//
 // Polygon
 //
 
@@ -968,7 +1081,12 @@ Polygon.prototype.contains = function () {
 //
 
 class Circle extends Polygon {
-    //see below
+    /**
+     * Constructor.
+     */
+    constructor(amino) {
+        super(amino);
+    }
 }
 
 AminoGfx.Circle = Circle;
@@ -1735,7 +1853,6 @@ input.init(OS);
 exports.input = input;
 
 //extended
-//exports.PixelView    = amino_core.PixelView;
 //exports.RichTextView = amino_core.RichTextView;
 
 //exports.PureImageView = amino.primitives.PureImageView;

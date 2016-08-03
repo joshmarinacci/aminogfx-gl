@@ -283,9 +283,10 @@ protected:
     class AsyncValueUpdate : public AnyAsyncUpdate {
     public:
         AminoJSObject *obj;
-        void *data;
+        void *data = NULL;
 
         //values
+        Nan::Persistent<v8::Value> *valuePersistent = NULL;
         AminoJSObject *valueObj = NULL;
         unsigned int valueUint32 = 0;
 
@@ -300,6 +301,7 @@ protected:
 
         AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback);
         AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback);
+        AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> value, void *data, asyncValueCallback callback);
         ~AsyncValueUpdate();
 
         void apply() override;
@@ -307,6 +309,7 @@ protected:
 
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
     bool enqueueValueUpdate(unsigned int value, asyncValueCallback callback);
+    bool enqueueValueUpdate(v8::Local<v8::Value> value, void *data, asyncValueCallback callback);
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     //static methods

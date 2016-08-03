@@ -416,7 +416,7 @@ bool AminoJSObject::isEventHandler() {
 /**
  * Enqueue a value update.
  *
- * Note: called on main thread.
+ * Note: has to be called on main thread.
  */
 bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback) {
     return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
@@ -425,10 +425,19 @@ bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback 
 /**
  * Enqueue a value update.
  *
- * Note: called on main thread.
+ * Note: has to be called on main thread.
  */
 bool AminoJSObject::enqueueValueUpdate(unsigned int value, asyncValueCallback callback) {
     return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
+}
+
+/**
+ * Enqueue a value update.
+ *
+ * Note: has to be called on main thread.
+ */
+bool AminoJSObject::enqueueValueUpdate(v8::Local<v8::Value> value, void *data, asyncValueCallback callback) {
+    return enqueueValueUpdate(new AsyncValueUpdate(this, value, data, callback));
 }
 
 /**
@@ -1355,6 +1364,20 @@ AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned i
     }
 }
 
+AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> value, void *data, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), data(data), callback(callback) {
+    //retain objects on main thread
+    obj->retain();
+
+    //value
+    valuePersistent = new Nan::Persistent<v8::Value>();
+    valuePersistent->Reset(value);
+
+    //init (on main thread)
+    if (callback) {
+        (obj->*callback)(this, STATE_CREATE);
+    }
+}
+
 AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
     //additional retains
     if (releaseLater) {
@@ -1371,6 +1394,12 @@ AminoJSObject::AsyncValueUpdate::~AsyncValueUpdate() {
 
     if (valueObj) {
         valueObj->release();
+    }
+
+    //peristent
+    if (valuePersistent) {
+        valuePersistent->Reset();
+        delete valuePersistent;
     }
 }
 
