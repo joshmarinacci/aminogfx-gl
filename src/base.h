@@ -476,6 +476,7 @@ private:
     AnyProperty *prop;
 
     bool started = false;
+    bool ended = false;
 
     float start;
     float end;
@@ -754,9 +755,15 @@ public:
      * End the animation.
      */
     void endAnimation() {
+        if (ended) {
+            return;
+        }
+
         if (DEBUG_BASE) {
             printf("Anim: endAnimation()\n");
         }
+
+        ended = true;
 
         //apply end state
         applyValue(end);
@@ -767,26 +774,40 @@ public:
                 printf("-> callback used\n");
             }
 
-            //create scope
-            Nan::HandleScope scope;
-//cbx enqueueSyncUpdate
-            //call
-            then->Call(handle(), 0, NULL);
+            enqueueJSCallbackUpdate((jsUpdateCallback)&AminoAnim::callThen, NULL, NULL);
         }
 
         //stop
-//cbx move to main thread (marked as stopped now)
+        enqueueJSCallbackUpdate((jsUpdateCallback)&AminoAnim::callStop, NULL, NULL);
+    }
+
+    /**
+     * Perform then() call on main thread.
+     */
+    void callThen(JSCallbackUpdate *update) {
+        //create scope
+        Nan::HandleScope scope;
+
+        //call
+        then->Call(handle(), 0, NULL);
+    }
+
+    /**
+     * Perform stop() call on main thread.
+     */
+    void callStop(JSCallbackUpdate *update) {
         stop();
     }
 
     void update(double currentTime) {
         //check active
-    	if (!started) {
+    	if (!started || ended) {
             return;
         }
 
         //check remaining loops
         if (count == 0) {
+            endAnimation();
             return;
         }
 

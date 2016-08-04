@@ -11,6 +11,7 @@
 #define ASYNC_UPDATE_PROPERTY      0
 #define ASYNC_UPDATE_VALUE         1
 #define ASYNC_JS_UPDATE_PROPERTY  10
+#define ASYNC_JS_UPDATE_CALLBACK  11
 #define ASYNC_UPDATE_CUSTOM      100
 
 //FIXME
@@ -322,6 +323,24 @@ protected:
     private:
         AnyProperty *property;
     };
+
+    class JSCallbackUpdate;
+    typedef void (AminoJSObject::*jsUpdateCallback)(JSCallbackUpdate *);
+
+    class JSCallbackUpdate: public AnyAsyncUpdate {
+    public:
+        AminoJSObject *obj;
+        jsUpdateCallback callbackApply;
+        jsUpdateCallback callbackDone;
+        void *data;
+
+        JSCallbackUpdate(AminoJSObject *obj, jsUpdateCallback callbackApply, jsUpdateCallback callbackDone, void *data);
+        ~JSCallbackUpdate();
+
+        void apply() override;
+    };
+
+    bool enqueueJSCallbackUpdate(jsUpdateCallback callbackApply, jsUpdateCallback callbackDone, void *data);
 
     //static methods
     static v8::Local<v8::FunctionTemplate> createTemplate(AminoJSObjectFactory* factory);

@@ -561,6 +561,24 @@ bool AminoJSObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
 }
 
 /**
+ * Enqueue JS callback update.
+ *
+ * Note: thread-safe.
+ */
+bool AminoJSObject::enqueueJSCallbackUpdate(jsUpdateCallback callbackApply, jsUpdateCallback callbackDone, void *data) {
+    //check queue exists
+    if (eventHandler) {
+        return eventHandler->enqueueJSUpdate(new JSCallbackUpdate(this, callbackApply, callbackDone, data));
+    }
+
+    if (DEBUG_BASE) {
+        printf("Missing event handler in %s\n", name.c_str());
+    }
+
+    return false;
+}
+
+/**
  * Get property with id.
  */
 AminoJSObject::AnyProperty* AminoJSObject::getPropertyWithId(int id) {
@@ -1471,6 +1489,26 @@ void AminoJSObject::JSPropertyUpdate::apply() {
 }
 
 //
+// AminoJSObject::JSCallbackUpdate
+//
+
+AminoJSObject::JSCallbackUpdate::JSCallbackUpdate(AminoJSObject *obj, jsUpdateCallback callbackApply, jsUpdateCallback callbackDone, void *data): AnyAsyncUpdate(ASYNC_JS_UPDATE_CALLBACK), obj(obj), callbackApply(callbackApply), callbackDone(callbackDone), data(data) {
+    //empty
+}
+
+AminoJSObject::JSCallbackUpdate::~JSCallbackUpdate() {
+    if (callbackDone) {
+        (obj->*callbackDone)(this);
+    }
+}
+
+void AminoJSObject::JSCallbackUpdate::apply() {
+    if (callbackApply) {
+        (obj->*callbackApply)(this);
+    }
+}
+
+//
 // AminoJSEventObject
 //
 
@@ -1715,6 +1753,8 @@ bool AminoJSEventObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
 
 bool AminoJSEventObject::enqueueJSUpdate(AnyAsyncUpdate *update) {
     if (destroyed) {
+        delete update;
+
         return false;
     }
 
