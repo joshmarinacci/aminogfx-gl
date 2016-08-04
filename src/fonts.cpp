@@ -148,6 +148,8 @@ void AminoFont::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     AminoFonts *fonts = Nan::ObjectWrap::Unwrap<AminoFonts>(info[0]->ToObject());
     v8::Local<v8::Object> fontData = info[1]->ToObject();
 
+    assert(fonts);
+
     this->fonts = fonts;
 
     //store font (in memory)
@@ -277,6 +279,8 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     AminoFont *font = Nan::ObjectWrap::Unwrap<AminoFont>(info[0]->ToObject());
     int size = (int)round(info[1]->NumberValue());
 
+    assert(font);
+
     this->font = font;
     fontTexture = font->getFontWithSize(size);
 
@@ -296,6 +300,8 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
 NAN_METHOD(AminoFontSize::CalcTextWidth) {
     AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
     v8::String::Utf8Value str(info[0]);
+
+    assert(obj);
 
     info.GetReturnValue().Set(obj->getTextWidth(*str));
 }
@@ -337,6 +343,8 @@ float AminoFontSize::getTextWidth(const char *text) {
 
 NAN_METHOD(AminoFontSize::GetFontMetrics) {
     AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
+
+    assert(obj);
 
     //metrics
     v8::Local<v8::Object> metricsObj = Nan::New<v8::Object>();

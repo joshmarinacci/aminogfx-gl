@@ -237,9 +237,7 @@ private:
 
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         //create scope
         Nan::HandleScope scope;
@@ -273,9 +271,7 @@ private:
     static void handleMouseMoveEvents(GLFWwindow *window, double x, double y) {
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         //create scope
         Nan::HandleScope scope;
@@ -301,9 +297,7 @@ private:
     static void handleMouseClickEvents(GLFWwindow *window, int button, int action, int mods) {
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         //create scope
         Nan::HandleScope scope;
@@ -331,9 +325,7 @@ private:
     static void handleMouseWheelEvents(GLFWwindow *window, double xoff, double yoff) {
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         //create scope
         Nan::HandleScope scope;
@@ -358,9 +350,7 @@ private:
 
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         obj->handleWindowSizeChanged(newWidth, newHeight);
     }
@@ -388,6 +378,8 @@ private:
         }
 
         //get framebuffer size
+        assert(window);
+
         glfwGetFramebufferSize(window, &viewportW, &viewportH);
 
         //check framebuffer size
@@ -422,9 +414,7 @@ private:
 
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         obj->handleWindowPosChanged(newX, newY);
     }
@@ -471,9 +461,7 @@ private:
     static void handleWindowCloseEvent(GLFWwindow *window) {
         AminoGfxMac *obj = windowToInstance(window);
 
-        if (!obj) {
-            return;
-        }
+        assert(obj);
 
         //create scope
         Nan::HandleScope scope;
@@ -497,6 +485,8 @@ private:
 
     void bindContext() override {
         //bind OpenGL context
+        assert(window);
+
         glfwMakeContextCurrent(window);
     }
 
@@ -505,6 +495,8 @@ private:
         //printf("renderingDone()\n");
 
         //swap
+        assert(window);
+
         glfwSwapBuffers(window);
 
         //handle events
@@ -523,6 +515,7 @@ private:
         //debug
         //printf("updateWindowSize()\n");
 
+        //ignore size changes before window is created
         if (!window) {
             return;
         }
@@ -545,6 +538,7 @@ private:
      * Note: has to be called on main thread
      */
     void updateWindowPosition() override {
+        //ignore position changes before window is created
         if (!window) {
             return;
         }
@@ -562,6 +556,7 @@ private:
      * Note: has to be called on main thread
      */
     void updateWindowTitle() override {
+        //ignore title changes before window is created
         if (!window) {
             return;
         }

@@ -155,6 +155,8 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
     //create new instance
     AminoJSObject *obj = factory->create();
 
+    assert(obj);
+
     obj->Wrap(info.This());
 
     //pre-init
@@ -346,6 +348,8 @@ AminoJSObject::ObjectProperty* AminoJSObject::createObjectProperty(std::string n
  * Note: has to be called in JS scope of setup()!
  */
 void AminoJSObject::addProperty(AnyProperty *prop) {
+    assert(prop);
+
     int id = prop->id;
     propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
 
@@ -376,6 +380,8 @@ NAN_METHOD(AminoJSObject::PropertyUpdated) {
     v8::Local<v8::Object> jsObj = info[2].As<v8::Object>();
     AminoJSObject *obj = Nan::ObjectWrap::Unwrap<AminoJSObject>(jsObj);
 
+    assert(obj);
+
     obj->enqueuePropertyUpdate(id, value);
 }
 
@@ -385,15 +391,17 @@ NAN_METHOD(AminoJSObject::PropertyUpdated) {
  * Note: retains the new event handler object instance.
  */
 void AminoJSObject::setEventHandler(AminoJSEventObject *handler) {
-    if (this->eventHandler != handler) {
-        if (this->eventHandler) {
-            this->eventHandler->release();
+    if (eventHandler != handler) {
+        if (eventHandler) {
+            eventHandler->release();
         }
 
-        this->eventHandler = handler;
+        eventHandler = handler;
 
         //retain handler instance (in addition to 'amino' JS property)
         if (handler) {
+            assert(!destroyed);
+
             handler->retain();
         }
     }
@@ -471,6 +479,8 @@ bool AminoJSObject::handleSyncUpdate(AnyProperty *property, void *data) {
 void AminoJSObject::handleAsyncUpdate(AsyncPropertyUpdate *update) {
     //overwrite for extended handling
 
+    assert(update);
+
     //default: update value
     update->apply();
 
@@ -487,6 +497,8 @@ void AminoJSObject::handleAsyncUpdate(AsyncPropertyUpdate *update) {
  */
 bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
     //overwrite
+
+    assert(update);
 
     if (update->callback) {
         update->apply();
@@ -507,11 +519,7 @@ bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
     AminoJSEventObject *eventHandler = this->eventHandler;
 
     if (!eventHandler) {
-        if (!isEventHandler()) {
-            printf("missing queue: %s\n", name.c_str());
-
-            return false;
-        }
+        assert(isEventHandler());
 
         eventHandler = (AminoJSEventObject *)this;
     }
@@ -604,6 +612,8 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
     //debug
     //printf("updateProperty() %s of %s\n", property->name.c_str(), name.c_str());
 
+    assert(property);
+
     AminoJSEventObject *eventHandler = this->eventHandler;
 
     if (!eventHandler && isEventHandler()) {
@@ -656,6 +666,8 @@ std::string* AminoJSObject::toNewString(v8::Local<v8::Value> &value) {
  */
 AminoJSObject::AnyProperty::AnyProperty(int type, AminoJSObject *obj, std::string name, int id): type(type), obj(obj), name(name), id(id) {
     //empty
+
+    assert(obj);
 }
 
 AminoJSObject::AnyProperty::~AnyProperty() {
@@ -1273,6 +1285,8 @@ void* AminoJSObject::ObjectProperty::getAsyncData(v8::Local<v8::Value> &value) {
         v8::Local<v8::Object> jsObj = value->ToObject();
         AminoJSObject *obj = Nan::ObjectWrap::Unwrap<AminoJSObject>(jsObj);
 
+        assert(obj);
+
         //retain reference on main thread
         obj->retain();
 
@@ -1342,6 +1356,8 @@ AminoJSObject::AnyAsyncUpdate::~AnyAsyncUpdate() {
 //
 
 AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueObj(value), callback(callback) {
+    assert(obj);
+
     //retain objects on main thread
     obj->retain();
 
@@ -1356,6 +1372,8 @@ AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, AminoJSObj
 }
 
 AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueUint32(value), callback(callback) {
+    assert(obj);
+
     //retain objects on main thread
     obj->retain();
 
@@ -1365,7 +1383,9 @@ AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned i
     }
 }
 
-AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> value, void *data, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), data(data), callback(callback) {
+AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> &value, void *data, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), data(data), callback(callback) {
+    assert(obj);
+
     //retain objects on main thread
     obj->retain();
 
@@ -1515,6 +1535,8 @@ void AminoJSEventObject::processAsyncQueue() {
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
         AnyAsyncUpdate *item = (*asyncUpdates)[i];
 
+        assert(item);
+
         switch (item->type) {
             case ASYNC_UPDATE_PROPERTY:
                 //property update
@@ -1590,6 +1612,8 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
         return false;
     }
 
+    assert(prop);
+
     //create
     void *data = prop->getAsyncData(value);
 
@@ -1623,6 +1647,8 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
  * Constructor.
  */
 AminoJSEventObject::AsyncPropertyUpdate::AsyncPropertyUpdate(AnyProperty *property, void *data): AnyAsyncUpdate(ASYNC_UPDATE_PROPERTY), property(property), data(data) {
+    assert(property);
+
     //retain instance to target object
     property->retain();
 }

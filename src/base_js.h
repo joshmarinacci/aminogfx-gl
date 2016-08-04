@@ -301,7 +301,7 @@ protected:
 
         AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback);
         AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback);
-        AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> value, void *data, asyncValueCallback callback);
+        AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> &value, void *data, asyncValueCallback callback);
         ~AsyncValueUpdate();
 
         void apply() override;
@@ -364,7 +364,7 @@ protected:
 private:
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
     std::vector<AnyAsyncUpdate *> *asyncDeletes = NULL;
-//cbx sync
+//cbxx sync
     uv_thread_t mainThread;
     pthread_mutex_t asyncLock;
 };

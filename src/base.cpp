@@ -3,6 +3,8 @@
 #include "SimpleRenderer.h"
 #include "fonts/utf8-utils.h"
 
+#define DEBUG_RENDERER false
+
 //
 //  AminoGfx
 //
@@ -107,6 +109,8 @@ void AminoGfx::setup() {
 NAN_METHOD(AminoGfx::Start) {
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
 
+    assert(obj);
+
     //validate state
     if (obj->startCallback || obj->started) {
         Nan::ThrowTypeError("already started");
@@ -171,6 +175,9 @@ NAN_METHOD(AminoGfx::InitColorShader) {
     };
 
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(obj);
+
     ColorShader *colorShader = obj->colorShader;
 
     colorShader->prog        = info[0]->Uint32Value();
@@ -196,6 +203,9 @@ NAN_METHOD(AminoGfx::InitTextureShader) {
     };
 
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(obj);
+
     TextureShader *textureShader = obj->textureShader;
 
     textureShader->prog        = info[0]->Uint32Value();
@@ -209,6 +219,9 @@ NAN_METHOD(AminoGfx::InitTextureShader) {
 
 NAN_METHOD(AminoGfx::InitFontShader) {
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(obj);
+
     v8::String::Utf8Value path(info[0]);
 
     assert(!obj->fontShader);
@@ -304,6 +317,8 @@ NAN_METHOD(AminoGfx::Tick) {
     //TODO reduce updates to refreshRate
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
 
+    assert(obj);
+
     obj->render();
 }
 
@@ -311,25 +326,54 @@ NAN_METHOD(AminoGfx::Tick) {
  * Render a scene (synchronous call).
  */
 void AminoGfx::render() {
+    //context
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: bindContext()\n");
+    }
+
     bindContext();
     rendering = true;
 
     //updates
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: handle updates\n");
+    }
+
     processAsyncQueue();
     processAnimations();
 
     //viewport
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: setupViewport()\n");
+    }
+
     setupViewport();
 
     //root
+        if (DEBUG_RENDERER) {
+        printf("-> renderer: renderScene()\n");
+    }
+
     renderScene();
 
     //done
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: renderingDone()\n");
+    }
+
     renderingDone();
     rendering = false;
 
     //cbx move to main thread
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: handleAsyncDeletes()\n");
+    }
+
     handleAsyncDeletes();
+
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: done\n");
+    }
 }
 
 /**
@@ -411,6 +455,8 @@ void AminoGfx::renderScene() {
  */
 NAN_METHOD(AminoGfx::Destroy) {
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(obj);
 
     if (obj->started && !obj->destroyed) {
         obj->destroy();
@@ -572,9 +618,13 @@ NAN_METHOD(AminoGfx::SetRoot) {
         group = NULL;
     } else {
         group = Nan::ObjectWrap::Unwrap<AminoGroup>(info[0]->ToObject());
+
+        assert(group);
     }
 
     AminoGfx *obj= Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(obj);
 
     obj->setRoot(group);
 }

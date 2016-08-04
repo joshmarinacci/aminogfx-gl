@@ -189,6 +189,8 @@ public:
         v8::Local<v8::Object> jsObj = info[0]->ToObject();
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(jsObj);
 
+        assert(obj);
+
         //bind to queue
         this->setEventHandler(obj);
         Nan::Set(handle(), Nan::New("amino").ToLocalChecked(), jsObj);
@@ -513,6 +515,9 @@ public:
         AminoNode *node = Nan::ObjectWrap::Unwrap<AminoNode>(info[1]->ToObject());
         unsigned int propId = info[2]->Uint32Value();
 
+        assert(obj);
+        assert(node);
+
         if (!node->checkRenderer(obj)) {
             return;
         }
@@ -585,6 +590,8 @@ public:
     static NAN_METHOD(Start) {
         AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
         v8::Local<v8::Object> data = info[0]->ToObject();
+
+        assert(obj);
 
         obj->handleStart(data);
     }
@@ -720,6 +727,8 @@ public:
 
     static NAN_METHOD(Stop) {
         AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
+
+        assert(obj);
 
         obj->stop();
     }
@@ -1136,6 +1145,9 @@ private:
         AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
+        assert(group);
+        assert(child);
+
         if (!child->checkRenderer(group)) {
             return;
         }
@@ -1167,6 +1179,9 @@ private:
     static NAN_METHOD(Remove) {
         AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
+
+        assert(group);
+        assert(child);
 
         //handle async
         group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::removeChild);

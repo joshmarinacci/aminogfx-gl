@@ -237,6 +237,8 @@ public:
         //store local values
         AminoImage *img = Nan::ObjectWrap::Unwrap<AminoImage>(obj);
 
+        assert(img);
+
         img->imageLoaded(buff, imgW, imgH, imgAlpha, imgBPP);
 
         //call callback
@@ -535,6 +537,8 @@ void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     v8::Local<v8::Object> jsObj = info[0]->ToObject();
     AminoJSEventObject *obj = Nan::ObjectWrap::Unwrap<AminoJSEventObject>(jsObj);
 
+    assert(obj);
+
     //bind to queue
     setEventHandler(obj);
     Nan::Set(handle(), Nan::New("amino").ToLocalChecked(), jsObj);
@@ -553,6 +557,8 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
     v8::Local<v8::Function> callback = info[1].As<v8::Function>();
 
+    assert(obj);
+
     if (obj->callback || obj->textureId != INVALID_TEXTURE) {
         //already set
         int argc = 1;
@@ -564,6 +570,8 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
 
     //image
     AminoImage *img = Nan::ObjectWrap::Unwrap<AminoImage>(info[0]->ToObject());
+
+    assert(img);
 
     if (!img->hasImage()) {
         //missing image
@@ -644,6 +652,8 @@ NAN_METHOD(AminoTexture::LoadTextureFromBuffer) {
     }
 
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
 
     //data
     v8::Local<v8::Object> data = info[0]->ToObject();
