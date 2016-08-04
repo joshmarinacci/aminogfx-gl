@@ -456,18 +456,37 @@ AminoTexture::~AminoTexture()  {
     //empty
 }
 
+/**
+ * Free resources.
+ */
 void AminoTexture::destroy() {
-    AminoJSObject::destroy();
+    if (destroyed) {
+        return;
+    }
 
     if (callback) {
         delete callback;
         callback = NULL;
     }
 
-    if (textureId != INVALID_TEXTURE && eventHandler) {
+    if (textureId != INVALID_TEXTURE) {
         //Note: we are on the main thread
-        ((AminoGfx *)eventHandler)->deleteTextureAsync(textureId);
+        if (eventHandler) {
+            ((AminoGfx *)eventHandler)->deleteTextureAsync(textureId);
+        }
+
+        textureId = INVALID_TEXTURE;
+        w = 0;
+        h = 0;
+
+        v8::Local<v8::Object> obj = handle();
+
+        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::Undefined());
+        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
     }
+
+    //Note: frees eventHandler
+    AminoJSObject::destroy();
 }
 
 /**
@@ -572,7 +591,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
         }
 
         AminoImage *img = (AminoImage *)update->valueObj;
-        GLuint textureId = img->createTexture(INVALID_TEXTURE);
+        GLuint textureId = img->createTexture(this->textureId);
 
         if (textureId != INVALID_TEXTURE) {
             //set values

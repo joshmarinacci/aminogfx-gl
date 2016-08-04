@@ -61,7 +61,7 @@ class AminoTextureFactory;
  */
 class AminoTexture : public AminoJSObject {
 public:
-    GLuint textureId = 0;
+    GLuint textureId = INVALID_TEXTURE;
     int w = 0;
     int h = 0;
 

@@ -17,6 +17,10 @@ void SimpleRenderer::startRender(AminoNode *root) {
 
     this->render(c, root);
     delete c;
+
+    if (DEBUG_RENDERER) {
+        printf("-> startRender() done\n");
+    }
 }
 
 void SimpleRenderer::render(GLContext *c, AminoNode *root) {
@@ -275,7 +279,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
 
 void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
     if (DEBUG_RENDERER) {
-        printf("-> drawRect()\n");
+        printf("-> drawRect() hasImage=%s\n", rect->hasImage ? "true":"false");
     }
 
     c->save();
@@ -303,29 +307,36 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
     verts[5][1] = y;
 
     GLfloat opacity = rect->propOpacity->value * c->opacity;
-    AminoTexture *texture = (AminoTexture *)rect->propTexture->value;
 
-    if (texture && texture->textureId != INVALID_TEXTURE) {
-        //texture
+    if (rect->hasImage) {
+        //has optional texture
+        AminoTexture *texture = (AminoTexture *)rect->propTexture->value;
 
-        //image coordinates (fractional world coordinates)
-        GLfloat texcoords[6][2];
-        float tx  = rect->propLeft->value;   //0
-        float ty2 = rect->propBottom->value; //1;
-        float tx2 = rect->propRight->value;  //1;
-        float ty  = rect->propTop->value;    //0;
+        if (texture && texture->textureId != INVALID_TEXTURE) {
+            //texture
 
-        texcoords[0][0] = tx;    texcoords[0][1] = ty;
-        texcoords[1][0] = tx2;   texcoords[1][1] = ty;
-        texcoords[2][0] = tx2;   texcoords[2][1] = ty2;
+            //debug
+            //printf("texture: %i\n", texture->textureId);
 
-        texcoords[3][0] = tx2;   texcoords[3][1] = ty2;
-        texcoords[4][0] = tx;    texcoords[4][1] = ty2;
-        texcoords[5][0] = tx;    texcoords[5][1] = ty;
+            //image coordinates (fractional world coordinates)
+            GLfloat texcoords[6][2];
+            float tx  = rect->propLeft->value;   //0
+            float ty2 = rect->propBottom->value; //1;
+            float tx2 = rect->propRight->value;  //1;
+            float ty  = rect->propTop->value;    //0;
 
-        textureShaderApply(c, textureShader, modelView, verts, texcoords, texture->textureId, opacity);
-    } else if (!rect->hasImage) {
-        //color
+            texcoords[0][0] = tx;    texcoords[0][1] = ty;
+            texcoords[1][0] = tx2;   texcoords[1][1] = ty;
+            texcoords[2][0] = tx2;   texcoords[2][1] = ty2;
+
+            texcoords[3][0] = tx2;   texcoords[3][1] = ty2;
+            texcoords[4][0] = tx;    texcoords[4][1] = ty2;
+            texcoords[5][0] = tx;    texcoords[5][1] = ty;
+
+            textureShaderApply(c, textureShader, modelView, verts, texcoords, texture->textureId, opacity);
+        }
+    } else {
+        //color only
         GLfloat colors[6][3];
         float r = rect->propR->value;
         float g = rect->propG->value;

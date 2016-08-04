@@ -618,7 +618,7 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
 
         updateProperty(property->name, property->toValue());
     } else {
-        //cbx sync handler
+        //cbxx sync handler
         assert(false);
     }
 }
@@ -1214,6 +1214,7 @@ AminoJSObject::ObjectProperty::~ObjectProperty() {
     //release instance
     if (value) {
         value->release();
+        value = NULL;
     }
 }
 
@@ -1468,13 +1469,18 @@ void AminoJSEventObject::handleAsyncDeletes() {
 
     std::size_t count = asyncDeletes->size();
 
-    for (std::size_t i = 0; i < count; i++) {
-        AnyAsyncUpdate *item = (*asyncDeletes)[i];
+    if (count > 0) {
+        //create scope
+        Nan::HandleScope scope;
 
-        delete item;
+        for (std::size_t i = 0; i < count; i++) {
+            AnyAsyncUpdate *item = (*asyncDeletes)[i];
+
+            delete item;
+        }
+
+        asyncDeletes->clear();
     }
-
-    asyncDeletes->clear();
 }
 
 /**
