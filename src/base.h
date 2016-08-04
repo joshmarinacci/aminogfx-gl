@@ -98,7 +98,7 @@ protected:
 
     virtual void render();
     void processAnimations();
-    virtual void bindContext() = 0;
+    virtual bool bindContext() = 0;
     virtual void setupViewport();
     virtual void renderScene();
     virtual void renderingDone() = 0;

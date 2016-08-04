@@ -483,11 +483,15 @@ private:
         glfwMakeContextCurrent(NULL);
     }
 
-    void bindContext() override {
+    bool bindContext() override {
         //bind OpenGL context
-        assert(window);
+        if (!window) {
+            return false;
+        }
 
         glfwMakeContextCurrent(window);
+
+        return true;
     }
 
     void renderingDone() override {

@@ -331,7 +331,9 @@ void AminoGfx::render() {
         printf("-> renderer: bindContext()\n");
     }
 
-    bindContext();
+    if (destroyed || !bindContext()) {
+        return;
+    }
     rendering = true;
 
     //updates
@@ -472,7 +474,9 @@ void AminoGfx::destroy() {
     //cbx join renderer thread
 
     //bind context
-    bindContext();
+    bool res = bindContext();
+
+    assert(res);
 
     //renderer (shader programs)
     if (colorShader) {
