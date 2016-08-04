@@ -373,6 +373,9 @@ void AminoGfx::render() {
 
     handleAsyncDeletes();
 
+    //cbx move to main tread
+    handleJSUpdates();
+
     if (DEBUG_RENDERER) {
         printf("-> renderer: done\n");
     }

@@ -8,9 +8,10 @@
 #include <memory>
 #include <pthread.h>
 
-#define ASYNC_UPDATE_PROPERTY   0
-#define ASYNC_UPDATE_VALUE      1
-#define ASYNC_UPDATE_CUSTOM   100
+#define ASYNC_UPDATE_PROPERTY      0
+#define ASYNC_UPDATE_VALUE         1
+#define ASYNC_JS_UPDATE_PROPERTY  10
+#define ASYNC_UPDATE_CUSTOM      100
 
 //FIXME
 #define DEBUG_BASE true
@@ -312,6 +313,16 @@ protected:
     bool enqueueValueUpdate(v8::Local<v8::Value> value, void *data, asyncValueCallback callback);
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
+    class JSPropertyUpdate: public AnyAsyncUpdate {
+    public:
+        JSPropertyUpdate(AnyProperty *property);
+        ~JSPropertyUpdate();
+
+        void apply() override;
+    private:
+        AnyProperty *property;
+    };
+
     //static methods
     static v8::Local<v8::FunctionTemplate> createTemplate(AminoJSObjectFactory* factory);
     static void createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObjectFactory* factory);
@@ -327,6 +338,9 @@ private:
     //async updates
     bool enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value);
     static NAN_METHOD(PropertyUpdated);
+
+    //JS updates
+    virtual bool enqueueJSPropertyUpdate(AnyProperty *prop);
 
 public:
     std::string getName();
@@ -353,6 +367,9 @@ public:
     bool enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> &value);
     bool enqueueValueUpdate(AsyncValueUpdate *update) override;
 
+    bool enqueueJSPropertyUpdate(AnyProperty *prop) override;
+    bool enqueueJSUpdate(AnyAsyncUpdate *update);
+
     bool isMainThread();
 
 protected:
@@ -360,11 +377,13 @@ protected:
     void processAsyncQueue();
     void clearAsyncQueue();
     void handleAsyncDeletes();
+    void handleJSUpdates();
 
 private:
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;
     std::vector<AnyAsyncUpdate *> *asyncDeletes = NULL;
-//cbxx sync
+    std::vector<AnyAsyncUpdate *> *jsUpdates = NULL;
+
     uv_thread_t mainThread;
     pthread_mutex_t asyncLock;
 };

@@ -529,7 +529,7 @@ bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
 
     if (!prop) {
         //property not found
-        printf("property with id=%i not found!\n", id);
+        printf("Property with id=%i not found!\n", id);
 
         return false;
     }
@@ -540,6 +540,24 @@ bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
     }
 
     return eventHandler->enqueuePropertyUpdate(prop, value);
+}
+
+/**
+ * Enqueue a JS property update (update JS value).
+ *
+ * Note: thread-safe.
+ */
+bool AminoJSObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
+    //check queue exists
+    if (eventHandler) {
+        return eventHandler->enqueueJSPropertyUpdate(prop);
+    }
+
+    if (DEBUG_BASE) {
+        printf("Missing event handler in %s\n", name.c_str());
+    }
+
+    return false;
 }
 
 /**
@@ -626,10 +644,9 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
         //create scope
         Nan::HandleScope scope;
 
-        updateProperty(property->name, property->toValue());
+        property->obj->updateProperty(property->name, property->toValue());
     } else {
-        //cbxx sync handler
-        assert(false);
+        enqueueJSPropertyUpdate(property);
     }
 }
 
@@ -1435,12 +1452,32 @@ void AminoJSObject::AsyncValueUpdate::apply() {
 }
 
 //
+// AminoJSObject::JSPropertyUpdate
+//
+
+AminoJSObject::JSPropertyUpdate::JSPropertyUpdate(AnyProperty *property): AnyAsyncUpdate(ASYNC_JS_UPDATE_PROPERTY), property(property) {
+    //empty
+}
+
+AminoJSObject::JSPropertyUpdate::~JSPropertyUpdate() {
+    //empty
+}
+
+/**
+ * Update JS property on main thread.
+ */
+void AminoJSObject::JSPropertyUpdate::apply() {
+    property->obj->updateProperty(property->name, property->toValue());
+}
+
+//
 // AminoJSEventObject
 //
 
 AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
     asyncUpdates = new std::vector<AnyAsyncUpdate *>();
     asyncDeletes = new std::vector<AnyAsyncUpdate *>();
+    jsUpdates = new std::vector<AnyAsyncUpdate *>();
 
     //main thread
     mainThread = uv_thread_self();
@@ -1450,10 +1487,16 @@ AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
 
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+
+    // asyncLock
     pthread_mutex_init(&asyncLock, &attr);
 }
 
 AminoJSEventObject::~AminoJSEventObject() {
+    //JS updates
+    handleJSUpdates();
+    delete jsUpdates;
+
     //asyncUpdates
     clearAsyncQueue();
     delete asyncUpdates;
@@ -1504,6 +1547,33 @@ void AminoJSEventObject::handleAsyncDeletes() {
 }
 
 /**
+ * Process all JS updates on main thread.
+ */
+void AminoJSEventObject::handleJSUpdates() {
+    assert(jsUpdates);
+
+    std::size_t count = jsUpdates->size();
+
+    if (count > 0) {
+        //create scope
+        Nan::HandleScope scope;
+
+        pthread_mutex_lock(&asyncLock);
+
+        for (std::size_t i = 0; i < count; i++) {
+            AnyAsyncUpdate *item = (*jsUpdates)[i];
+
+            item->apply();
+            delete item;
+        }
+
+        pthread_mutex_unlock(&asyncLock);
+
+        jsUpdates->clear();
+    }
+}
+
+/**
  * Check if running on main thread.
  */
 bool AminoJSEventObject::isMainThread() {
@@ -1528,9 +1598,9 @@ void AminoJSEventObject::processAsyncQueue() {
     }
 
     //iterate
-    pthread_mutex_lock(&asyncLock);
-
     assert(asyncUpdates);
+
+    pthread_mutex_lock(&asyncLock);
 
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
         AnyAsyncUpdate *item = (*asyncUpdates)[i];
@@ -1603,7 +1673,7 @@ bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
 }
 
 /**
- * Enqueue a property update.
+ * Enqueue a property update (value change from JS code).
  *
  * Note: called on main thread.
  */
@@ -1639,8 +1709,22 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     return true;
 }
 
+bool AminoJSEventObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
+    return enqueueJSUpdate(new JSPropertyUpdate(prop));
+}
+
+bool AminoJSEventObject::enqueueJSUpdate(AnyAsyncUpdate *update) {
+    if (destroyed) {
+        return false;
+    }
+
+    pthread_mutex_lock(&asyncLock);
+    jsUpdates->push_back(update);
+    pthread_mutex_unlock(&asyncLock);
+}
+
 //
-// AminoJSObject::AsyncPropertyUpdate
+// AminoJSEventObject::AsyncPropertyUpdate
 //
 
 /**
