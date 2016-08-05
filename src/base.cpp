@@ -55,7 +55,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
     Nan::SetTemplate(tpl, "Group", AminoGroup::GetInitFunction());
 
-    // other
+    // primitives
     Nan::SetTemplate(tpl, "Rect", AminoRect::GetRectInitFunction());
     Nan::SetTemplate(tpl, "ImageView", AminoRect::GetImageViewInitFunction());
     Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
@@ -65,6 +65,9 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
 
     //special: GL object
     Nan::SetTemplate(tpl, "GL", createGLObject());
+
+    //stats
+    Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
 
     //global template instance
     v8::Local<v8::Function> func = Nan::GetFunction(tpl).ToLocalChecked();
@@ -730,6 +733,21 @@ void AminoGfx::setRoot(AminoGroup *group) {
     if (group) {
         group->retain();
     }
+}
+
+/**
+ * Get runtime statistics.
+ */
+NAN_METHOD(AminoGfx::GetStats) {
+    AminoGfx *gfx = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+
+    Nan::Set(obj, Nan::New("activeInstances").ToLocalChecked(), Nan::New(activeInstances));
+    Nan::Set(obj, Nan::New("totalInstances").ToLocalChecked(), Nan::New(totalInstances));
+
+    gfx->getStats(obj);
+
+    info.GetReturnValue().Set(obj);
 }
 
 /**

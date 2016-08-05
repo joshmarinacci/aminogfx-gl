@@ -34,6 +34,9 @@ AminoJSObject::AminoJSObject(std::string name) {
     if (DEBUG_BASE) {
         printf("%s constructor\n", name.c_str());
     }
+
+    activeInstances++;
+    totalInstances++;
 }
 
 /**
@@ -52,6 +55,8 @@ AminoJSObject::~AminoJSObject() {
     for (std::map<int, AnyProperty *>::iterator iter = propertyMap.begin(); iter != propertyMap.end(); iter++) {
         delete iter->second;
     }
+
+    activeInstances--;
 }
 
 /**
@@ -691,6 +696,9 @@ std::string* AminoJSObject::toNewString(v8::Local<v8::Value> &value) {
     //convert it to string
     return new std::string(*str);
 }
+
+int AminoJSObject::activeInstances = 0;
+int AminoJSObject::totalInstances = 0;
 
 //
 // AminoJSObject::AnyProperty
@@ -1621,6 +1629,18 @@ void AminoJSEventObject::handleJSUpdates() {
 
         pthread_mutex_unlock(&asyncLock);
     }
+}
+
+/**
+ * Get runtime specific data.
+ */
+void AminoJSEventObject::getStats(v8::Local<v8::Object> &obj) {
+    //internal
+    /*
+    Nan::Set(obj, Nan::New("jsUpdates").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)jsUpdates->size()));
+    Nan::Set(obj, Nan::New("asyncUpdates").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)asyncUpdates->size()));
+    Nan::Set(obj, Nan::New("asyncDeletes").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)asyncDeletes->size()));
+    */
 }
 
 /**

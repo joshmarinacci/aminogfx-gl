@@ -141,6 +141,7 @@ private:
     static NAN_METHOD(InitTextureShader);
     static NAN_METHOD(InitFontShader);
     static NAN_METHOD(SetRoot);
+    static NAN_METHOD(GetStats);
 
     //GL
     static v8::Local<v8::Object> createGLObject();

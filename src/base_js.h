@@ -47,6 +47,10 @@ protected:
     AminoJSEventObject *eventHandler = NULL;
     bool destroyed = false;
 
+    //stats
+    static int activeInstances;
+    static int totalInstances;
+
     AminoJSObject(std::string name);
     virtual ~AminoJSObject();
 
@@ -397,6 +401,8 @@ protected:
     void clearAsyncQueue();
     void handleAsyncDeletes();
     void handleJSUpdates();
+
+    void getStats(v8::Local<v8::Object> &obj);
 
 private:
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;

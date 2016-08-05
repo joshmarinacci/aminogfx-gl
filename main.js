@@ -253,6 +253,19 @@ AminoGfx.prototype.destroy = function () {
 */
 };
 
+/**
+ * Get runtime system info.
+ */
+AminoGfx.prototype.getStats = function () {
+    var stats = this._getStats();
+    var mem = process.memoryUsage();
+
+    stats.heapUsed = mem.heapUsed;
+    stats.heapTotal = mem.heapTotal;
+
+    return stats;
+};
+
 AminoGfx.prototype.find = function (id) {
     function findNodeById(id, node) {
         if (node.id && node.id == id) {
