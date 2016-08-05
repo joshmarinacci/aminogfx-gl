@@ -348,13 +348,22 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    //clamp to border
+    /*
+     * clamp to border
+     *
+     * FIXME cbx not supported by OpenGL ES 2.0
+     *
+     * - https://lists.cairographics.org/archives/cairo/2011-February/021715.html
+     * - https://wiki.linaro.org/WorkingGroups/Middleware/Graphics/GLES2PortingTips
+     */
+    /*
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
     float color[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
+    */
 
     return texture;
 }

@@ -1057,7 +1057,6 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
 
                             //update existing glyphs
                             float xOffset = pen->x; //case: space before
-                            float xLast = 0;
 
                             for (size_t j = start; j < count; j++) {
                                 //glyph info
@@ -1083,7 +1082,6 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
                                     vertices++;
                                 }
 
-                                xLast = vertices->x;
                                 linePos++;
                             }
 
