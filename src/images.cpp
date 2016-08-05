@@ -351,12 +351,16 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
     /*
      * clamp to border
      *
-     * FIXME cbx not supported by OpenGL ES 2.0
+     * Note: GL_CLAMP_TO_BORDER not supported by OpenGL ES 2.0
      *
      * - https://lists.cairographics.org/archives/cairo/2011-February/021715.html
      * - https://wiki.linaro.org/WorkingGroups/Middleware/Graphics/GLES2PortingTips
+     *
+     * Workaround: use GL_CLAMP_TO_EDGE and clip pixels outside in shader
      */
+
     /*
+    //code below works on macOS
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
@@ -364,6 +368,9 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
 
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
     */
+
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     return texture;
 }

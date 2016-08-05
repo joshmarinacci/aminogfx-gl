@@ -98,6 +98,7 @@ gfx.start(function (err) {
 
     // 4) contain
     iv.w(100).h(50);
+    //iv.w(50).h(100); //clamp test
     iv.size('contain');
 
     g.add(iv);
