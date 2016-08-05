@@ -68,6 +68,11 @@ protected:
     AminoFontShader *fontShader = NULL;
     GLfloat *modelView;
 
+    //thread
+    uv_thread_t thread;
+    bool threadRunning = false;
+    uv_async_t asyncHandle;
+
     //properties
     FloatProperty *propX;
     FloatProperty *propY;
@@ -96,6 +101,13 @@ protected:
     virtual void start();
     void ready();
 
+    void startRenderingThread();
+    void stopRenderingThread();
+    bool isRenderingThreadRunning();
+    static void renderingThread(void *arg);
+    static void handleRenderEvents(uv_async_t *handle);
+    virtual void handleSystemEvents() = 0;
+
     virtual void render();
     void processAnimations();
     virtual bool bindContext() = 0;
@@ -123,7 +135,6 @@ private:
     //JS methods
     static NAN_METHOD(Start);
     static NAN_METHOD(Destroy);
-    static NAN_METHOD(Tick);
     static NAN_METHOD(InitColorShader);
     static NAN_METHOD(InitTextureShader);
     static NAN_METHOD(InitFontShader);

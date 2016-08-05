@@ -36,6 +36,8 @@ public:
 
 private:
     Nan::Persistent<v8::Object> buffer;
+    char *bufferData = NULL;
+    size_t bufferLength = 0;
 
     //JS constructor
     static NAN_METHOD(New);

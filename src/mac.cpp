@@ -41,7 +41,6 @@ private:
 
     //GLFW window
     GLFWwindow *window = NULL;
-    bool resizing = false;
 
     static AminoGfxMac* windowToInstance(GLFWwindow *window) {
         std::map<GLFWwindow *, AminoGfxMac *>::iterator it = windowMap->find(window);
@@ -394,12 +393,6 @@ private:
         Nan::Set(event_obj, Nan::New("width").ToLocalChecked(),  Nan::New(propW->value));
         Nan::Set(event_obj, Nan::New("height").ToLocalChecked(), Nan::New(propH->value));
 
-        //render
-        //TODO no longer needed in threaded implementation
-        resizing = true;
-        render();
-        resizing = false;
-
         //fire
         fireEvent(event_obj);
     }
@@ -502,12 +495,11 @@ private:
         assert(window);
 
         glfwSwapBuffers(window);
+    }
 
+    void handleSystemEvents() override {
         //handle events
-        //TODO send event to handle events on main thread
-        if (!resizing) {
-            glfwPollEvents();
-        }
+        glfwPollEvents();
     }
 
     /**

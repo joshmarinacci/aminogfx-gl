@@ -53,7 +53,10 @@ public:
         //mutex
         if (!jpegMutexInitalized) {
             jpegMutexInitalized = true;
-            uv_mutex_init(&jpegMutex);
+
+            int res = uv_mutex_init(&jpegMutex);
+
+            assert(res == 0);
         }
     }
 
@@ -295,11 +298,6 @@ GLuint AminoImage::createTexture(GLuint textureId) {
         return INVALID_TEXTURE;
     }
 
-    //buffer
-    v8::Local<v8::Object> bufferObj = Nan::New(buffer);
-    char *bufferData = node::Buffer::Data(bufferObj);
-    size_t bufferLength = node::Buffer::Length(bufferObj);
-
     //debug
     if (DEBUG_IMAGES) {
         printf("createTexture(): buffer=%d, size=%ix%i, bpp=%i\n", (int)bufferLength, w, h, bpp);
@@ -420,6 +418,10 @@ void AminoImage::imageLoaded(v8::Local<v8::Object> &buffer, int w, int h, bool a
     this->h = h;
     this->alpha = alpha;
     this->bpp = bpp;
+
+    //get buffer data for OpenGL thread
+    bufferData = node::Buffer::Data(buffer);
+    bufferLength = node::Buffer::Length(buffer);
 }
 
 //

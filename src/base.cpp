@@ -32,7 +32,6 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // basic
     Nan::SetPrototypeMethod(tpl, "_start", Start);
     Nan::SetPrototypeMethod(tpl, "_destroy", Destroy);
-    Nan::SetPrototypeMethod(tpl, "tick", Tick);
 
     // shader
     Nan::SetPrototypeMethod(tpl, "initColorShader", InitColorShader);
@@ -306,20 +305,89 @@ void AminoGfx::ready() {
         printf("-> started\n");
     }
 
-    //TODO create rendering thread cbx
+    //start rendering
+    startRenderingThread();
 }
 
 /**
- * System has time to render a new scene.
+ * Render thread.
  */
-NAN_METHOD(AminoGfx::Tick) {
-    //TODO check fps
-    //TODO reduce updates to refreshRate
-    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+void AminoGfx::renderingThread(void *arg) {
+    AminoGfx *gfx = (AminoGfx *)arg;
 
-    assert(obj);
+    while (gfx->isRenderingThreadRunning()) {
+        gfx->render();
+    }
+}
 
-    obj->render();
+/**
+ * Start rendering in asynchronous thread.
+ */
+void AminoGfx::startRenderingThread() {
+    if (threadRunning) {
+        return;
+    }
+
+    int res = uv_thread_create(&thread, renderingThread, this);
+
+    assert(res == 0);
+
+    threadRunning = true;
+
+    asyncHandle.data = this;
+    uv_async_init(uv_default_loop(), &asyncHandle, AminoGfx::handleRenderEvents);
+}
+
+/**
+ * Signal from rendering thread to check for async updates.
+ */
+void AminoGfx::handleRenderEvents(uv_async_t *handle) {
+    if (DEBUG_RENDERER) {
+        printf("-> renderer: handleAsyncDeletes()\n");
+    }
+
+    AminoGfx *gfx = (AminoGfx *)handle->data;
+
+    //create scope
+    Nan::HandleScope scope;
+
+    gfx->handleJSUpdates();
+    gfx->handleAsyncDeletes();
+
+    //handle events
+    gfx->handleSystemEvents();
+}
+
+/**
+ * Stop rendering thread.
+ *
+ * Note: has to be called on main thread!
+ */
+void AminoGfx::stopRenderingThread() {
+    if (!threadRunning) {
+        return;
+    }
+
+    threadRunning = false;
+
+    int res = uv_thread_join(&thread);
+
+    assert(res == 0);
+
+    //process remaining events
+    res = uv_async_send(&asyncHandle);
+
+    assert(res == 0);
+
+    //destroy handle
+    uv_close((uv_handle_t *)&asyncHandle, NULL);
+}
+
+/**
+ * Check OpenGL thread status.
+ */
+bool AminoGfx::isRenderingThreadRunning() {
+    return threadRunning;
 }
 
 /**
@@ -344,6 +412,11 @@ void AminoGfx::render() {
     processAsyncQueue();
     processAnimations();
 
+    //send signal to main thread to handle queues
+    int res = uv_async_send(&asyncHandle);
+
+    assert(res == 0);
+
     //viewport
     if (DEBUG_RENDERER) {
         printf("-> renderer: setupViewport()\n");
@@ -352,7 +425,7 @@ void AminoGfx::render() {
     setupViewport();
 
     //root
-        if (DEBUG_RENDERER) {
+    if (DEBUG_RENDERER) {
         printf("-> renderer: renderScene()\n");
     }
 
@@ -365,16 +438,6 @@ void AminoGfx::render() {
 
     renderingDone();
     rendering = false;
-
-    //cbx move to main thread
-    if (DEBUG_RENDERER) {
-        printf("-> renderer: handleAsyncDeletes()\n");
-    }
-
-    handleAsyncDeletes();
-
-    //cbx move to main tread
-    handleJSUpdates();
 
     if (DEBUG_RENDERER) {
         printf("-> renderer: done\n");
@@ -474,9 +537,10 @@ NAN_METHOD(AminoGfx::Destroy) {
  * Note: has to run on main thread.
  */
 void AminoGfx::destroy() {
-    //cbx join renderer thread
+    //stop thread
+    stopRenderingThread();
 
-    //bind context
+    //bind context (to main thread)
     bool res = bindContext();
 
     assert(res);

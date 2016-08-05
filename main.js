@@ -153,9 +153,6 @@ AminoGfx.prototype.start = function (done) {
             if (!self.root) {
                 throw new Error('Missing root!');
             }
-
-            //start rendering loop
-            self.startTimer();
         });
     });
 };
@@ -226,38 +223,6 @@ AminoGfx.prototype.createText = function () {
     return new AminoGfx.Text(this);
 };
 
-AminoGfx.prototype.startTimer = function () {
-    if (this.timer) {
-        return;
-    }
-
-    var self = this;
-
-    function immediateLoop() {
-        //debug
-        //console.log('tick()');
-
-        self.tick();
-
-        //debug: fps
-        if (DEBUG_FPS) {
-            var time = (new Date()).getTime();
-
-            if (self.lastTime) {
-                console.log('fps: ' + (1000 / (time - self.lastTime)));
-            }
-
-            self.lastTime = time;
-        }
-
-        //next cycle
-        self.timer = setImmediate(immediateLoop);
-    }
-
-    //see https://nodejs.org/api/timers.html#timers_setimmediate_callback_arg
-    this.timer = setImmediate(immediateLoop);
-};
-
 /**
  * Handle an event.
  */
@@ -276,11 +241,6 @@ AminoGfx.prototype.handleEvent = function (evt) {
  * Destroy renderer.
  */
 AminoGfx.prototype.destroy = function () {
-    if (this.timer) {
-        clearImmediate(this.timer);
-        this.timer = null;
-    }
-
     this._destroy();
 
 /*

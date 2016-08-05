@@ -1549,9 +1549,13 @@ AminoJSEventObject::~AminoJSEventObject() {
 
 /**
  * Clear async updates.
+ *
+ * Note: items are never applied.
  */
 void AminoJSEventObject::clearAsyncQueue() {
     assert(asyncUpdates);
+
+    pthread_mutex_lock(&asyncLock);
 
     std::size_t count = asyncUpdates->size();
 
@@ -1560,6 +1564,10 @@ void AminoJSEventObject::clearAsyncQueue() {
 
         delete item;
     }
+
+    asyncUpdates->clear();
+
+    pthread_mutex_unlock(&asyncLock);
 }
 
 /**
@@ -1567,6 +1575,8 @@ void AminoJSEventObject::clearAsyncQueue() {
  */
 void AminoJSEventObject::handleAsyncDeletes() {
     assert(asyncDeletes);
+
+    pthread_mutex_lock(&asyncLock);
 
     std::size_t count = asyncDeletes->size();
 
@@ -1582,6 +1592,8 @@ void AminoJSEventObject::handleAsyncDeletes() {
 
         asyncDeletes->clear();
     }
+
+    pthread_mutex_unlock(&asyncLock);
 }
 
 /**
@@ -1598,16 +1610,16 @@ void AminoJSEventObject::handleJSUpdates() {
 
         pthread_mutex_lock(&asyncLock);
 
-        for (std::size_t i = 0; i < count; i++) {
+        for (std::size_t i = 0; i < jsUpdates->size(); i++) {
             AnyAsyncUpdate *item = (*jsUpdates)[i];
 
             item->apply();
             delete item;
         }
 
-        pthread_mutex_unlock(&asyncLock);
-
         jsUpdates->clear();
+
+        pthread_mutex_unlock(&asyncLock);
     }
 }
 
