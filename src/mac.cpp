@@ -561,8 +561,8 @@ private:
     }
 };
 
-int AminoGfxMac::instanceCount;
-bool AminoGfxMac::glfwInitialized;
+int AminoGfxMac::instanceCount = 0;
+bool AminoGfxMac::glfwInitialized = false;
 std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLFWwindow *, AminoGfxMac *>();
 
 //

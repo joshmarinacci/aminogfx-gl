@@ -107,6 +107,7 @@ private:
         assert(EGL_FALSE != res);
 
         //get an appropriate EGL frame buffer configuration
+        //this uses a BRCM extension that gets the closest match, rather than standard which returns anything that matches
         static const EGLint attribute_list[] = {
             EGL_RED_SIZE, 8,
             EGL_GREEN_SIZE, 8,
@@ -118,7 +119,7 @@ private:
 
         EGLint num_config;
 
-        res = eglChooseConfig(display, attribute_list, &config, 1, &num_config);
+        res = eglSaneChooseConfigBRCM(display, attribute_list, &config, 1, &num_config);
 
         assert(EGL_FALSE != res);
 
@@ -157,7 +158,7 @@ private:
             return;
         }
 
-        //destroy basic instance
+        //destroy basic instance (activates context)
         AminoGfx::destroy();
 
         //OpenGL ES
@@ -165,6 +166,11 @@ private:
             if (context != EGL_NO_CONTEXT) {
                 eglDestroyContext(display, context);
                 context = EGL_NO_CONTEXT;
+            }
+
+            if (surface != EGL_NO_SURFACE) {
+                eglDestroySurface(display, surface);
+                surface = EGL_NO_SURFACE;
             }
 
             eglTerminate(display);
@@ -229,6 +235,9 @@ private:
         updateSize(screenW, screenH);
         updatePosition(0, 0);
 
+        viewportW = screenW;
+        viewportH = screenH;
+
         //Dispmanx init
         DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0 /* LCD */);
         DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
@@ -267,7 +276,7 @@ private:
         vc_dispmanx_update_submit_sync(dispman_update);
 
         //create EGL surface
-        EGL_DISPMANX_WINDOW_T native_window;
+        static EGL_DISPMANX_WINDOW_T native_window;
 
         native_window.element = dispman_element;
         native_window.width = screenW;
@@ -639,8 +648,8 @@ private:
     }
 };
 
-int AminoGfxRPi::instanceCount;
-bool AminoGfxRPi::glESInitialized;
+int AminoGfxRPi::instanceCount = 0;
+bool AminoGfxRPi::glESInitialized = false;
 
 //
 // AminoGfxRPiFactory
