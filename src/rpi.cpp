@@ -6,8 +6,8 @@
 #include <dirent.h>
 #include <stdio.h>
 
-#define DEBUG_GLES false
-#define DEBUG_RENDER false
+#define DEBUG_GLES true
+#define DEBUG_RENDER true
 #define DEBUG_INPUT false
 
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -141,6 +141,8 @@ private:
         int32_t success = graphics_get_display_size(0 /* LCD */, &screenW, &screenH);
 
         assert(success >= 0);
+        assert(screenW > 0);
+        assert(screenH > 0);
 
         if (DEBUG_GLES) {
             printf("RPI: display size = %d x %d\n", screenW, screenH);
@@ -185,8 +187,9 @@ private:
      * Get default monitor resolution.
      */
     bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) override {
-        //debug
-        //printf("getScreenInfo\n");
+        if (DEBUG_GLES) {
+            printf("getScreenInfo\n");
+        }
 
         //get display properties
         w = screenW;
@@ -201,8 +204,9 @@ private:
      * Add VideoCore IV properties.
      */
     void populateRuntimeProperties(v8::Local<v8::Object> &obj) override {
-        //debug
-        //printf("populateRuntimeProperties\n");
+        if (DEBUG_GLES) {
+            printf("populateRuntimeProperties\n");
+        }
 
         AminoGfx::populateRuntimeProperties(obj);
 
@@ -215,6 +219,10 @@ private:
      * Initialize OpenGL ES.
      */
     void initRenderer() override {
+        if (DEBUG_GLES) {
+            printf("initRenderer()\n");
+        }
+
         AminoGfx::initRenderer();
 
         //set display size
@@ -413,12 +421,15 @@ private:
 
         EGLBoolean res = eglMakeCurrent(display, surface, surface, context);
 
-        return res == EGL_TRUE;
+        assert(res == EGL_TRUE);
+
+        return true;
     }
 
     void renderingDone() override {
-        //debug
-        //printf("renderingDone()\n");
+        if (DEBUG_GLES) {
+            printf("renderingDone()\n");
+        }
 
         //swap
         EGLBoolean res = eglSwapBuffers(display, surface);
@@ -432,10 +443,14 @@ private:
     }
 
     void processInputs() {
+        if (DEBUG_GLES) {
+            printf("processInputs()\n");
+        }
+
         int size = sizeof(struct input_event);
         struct input_event ev[64];
 
-        for(unsigned int i = 0; i < fds.size(); i++) {
+        for (unsigned int i = 0; i < fds.size(); i++) {
             int fd = fds[i];
             int rd = read(fd, ev, size*64);
 
