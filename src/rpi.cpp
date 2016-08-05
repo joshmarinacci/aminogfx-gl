@@ -12,7 +12,7 @@
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
 
 /**
- * Mac AminoGfx implementation.
+ * Raspberry Pi AminoGfx implementation.
  */
 class AminoGfxRPi : public AminoGfx {
 public:

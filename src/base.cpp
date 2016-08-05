@@ -1,5 +1,7 @@
 #include "base.h"
 
+#include <cwctype>
+
 #include "SimpleRenderer.h"
 #include "fonts/utf8-utils.h"
 
@@ -1013,13 +1015,13 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
                     wordWrap = wrap == AminoText::WRAP_WORD;
 
                     //check space
-                    if (iswspace((wchar_t)glyph->codepoint)) {
+                    if (std::iswspace((wchar_t)glyph->codepoint)) {
                         skip = true;
                     }
                 }
 
                 //check white space
-                if (!skip && (newLine || lineStart == i) && iswspace(glyph->codepoint)) {
+                if (!skip && (newLine || lineStart == i) && std::iswspace(glyph->codepoint)) {
                     skip = true;
                 }
 
@@ -1035,7 +1037,7 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
                         int wrapPos = -1;
 
                         for (size_t j = i - 1; j > lineStart; j--) {
-                            if (iswspace((wchar_t)textUtf32[j])) {
+                            if (std::iswspace((wchar_t)textUtf32[j])) {
                                 wrapPos = j;
                                 break;
                             }

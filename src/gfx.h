@@ -55,10 +55,14 @@ static double getTime(void) {
 #include "GLES2/gl2.h"
 #include "GLES2/gl2ext.h"
 
+#include <time.h>
+
 //return the current time in msec
 static double getTime(void) {
     struct timespec res;
+
     clock_gettime(CLOCK_REALTIME, &res);
+
     return 1000.0 * res.tv_sec + ((double) res.tv_nsec / 1e6);
 }
 
