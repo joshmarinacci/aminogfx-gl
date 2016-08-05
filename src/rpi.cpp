@@ -8,6 +8,7 @@
 
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
+#define DEBUG_INPUT false
 
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
 
@@ -50,8 +51,9 @@ private:
     EGLDisplay display = EGL_NO_DISPLAY;
     EGLContext context = EGL_NO_CONTEXT;
     EGLSurface surface = EGL_NO_SURFACE;
-    int screenW = 0;
-    int screenH = 0;
+    EGLConfig config;
+    uint32_t screenW = 0;
+    uint32_t screenH = 0;
 
     //input
     std::vector<int> fds;
@@ -114,7 +116,6 @@ private:
             EGL_NONE
         };
 
-        EGLConfig config;
         EGLint num_config;
 
         res = eglChooseConfig(display, attribute_list, &config, 1, &num_config);
@@ -217,7 +218,7 @@ private:
         AminoGfx::initRenderer();
 
         //set display size
-        updateSize(windowW, windowH);
+        updateSize(screenW, screenH);
         updatePosition(0, 0);
 
         //Dispmanx init
@@ -269,11 +270,9 @@ private:
         assert(surface != EGL_NO_SURFACE);
 
         //activate context (needed by JS code to create shaders)
-        res = eglMakeCurrent(display, surface, surface, context);
+        EGLBoolean res = eglMakeCurrent(display, surface, surface, context);
 
         assert(EGL_FALSE != res);
-
-        glfwMakeContextCurrent(window);
 
         //input
         initInput();
@@ -412,7 +411,7 @@ private:
             return false;
         }
 
-        res = eglMakeCurrent(display, surface, surface, context);
+        EGLBoolean res = eglMakeCurrent(display, surface, surface, context);
 
         return res == EGL_TRUE;
     }
@@ -436,7 +435,7 @@ private:
         int size = sizeof(struct input_event);
         struct input_event ev[64];
 
-        for(int i = 0; i < fds.size(); i++) {
+        for(unsigned int i = 0; i < fds.size(); i++) {
             int fd = fds[i];
             int rd = read(fd, ev, size*64);
 
