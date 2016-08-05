@@ -171,7 +171,7 @@ private:
 
         instanceCount--;
 
-        if (DEBUG_GLFW) {
+        if (DEBUG_GLES) {
             printf("Destroyed GLFW instance. Left=%i\n", instanceCount);
         }
 
@@ -474,12 +474,12 @@ private:
                 mouse_y = 0;
             }
 
-            if (mouse_x > screenW)  {
-                mouse_x = screenW;
+            if (mouse_x >= (int)screenW)  {
+                mouse_x = (int)screenW - 1;
             }
 
-            if (mouse_y > screenH) {
-                mouse_y = screenH;
+            if (mouse_y >= (int)screenH) {
+                mouse_y = (int)screenH - 1;
             }
 
             //TODO GLFW_MOUSE_POS_CALLBACK_FUNCTION(mouse_x, mouse_y);
