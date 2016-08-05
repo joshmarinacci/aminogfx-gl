@@ -50,6 +50,8 @@ private:
     EGLDisplay display = EGL_NO_DISPLAY;
     EGLContext context = EGL_NO_CONTEXT;
     EGLSurface surface = EGL_NO_SURFACE;
+    int screenW = 0;
+    int screenH = 0;
 
     //input
     std::vector<int> fds;
@@ -135,8 +137,6 @@ private:
         assert(context != EGL_NO_CONTEXT);
 
         //get display size (see http://elinux.org/Raspberry_Pi_VideoCore_APIs#graphics_get_display_size)
-        uint32_t screenW;
-        uint32_t screenH;
         int32_t success = graphics_get_display_size(0 /* LCD */, &screenW, &screenH);
 
         assert(success >= 0);
@@ -475,12 +475,12 @@ private:
                 mouse_y = 0;
             }
 
-            if (mouse_x > width)  {
-                mouse_x = width;
+            if (mouse_x > screenW)  {
+                mouse_x = screenW;
             }
 
-            if (mouse_y > height) {
-                mouse_y = height;
+            if (mouse_y > screenH) {
+                mouse_y = screenH;
             }
 
             //TODO GLFW_MOUSE_POS_CALLBACK_FUNCTION(mouse_x, mouse_y);
@@ -614,7 +614,16 @@ private:
         propX->setValue(0);
         propY->setValue(0);
     }
-}
+
+    /**
+     * Update the title.
+     *
+     * Note: has to be called on main thread
+     */
+    void updateWindowTitle() override {
+        //not supported
+    }
+};
 
 int AminoGfxRPi::instanceCount;
 bool AminoGfxRPi::glESInitialized;

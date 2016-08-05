@@ -1773,6 +1773,8 @@ bool AminoJSEventObject::enqueueJSUpdate(AnyAsyncUpdate *update) {
     pthread_mutex_lock(&asyncLock);
     jsUpdates->push_back(update);
     pthread_mutex_unlock(&asyncLock);
+
+    return true;
 }
 
 //
