@@ -744,6 +744,7 @@ NAN_METHOD(AminoGfx::GetStats) {
 
     Nan::Set(obj, Nan::New("activeInstances").ToLocalChecked(), Nan::New(activeInstances));
     Nan::Set(obj, Nan::New("totalInstances").ToLocalChecked(), Nan::New(totalInstances));
+    Nan::Set(obj, Nan::New("animations").ToLocalChecked(), Nan::New((uint32_t)gfx->animations.size()));
 
     gfx->getStats(obj);
 
