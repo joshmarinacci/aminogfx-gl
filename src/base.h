@@ -48,6 +48,8 @@ public:
     AminoGfx(std::string name);
     virtual ~AminoGfx();
 
+    static NAN_MODULE_INIT(InitClasses);
+
     bool addAnimationAsync(AminoAnim *anim);
     void removeAnimationAsync(AminoAnim *anim);
 

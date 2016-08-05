@@ -215,5 +215,7 @@ function testWindow(title) {
     return gfx;
 }
 
-testWindow('Window 1').x(0).y(0);
-testWindow('Window 2').x(200).y(0);
+if (!gfx.screen.fullscreen) {
+    testWindow('Window 1').x(0).y(0);
+    testWindow('Window 2').x(200).y(0);
+}

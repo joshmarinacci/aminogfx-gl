@@ -22,6 +22,17 @@ AminoGfx::~AminoGfx() {
 }
 
 /**
+ * Initialize basic amino classes.
+ */
+NAN_MODULE_INIT(AminoGfx::InitClasses) {
+    //image class
+    AminoImage::Init(target);
+
+    //fonts class
+    AminoFonts::Init(target);
+}
+
+/**
  * Initialize AminoGfx template.
  */
 void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory) {

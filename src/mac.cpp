@@ -1,6 +1,6 @@
 #include "mac.h"
 
-#define DEBUG_GLFW true
+#define DEBUG_GLFW false
 #define DEBUG_RENDER false
 
 /**
@@ -589,11 +589,8 @@ NAN_MODULE_INIT(InitAll) {
     //main class
     AminoGfxMac::Init(target);
 
-    //image class
-    AminoImage::Init(target);
-
-    //fonts class
-    AminoFonts::Init(target);
+    //amino classes
+    AminoGfx::InitClasses(target);
 }
 
 //entry point
