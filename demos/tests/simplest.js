@@ -11,4 +11,8 @@ gfx.start(function (err) {
     }
 
     this.fill('#FF0000');
+
+    //some info
+    console.log('screen: ' + JSON.stringify(gfx.screen));
+    console.log('window size: ' + this.w() + 'x' + this.h());
 });
