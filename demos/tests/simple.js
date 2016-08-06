@@ -50,7 +50,7 @@ gfx.start(function (err) {
     this.setRoot(g);
 
     //add rect
-    const r = (this.createRect()).w(100).h(100).fill('#FF0000');
+    const r = this.createRect().w(100).h(100).fill('#FF0000');
 
     r.originX(.5).originY(.5).rz(45);
 
