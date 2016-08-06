@@ -9,9 +9,8 @@
 /**
  * Create factory for AminoJSObject creation.
  */
-AminoJSObjectFactory::AminoJSObjectFactory(std::string name, Nan::FunctionCallback callback) {
-    this->name = name;
-    this->callback = callback;
+AminoJSObjectFactory::AminoJSObjectFactory(std::string name, Nan::FunctionCallback callback): name(name), callback(callback) {
+    //empty
 }
 
 /**
@@ -28,9 +27,7 @@ AminoJSObject* AminoJSObjectFactory::create() {
 /**
  * Constructor.
  */
-AminoJSObject::AminoJSObject(std::string name) {
-    this->name = name;
-
+AminoJSObject::AminoJSObject(std::string name): name(name) {
     if (DEBUG_BASE) {
         printf("%s constructor\n", name.c_str());
     }
@@ -41,6 +38,8 @@ AminoJSObject::AminoJSObject(std::string name) {
 
 /**
  * Destructor.
+ *
+ * Note: has to be called on main thread.
  */
 AminoJSObject::~AminoJSObject() {
     if (DEBUG_BASE) {
@@ -86,6 +85,8 @@ void AminoJSObject::setup() {
 
 /**
  * Free all resources.
+ *
+ * Note: has to be called on main thread.
  */
 void AminoJSObject::destroy() {
     destroyed = true;
@@ -789,7 +790,7 @@ void* AminoJSObject::FloatProperty::getAsyncData(v8::Local<v8::Value> &value) {
     if (value->IsNumber()) {
         //double to float
         float f = value->NumberValue();
-        float *res = new float[1];
+        float *res = new float;
 
         *res = f;
 
@@ -814,7 +815,7 @@ void AminoJSObject::FloatProperty::setAsyncData(AsyncPropertyUpdate *update, voi
  * Free async data.
  */
 void AminoJSObject::FloatProperty::freeAsyncData(void *data) {
-    delete[] (float *)data;
+    delete (float *)data;
 }
 
 //
@@ -978,7 +979,7 @@ void* AminoJSObject::Int32Property::getAsyncData(v8::Local<v8::Value> &value) {
     if (value->IsNumber()) {
         //UInt32
         int i = value->Int32Value();
-        int *res = new int[1];
+        int *res = new int;
 
         *res = i;
 
@@ -1003,7 +1004,7 @@ void AminoJSObject::Int32Property::setAsyncData(AsyncPropertyUpdate *update, voi
  * Free async data.
  */
 void AminoJSObject::Int32Property::freeAsyncData(void *data) {
-    delete[] (int *)data;
+    delete (int *)data;
 }
 
 //
@@ -1060,7 +1061,7 @@ void* AminoJSObject::UInt32Property::getAsyncData(v8::Local<v8::Value> &value) {
     if (value->IsNumber()) {
         //UInt32
         unsigned int ui = value->Uint32Value();
-        unsigned int *res = new unsigned int[1];
+        unsigned int *res = new unsigned int;
 
         *res = ui;
 
@@ -1085,7 +1086,7 @@ void AminoJSObject::UInt32Property::setAsyncData(AsyncPropertyUpdate *update, vo
  * Free async data.
  */
 void AminoJSObject::UInt32Property::freeAsyncData(void *data) {
-    delete[] (unsigned int *)data;
+    delete (unsigned int *)data;
 }
 
 //
@@ -1141,7 +1142,7 @@ v8::Local<v8::Value> AminoJSObject::BooleanProperty::toValue() {
 void* AminoJSObject::BooleanProperty::getAsyncData(v8::Local<v8::Value> &value) {
     if (value->IsBoolean()) {
         bool b = value->BooleanValue();
-        bool *res = new bool[1];
+        bool *res = new bool;
 
         *res = b;
 
@@ -1166,7 +1167,7 @@ void AminoJSObject::BooleanProperty::setAsyncData(AsyncPropertyUpdate *update, v
  * Free async data.
  */
 void AminoJSObject::BooleanProperty::freeAsyncData(void *data) {
-    delete[] (bool *)data;
+    delete (bool *)data;
 }
 
 //
@@ -1580,9 +1581,15 @@ void AminoJSEventObject::clearAsyncQueue() {
 
 /**
  * Free async updates on main thread.
+ *
+ * Note: has to run on main thread!
  */
 void AminoJSEventObject::handleAsyncDeletes() {
     assert(asyncDeletes);
+
+    if (DEBUG_BASE) {
+        assert(isMainThread());
+    }
 
     pthread_mutex_lock(&asyncLock);
 
@@ -1595,6 +1602,7 @@ void AminoJSEventObject::handleAsyncDeletes() {
         for (std::size_t i = 0; i < count; i++) {
             AnyAsyncUpdate *item = (*asyncDeletes)[i];
 
+            //free instance
             delete item;
         }
 
@@ -1606,17 +1614,23 @@ void AminoJSEventObject::handleAsyncDeletes() {
 
 /**
  * Process all JS updates on main thread.
+ *
+ * Note: has to run on main thread!
  */
 void AminoJSEventObject::handleJSUpdates() {
     assert(jsUpdates);
+
+    if (DEBUG_BASE) {
+        assert(isMainThread());
+    }
+
+    pthread_mutex_lock(&asyncLock);
 
     std::size_t count = jsUpdates->size();
 
     if (count > 0) {
         //create scope
         Nan::HandleScope scope;
-
-        pthread_mutex_lock(&asyncLock);
 
         for (std::size_t i = 0; i < jsUpdates->size(); i++) {
             AnyAsyncUpdate *item = (*jsUpdates)[i];
@@ -1626,9 +1640,9 @@ void AminoJSEventObject::handleJSUpdates() {
         }
 
         jsUpdates->clear();
-
-        pthread_mutex_unlock(&asyncLock);
     }
+
+    pthread_mutex_unlock(&asyncLock);
 }
 
 /**
@@ -1661,10 +1675,16 @@ bool AminoJSEventObject::isEventHandler() {
 
 /**
  * Process all queued updates.
+ *
+ * Note: runs on rendering thread.
  */
 void AminoJSEventObject::processAsyncQueue() {
     if (destroyed) {
         return;
+    }
+
+    if (DEBUG_BASE) {
+        assert(!isMainThread());
     }
 
     //iterate
@@ -1719,11 +1739,11 @@ void AminoJSEventObject::processAsyncQueue() {
  * Enqueue a value update.
  */
 bool AminoJSEventObject::enqueueValueUpdate(AsyncValueUpdate *update) {
-    if (!update || destroyed) {
-        //free local objects
-        if (update->obj == this) {
-            delete update;
-        }
+    assert(update);
+
+    if (destroyed) {
+        //free
+        delete update;
 
         return false;
     }
@@ -1779,11 +1799,19 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     return true;
 }
 
+/**
+ * Add JS property update.
+ */
 bool AminoJSEventObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
     return enqueueJSUpdate(new JSPropertyUpdate(prop));
 }
 
+/**
+ * Add JS update to run on main thread.
+ */
 bool AminoJSEventObject::enqueueJSUpdate(AnyAsyncUpdate *update) {
+    assert(update);
+
     if (destroyed) {
         delete update;
 

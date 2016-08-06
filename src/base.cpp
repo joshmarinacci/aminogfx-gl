@@ -364,6 +364,10 @@ void AminoGfx::handleRenderEvents(uv_async_t *handle) {
 
     AminoGfx *gfx = (AminoGfx *)handle->data;
 
+    if (DEBUG_BASE) {
+        assert(gfx->isMainThread());
+    }
+
     //create scope
     Nan::HandleScope scope;
 
@@ -462,8 +466,14 @@ void AminoGfx::render() {
 
 /**
  * Update all animated values.
+ *
+ * Note: called on rendering thread.
  */
 void AminoGfx::processAnimations() {
+    if (DEBUG_BASE) {
+        assert(!isMainThread());
+    }
+
     double currentTime = getTime();
     int count = animations.size();
 
@@ -869,6 +879,9 @@ AminoGroupFactory::AminoGroupFactory(Nan::FunctionCallback callback): AminoJSObj
     //empty
 }
 
+/**
+ * Create group instance.
+ */
 AminoJSObject* AminoGroupFactory::create() {
     return new AminoGroup();
 }
@@ -884,6 +897,9 @@ AminoRectFactory::AminoRectFactory(Nan::FunctionCallback callback, bool hasImage
     //empty
 }
 
+/**
+ * Create rect instance.
+ */
 AminoJSObject* AminoRectFactory::create() {
     return new AminoRect(hasImage);
 }
@@ -899,6 +915,9 @@ AminoPolygonFactory::AminoPolygonFactory(Nan::FunctionCallback callback): AminoJ
     //empty
 }
 
+/**
+ * Create polygon instance.
+ */
 AminoJSObject* AminoPolygonFactory::create() {
     return new AminoPolygon();
 }
@@ -914,6 +933,9 @@ AminoAnimFactory::AminoAnimFactory(Nan::FunctionCallback callback): AminoJSObjec
     //empty
 }
 
+/**
+ * Create anim instance.
+ */
 AminoJSObject* AminoAnimFactory::create() {
     return new AminoAnim();
 }
@@ -929,6 +951,9 @@ AminoTextFactory::AminoTextFactory(Nan::FunctionCallback callback): AminoJSObjec
     //empty
 }
 
+/**
+ * Create text instance.
+ */
 AminoJSObject* AminoTextFactory::create() {
     return new AminoText();
 }

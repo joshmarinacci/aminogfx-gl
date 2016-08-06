@@ -217,7 +217,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
     std::vector<float> *geometry = &poly->propGeometry->value;
     int len = geometry->size();
     int dim = poly->propDimension->value;
-    GLfloat verts[len][dim];// = malloc(sizeof(GLfloat[2])*len);
+    GLfloat verts[len][dim];
 
     for (int i = 0; i < len / dim; i++) {
         verts[i][0] = geometry->at(i * dim);

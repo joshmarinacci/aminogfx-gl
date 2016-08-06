@@ -731,6 +731,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
                 textureData->callback->Call(handle(), argc, argv);
+                delete textureData->callback;
             }
 
             return;
@@ -747,6 +748,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
             textureData->callback->Call(obj, argc, argv);
+            delete textureData->callback;
         }
 
         //free

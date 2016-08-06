@@ -1529,6 +1529,9 @@ Text.prototype.updateFont = function (val, prop, obj) {
 
 var Anim = AminoGfx.Anim;
 
+/**
+ * Initialize instance.
+ */
 Anim.prototype.init = function () {
     this._from = null;
     this._to = null;
@@ -1542,6 +1545,9 @@ Anim.prototype.init = function () {
     this.started = false;
 };
 
+/**
+ * From animation value.
+ */
 Anim.prototype.from = function (val) {
     this.checkStarted();
 
@@ -1550,6 +1556,9 @@ Anim.prototype.from = function (val) {
     return this;
 };
 
+/**
+ * To animation value.
+ */
 Anim.prototype.to = function (val) {
     this.checkStarted();
 
@@ -1558,6 +1567,9 @@ Anim.prototype.to = function (val) {
     return this;
 };
 
+/**
+ * Animation duration.
+ */
 Anim.prototype.dur = function (val) {
     this.checkStarted();
 
@@ -1566,6 +1578,9 @@ Anim.prototype.dur = function (val) {
     return this;
 };
 
+/**
+ * Animation delay.
+ */
 Anim.prototype.delay = function (val) {
     this.checkStarted();
 
@@ -1574,6 +1589,9 @@ Anim.prototype.delay = function (val) {
     return this;
 };
 
+/**
+ * Animation loop count. Use -1 for forever.
+ */
 Anim.prototype.loop = function (val) {
     this.checkStarted();
 
@@ -1582,6 +1600,9 @@ Anim.prototype.loop = function (val) {
     return this;
 };
 
+/**
+ * End callback.
+ */
 Anim.prototype.then = function (fun) {
     this.checkStarted();
 
@@ -1590,6 +1611,9 @@ Anim.prototype.then = function (fun) {
     return this;
 };
 
+/**
+ * Auto reverse animation.
+ */
 Anim.prototype.autoreverse = function(val) {
     this.checkStarted();
 
@@ -1601,6 +1625,9 @@ Anim.prototype.autoreverse = function(val) {
 //Time function values.
 var timeFuncs = ['linear', 'cubicIn', 'cubicOut', 'cubicInOut'];
 
+/**
+ * Time function.
+ */
 Anim.prototype.timeFunc = function (val) {
     this.checkStarted();
 
@@ -1613,6 +1640,9 @@ Anim.prototype.timeFunc = function (val) {
     return this;
 };
 
+/**
+ * Internal: check started state.
+ */
 Anim.prototype.checkStarted = function () {
     if (this.started) {
         throw new Error('immutable after start() was called');

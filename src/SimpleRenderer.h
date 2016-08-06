@@ -18,51 +18,52 @@ public:
         opacity = 1;
 
         //matrix
-        this->globaltx = new GLfloat[16];
-        make_identity_matrix(this->globaltx);
+        globaltx = new GLfloat[16];
+        make_identity_matrix(globaltx);
     }
 
     virtual ~GLContext() {
-        delete this->globaltx;
+        assert(matrixStack.size() == 0);
+        delete[] globaltx;
     }
 
     void dumpGlobalTransform() {
-        print_matrix(this->globaltx);
+        print_matrix(globaltx);
     }
 
-    void translate(double x, double y) {
+    void translate(GLfloat x, GLfloat y) {
         GLfloat tr[16];
         GLfloat trans2[16];
 
-        make_trans_matrix((float)x, (float)y, 0, tr);
-        mul_matrix(trans2, this->globaltx, tr);
-        copy_matrix(this->globaltx, trans2);
+        make_trans_matrix(x, y, 0, tr);
+        mul_matrix(trans2, globaltx, tr);
+        copy_matrix(globaltx, trans2);
     }
 
-    void rotate(double x, double y, double z) {
+    void rotate(GLfloat x, GLfloat y, GLfloat z) {
         GLfloat rot[16];
         GLfloat temp[16];
 
         make_x_rot_matrix(x, rot);
-        mul_matrix(temp, this->globaltx, rot);
-        copy_matrix(this->globaltx,temp);
+        mul_matrix(temp, globaltx, rot);
+        copy_matrix(globaltx,temp);
 
         make_y_rot_matrix(y, rot);
-        mul_matrix(temp, this->globaltx, rot);
-        copy_matrix(this->globaltx,temp);
+        mul_matrix(temp, globaltx, rot);
+        copy_matrix(globaltx,temp);
 
         make_z_rot_matrix(z, rot);
-        mul_matrix(temp, this->globaltx, rot);
-        copy_matrix(this->globaltx,temp);
+        mul_matrix(temp, globaltx, rot);
+        copy_matrix(globaltx,temp);
     }
 
-    void scale(double x, double y) {
+    void scale(GLfloat x, GLfloat y) {
         GLfloat scale[16];
         GLfloat temp[16];
 
-        make_scale_matrix((float)x, (float)y, 1.0, scale);
-        mul_matrix(temp, this->globaltx, scale);
-        copy_matrix(this->globaltx, temp);
+        make_scale_matrix(x, y, 1.0, scale);
+        mul_matrix(temp, globaltx, scale);
+        copy_matrix(globaltx, temp);
     }
 
     GLfloat applyOpacity(GLfloat opacity) {
@@ -75,32 +76,32 @@ public:
         GLfloat *temp = new GLfloat[1];
 
         temp[0] = opacity;
-        this->matrixStack.push(temp);
+        matrixStack.push(temp);
     }
 
     void restoreOpacity() {
-        GLfloat *temp = (GLfloat *)this->matrixStack.top();
+        GLfloat *temp = (GLfloat *)matrixStack.top();
 
-        this->matrixStack.pop();
+        matrixStack.pop();
 
         opacity = temp[0];
-        delete temp;
+        delete[] temp;
     }
 
     void save() {
         //matrix
         GLfloat *temp = new GLfloat[16];
 
-        copy_matrix(temp, this->globaltx);
-        this->matrixStack.push(this->globaltx);
-        this->globaltx = temp;
+        copy_matrix(temp, globaltx);
+        matrixStack.push(globaltx);
+        globaltx = temp;
     }
 
     void restore() {
         //matrix
-        delete this->globaltx;
-        this->globaltx = (GLfloat *)this->matrixStack.top();
-        this->matrixStack.pop();
+        delete[] globaltx;
+        globaltx = (GLfloat *)matrixStack.top();
+        matrixStack.pop();
     }
 
     void useProgram(GLuint prog) {

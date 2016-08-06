@@ -228,13 +228,13 @@ public:
     /**
      * Free all resources.
      */
-    void destroy()  override {
+    void destroy() override {
         AminoJSObject::destroy();
 
         //to be overwritten
     }
 
-    AminoGfx *getAminoGfx() {
+    AminoGfx* getAminoGfx() {
         return (AminoGfx *)eventHandler;
     }
 
@@ -249,7 +249,9 @@ public:
      * Validate renderer instance. Must be called in JS method handler.
      */
     bool checkRenderer(AminoGfx *amino) {
-        if (this->eventHandler != amino) {
+        assert(eventHandler);
+
+        if (eventHandler != amino) {
             Nan::ThrowTypeError("invalid renderer");
             return false;
         }
@@ -350,6 +352,10 @@ public:
     }
 
     //creation
+
+    /**
+     * Create text factory.
+     */
     static AminoTextFactory* getFactory() {
         static AminoTextFactory *textFactory;
 
@@ -571,6 +577,10 @@ public:
     }
 
     //creation
+
+    /**
+     * Create anim factory.
+     */
     static AminoAnimFactory* getFactory() {
         static AminoAnimFactory *animFactory;
 
@@ -927,6 +937,9 @@ public:
         //empty
     }
 
+    /**
+     * Free resources.
+     */
     void destroy() override {
         AminoNode::destroy();
 
@@ -934,6 +947,9 @@ public:
         propTexture->destroy();
     }
 
+    /**
+     * Setup rect properties.
+     */
     void setup() override {
         AminoNode::setup();
 
@@ -959,6 +975,10 @@ public:
     }
 
     //creation
+
+    /**
+     * Get rect factory.
+     */
     static AminoRectFactory* getRectFactory() {
         static AminoRectFactory *rectFactory;
 
@@ -991,6 +1011,10 @@ public:
     //ImageView
 
     //creation
+
+    /**
+     * Get image view factory.
+     */
     static AminoRectFactory* getImageViewFactory() {
         static AminoRectFactory *rectFactory;
 
@@ -1070,6 +1094,10 @@ public:
     }
 
     //creation
+
+    /**
+     * Get polygon factory.
+     */
     static AminoPolygonFactory* getFactory() {
         static AminoPolygonFactory *polygonFactory;
 
@@ -1144,6 +1172,10 @@ public:
     }
 
     //creation
+
+    /**
+     * Get group factory.
+     */
     static AminoGroupFactory* getFactory() {
         static AminoGroupFactory *groupFactory;
 
