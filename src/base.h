@@ -357,7 +357,7 @@ public:
      * Create text factory.
      */
     static AminoTextFactory* getFactory() {
-        static AminoTextFactory *textFactory;
+        static AminoTextFactory *textFactory = NULL;
 
         if (!textFactory) {
             textFactory = new AminoTextFactory(New);
@@ -980,7 +980,7 @@ public:
      * Get rect factory.
      */
     static AminoRectFactory* getRectFactory() {
-        static AminoRectFactory *rectFactory;
+        static AminoRectFactory *rectFactory = NULL;
 
         if (!rectFactory) {
             rectFactory = new AminoRectFactory(NewRect, false);
@@ -1016,7 +1016,7 @@ public:
      * Get image view factory.
      */
     static AminoRectFactory* getImageViewFactory() {
-        static AminoRectFactory *rectFactory;
+        static AminoRectFactory *rectFactory = NULL;
 
         if (!rectFactory) {
             rectFactory = new AminoRectFactory(NewImageView, true);
@@ -1099,7 +1099,7 @@ public:
      * Get polygon factory.
      */
     static AminoPolygonFactory* getFactory() {
-        static AminoPolygonFactory *polygonFactory;
+        static AminoPolygonFactory *polygonFactory = NULL;
 
         if (!polygonFactory) {
             polygonFactory = new AminoPolygonFactory(New);
@@ -1177,7 +1177,7 @@ public:
      * Get group factory.
      */
     static AminoGroupFactory* getFactory() {
-        static AminoGroupFactory *groupFactory;
+        static AminoGroupFactory *groupFactory = NULL;
 
         if (!groupFactory) {
             groupFactory = new AminoGroupFactory(New);

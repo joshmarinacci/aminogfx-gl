@@ -58,7 +58,9 @@ gfx.start(function (err) {
 
     //animation
     r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(1).then(animDone).start();
+    //r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(-1).then(animDone).start(); //Note: no extra garbage seen
     r.b.watch((value) => {
+
         console.log('animation state: ' + value);
     });
 
@@ -105,6 +107,9 @@ gfx.start(function (err) {
 
     //GC tests
 //    testImages(g);
+    //testAnimGC();
+    testGC();
+    //testProps();
 
     //text
     var text = this.createText()
@@ -120,8 +125,6 @@ gfx.start(function (err) {
     //text.text('äöü');
 
     g.add(text);
-
-    //TODO more cbx
 });
 
 function testImages(g) {
@@ -188,6 +191,78 @@ function testFont() {
     });
 }
 
+function testAnimGC() {
+    //not visible
+    const r = gfx.createRect().x(0).y(0).w(100).h(100);
+
+    // 1) keep & release
+    /*
+    const anims = [];
+
+    for (let i = 0; i < 1000; i++) {
+        let anim = r.x.anim().from(0).to(1).dur(2000).start();
+
+        anims.push(anim);
+    }
+
+    setInterval(() => {
+        //free 100
+        for (let i = 0; i < 100; i++) {
+            let anim = anims.pop();
+
+            if (anim) {
+                //stop now (or wait for 2 s duration)
+                //anim.stop();
+            }
+        }
+    }, 100);
+    */
+
+    // 2) create large amount
+    setInterval(() => {
+        //create some garbage
+        for (let i = 0; i < 1000; i++) {
+            let anim = r.x.anim().from(0).to(1).dur(2000).start();
+
+            //Note: stopped after 2 seconds
+        }
+
+        //result: no leaks seen
+    }, 10000);
+}
+
+function testGC() {
+    setInterval(() => {
+        //create some garbage
+        for (let i = 0; i < 1000; i++) {
+            //gfx.createCircle(); //cbx leak
+            gfx.createRect(); //cbx massive leak & out of memory
+
+            //Note: without object creation seeing memory increase of 2 KB/s which is reset after about 3 MB are collected. The GC cycle takes quite some time!
+        }
+    }, 10000);
+}
+
+function testProps() {
+    //result: no extra garbage
+    const r = gfx.createRect();
+    const g = gfx.createGroup();
+
+    setInterval(() => {
+        for (let i = 0; i < 1000; i++) {
+            //value change
+            r.x(i);
+
+            //call
+            if (i & 0x1) {
+                g.add(r);
+            } else {
+                g.remove(r);
+            }
+        }
+    }, 10000);
+}
+
 function testWindow(title) {
     const gfx = new amino.AminoGfx();
 
@@ -222,8 +297,38 @@ if (!gfx.screen.fullscreen) {
 }
 
 function checkMemory() {
+    let maxHeapUsed = 0;
+    let lastGC = null;
+    let lastHeapUsed = 0;
+    let step  = 0;
+
     setInterval(() => {
-        console.log(JSON.stringify(gfx.getStats()));
+        const stats = gfx.getStats();
+
+        //max heap
+        if (stats.heapUsed > maxHeapUsed) {
+            maxHeapUsed = stats.heapUsed;
+        }
+
+        //GC
+        if (stats.heapUsed < lastHeapUsed) {
+            lastGC = new Date();
+        }
+
+        //show raw value
+        console.log(JSON.stringify(stats));
+
+        //more details
+        if (step % 5 == 0) {
+            if (lastGC) {
+                console.log('Last GC: ' + (new Date().getTime() - lastGC) + ' ms');
+            }
+
+            console.log('Below max heap: ' + ((maxHeapUsed - stats.heapUsed) / 1024 / 1024) + ' MB' + ' (heap: ' + (stats.heapUsed / 1024 / 1024) + ' MB)');
+        }
+
+        lastHeapUsed = stats.heapUsed;
+        step++;
     }, 1000);
 }
 

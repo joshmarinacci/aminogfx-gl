@@ -379,7 +379,7 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
  * Get factory instance.
  */
 AminoImageFactory* AminoImage::getFactory() {
-    static AminoImageFactory *aminoImageFactory;
+    static AminoImageFactory *aminoImageFactory = NULL;
 
     if (!aminoImageFactory) {
         aminoImageFactory = new AminoImageFactory(New);
@@ -513,7 +513,7 @@ void AminoTexture::destroy() {
  * Get factory instance.
  */
 AminoTextureFactory* AminoTexture::getFactory() {
-    static AminoTextureFactory *aminoTextureFactory;
+    static AminoTextureFactory *aminoTextureFactory = NULL;
 
     if (!aminoTextureFactory) {
         aminoTextureFactory = new AminoTextureFactory(New);

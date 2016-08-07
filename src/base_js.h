@@ -91,7 +91,7 @@ protected:
         virtual v8::Local<v8::Value> toValue() = 0;
 
         //async handling
-        virtual void* getAsyncData(v8::Local<v8::Value> &value) = 0;
+        virtual void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) = 0;
         virtual void setAsyncData(AsyncPropertyUpdate *update, void *data) = 0;
         virtual void freeAsyncData(void *data) = 0;
 
@@ -115,7 +115,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -135,7 +135,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -155,7 +155,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -175,7 +175,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -195,7 +195,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -216,7 +216,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -238,7 +238,7 @@ protected:
         v8::Local<v8::Value> toValue() override;
 
         //async handling
-        void* getAsyncData(v8::Local<v8::Value> &value) override;
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
         void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
         void freeAsyncData(void *data) override;
     };
@@ -373,6 +373,7 @@ public:
     int getReferenceCount();
 
     AnyProperty* getPropertyWithId(int id);
+    AnyProperty* getPropertyWithName(std::string name);
 
     virtual bool handleSyncUpdate(AnyProperty *property, void *data);
     virtual void handleAsyncUpdate(AsyncPropertyUpdate *update);

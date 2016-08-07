@@ -23,7 +23,7 @@ AminoFonts::~AminoFonts() {
  * Get factory instance.
  */
 AminoFontsFactory* AminoFonts::getFactory() {
-    static AminoFontsFactory *aminoFontsFactory;
+    static AminoFontsFactory *aminoFontsFactory = NULL;
 
     if (!aminoFontsFactory) {
         aminoFontsFactory = new AminoFontsFactory(New);
@@ -113,7 +113,7 @@ void AminoFont::destroy() {
  * Get factory instance.
  */
 AminoFontFactory* AminoFont::getFactory() {
-    static AminoFontFactory *aminoFontFactory;
+    static AminoFontFactory *aminoFontFactory = NULL;
 
     if (!aminoFontFactory) {
         aminoFontFactory = new AminoFontFactory(New);
@@ -245,7 +245,7 @@ AminoFontSize::~AminoFontSize() {
  * Get factory instance.
  */
 AminoFontSizeFactory* AminoFontSize::getFactory() {
-    static AminoFontSizeFactory *aminoFontSizeFactory;
+    static AminoFontSizeFactory *aminoFontSizeFactory = NULL;
 
     if (!aminoFontSizeFactory) {
         aminoFontSizeFactory = new AminoFontSizeFactory(New);

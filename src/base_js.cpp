@@ -356,6 +356,10 @@ AminoJSObject::ObjectProperty* AminoJSObject::createObjectProperty(std::string n
 void AminoJSObject::addProperty(AnyProperty *prop) {
     assert(prop);
 
+    if (DEBUG_BASE) {
+        assert(getPropertyWithName(prop->name) == NULL);
+    }
+
     int id = prop->id;
     propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
 
@@ -365,9 +369,10 @@ void AminoJSObject::addProperty(AnyProperty *prop) {
         prop->connected = true;
 
         //set default value
-        void *data = prop->getAsyncData(value);
+        bool valid = false;
+        void *data = prop->getAsyncData(value, valid);
 
-        if (data) {
+        if (valid) {
             prop->setAsyncData(NULL, data);
             prop->freeAsyncData(data);
         }
@@ -533,12 +538,7 @@ bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
     //find property
     AnyProperty *prop = getPropertyWithId(id);
 
-    if (!prop) {
-        //property not found
-        printf("Property with id=%i not found!\n", id);
-
-        return false;
-    }
+    assert(prop);
 
     //enqueue (in event handler)
     if (DEBUG_BASE) {
@@ -596,6 +596,19 @@ AminoJSObject::AnyProperty* AminoJSObject::getPropertyWithId(int id) {
     }
 
     return iter->second;
+}
+
+/**
+ * Get property with name.
+ */
+AminoJSObject::AnyProperty* AminoJSObject::getPropertyWithName(std::string name) {
+    for (std::map<int, AnyProperty *>::iterator iter = propertyMap.begin(); iter != propertyMap.end(); iter++) {
+        if (iter->second->name == name) {
+            return iter->second;
+        }
+    }
+
+    return NULL;
 }
 
 /**
@@ -786,19 +799,22 @@ v8::Local<v8::Value> AminoJSObject::FloatProperty::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::FloatProperty::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::FloatProperty::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
     if (value->IsNumber()) {
         //double to float
         float f = value->NumberValue();
         float *res = new float;
 
         *res = f;
+        valid = true;
 
         return res;
     } else {
         if (DEBUG_BASE) {
             printf("-> default value not a number!\n");
         }
+
+        valid = false;
 
         return NULL;
     }
@@ -808,14 +824,18 @@ void* AminoJSObject::FloatProperty::getAsyncData(v8::Local<v8::Value> &value) {
  * Apply async data.
  */
 void AminoJSObject::FloatProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
-    value = *((float *)data);
+    if (data) {
+        value = *((float *)data);
+    }
 }
 
 /**
  * Free async data.
  */
 void AminoJSObject::FloatProperty::freeAsyncData(void *data) {
-    delete (float *)data;
+    if (data) {
+        delete (float *)data;
+    }
 }
 
 //
@@ -890,8 +910,11 @@ v8::Local<v8::Value> AminoJSObject::FloatArrayProperty::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::FloatArrayProperty::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::FloatArrayProperty::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
     if (value->IsNull()) {
+        //Note: only accepting empty arrays as values
+        valid = false;
+
         return NULL;
     }
 
@@ -902,6 +925,8 @@ void* AminoJSObject::FloatArrayProperty::getAsyncData(v8::Local<v8::Value> &valu
     for (std::size_t i = 0; i < count; i++) {
         vector->push_back((float)(arr->Get(i)->NumberValue()));
     }
+
+    valid = true;
 
     return vector;
 }
@@ -922,7 +947,9 @@ void AminoJSObject::FloatArrayProperty::setAsyncData(AsyncPropertyUpdate *update
  * Free async data.
  */
 void AminoJSObject::FloatArrayProperty::freeAsyncData(void *data) {
-    delete (std::vector<float> *)data;
+    if (data) {
+        delete (std::vector<float> *)data;
+    }
 }
 
 //
@@ -975,19 +1002,22 @@ v8::Local<v8::Value> AminoJSObject::Int32Property::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::Int32Property::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::Int32Property::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
     if (value->IsNumber()) {
         //UInt32
         int i = value->Int32Value();
         int *res = new int;
 
         *res = i;
+        valid = true;
 
         return res;
     } else {
         if (DEBUG_BASE) {
             printf("-> default value not a number!\n");
         }
+
+        valid = false;
 
         return NULL;
     }
@@ -997,14 +1027,18 @@ void* AminoJSObject::Int32Property::getAsyncData(v8::Local<v8::Value> &value) {
  * Apply async data.
  */
 void AminoJSObject::Int32Property::setAsyncData(AsyncPropertyUpdate *update, void *data) {
-    value = *((int *)data);
+    if (data) {
+        value = *((int *)data);
+    }
 }
 
 /**
  * Free async data.
  */
 void AminoJSObject::Int32Property::freeAsyncData(void *data) {
-    delete (int *)data;
+    if (data) {
+        delete (int *)data;
+    }
 }
 
 //
@@ -1057,19 +1091,22 @@ v8::Local<v8::Value> AminoJSObject::UInt32Property::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::UInt32Property::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::UInt32Property::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
     if (value->IsNumber()) {
         //UInt32
         unsigned int ui = value->Uint32Value();
         unsigned int *res = new unsigned int;
 
         *res = ui;
+        valid = true;
 
         return res;
     } else {
         if (DEBUG_BASE) {
             printf("-> default value not a number!\n");
         }
+
+        valid = false;
 
         return NULL;
     }
@@ -1079,14 +1116,18 @@ void* AminoJSObject::UInt32Property::getAsyncData(v8::Local<v8::Value> &value) {
  * Apply async data.
  */
 void AminoJSObject::UInt32Property::setAsyncData(AsyncPropertyUpdate *update, void *data) {
-    value = *((unsigned int *)data);
+    if (data) {
+        value = *((unsigned int *)data);
+    }
 }
 
 /**
  * Free async data.
  */
 void AminoJSObject::UInt32Property::freeAsyncData(void *data) {
-    delete (unsigned int *)data;
+    if (data) {
+        delete (unsigned int *)data;
+    }
 }
 
 //
@@ -1139,18 +1180,21 @@ v8::Local<v8::Value> AminoJSObject::BooleanProperty::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::BooleanProperty::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::BooleanProperty::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
     if (value->IsBoolean()) {
         bool b = value->BooleanValue();
         bool *res = new bool;
 
         *res = b;
+        valid = true;
 
         return res;
     } else {
         if (DEBUG_BASE) {
             printf("-> default value not a boolean!\n");
         }
+
+        valid = false;
 
         return NULL;
     }
@@ -1160,14 +1204,18 @@ void* AminoJSObject::BooleanProperty::getAsyncData(v8::Local<v8::Value> &value) 
  * Apply async data.
  */
 void AminoJSObject::BooleanProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
-    value = *((bool *)data);
+    if (data) {
+        value = *((bool *)data);
+    }
 }
 
 /**
  * Free async data.
  */
 void AminoJSObject::BooleanProperty::freeAsyncData(void *data) {
-    delete (bool *)data;
+    if (data) {
+        delete (bool *)data;
+    }
 }
 
 //
@@ -1229,9 +1277,11 @@ v8::Local<v8::Value> AminoJSObject::Utf8Property::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::Utf8Property::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::Utf8Property::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
     //convert to string
     std::string *str = AminoJSObject::toNewString(value);
+
+    valid = true;
 
     return str;
 }
@@ -1240,14 +1290,18 @@ void* AminoJSObject::Utf8Property::getAsyncData(v8::Local<v8::Value> &value) {
  * Apply async data.
  */
 void AminoJSObject::Utf8Property::setAsyncData(AsyncPropertyUpdate *update, void *data) {
-    value = *((std::string *)data);
+    if (data) {
+        value = *((std::string *)data);
+    }
 }
 
 /**
  * Free async data.
  */
 void AminoJSObject::Utf8Property::freeAsyncData(void *data) {
-    delete (std::string *)data;
+    if (data) {
+        delete (std::string *)data;
+    }
 }
 
 //
@@ -1268,10 +1322,7 @@ AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string na
  */
 AminoJSObject::ObjectProperty::~ObjectProperty() {
     //release instance
-    if (value) {
-        value->release();
-        value = NULL;
-    }
+    destroy();
 }
 
 /**
@@ -1324,7 +1375,9 @@ v8::Local<v8::Value> AminoJSObject::ObjectProperty::toValue() {
 /**
  * Get async data representation.
  */
-void* AminoJSObject::ObjectProperty::getAsyncData(v8::Local<v8::Value> &value) {
+void* AminoJSObject::ObjectProperty::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
+    valid = true;
+
     if (value->IsObject()) {
         v8::Local<v8::Object> jsObj = value->ToObject();
         AminoJSObject *obj = Nan::ObjectWrap::Unwrap<AminoJSObject>(jsObj);
@@ -1775,9 +1828,10 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     assert(prop);
 
     //create
-    void *data = prop->getAsyncData(value);
+    bool valid = false;
+    void *data = prop->getAsyncData(value, valid);
 
-    if (!data) {
+    if (!valid) {
         return false;
     }
 
@@ -1788,6 +1842,7 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
         }
 
         prop->freeAsyncData(data);
+
         return true;
     }
 

@@ -591,6 +591,9 @@ void AminoGfx::destroy() {
     //free async
     clearAsyncQueue();
     handleAsyncDeletes();
+
+    //base destroy
+    AminoJSEventObject::destroy();
 }
 
 /**

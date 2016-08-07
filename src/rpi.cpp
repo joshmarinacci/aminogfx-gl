@@ -25,7 +25,7 @@ public:
      * Get factory instance.
      */
     static AminoGfxRPiFactory* getFactory() {
-        static AminoGfxRPiFactory *instance;
+        static AminoGfxRPiFactory *instance = NULL;
 
         if (!instance) {
             instance = new AminoGfxRPiFactory(New);

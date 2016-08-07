@@ -16,7 +16,7 @@ public:
      * Get factory instance.
      */
     static AminoGfxMacFactory* getFactory() {
-        static AminoGfxMacFactory *instance;
+        static AminoGfxMacFactory *instance = NULL;
 
         if (!instance) {
             instance = new AminoGfxMacFactory(New);
@@ -561,6 +561,7 @@ private:
     }
 };
 
+//static initializers
 int AminoGfxMac::instanceCount = 0;
 bool AminoGfxMac::glfwInitialized = false;
 std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLFWwindow *, AminoGfxMac *>();
@@ -583,6 +584,13 @@ AminoJSObject* AminoGfxMacFactory::create() {
     return new AminoGfxMac();
 }
 
+void exitHandler(void *arg) {
+    //Note: not called on Ctrl-C
+    if (DEBUG_BASE) {
+        printf("app exiting\n");
+    }
+}
+
 // ========== Event Callbacks ===========
 
 NAN_MODULE_INIT(InitAll) {
@@ -591,6 +599,9 @@ NAN_MODULE_INIT(InitAll) {
 
     //amino classes
     AminoGfx::InitClasses(target);
+
+    //exit handler
+    node::AtExit(exitHandler);
 }
 
 //entry point
