@@ -6,8 +6,8 @@
 #include <dirent.h>
 #include <stdio.h>
 
-#define DEBUG_GLES true
-#define DEBUG_RENDER true
+#define DEBUG_GLES false
+#define DEBUG_RENDER false
 #define DEBUG_INPUT false
 
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
