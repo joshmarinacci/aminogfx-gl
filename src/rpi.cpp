@@ -180,7 +180,7 @@ private:
         instanceCount--;
 
         if (DEBUG_GLES) {
-            printf("Destroyed GLFW instance. Left=%i\n", instanceCount);
+            printf("Destroyed OpenGL ES/EGL instance. Left=%i\n", instanceCount);
         }
 
         if (instanceCount == 0) {
@@ -305,7 +305,7 @@ private:
     }
 
     void initInput() {
-        if((getuid()) != 0) {
+        if ((getuid()) != 0) {
             printf("you are not root. this might not work\n");
         }
 
@@ -362,7 +362,8 @@ private:
 
                 for (int i = 0; i < EV_MAX; i++) {
                     if (test_bit(i, evtype_b)) {
-                        printf("event type 0x%02x ",i);
+                        printf("event type 0x%02x ", i);
+
                         switch (i) {
                             case EV_SYN:
                                 printf("sync events\n");
@@ -476,6 +477,10 @@ private:
                 handleEvent(ev[i]);
             }
         }
+
+        if (DEBUG_GLES) {
+            printf("-> done\n");
+        }
     }
 
     void handleEvent(input_event ev) {
@@ -518,7 +523,9 @@ private:
         }
 
         if (ev.type == EV_KEY) {
-            printf("key or button pressed code = %d, state = %d\n", ev.code, ev.value);
+            if (DEBUG_GLES) {
+                printf("key or button pressed code = %d, state = %d\n", ev.code, ev.value);
+            }
 
             if (ev.code == BTN_LEFT) {
                 //TODO GLFW_MOUSE_BUTTON_CALLBACK_FUNCTION(ev.code, ev.value);

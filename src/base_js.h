@@ -52,7 +52,7 @@ protected:
     static int totalInstances;
 
     AminoJSObject(std::string name);
-    virtual ~AminoJSObject();
+    ~AminoJSObject();
 
     virtual void preInit(Nan::NAN_METHOD_ARGS_TYPE info);
     virtual void setup();
@@ -386,7 +386,7 @@ public:
 class AminoJSEventObject : public AminoJSObject {
 public:
     AminoJSEventObject(std::string name);
-    virtual ~AminoJSEventObject();
+    ~AminoJSEventObject();
 
     bool enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> &value);
     bool enqueueValueUpdate(AsyncValueUpdate *update) override;

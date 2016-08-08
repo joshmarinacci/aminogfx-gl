@@ -585,7 +585,7 @@ AminoJSObject* AminoGfxMacFactory::create() {
 }
 
 void exitHandler(void *arg) {
-    //Note: not called on Ctrl-C
+    //Note: not called on Ctrl-C (use process.on('SIGINT', ...))
     if (DEBUG_BASE) {
         printf("app exiting\n");
     }

@@ -46,7 +46,7 @@ class AminoAnim;
 class AminoGfx : public AminoJSEventObject {
 public:
     AminoGfx(std::string name);
-    virtual ~AminoGfx();
+    ~AminoGfx();
 
     static NAN_MODULE_INIT(InitClasses);
 
@@ -194,7 +194,7 @@ public:
         //empty
     }
 
-    virtual ~AminoNode() {
+    ~AminoNode() {
         //see destroy
     }
 
@@ -216,11 +216,14 @@ public:
         //register native properties
         propX = createFloatProperty("x");
         propY = createFloatProperty("y");
+
         propScaleX = createFloatProperty("sx");
         propScaleY = createFloatProperty("sy");
+
         propRotateX = createFloatProperty("rx");
         propRotateY = createFloatProperty("ry");
         propRotateZ = createFloatProperty("rz");
+
         propOpacity = createFloatProperty("opacity");
         propVisible = createBooleanProperty("visible");
     }
@@ -234,7 +237,12 @@ public:
         //to be overwritten
     }
 
+    /**
+     * Get AminoGfx instance.
+     */
     AminoGfx* getAminoGfx() {
+        assert(eventHandler);
+
         return (AminoGfx *)eventHandler;
     }
 
@@ -314,7 +322,7 @@ public:
         //empty
     }
 
-    virtual ~AminoText() {
+    ~AminoText() {
         //empty
     }
 
@@ -582,7 +590,7 @@ public:
      * Create anim factory.
      */
     static AminoAnimFactory* getFactory() {
-        static AminoAnimFactory *animFactory;
+        static AminoAnimFactory *animFactory = NULL;
 
         if (!animFactory) {
             animFactory = new AminoAnimFactory(New);
@@ -915,15 +923,15 @@ class AminoRect : public AminoNode {
 public:
     bool hasImage;
 
-    //color
+    //color (no texture)
     FloatProperty *propR;
     FloatProperty *propG;
     FloatProperty *propB;
 
-    //image
+    //texture (image only)
     ObjectProperty *propTexture;
 
-    //  offset
+    //texture offset (image only)
     FloatProperty *propLeft;
     FloatProperty *propRight;
     FloatProperty *propTop;
@@ -933,7 +941,7 @@ public:
         this->hasImage = hasImage;
     }
 
-    virtual ~AminoRect() {
+    ~AminoRect() {
         //empty
     }
 
@@ -1076,7 +1084,7 @@ public:
         //empty
     }
 
-    virtual ~AminoPolygon() {
+    ~AminoPolygon() {
     }
 
     void setup() override {

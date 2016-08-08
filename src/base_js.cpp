@@ -55,6 +55,9 @@ AminoJSObject::~AminoJSObject() {
         delete iter->second;
     }
 
+    propertyMap.clear();
+
+    //instance count
     activeInstances--;
 }
 

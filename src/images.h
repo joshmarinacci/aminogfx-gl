@@ -68,7 +68,7 @@ public:
     int h = 0;
 
     AminoTexture();
-    virtual ~AminoTexture();
+    ~AminoTexture();
 
     void destroy() override;
 

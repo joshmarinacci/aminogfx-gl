@@ -102,6 +102,8 @@ public:
         delete[] globaltx;
         globaltx = (GLfloat *)matrixStack.top();
         matrixStack.pop();
+
+        assert(globaltx);
     }
 
     void useProgram(GLuint prog) {
