@@ -18,6 +18,7 @@ AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
 AminoGfx::~AminoGfx() {
     if (startCallback) {
         delete startCallback;
+        startCallback = NULL;
     }
 
     //Note: properties are deleted by base class destructor
@@ -93,6 +94,10 @@ void AminoGfx::setup() {
     //screen size
     int w, h, refreshRate;
     bool fullscreen;
+
+    if (DEBUG_BASE) {
+        printf("getScreenInfo()\n");
+    }
 
     if (getScreenInfo(w, h, refreshRate, fullscreen)) {
         v8::Local<v8::Object> obj = Nan::New<v8::Object>();
@@ -338,6 +343,8 @@ void AminoGfx::renderingThread(void *arg) {
 
 /**
  * Start rendering in asynchronous thread.
+ *
+ * Note: called on main thread.
  */
 void AminoGfx::startRenderingThread() {
     if (threadRunning) {
@@ -352,6 +359,9 @@ void AminoGfx::startRenderingThread() {
 
     asyncHandle.data = this;
     uv_async_init(uv_default_loop(), &asyncHandle, AminoGfx::handleRenderEvents);
+
+    //retain instance (while thread is running)
+    retain();
 }
 
 /**
@@ -401,6 +411,9 @@ void AminoGfx::stopRenderingThread() {
 
     //destroy handle
     uv_close((uv_handle_t *)&asyncHandle, NULL);
+
+    //release instance
+    release();
 }
 
 /**
@@ -552,7 +565,7 @@ NAN_METHOD(AminoGfx::Destroy) {
 
     assert(obj);
 
-    if (obj->started && !obj->destroyed) {
+    if (!obj->destroyed) {
         obj->destroy();
     }
 }
@@ -567,22 +580,26 @@ void AminoGfx::destroy() {
     stopRenderingThread();
 
     //bind context (to main thread)
-    bool res = bindContext();
+    if (started) {
+        started = false;
 
-    assert(res);
+        bool res = bindContext();
 
-    //renderer (shader programs)
-    if (colorShader) {
-        colorShader->destroy();
-        delete colorShader;
-        colorShader = NULL;
+        assert(res);
 
-        textureShader->destroy();
-        delete textureShader;
-        textureShader = NULL;
+        //renderer (shader programs)
+        if (colorShader) {
+            colorShader->destroy();
+            delete colorShader;
+            colorShader = NULL;
 
-        delete[] modelView;
-        modelView = NULL;
+            textureShader->destroy();
+            delete textureShader;
+            textureShader = NULL;
+
+            delete[] modelView;
+            modelView = NULL;
+        }
     }
 
     //unbind root
@@ -594,6 +611,11 @@ void AminoGfx::destroy() {
 
     //base destroy
     AminoJSEventObject::destroy();
+
+    //debug
+    if (DEBUG_BASE) {
+        printf("AminoGfx destroyed -> %i references left\n", getReferenceCount());
+    }
 }
 
 /**
@@ -722,13 +744,16 @@ NAN_METHOD(AminoGfx::SetRoot) {
         assert(group);
     }
 
-    AminoGfx *obj= Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
 
     assert(obj);
 
     obj->setRoot(group);
 }
 
+/**
+ * Set the root node.
+ */
 void AminoGfx::setRoot(AminoGroup *group) {
     //validate
     if (group && !group->checkRenderer(this)) {

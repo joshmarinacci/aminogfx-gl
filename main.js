@@ -157,12 +157,18 @@ AminoGfx.prototype.start = function (done) {
     });
 };
 
+/**
+ * Set the root node.
+ */
 AminoGfx.prototype.setRoot = function (root) {
     this.root = root;
 
     this._setRoot(root);
 };
 
+/**
+ * Get the root node.
+ */
 AminoGfx.prototype.getRoot = function () {
     return this.root;
 };
@@ -241,6 +247,9 @@ AminoGfx.prototype.handleEvent = function (evt) {
  * Destroy renderer.
  */
 AminoGfx.prototype.destroy = function () {
+    //clear root copy
+    this.root = null;
+
     this._destroy();
 
 /*

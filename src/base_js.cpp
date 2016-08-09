@@ -17,6 +17,8 @@ AminoJSObjectFactory::AminoJSObjectFactory(std::string name, Nan::FunctionCallba
  * Create new object instance.
  */
 AminoJSObject* AminoJSObjectFactory::create() {
+    assert(false);
+
     return NULL;
 }
 
@@ -54,6 +56,9 @@ AminoJSObject::~AminoJSObject() {
     for (std::map<int, AnyProperty *>::iterator iter = propertyMap.begin(); iter != propertyMap.end(); iter++) {
         delete iter->second;
     }
+
+    //debug
+    //printf("deleted %i properties\n", (int)propertyMap.size());
 
     propertyMap.clear();
 
@@ -282,6 +287,11 @@ AminoJSObject::FloatProperty* AminoJSObject::createFloatProperty(std::string nam
     return prop;
 }
 
+/**
+ * Create float array property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
 AminoJSObject::FloatArrayProperty* AminoJSObject::createFloatArrayProperty(std::string name) {
     int id = ++lastPropertyId;
     FloatArrayProperty *prop = new FloatArrayProperty(this, name, id);
@@ -291,6 +301,11 @@ AminoJSObject::FloatArrayProperty* AminoJSObject::createFloatArrayProperty(std::
     return prop;
 }
 
+/**
+ * Create int32 property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
 AminoJSObject::Int32Property* AminoJSObject::createInt32Property(std::string name) {
     int id = ++lastPropertyId;
     Int32Property *prop = new Int32Property(this, name, id);
@@ -300,6 +315,11 @@ AminoJSObject::Int32Property* AminoJSObject::createInt32Property(std::string nam
     return prop;
 }
 
+/**
+ * Create unsigned int32 property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
 AminoJSObject::UInt32Property* AminoJSObject::createUInt32Property(std::string name) {
     int id = ++lastPropertyId;
     UInt32Property *prop = new UInt32Property(this, name, id);
@@ -364,7 +384,8 @@ void AminoJSObject::addProperty(AnyProperty *prop) {
     }
 
     int id = prop->id;
-    propertyMap.insert(std::pair<int, AnyProperty *>(id, prop));
+
+    propertyMap[id] = prop;
 
     v8::Local<v8::Value> value;
 
