@@ -186,6 +186,7 @@ private:
         if (instanceCount == 0) {
             //VideoCore IV
             bcm_host_deinit();
+            glESInitialized = false;
         }
     }
 
