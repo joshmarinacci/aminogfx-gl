@@ -359,7 +359,7 @@ void AminoGfx::startRenderingThread() {
  */
 void AminoGfx::handleRenderEvents(uv_async_t *handle) {
     if (DEBUG_RENDERER) {
-        printf("-> renderer: handleAsyncDeletes()\n");
+        printf("-> renderer: handleRenderEvents()\n");
     }
 
     AminoGfx *gfx = (AminoGfx *)handle->data;
