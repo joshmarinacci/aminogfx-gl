@@ -68,7 +68,7 @@ protected:
     ColorShader *colorShader = NULL;
     TextureShader *textureShader = NULL;
     AminoFontShader *fontShader = NULL;
-    GLfloat *modelView;
+    GLfloat *modelView = NULL;
 
     //thread
     uv_thread_t thread;

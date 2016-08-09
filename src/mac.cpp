@@ -112,6 +112,7 @@ private:
 
         if (instanceCount == 0) {
             glfwTerminate();
+            glfwInitialized = false;
         }
     }
 
