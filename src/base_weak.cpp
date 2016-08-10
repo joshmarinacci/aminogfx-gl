@@ -1,5 +1,7 @@
 #include "base_weak.h"
 
+#define DEBUG_WEAK false
+
 //
 // AminoWeakReference
 //
@@ -8,10 +10,14 @@
  * Construct weak reference.
  */
 AminoWeakReference::AminoWeakReference(v8::Local<v8::Object> &value) {
+    if (DEBUG_WEAK) {
+        printf("AminoWeakReference()\n");
+    }
+
     this->value.Reset(value);
 
     //make weak
-    //FIXME does not recognize kParameter: https://github.com/nodejs/nan/blob/master/nan_weak.h
+    //Note: does not recognize kParameter and only supports objects: https://github.com/nodejs/nan/blob/master/nan_weak.h
     this->value.SetWeak(this, weakCallbackHandler, Nan::WeakCallbackType::kParameter);
 }
 
@@ -19,7 +25,13 @@ AminoWeakReference::AminoWeakReference(v8::Local<v8::Object> &value) {
  * Destructor.
  */
 AminoWeakReference::~AminoWeakReference() {
+    if (DEBUG_WEAK) {
+        printf("~AminoWeakReference()\n");
+    }
+
     value.Reset();
+
+    assert(!active);
 }
 
 /**
@@ -33,8 +45,14 @@ bool AminoWeakReference::hasReference() {
  * Get value.
  */
 v8::Local<v8::Object> AminoWeakReference::getValue() {
-    assert(active);
+    if (DEBUG_WEAK) {
+        printf("AminoWeakReference::getValue()\n");
+    }
 
+    assert(active);
+    assert(!value.IsEmpty());
+
+    //new strong reference
     return Nan::New(value);
 }
 
@@ -42,7 +60,13 @@ v8::Local<v8::Object> AminoWeakReference::getValue() {
  * Callback function.
  */
 void AminoWeakReference::weakCallbackHandler(const Nan::WeakCallbackInfo<AminoWeakReference> &data) {
+    if (DEBUG_WEAK) {
+        printf("AminoWeakReference::weakCallbackHandler()\n");
+    }
+
     AminoWeakReference *obj = data.GetParameter();
+
+    assert(obj);
 
     obj->handleReferenceLost();
 }
@@ -52,11 +76,16 @@ void AminoWeakReference::weakCallbackHandler(const Nan::WeakCallbackInfo<AminoWe
  */
 void AminoWeakReference::handleReferenceLost() {
     active = false;
-    value.Reset();
+
+    //Note: do not call value.Reset() here! Leads to crash.
 
     //callback
     if (callback) {
         (obj->*callback)(this);
+    }
+
+    if (DEBUG_WEAK) {
+        printf("-> done\n");
     }
 }
 
@@ -83,13 +112,19 @@ AminoJSWeakReference::AminoJSWeakReference(): AminoJSObject(getFactory()->name) 
  * Destructor.
  */
 AminoJSWeakReference::~AminoJSWeakReference()  {
-    //empty
+    if (DEBUG_WEAK) {
+        printf("~AminoJSWeakReference\n");
+    }
+
+    assert(!weak || !weak->hasReference());
 }
 
 /**
  * Get the weak reference handler.
  */
 AminoWeakReference *AminoJSWeakReference::getWeakReference() {
+    assert(weak);
+
     return weak;
 }
 
@@ -97,6 +132,10 @@ AminoWeakReference *AminoJSWeakReference::getWeakReference() {
  * Free all resources.
  */
 void AminoJSWeakReference::destroy() {
+    if (DEBUG_WEAK) {
+        printf("AminoJSWeakReference::destroy()\n");
+    }
+
     if (destroyed) {
         return;
     }
@@ -183,6 +222,10 @@ void AminoJSWeakReference::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
  * Weak reference lost.
  */
 void AminoJSWeakReference::weakCallbackHandler(AminoWeakReference *weak) {
+    if (DEBUG_WEAK) {
+        printf("AminoJSWeakReference::weakCallbackHandler()\n");
+    }
+
     //fire callback
     if (callback) {
         //create scope
@@ -198,6 +241,10 @@ void AminoJSWeakReference::weakCallbackHandler(AminoWeakReference *weak) {
     if (retained) {
         release();
         retained = false;
+    }
+
+    if (DEBUG_WEAK) {
+        printf("-> done\n");
     }
 }
 
@@ -230,7 +277,6 @@ NAN_METHOD(AminoJSWeakReference::GetReference) {
     }
 
     info.GetReturnValue().Set(res);
-
 }
 
 /**

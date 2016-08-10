@@ -1,6 +1,6 @@
 'use strict';
 
-//launch: node --expose-gc demos/tests/gc.js
+//launch: node --expose-gc demos/tests/gc-gfx.js
 
 var amino = require('../../main.js');
 

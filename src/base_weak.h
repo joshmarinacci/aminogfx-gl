@@ -24,8 +24,8 @@ private:
     bool active = true;
 
     //callback
-    AminoJSObject *obj;
-    weakCallback callback;
+    AminoJSObject *obj = NULL;
+    weakCallback callback = NULL;
 
     static void weakCallbackHandler(const Nan::WeakCallbackInfo<AminoWeakReference> &data);
     void handleReferenceLost();
