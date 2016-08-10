@@ -33,6 +33,9 @@ NAN_MODULE_INIT(AminoGfx::InitClasses) {
 
     //fonts class
     AminoFonts::Init(target);
+
+    //weak reference class
+    AminoJSWeakReference::Init(target);
 }
 
 /**

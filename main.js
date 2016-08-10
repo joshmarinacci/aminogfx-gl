@@ -1856,6 +1856,11 @@ function makeProp(obj, name, val) {
 
 exports.makeProps = makeProps;
 
+//
+// AminoWeakReference
+//
+exports.AminoWeakReference = native.AminoWeakReference;
+
 //input
 var input = require('./src/core/aminoinput');
 

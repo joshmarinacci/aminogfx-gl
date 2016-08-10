@@ -3,6 +3,7 @@
 
 #include "gfx.h"
 #include "base_js.h"
+#include "base_weak.h"
 #include "fonts.h"
 #include "images.h"
 
