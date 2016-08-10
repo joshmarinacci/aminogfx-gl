@@ -5,6 +5,7 @@
             "sources":[
                 "src/base.cpp",
                 "src/base_js.cpp",
+                "src/base_weak.cpp",
 
                 "src/fonts/vector.c",
                 "src/fonts/vertex-buffer.c",
