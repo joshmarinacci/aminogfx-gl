@@ -479,7 +479,7 @@ bool AminoJSObject::enqueueValueUpdate(unsigned int value, asyncValueCallback ca
  *
  * Note: has to be called on main thread.
  */
-bool AminoJSObject::enqueueValueUpdate(v8::Local<v8::Value> value, void *data, asyncValueCallback callback) {
+bool AminoJSObject::enqueueValueUpdate(v8::Local<v8::Value> &value, void *data, asyncValueCallback callback) {
     return enqueueValueUpdate(new AsyncValueUpdate(this, value, data, callback));
 }
 
@@ -640,7 +640,7 @@ AminoJSObject::AnyProperty* AminoJSObject::getPropertyWithName(std::string name)
  *
  * Note: has to be called on main thread.
  */
-void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> value) {
+void AminoJSObject::updateProperty(std::string name, v8::Local<v8::Value> &value) {
     if (DEBUG_BASE) {
         printf("updateProperty(): %s\n", name.c_str());
     }
@@ -705,7 +705,9 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
         //create scope
         Nan::HandleScope scope;
 
-        property->obj->updateProperty(property->name, property->toValue());
+        v8::Local<v8::Value> value = property->toValue();
+
+        property->obj->updateProperty(property->name, value);
     } else {
         enqueueJSPropertyUpdate(property);
     }
@@ -1571,7 +1573,9 @@ AminoJSObject::JSPropertyUpdate::~JSPropertyUpdate() {
  * Update JS property on main thread.
  */
 void AminoJSObject::JSPropertyUpdate::apply() {
-    property->obj->updateProperty(property->name, property->toValue());
+    v8::Local<v8::Value> value = property->toValue();
+
+    property->obj->updateProperty(property->name, value);
 }
 
 //

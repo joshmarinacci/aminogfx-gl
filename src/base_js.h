@@ -4,6 +4,7 @@
 #include <node.h>
 #include <node_buffer.h>
 #include <nan.h>
+
 #include <map>
 #include <memory>
 #include <pthread.h>
@@ -59,7 +60,7 @@ protected:
     virtual void destroy();
 
     //properties
-    void updateProperty(std::string name, v8::Local<v8::Value> value);
+    void updateProperty(std::string name, v8::Local<v8::Value> &value);
 
     static std::string toString(v8::Local<v8::Value> &value);
     static std::string* toNewString(v8::Local<v8::Value> &value);
@@ -315,7 +316,7 @@ protected:
 
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
     bool enqueueValueUpdate(unsigned int value, asyncValueCallback callback);
-    bool enqueueValueUpdate(v8::Local<v8::Value> value, void *data, asyncValueCallback callback);
+    bool enqueueValueUpdate(v8::Local<v8::Value> &value, void *data, asyncValueCallback callback);
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     class JSPropertyUpdate: public AnyAsyncUpdate {

@@ -674,15 +674,17 @@ NAN_METHOD(AminoTexture::LoadTextureFromBuffer) {
     assert(obj);
 
     //data
-    v8::Local<v8::Object> data = info[0]->ToObject();
-    v8::Local<v8::Object> bufferObj = Nan::Get(data, Nan::New<v8::String>("buffer").ToLocalChecked()).ToLocalChecked()->ToObject();
+    v8::Local<v8::Value> data = info[0];
+    v8::Local<v8::Object> dataObj = data->ToObject();
+    v8::Local<v8::Object> bufferObj = Nan::Get(dataObj, Nan::New<v8::String>("buffer").ToLocalChecked()).ToLocalChecked()->ToObject();
     amino_texture_t *textureData = new amino_texture_t();
 
     textureData->bufferData = node::Buffer::Data(bufferObj);
     textureData->bufferLen = node::Buffer::Length(bufferObj);
-    textureData->w = Nan::Get(data, Nan::New<v8::String>("w").ToLocalChecked()).ToLocalChecked()->IntegerValue();
-    textureData->h = Nan::Get(data, Nan::New<v8::String>("h").ToLocalChecked()).ToLocalChecked()->IntegerValue();
-    textureData->bpp = Nan::Get(data, Nan::New<v8::String>("bpp").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+
+    textureData->w = Nan::Get(dataObj, Nan::New<v8::String>("w").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+    textureData->h = Nan::Get(dataObj, Nan::New<v8::String>("h").ToLocalChecked()).ToLocalChecked()->IntegerValue();
+    textureData->bpp = Nan::Get(dataObj, Nan::New<v8::String>("bpp").ToLocalChecked()).ToLocalChecked()->IntegerValue();
 
     //callback
     v8::Local<v8::Function> callback = info[1].As<v8::Function>();
