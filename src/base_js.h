@@ -16,7 +16,7 @@
 #define ASYNC_UPDATE_CUSTOM      100
 
 //FIXME cbx
-#define DEBUG_BASE true
+#define DEBUG_BASE false
 #define DEBUG_RESOURCES true
 #define DEBUG_REFERENCES false
 
