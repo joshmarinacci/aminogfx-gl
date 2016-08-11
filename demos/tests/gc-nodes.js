@@ -18,8 +18,8 @@ gfx.start(function (err) {
     console.log('-> started');
 
     //stress tests
-    generateWeakReferenceGarbage();
-    //generateRectGarbage(5 * 1000);
+    //generateWeakReferenceGarbage();
+    generateRectGarbage(5 * 1000);
 });
 
 function callGC(log) {
@@ -114,4 +114,5 @@ function generateRectGarbage(maxTime) {
     }, 100);
 
     //cbx memory leak (instances freed but not whole memory)
+    //-> 157 MB at end of test
 }
