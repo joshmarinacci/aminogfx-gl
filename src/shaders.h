@@ -8,7 +8,7 @@
  */
 class ColorShader {
 public:
-    int prog = -1;
+    GLuint prog = INVALID_PROGRAM;
     GLint u_matrix, u_trans, u_opacity;
     GLint attr_pos;
     GLint attr_color;
@@ -23,7 +23,7 @@ public:
  */
 class TextureShader {
 public:
-    int prog = -1;
+    GLuint prog = INVALID_PROGRAM;
     GLint u_matrix, u_trans, u_opacity;
     GLint attr_pos;
     GLint attr_texcoords, texID;

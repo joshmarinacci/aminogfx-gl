@@ -5,9 +5,9 @@ ColorShader::ColorShader() {
 }
 
 void ColorShader::destroy() {
-    if (prog != -1) {
+    if (prog != INVALID_PROGRAM) {
         glDeleteProgram(prog);
-        prog = -1;
+        prog = INVALID_PROGRAM;
     }
 }
 
@@ -16,8 +16,8 @@ TextureShader::TextureShader() {
 }
 
 void TextureShader::destroy() {
-    if (prog != -1) {
+    if (prog != INVALID_PROGRAM) {
         glDeleteProgram(prog);
-        prog = -1;
+        prog = INVALID_PROGRAM;
     }
 }

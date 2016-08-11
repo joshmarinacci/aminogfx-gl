@@ -23,6 +23,9 @@ void SimpleRenderer::startRender(AminoNode *root) {
     }
 }
 
+/**
+ * Render a node.
+ */
 void SimpleRenderer::render(GLContext *c, AminoNode *root) {
     if (DEBUG_RENDERER) {
         printf("-> render()\n");
@@ -80,8 +83,13 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
     c->restore();
 }
 
+/**
+ * Use solid color shader.
+ */
 void colorShaderApply(GLContext *ctx, ColorShader* shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat colors[][3], GLfloat opacity) {
     ctx->useProgram(shader->prog);
+
+    //set uniforms
     glUniformMatrix4fv(shader->u_matrix, 1, GL_FALSE, modelView);
     glUniformMatrix4fv(shader->u_trans,  1, GL_FALSE, ctx->globaltx);
     glUniform1f(shader->u_opacity, opacity);
@@ -91,6 +99,7 @@ void colorShaderApply(GLContext *ctx, ColorShader* shader, GLfloat modelView[16]
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
+    //set attributes
     glVertexAttribPointer(shader->attr_pos,   2, GL_FLOAT, GL_FALSE, 0, verts);
     glVertexAttribPointer(shader->attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
     glEnableVertexAttribArray(shader->attr_pos);
@@ -187,7 +196,7 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
         glStencilMask(0x00);
 
         //turn color buffer drawing back on
-        glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
 
     //group opacity

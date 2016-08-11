@@ -255,7 +255,7 @@ AminoFontSizeFactory* AminoFontSize::getFactory() {
 }
 
 /**
- * Initialize Group template.
+ * Initialize AminoFontSize template.
  */
 v8::Local<v8::Function> AminoFontSize::GetInitFunction() {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
@@ -275,6 +275,9 @@ NAN_METHOD(AminoFontSize::New) {
     AminoJSObject::createInstance(info, getFactory());
 }
 
+/**
+ * Initialize constructor values.
+ */
 void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     AminoFont *font = Nan::ObjectWrap::Unwrap<AminoFont>(info[0]->ToObject());
     int size = (int)round(info[1]->NumberValue());
@@ -297,6 +300,9 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     Nan::Set(obj, Nan::New("style").ToLocalChecked(), Nan::New<v8::String>(font->fontStyle).ToLocalChecked());
 }
 
+/**
+ * Calculate text width.
+ */
 NAN_METHOD(AminoFontSize::CalcTextWidth) {
     AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
     v8::String::Utf8Value str(info[0]);
@@ -341,6 +347,9 @@ float AminoFontSize::getTextWidth(const char *text) {
     return w;
 }
 
+/**
+ * Get font metrics (height, ascender, descender).
+ */
 NAN_METHOD(AminoFontSize::GetFontMetrics) {
     AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
 
@@ -378,14 +387,25 @@ AminoJSObject* AminoFontSizeFactory::create() {
 // AminoFontShader
 //
 
+/**
+ * Create font shader.
+ */
 AminoFontShader::AminoFontShader(std::string shaderPath) {
     loadShader(shaderPath);
 }
 
+/**
+ * Free font shader.
+ *
+ * Note: has to run on rendering thread.
+ */
 AminoFontShader::~AminoFontShader() {
     glDeleteProgram(shader);
 }
 
+/**
+ * Load vertex and fragment shader.
+ */
 void AminoFontShader::loadShader(std::string shaderPath) {
     std::string vert = shaderPath + "/v3f-t2f.vert";
     std::string frag = shaderPath + "/v3f-t2f.frag";
@@ -401,6 +421,9 @@ void AminoFontShader::loadShader(std::string shaderPath) {
     colorUni = glGetUniformLocation(shader, "color");
 }
 
+/**
+ * Get texture for atlas.
+ */
 amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
     std::map<texture_atlas_t *, amino_atlas_t>::iterator it = atlasTextures.find(atlas);
 
