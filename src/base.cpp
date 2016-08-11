@@ -7,6 +7,7 @@
 #include "fonts/utf8-utils.h"
 
 #define DEBUG_RENDERER false
+#define DEBUG_RENDERER_ERRORS false
 #define DEBUG_FONT_TEXTURE false
 
 //
@@ -343,6 +344,11 @@ void AminoGfx::renderingThread(void *arg) {
 
     while (gfx->isRenderingThreadRunning()) {
         gfx->render();
+
+        //check errors
+        if (DEBUG_RENDERER || DEBUG_RENDERER_ERRORS) {
+            SimpleRenderer::showGLErrors();
+        }
     }
 }
 

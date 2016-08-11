@@ -136,6 +136,8 @@ public:
     virtual void drawPoly(GLContext *c, AminoPolygon *poly);
     virtual void drawText(GLContext *c, AminoText *text);
 
+    static int showGLErrors();
+
 private:
     AminoFontShader *fontShader;
     ColorShader *colorShader;

@@ -438,3 +438,16 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
 
     c->restore();
 }
+
+/**
+ * Output all occured OpenGL errors.
+ */
+int SimpleRenderer::showGLErrors() {
+    GLenum err = GL_NO_ERROR;
+    int count = 0;
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        count++;
+        printf("OpenGL error: %08x\n", err);
+    }
+}
