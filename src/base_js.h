@@ -15,9 +15,8 @@
 #define ASYNC_JS_UPDATE_CALLBACK  11
 #define ASYNC_UPDATE_CUSTOM      100
 
-//FIXME cbx
 #define DEBUG_BASE false
-#define DEBUG_RESOURCES true
+#define DEBUG_RESOURCES false
 #define DEBUG_REFERENCES false
 
 class AminoJSObject;

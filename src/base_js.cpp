@@ -251,7 +251,7 @@ bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::V
 
     //set nativeListener value
     //FIXME cbx: memory leak due to v8::Function reference which is never freed!!!
-//cbx    Nan::Set(obj, Nan::New<v8::String>("nativeListener").ToLocalChecked(), Nan::New<v8::Function>(PropertyUpdated));
+    Nan::Set(obj, Nan::New<v8::String>("nativeListener").ToLocalChecked(), Nan::New<v8::Function>(PropertyUpdated));
 
     //set propId value
     Nan::Set(obj, Nan::New<v8::String>("propId").ToLocalChecked(), Nan::New<v8::Integer>(id));

@@ -8,7 +8,7 @@ extern "C" {
     #include "upng.h"
 }
 
-#define DEBUG_IMAGES true
+#define DEBUG_IMAGES false
 #define DEBUG_IMAGES_CONSOLE true
 
 //
