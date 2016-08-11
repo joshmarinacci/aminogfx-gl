@@ -1,11 +1,13 @@
 #include "base.h"
 
 #include <cwctype>
+#include <algorithm>
 
 #include "SimpleRenderer.h"
 #include "fonts/utf8-utils.h"
 
 #define DEBUG_RENDERER false
+#define DEBUG_FONT_TEXTURE false
 
 //
 //  AminoGfx
@@ -207,7 +209,7 @@ NAN_METHOD(AminoGfx::InitColorShader) {
     colorShader->u_matrix    = info[1]->Uint32Value();
     colorShader->u_trans     = info[2]->Uint32Value();
     colorShader->u_opacity   = info[3]->Uint32Value();
-
+//cbx
     colorShader->attr_pos    = info[4]->Uint32Value();
     colorShader->attr_color  = info[5]->Uint32Value();
 }
@@ -1023,8 +1025,42 @@ GLuint AminoText::updateTexture() {
         printf("-> updateTexture()\n");
     }
 
+    if (DEBUG_FONT_TEXTURE) {
+        //output as ASCII art
+        int maxW = std::min(80, (int)atlas->width);
+        int maxH = atlas->height;
+
+        //find last set pixels
+        unsigned char *first = atlas->data;
+        unsigned char *pos = first + atlas->width * atlas->height - 1;
+
+        while (pos > first && *pos == 0) {
+            pos--;
+        }
+
+        maxH = (pos - first) / atlas->height + 1;
+
+        //output
+        for (int j = 0; j < maxH; j++) {
+            for (int i = 0; i < maxW; i++) {
+                int d = atlas->data[i + j * atlas->width];
+
+                if (d == 0) {
+                    printf(" ");
+                } else {
+                    printf("X");
+                }
+            }
+
+            printf("\n");
+        }
+
+        printf("\n");
+    }
+
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
 
+    //FIXME cbx: no output on RPi
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
 
     texture.lastGlyphUpdate = fontSize->fontTexture->glyphs->size;
