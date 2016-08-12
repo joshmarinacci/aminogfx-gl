@@ -437,6 +437,10 @@ vertex_buffer_render_finish ( vertex_buffer_t *self )
     glBindBuffer( GL_ARRAY_BUFFER, 0 );
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 #endif
+
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_render_finish()");
+    }
 }
 
 
@@ -473,19 +477,26 @@ vertex_buffer_render ( vertex_buffer_t *self, GLenum mode )
     size_t icount = self->indices->size;
 
     vertex_buffer_render_setup( self, mode );
+
     if( icount )
     {
         glDrawElements( mode, icount, GL_UNSIGNED_INT, 0 );
+
+        if (DEBUG_GL_ERRORS) {
+            vertex_buffer_show_gl_errors("vertex_buffer_render() glDrawElements");
+        }
     }
     else
     {
         glDrawArrays( mode, 0, vcount );
-    }
-    vertex_buffer_render_finish( self );
 
-    if (DEBUG_GL_ERRORS) {
-        vertex_buffer_show_gl_errors("vertex_buffer_render() done");
+        if (DEBUG_GL_ERRORS) {
+            vertex_buffer_show_gl_errors("vertex_buffer_render() glDrawArrays");
+        }
     }
+
+
+    vertex_buffer_render_finish( self );
 }
 
 
