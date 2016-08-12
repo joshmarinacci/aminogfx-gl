@@ -483,6 +483,7 @@ vertex_buffer_render ( vertex_buffer_t *self, GLenum mode )
         //cbx FIXME GL_INVALID_ENUM
         //glDrawElements( mode, icount, GL_UNSIGNED_INT, 0 );
 
+        //cbx FIXME wrong output on macOS and RPi (but no longer OpenGL errors)
         glDrawElements( mode, icount, GL_UNSIGNED_SHORT, 0 );
 
         if (DEBUG_GL_ERRORS) {
