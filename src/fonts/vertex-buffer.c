@@ -480,7 +480,10 @@ vertex_buffer_render ( vertex_buffer_t *self, GLenum mode )
 
     if( icount )
     {
-        glDrawElements( mode, icount, GL_UNSIGNED_INT, 0 );
+        //cbx FIXME GL_INVALID_ENUM
+        //glDrawElements( mode, icount, GL_UNSIGNED_INT, 0 );
+
+        glDrawElements( mode, icount, GL_UNSIGNED_SHORT, 0 );
 
         if (DEBUG_GL_ERRORS) {
             vertex_buffer_show_gl_errors("vertex_buffer_render() glDrawElements");
