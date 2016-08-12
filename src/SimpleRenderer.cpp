@@ -450,4 +450,6 @@ int SimpleRenderer::showGLErrors() {
         count++;
         printf("OpenGL error: %08x\n", err);
     }
+
+    return count;
 }
