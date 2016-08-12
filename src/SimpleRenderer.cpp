@@ -421,6 +421,10 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
     //use texture
     GLuint texture = text->updateTexture();
 
+    if (DEBUG_RENDERER_ERRORS) {
+        showGLErrors("updateTexture()");
+    }
+
     glActiveTexture(GL_TEXTURE0);
     c->bindTexture(texture);
 
@@ -439,8 +443,16 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
     //only the global transform will change each time
     glUniformMatrix4fv(fontShader->transUni, 1, 0, c->globaltx);
 
+    if (DEBUG_RENDERER_ERRORS) {
+        showGLErrors("before text rendering");
+    }
+
     //render
     vertex_buffer_render(text->buffer, GL_TRIANGLES);
+
+    if (DEBUG_RENDERER_ERRORS) {
+        showGLErrors("after text rendering");
+    }
 
     c->restore();
 }
@@ -458,4 +470,15 @@ int SimpleRenderer::showGLErrors() {
     }
 
     return count;
+}
+
+/**
+ * Output all occured OpenGL errors.
+ */
+int SimpleRenderer::showGLErrors(std::string msg) {
+    int res = showGLErrors();
+
+    if (res) {
+        printf("%i OpenGL errors at %s", res, msg.c_str());
+    }
 }

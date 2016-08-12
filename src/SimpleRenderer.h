@@ -115,11 +115,12 @@ public:
     }
 
     void bindTexture(GLuint tex) {
-        if (prevTex != tex) {
+//cbx verify
+//        if (prevTex != tex) {
             glBindTexture(GL_TEXTURE_2D, tex);
 
             prevTex = tex;
-        }
+//        }
     }
 };
 
@@ -137,6 +138,7 @@ public:
     virtual void drawText(GLContext *c, AminoText *text);
 
     static int showGLErrors();
+    static int showGLErrors(std::string msg);
 
 private:
     AminoFontShader *fontShader;
