@@ -238,6 +238,7 @@ private:
 
         viewportW = screenW;
         viewportH = screenH;
+        viewportChanged = true;
 
         //Dispmanx init
         DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0 /* LCD */);

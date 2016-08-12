@@ -208,6 +208,7 @@ private:
 
         //get framebuffer size
         glfwGetFramebufferSize(window, &viewportW, &viewportH);
+        viewportChanged = true;
 
         //check framebuffer size
         if (DEBUG_GLFW) {
@@ -381,6 +382,7 @@ private:
         assert(window);
 
         glfwGetFramebufferSize(window, &viewportW, &viewportH);
+        viewportChanged = true;
 
         //check framebuffer size
         if (DEBUG_GLFW) {
@@ -522,6 +524,7 @@ private:
 
         //get framebuffer size
         glfwGetFramebufferSize(window, &viewportW, &viewportH);
+        viewportChanged = true;
 
         //check framebuffer size
         if (DEBUG_GLFW) {

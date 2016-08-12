@@ -170,6 +170,7 @@ void AminoGfx::initRenderer() {
     //empty: overwrite
     viewportW = propW->value;
     viewportH = propH->value;
+    viewportChanged = true;
 }
 
 /**
@@ -514,41 +515,46 @@ bool AminoGfx::isRendering() {
 }
 
 void AminoGfx::setupViewport() {
-    //set up the viewport (y-inversion, top-left origin)
-    float width = propW->value;
-    float height = propH->value;
+    if (viewportChanged) {
+        viewportChanged = false;
 
-    //scale
-    GLfloat *scaleM = new GLfloat[16];
+        //set up the viewport (y-inversion, top-left origin)
+        float width = propW->value;
+        float height = propH->value;
 
-    make_scale_matrix(1, -1, 1, scaleM);
+        //scale
+        GLfloat *scaleM = new GLfloat[16];
 
-    //translate
-    GLfloat *transM = new GLfloat[16];
+        make_scale_matrix(1, -1, 1, scaleM);
 
-    make_trans_matrix(- width / 2, height / 2, 0, transM);
+        //translate
+        GLfloat *transM = new GLfloat[16];
 
-    //combine
-    GLfloat *m4 = new GLfloat[16];
+        make_trans_matrix(- width / 2, height / 2, 0, transM);
 
-    mul_matrix(m4, transM, scaleM);
+        //combine
+        GLfloat *m4 = new GLfloat[16];
 
-    //3D perspective
-    GLfloat *pixelM = new GLfloat[16];
-    const float near = 150;
-    const float far = -300;
-    const float eye = 600;
+        mul_matrix(m4, transM, scaleM);
 
-    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
-    mul_matrix(modelView, pixelM, m4);
+        //3D perspective
+        GLfloat *pixelM = new GLfloat[16];
+        const float near = 150;
+        const float far = -300;
+        const float eye = 600;
 
-    delete[] m4;
-    delete[] pixelM;
-    delete[] scaleM;
-    delete[] transM;
+        loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
+        mul_matrix(modelView, pixelM, m4);
+
+        delete[] m4;
+        delete[] pixelM;
+        delete[] scaleM;
+        delete[] transM;
+
+        glViewport(0, 0, viewportW, viewportH);
+    }
 
     //prepare
-    glViewport(0, 0, viewportW, viewportH);
     glClearColor(propR->value, propG->value, propB->value, propOpacity->value);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);

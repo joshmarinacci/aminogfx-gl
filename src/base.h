@@ -66,6 +66,7 @@ protected:
     AminoGroup *root = NULL;
     int viewportW;
     int viewportH;
+    bool viewportChanged;
     ColorShader *colorShader = NULL;
     TextureShader *textureShader = NULL;
     AminoFontShader *fontShader = NULL;
