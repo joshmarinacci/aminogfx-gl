@@ -46,6 +46,7 @@
 #define DIRTY  (1)
 #define FROZEN (2)
 
+#define DEBUG_GL_ERRORS 0
 
 // ----------------------------------------------------------------------------
 vertex_buffer_t *
@@ -344,6 +345,10 @@ vertex_buffer_render_setup ( vertex_buffer_t *self, GLenum mode )
         self->state = CLEAN;
     }
 
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_upload");
+    }
+
 #ifdef FREETYPE_GL_USE_VAO
     if( self->VAO_id == 0 )
     {
@@ -399,6 +404,10 @@ vertex_buffer_render_setup ( vertex_buffer_t *self, GLenum mode )
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, self->indices_id );
     }
 #endif
+
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_render_setup() done");
+    }
 
     self->mode = mode;
 }
@@ -473,6 +482,10 @@ vertex_buffer_render ( vertex_buffer_t *self, GLenum mode )
         glDrawArrays( mode, 0, vcount );
     }
     vertex_buffer_render_finish( self );
+
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_render() done");
+    }
 }
 
 
@@ -675,4 +688,21 @@ vertex_buffer_erase( vertex_buffer_t * self,
     vertex_buffer_erase_vertices( self, vstart, vstart+vcount );
     vector_erase( self->items, index );
     self->state = DIRTY;
+}
+
+/**
+ * Output all occured OpenGL errors.
+ */
+void vertex_buffer_show_gl_errors(char* msg) {
+    GLenum err = GL_NO_ERROR;
+    int count = 0;
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        count++;
+        printf("OpenGL error: %08x\n", err);
+    }
+
+    if (count) {
+        printf("%i OpenGL errors at '%s'\n'", count, msg);
+    }
 }

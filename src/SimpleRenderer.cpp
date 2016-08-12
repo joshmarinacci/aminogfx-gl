@@ -479,6 +479,6 @@ int SimpleRenderer::showGLErrors(std::string msg) {
     int res = showGLErrors();
 
     if (res) {
-        printf("%i OpenGL errors at %s", res, msg.c_str());
+        printf("%i OpenGL errors at '%s'\n'", res, msg.c_str());
     }
 }

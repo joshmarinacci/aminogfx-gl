@@ -345,6 +345,11 @@ typedef struct vertex_buffer_t
   vertex_buffer_erase( vertex_buffer_t * self,
                        const size_t index );
 
+/**
+ * Check OpenGL errors.
+ */
+void vertex_buffer_show_gl_errors(char* msg);
+
 /** @} */
 
 #ifdef __cplusplus
