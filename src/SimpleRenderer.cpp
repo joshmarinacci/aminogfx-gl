@@ -1,6 +1,7 @@
 #include "SimpleRenderer.h"
 
 #define DEBUG_RENDERER false
+#define DEBUG_RENDERER_ERRORS false
 
 SimpleRenderer::SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): fontShader(fontShader), colorShader(colorShader), textureShader(textureShader), modelView(modelView) {
     if (DEBUG_RENDERER) {
@@ -77,6 +78,11 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
         default:
             printf("invalid node type: %i\n", root->type);
             break;
+    }
+
+    //debug
+    if (DEBUG_RENDERER_ERRORS) {
+        showGLErrors();
     }
 
     //done
