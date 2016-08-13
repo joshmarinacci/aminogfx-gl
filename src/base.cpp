@@ -1072,7 +1072,6 @@ GLuint AminoText::updateTexture() {
 
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
 
-    //FIXME cbx: no output on RPi
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
 
     texture.lastGlyphUpdate = fontSize->fontTexture->glyphs->size;
@@ -1257,11 +1256,11 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
                 advance = 0;
             }
 
-            GLuint indices[6] = {0,1,2, 0,2,3};
-            vertex_t vertices[4] = { { x0,y0,0,  s0,t0 },
-                                     { x0,y1,0,  s0,t1 },
-                                     { x1,y1,0,  s1,t1 },
-                                     { x1,y0,0,  s1,t0 } };
+            GLushort indices[6] = {0,1,2, 0,2,3};
+            vertex_t vertices[4] = { { x0, y0, 0,  s0, t0 },
+                                     { x0, y1, 0,  s0, t1 },
+                                     { x1, y1, 0,  s1, t1 },
+                                     { x1, y0, 0,  s1, t0 } };
 
             //append
             vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
@@ -1313,6 +1312,7 @@ bool AminoText::layoutText() {
     if (buffer) {
         vertex_buffer_clear(buffer);
     } else {
+        //vertex & texture coordinates
         buffer = vertex_buffer_new("vertex:3f,tex_coord:2f");
     }
 

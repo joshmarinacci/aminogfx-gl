@@ -115,12 +115,11 @@ public:
     }
 
     void bindTexture(GLuint tex) {
-//cbx verify
-//        if (prevTex != tex) {
+        if (prevTex != tex) {
             glBindTexture(GL_TEXTURE_2D, tex);
 
             prevTex = tex;
-//        }
+        }
     }
 };
 
