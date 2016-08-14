@@ -361,6 +361,7 @@ private:
     //async updates
     bool enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value);
     static NAN_METHOD(PropertyUpdated);
+    static Nan::Persistent<v8::Function> *propertyUpdatedFunc;
 
     //JS updates
     virtual bool enqueueJSPropertyUpdate(AnyProperty *prop);

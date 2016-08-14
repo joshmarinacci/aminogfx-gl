@@ -102,7 +102,7 @@ function generateRectGarbage(maxTime) {
     const timer = setInterval(() => {
         let obj = {};
 
-        for (let i = 0; i < 1000; i++) {
+        for (let i = 0; i < 10000; i++) {
             gfx.createRect();
         }
 
@@ -112,7 +112,4 @@ function generateRectGarbage(maxTime) {
             callGC(true);
         }
     }, 100);
-
-    //cbx memory leak (instances freed but not whole memory)
-    //-> 157 MB at end of test
 }

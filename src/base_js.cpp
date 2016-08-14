@@ -250,8 +250,15 @@ bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::V
     v8::Local<v8::Object> obj = propLocal.As<v8::Object>();
 
     //set nativeListener value
-    //FIXME cbx: memory leak due to v8::Function reference which is never freed!!!
-    Nan::Set(obj, Nan::New<v8::String>("nativeListener").ToLocalChecked(), Nan::New<v8::Function>(PropertyUpdated));
+    if (!propertyUpdatedFunc) {
+        propertyUpdatedFunc = new Nan::Persistent<v8::Function>();
+        propertyUpdatedFunc->Reset(Nan::New<v8::Function>(PropertyUpdated));
+    }
+
+    //Note: memory leak due to v8::Function reference which is never freed!!! Workaround: use single instance to leak a single item.
+    //Nan::Set(obj, Nan::New<v8::String>("nativeListener").ToLocalChecked(), Nan::New<v8::Function>(PropertyUpdated));
+
+    Nan::Set(obj, Nan::New<v8::String>("nativeListener").ToLocalChecked(), Nan::New<v8::Function>(*propertyUpdatedFunc));
 
     //set propId value
     Nan::Set(obj, Nan::New<v8::String>("propId").ToLocalChecked(), Nan::New<v8::Integer>(id));
@@ -273,6 +280,8 @@ bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::V
 
     return true;
 }
+
+Nan::Persistent<v8::Function>* AminoJSObject::propertyUpdatedFunc = NULL;
 
 /**
  * Create float property (bound to JS property).

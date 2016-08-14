@@ -235,8 +235,8 @@ function testGC() {
     setInterval(() => {
         //create some garbage
         for (let i = 0; i < 1000; i++) {
-            //gfx.createCircle(); //cbx leak
-            gfx.createRect(); //cbx massive leak & out of memory
+            gfx.createCircle();
+            gfx.createRect();
 
             //Note: without object creation seeing memory increase of 2 KB/s which is reset after about 3 MB are collected. The GC cycle takes quite some time!
         }

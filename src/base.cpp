@@ -211,7 +211,7 @@ NAN_METHOD(AminoGfx::InitColorShader) {
     colorShader->u_matrix    = info[1]->Uint32Value();
     colorShader->u_trans     = info[2]->Uint32Value();
     colorShader->u_opacity   = info[3]->Uint32Value();
-//cbx
+
     colorShader->attr_pos    = info[4]->Uint32Value();
     colorShader->attr_color  = info[5]->Uint32Value();
 }
