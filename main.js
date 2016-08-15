@@ -1,21 +1,22 @@
 'use strict';
 
-var DEBUG = false;
-var DEBUG_FPS = false;
+const DEBUG = false;
+const DEBUG_FPS = false;
+const DEBUG_ERRORS = true;
 
 if (DEBUG) {
     console.log('inside of the aminogfx main.js');
 }
 
 //load native module
-var binary = require('node-pre-gyp');
-var path = require('path');
-var binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
-var native = require(binding_path);
+const binary = require('node-pre-gyp');
+const path = require('path');
+const binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
+const native = require(binding_path);
 
-var shaders = require('./src/shaders.js');
-var fs = require('fs');
-var util =  require('util');
+const shaders = require('./src/shaders.js');
+const fs = require('fs');
+const util =  require('util');
 
 //detect platform
 var OS;
@@ -789,7 +790,7 @@ ImageView.prototype.init = function () {
 
         img.onload = function (err) {
             if (err) {
-                if (DEBUG) {
+                if (DEBUG || DEBUG_ERRORS) {
                     console.log('could not load image: ' + err.message);
                 }
 
@@ -803,11 +804,11 @@ ImageView.prototype.init = function () {
 
             //load texture
             var amino = self.amino;
-            var texture = amino.createTexture(amino);
+            var texture = amino.createTexture();
 
             texture.loadTextureFromImage(img, function (err, texture) {
                 if (err) {
-                    if (DEBUG) {
+                    if (DEBUG || DEBUG_ERRORS) {
                         console.log('could not load texture: ' + err.message);
                     }
 
@@ -976,7 +977,11 @@ PixelView.prototype.updateTexture = function () {
         bpp: this.bpp()
     }, function (err) {
         if (err) {
-            console.log('Could not create texture!');
+            if (DEBUG_ERRORS) {
+                console.log('Could not create texture!');
+            }
+
+            return;
         }
     });
 };
@@ -1511,6 +1516,14 @@ Text.prototype.updateFont = function (val, prop, obj) {
             fonts.getFont({
                 size: obj.fontSize()
             }, function (err, font) {
+                if (err) {
+                    if (DEBUG_ERRORS) {
+                        console.log('could not load default font!');
+                    }
+
+                    return;
+                }
+
                 if (font && obj.latestFontId === id) {
                     obj.latestFontId = undefined;
 
