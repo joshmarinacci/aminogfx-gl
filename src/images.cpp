@@ -191,6 +191,12 @@ public:
         imgAlpha = false;
         imgBPP = njGetBPP();
 
+        //get ownership
+        njUnlinkImageData();
+
+        //free instance
+        njDone();
+
         if (DEBUG_IMAGES) {
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
@@ -206,11 +212,6 @@ public:
         if (upng) {
             upng_free(upng);
         }
-
-        if (isJpeg) {
-            //free memory
-            njDone();
-        }
     }
 
     /**
@@ -225,7 +226,15 @@ public:
 
         //result
         v8::Local<v8::Object> obj = GetFromPersistent("object")->ToObject();
-        v8::Local<v8::Object> buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
+        v8::Local<v8::Object> buff;
+
+        if (isJpeg) {
+            //transfer ownership
+            buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
+        } else {
+            //create copy
+            buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
+        }
 
         //create object
         Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(imgW));

@@ -55,6 +55,9 @@ int njIsColor(void);
 // If njDecode() failed, the result of njGetImage() is undefined.
 unsigned char* njGetImage(void);
 
+// transfer ownership of image buffers.
+void njUnlinkImageData(void);
+
 // njGetImageSize: Returns the size (in bytes) of the image data returned
 // by njGetImage(). If njDecode() failed, the result of njGetImageSize() is
 // undefined.
