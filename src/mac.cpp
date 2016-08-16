@@ -169,6 +169,7 @@ private:
 
         //create window
         glfwWindowHint(GLFW_DEPTH_BITS, 32); //default
+        glfwWindowHint(GLFW_SAMPLES, 4); //increase quality
 
         window = glfwCreateWindow(propW->value, propH->value, propTitle->value.c_str(), NULL, NULL);
 
