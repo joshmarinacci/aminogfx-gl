@@ -264,6 +264,28 @@ AminoGfx.prototype.destroy = function () {
 };
 
 /**
+ * Set position.
+ */
+AminoGfx.prototype.setPosition = setPosition;
+
+function setPosition(x, y, z) {
+    this.x(x).y(y);
+
+    if (z !== undefined) {
+        this.z(z);
+    }
+}
+
+/**
+ * Set size.
+ */
+AminoGfx.prototype.setSize = setSize;
+
+function setSize(w, h) {
+    this.w(w).h(h);
+};
+
+/**
  * Get runtime system info.
  */
 AminoGfx.prototype.getStats = function () {
@@ -276,6 +298,9 @@ AminoGfx.prototype.getStats = function () {
     return stats;
 };
 
+/**
+ * Find node with id.
+ */
 AminoGfx.prototype.find = function (id) {
     function findNodeById(id, node) {
         if (node.id && node.id == id) {
@@ -494,6 +519,7 @@ Group.prototype.init = function () {
         //position
         x: 0,
         y: 0,
+        z: 0,
 
         //size
         w: 100,
@@ -519,6 +545,34 @@ Group.prototype.init = function () {
     this.isGroup = true;
     this.children = [];
 };
+
+/**
+ * Set position.
+ */
+Group.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Group.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Group.prototype.scale = scaleFunc;
+
+function scaleFunc(sx, sy) {
+    this.sx(sx).sy(sy);
+}
+
+/**
+ * Rotate.
+ */
+Group.prototype.rotate = rotateFunc;
+
+function rotateFunc(rx, ry, rz) {
+    this.rx(rx).ry(ry).rz(rz);
+}
 
 /**
  * Add one or more children to this group.
@@ -684,6 +738,7 @@ Rect.prototype.init = function () {
         //position
         x: 0,
         y: 0,
+        z: 0,
 
         //size
         w: 100,
@@ -714,7 +769,30 @@ Rect.prototype.init = function () {
     this.fill.watch(watchFill);
 };
 
+/**
+ * Check if point is inside of rect.
+ */
 Rect.prototype.contains = contains;
+
+/**
+ * Set position.
+ */
+Rect.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Rect.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Rect.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Rect.prototype.rotate = rotateFunc;
 
 /**
  * Check if a given point is inside this node.
@@ -745,6 +823,7 @@ ImageView.prototype.init = function () {
         //positon
         x: 0,
         y: 0,
+        z: 0,
 
         //size
         w: 100,
@@ -893,7 +972,30 @@ ImageView.prototype.init = function () {
     }
 };
 
+/**
+ * Check if point inside of image view.
+ */
 ImageView.prototype.contains = contains;
+
+/**
+ * Set position.
+ */
+ImageView.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+ImageView.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+ImageView.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+ImageView.prototype.rotate = rotateFunc;
 
 //
 // PixelView
@@ -1020,6 +1122,7 @@ Polygon.prototype.init = function () {
         //position
         x: 0,
         y: 0,
+        z: 0,
 
         //scaling
         sx: 1,
@@ -1058,10 +1161,33 @@ function setFill(val, prop, obj) {
     obj.fillB(color.b);
 }
 
+/**
+ * Check if point inside of polygon.
+ */
 Polygon.prototype.contains = function () {
     //TODO check polygon coords
     return false;
 };
+
+/**
+ * Set position.
+ */
+Polygon.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Polygon.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Polygon.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Polygon.prototype.rotate = rotateFunc;
 
 //
 // Circle
@@ -1437,6 +1563,7 @@ Text.prototype.init = function () {
         //position
         x: 0,
         y: 0,
+        z: 0,
 
         //size
         w: 0,
@@ -1490,6 +1617,26 @@ Text.prototype.initDone = function () {
     this.fontWeight.watch(this.updateFont);
     this.fontSize.watch(this.updateFont);
 };
+
+/**
+ * Set position.
+ */
+Text.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Text.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Text.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Text.prototype.rotate = rotateFunc;
 
 var fontId = 0;
 

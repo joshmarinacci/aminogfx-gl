@@ -80,12 +80,16 @@ protected:
     //properties
     FloatProperty *propX;
     FloatProperty *propY;
+
     FloatProperty *propW;
     FloatProperty *propH;
+
     FloatProperty *propR;
     FloatProperty *propG;
     FloatProperty *propB;
+
     FloatProperty *propOpacity;
+
     Utf8Property *propTitle;
 
     //animations
@@ -168,6 +172,7 @@ public:
     //location
     FloatProperty *propX;
     FloatProperty *propY;
+    FloatProperty *propZ;
 
     //size (optional)
     FloatProperty *propW = NULL;
@@ -218,6 +223,7 @@ public:
         //register native properties
         propX = createFloatProperty("x");
         propY = createFloatProperty("y");
+        propZ = createFloatProperty("z");
 
         propScaleX = createFloatProperty("sx");
         propScaleY = createFloatProperty("sy");

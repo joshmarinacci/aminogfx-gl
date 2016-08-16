@@ -46,14 +46,16 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
 
     //transform
     if (root->propW) {
+        //apply origin
         c->translate(root->propW->value* root->propOriginX->value, root->propH->value * root->propOriginY->value);
     }
 
-    c->translate(root->propX->value, root->propY->value);
+    c->translate(root->propX->value, root->propY->value, root->propZ->value);
     c->scale(root->propScaleX->value, root->propScaleY->value);
     c->rotate(root->propRotateX->value, root->propRotateY->value, root->propRotateZ->value);
 
     if (root->propW) {
+        //apply origin
         c->translate(- (root->propW->value* root->propOriginX->value), - (root->propH->value * root->propOriginY->value));
     }
 

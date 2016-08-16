@@ -89,12 +89,16 @@ void AminoGfx::setup() {
     //register native properties
     propX = createFloatProperty("x");
     propY = createFloatProperty("y");
+
     propW = createFloatProperty("w");
     propH = createFloatProperty("h");
+
     propR = createFloatProperty("r");
     propG = createFloatProperty("g");
     propB = createFloatProperty("b");
+
     propOpacity = createFloatProperty("opacity");
+
     propTitle = createUtf8Property("title");
 
     //screen size
@@ -558,6 +562,7 @@ void AminoGfx::setupViewport() {
     glClearColor(propR->value, propG->value, propB->value, propOpacity->value);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST); //TODO cbx
 }
 
 /**

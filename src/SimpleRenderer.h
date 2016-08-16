@@ -32,10 +32,14 @@ public:
     }
 
     void translate(GLfloat x, GLfloat y) {
+        translate(x, y, 0);
+    }
+
+    void translate(GLfloat x, GLfloat y, GLfloat z) {
         GLfloat tr[16];
         GLfloat trans2[16];
 
-        make_trans_matrix(x, y, 0, tr);
+        make_trans_matrix(x, y, z, tr);
         mul_matrix(trans2, globaltx, tr);
         copy_matrix(globaltx, trans2);
     }
