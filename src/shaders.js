@@ -212,17 +212,15 @@ exports.init = function (gfx, OS) {
 
     cshader.useProgram();
     cshader.locateAttrib('pos');
-    cshader.locateUniform('modelviewProjection');
+    cshader.locateUniform('mvp');
     cshader.locateUniform('trans');
-    cshader.locateUniform('opacity');
-    cshader.locateAttrib('color');
+    cshader.locateUniform('color');
 
     gfx.initColorShader(cshader.prog,
-        cshader.uniforms.modelviewProjection,
+        cshader.uniforms.mvp,
         cshader.uniforms.trans,
-        cshader.uniforms.opacity,
-        cshader.attribs.pos,
-        cshader.attribs.color);
+        cshader.uniforms.color,
+        cshader.attribs.pos);
 
     //texture shader
     var tshader = Object.create(Shader);
@@ -234,7 +232,7 @@ exports.init = function (gfx, OS) {
 
     tshader.useProgram();
 
-    tshader.locateUniform('modelviewProjection');
+    tshader.locateUniform('mvp');
     tshader.locateUniform('trans');
     tshader.locateUniform('opacity');
 
@@ -242,10 +240,9 @@ exports.init = function (gfx, OS) {
     tshader.locateAttrib('texcoords');
 
     gfx.initTextureShader(tshader.prog,
-        tshader.uniforms.modelviewProjection,
+        tshader.uniforms.mvp,
         tshader.uniforms.trans,
         tshader.uniforms.opacity,
         tshader.attribs.pos,
-        tshader.attribs.texcoords,
-        tshader.attribs.tex);
+        tshader.attribs.texcoords);
 };

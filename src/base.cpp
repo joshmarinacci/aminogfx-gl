@@ -205,7 +205,7 @@ NAN_METHOD(AminoGfx::InitColorShader) {
         printf("-> InitColorShader()\n");
     }
 
-    if (info.Length() < 5) {
+    if (info.Length() < 4) {
         printf("initColorShader: not enough args\n");
         exit(1);
     };
@@ -219,10 +219,9 @@ NAN_METHOD(AminoGfx::InitColorShader) {
     colorShader->prog        = info[0]->Uint32Value();
     colorShader->u_matrix    = info[1]->Uint32Value();
     colorShader->u_trans     = info[2]->Uint32Value();
-    colorShader->u_opacity   = info[3]->Uint32Value();
+    colorShader->u_color     = info[3]->Uint32Value();
 
     colorShader->attr_pos    = info[4]->Uint32Value();
-    colorShader->attr_color  = info[5]->Uint32Value();
 }
 
 /**

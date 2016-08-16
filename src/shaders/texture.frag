@@ -1,6 +1,6 @@
 varying vec2 uv;
-varying float outopacity;
 
+uniform float opacity;
 uniform sampler2D tex;
 
 float clamp_to_border_factor(vec2 coords) {
@@ -14,5 +14,5 @@ float clamp_to_border_factor(vec2 coords) {
 void main() {
    vec4 pixel = texture2D(tex, uv);
 
-   gl_FragColor = vec4(pixel.rgb, pixel.a * outopacity * clamp_to_border_factor(uv));
+   gl_FragColor = vec4(pixel.rgb, pixel.a * opacity * clamp_to_border_factor(uv));
  }

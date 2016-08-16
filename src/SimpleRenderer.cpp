@@ -94,33 +94,34 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
 /**
  * Use solid color shader.
  */
-void colorShaderApply(GLContext *ctx, ColorShader* shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat colors[][3], GLfloat opacity) {
+void applyColorShader(GLContext *ctx, ColorShader* shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat color[4]) {
     ctx->useProgram(shader->prog);
 
     //set uniforms
     glUniformMatrix4fv(shader->u_matrix, 1, GL_FALSE, modelView);
     glUniformMatrix4fv(shader->u_trans,  1, GL_FALSE, ctx->globaltx);
-    glUniform1f(shader->u_opacity, opacity);
+    glUniform4f(shader->u_color, color[0], color[1], color[2], color[3]);
 
-    if (opacity != 1.0) {
+    if (color[3] != 1.0) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    //set attributes
-    glVertexAttribPointer(shader->attr_pos,   2, GL_FLOAT, GL_FALSE, 0, verts);
-    glVertexAttribPointer(shader->attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
+    //set attributes (vertex pos & color)
+    glVertexAttribPointer(shader->attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
     glEnableVertexAttribArray(shader->attr_pos);
-    glEnableVertexAttribArray(shader->attr_color);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glDisableVertexAttribArray(shader->attr_pos);
-    glDisableVertexAttribArray(shader->attr_color);
+    glDisable(GL_BLEND);
 }
 
-void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], GLuint texid, GLfloat opacity) {
-    //printf("doing texture shader apply %d opacity = %f\n", texid, opacity);
+/**
+ * Draw texture.
+ */
+void applyTextureShader(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], GLuint texId, GLfloat opacity) {
+    //printf("doing texture shader apply %d opacity = %f\n", texId, opacity);
 
     ctx->useProgram(shader->prog);
 
@@ -141,8 +142,8 @@ void textureShaderApply(GLContext *ctx, TextureShader *shader, GLfloat modelView
     glActiveTexture(GL_TEXTURE0);
 
     //render
-    ctx->bindTexture(texid);
-    glDrawArrays(GL_TRIANGLES, 0, 6); //contains colors
+    ctx->bindTexture(texId);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glDisableVertexAttribArray(shader->attr_pos);
     glDisableVertexAttribArray(shader->attr_texcoords);
@@ -193,15 +194,9 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
         verts[5][0] = x;
         verts[5][1] = y;
 
-        GLfloat colors[6][3];
+        GLfloat color[4] = { 1.0, 1.0, 1.0, 1.0 };
 
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 3; j++) {
-                colors[i][j] = 1.0;
-            }
-        }
-
-        colorShaderApply(c, colorShader, modelView, verts, colors, 1.0);
+        applyColorShader(c, colorShader, modelView, verts, color);
 
         //set function to draw pixels where the buffer is equal to 1
         glStencilFunc(GL_EQUAL, 0x1, 0xFF);
@@ -235,11 +230,32 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
     }
 }
 
+/**
+ * Draw a polygon.
+ */
 void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
     if (DEBUG_RENDERER) {
         printf("-> drawPoly()\n");
     }
 
+    //setup shader
+    ctx->useProgram(colorShader->prog);
+
+    glUniformMatrix4fv(colorShader->u_matrix, 1, GL_FALSE, modelView);
+    glUniformMatrix4fv(colorShader->u_trans,  1, GL_FALSE, ctx->globaltx);
+
+    //color
+    GLfloat opacity = poly->propOpacity->value * ctx->opacity;
+
+    glUniform4f(colorShader->u_color, poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity);
+
+    if (opacity != 1.0) {
+        //blend mode needed
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    //vertices
     std::vector<float> *geometry = &poly->propGeometry->value;
     int len = geometry->size();
     int dim = poly->propDimension->value;
@@ -256,47 +272,20 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
         }
     }
 
-    GLfloat colors[len][3];
+    assert(dim == 2 || dim == 3);
 
-    for (int i = 0; i < len / dim; i++) {
-        colors[i][0] = poly->propFillR->value;
-        colors[i][1] = poly->propFillG->value;
-        colors[i][2] = poly->propFillB->value;
-    }
-
-    ctx->useProgram(colorShader->prog);
-    glUniformMatrix4fv(colorShader->u_matrix, 1, GL_FALSE, modelView);
-    glUniformMatrix4fv(colorShader->u_trans,  1, GL_FALSE, ctx->globaltx);
-
-    //opacity
-    GLfloat opacity = poly->propOpacity->value * ctx->opacity;
-
-    glUniform1f(colorShader->u_opacity, opacity);
-
-    if (opacity != 1.0) {
-        //blend mode needed
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-
-    if (dim == 2) {
-        glVertexAttribPointer(colorShader->attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-    } else if (dim == 3) {
-        glVertexAttribPointer(colorShader->attr_pos, 3, GL_FLOAT, GL_FALSE, 0, verts);
-    }
-
-    glVertexAttribPointer(colorShader->attr_color, 3, GL_FLOAT, GL_FALSE, 0, colors);
+    glVertexAttribPointer(colorShader->attr_pos, dim, GL_FLOAT, GL_FALSE, 0, verts);
     glEnableVertexAttribArray(colorShader->attr_pos);
-    glEnableVertexAttribArray(colorShader->attr_color);
 
     if (poly->propFilled->value) {
+        //filled polygon
         glDrawArrays(GL_TRIANGLE_FAN, 0, len / dim);
     } else {
+        //draw outline (glLineWidth() not used yet)
         glDrawArrays(GL_LINE_LOOP, 0, len / dim);
     }
 
     glDisableVertexAttribArray(colorShader->attr_pos);
-    glDisableVertexAttribArray(colorShader->attr_color);
 
     if (opacity != 1.0) {
         glDisable(GL_BLEND);
@@ -345,44 +334,27 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
             //printf("texture: %i\n", texture->textureId);
 
             //image coordinates (fractional world coordinates)
-            GLfloat texcoords[6][2];
+            GLfloat texCoords[6][2];
             float tx  = rect->propLeft->value;   //0
-            float ty2 = rect->propBottom->value; //1;
-            float tx2 = rect->propRight->value;  //1;
-            float ty  = rect->propTop->value;    //0;
+            float ty2 = rect->propBottom->value; //1
+            float tx2 = rect->propRight->value;  //1
+            float ty  = rect->propTop->value;    //0
 
-            texcoords[0][0] = tx;    texcoords[0][1] = ty;
-            texcoords[1][0] = tx2;   texcoords[1][1] = ty;
-            texcoords[2][0] = tx2;   texcoords[2][1] = ty2;
+            texCoords[0][0] = tx;    texCoords[0][1] = ty;
+            texCoords[1][0] = tx2;   texCoords[1][1] = ty;
+            texCoords[2][0] = tx2;   texCoords[2][1] = ty2;
 
-            texcoords[3][0] = tx2;   texcoords[3][1] = ty2;
-            texcoords[4][0] = tx;    texcoords[4][1] = ty2;
-            texcoords[5][0] = tx;    texcoords[5][1] = ty;
+            texCoords[3][0] = tx2;   texCoords[3][1] = ty2;
+            texCoords[4][0] = tx;    texCoords[4][1] = ty2;
+            texCoords[5][0] = tx;    texCoords[5][1] = ty;
 
-            textureShaderApply(c, textureShader, modelView, verts, texcoords, texture->textureId, opacity);
+            applyTextureShader(c, textureShader, modelView, verts, texCoords, texture->textureId, opacity);
         }
     } else {
         //color only
-        GLfloat colors[6][3];
-        float r = rect->propR->value;
-        float g = rect->propG->value;
-        float b = rect->propB->value;
+        GLfloat color[4] = { rect->propR->value, rect->propG->value, rect->propB->value, opacity };
 
-        for (int i = 0; i < 6; i++) {
-            for (int j = 0; j < 3; j++) {
-                colors[i][j] = 0.5;
-
-                if (j==0) {
-                    colors[i][j] = r;
-                } else if (j==1) {
-                    colors[i][j] = g;
-                } else if (j==2) {
-                    colors[i][j] = b;
-                }
-            }
-        }
-
-        colorShaderApply(c, colorShader, modelView, verts, colors, opacity);
+        applyColorShader(c, colorShader, modelView, verts, color);
     }
 
     c->restore();
