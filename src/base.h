@@ -1166,6 +1166,7 @@ public:
 
     //properties
     BooleanProperty *propCliprect;
+    BooleanProperty *propDepth;
 
     AminoGroup(): AminoNode(getFactory()->name, GROUP) {
         //empty
@@ -1185,6 +1186,7 @@ public:
         propOriginY = createFloatProperty("originY");
 
         propCliprect = createBooleanProperty("cliprect");
+        propDepth = createBooleanProperty("depth");
     }
 
     //creation

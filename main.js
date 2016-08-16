@@ -539,7 +539,10 @@ Group.prototype.init = function () {
         rz: 0,
 
         //clipping
-        cliprect: false
+        cliprect: false,
+
+        //3D rendering (depth test)
+        depth: false
     });
 
     this.isGroup = true;

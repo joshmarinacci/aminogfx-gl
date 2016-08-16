@@ -168,6 +168,8 @@ private:
          */
 
         //create window
+        glfwWindowHint(GLFW_DEPTH_BITS, 32); //default
+
         window = glfwCreateWindow(propW->value, propH->value, propTitle->value.c_str(), NULL, NULL);
 
         if (!window) {

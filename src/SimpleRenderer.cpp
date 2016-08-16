@@ -154,19 +154,23 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
         printf("-> drawGroup()\n");
     }
 
+    if (group->propDepth->value) {
+        //enable depth mask
+        c->enableDepth();
+    }
+
     if (group->propCliprect->value) {
         //turn on stenciling
-        glDepthMask(GL_FALSE);
         glEnable(GL_STENCIL_TEST);
-        //clear the buffers
 
         //setup the stencil
         glStencilFunc(GL_ALWAYS, 0x1, 0xFF);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         glStencilMask(0xFF);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        glDepthMask(GL_FALSE);
-        glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //clear the buffers
+        glClear(GL_STENCIL_BUFFER_BIT);
 
         //draw the stencil
         float x = 0;
@@ -223,6 +227,11 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
 
     if (group->propCliprect->value) {
         glDisable(GL_STENCIL_TEST);
+    }
+
+    if (group->propDepth->value) {
+        //disable depth mask again
+        c->disableDepth();
     }
 }
 

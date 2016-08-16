@@ -558,11 +558,16 @@ void AminoGfx::setupViewport() {
         glViewport(0, 0, viewportW, viewportH);
     }
 
+    //enable depth mask
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
     //prepare
     glClearColor(propR->value, propG->value, propB->value, propOpacity->value);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-    //glEnable(GL_DEPTH_TEST); //TODO cbx
+
+    //disable depth mask (use painter's algorithm by default)
+    glDepthMask(GL_FALSE);
 }
 
 /**

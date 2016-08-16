@@ -6,19 +6,16 @@
 class GLContext {
 public:
     std::stack<void *> matrixStack;
-    GLfloat *globaltx;
-    GLfloat opacity;
-    GLuint prevProg;
-    GLuint prevTex;
+    GLfloat *globaltx = new GLfloat[16];
+    GLfloat opacity = 1;
+
+    int depth = 0;
+
+    GLuint prevProg = INVALID_PROGRAM;
+    GLuint prevTex = INVALID_TEXTURE;
 
     GLContext() {
-        prevProg = INVALID_PROGRAM;
-        prevTex = INVALID_TEXTURE;
-
-        opacity = 1;
-
         //matrix
-        globaltx = new GLfloat[16];
         make_identity_matrix(globaltx);
     }
 
@@ -123,6 +120,25 @@ public:
             glBindTexture(GL_TEXTURE_2D, tex);
 
             prevTex = tex;
+        }
+    }
+
+    void enableDepth() {
+        depth++;
+
+        if (depth == 1) {
+            glDepthMask(GL_TRUE);
+
+            //debug
+            //printf("using depth mask\n");
+        }
+    }
+
+    void disableDepth() {
+        depth--;
+
+        if (depth == 0) {
+            glDepthMask(GL_FALSE);
         }
     }
 };
