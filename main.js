@@ -145,7 +145,7 @@ AminoGfx.prototype.start = function (done) {
             //init shaders (in current context)
             self.GL = AminoGfx.GL;
             shaders.init(self, OS);
-            self.initFontShader(path.join(__dirname, '/resources/shaders'));
+            self.initFontShader(path.join(__dirname, '/src/shaders'));
 
             //ready (Note: this points to the instance)
             done.call(self, err);
