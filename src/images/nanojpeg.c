@@ -901,7 +901,7 @@ unsigned char* njGetImage(void) { return (nj.ncomp == 1) ? nj.comp[0].pixels : n
 int njGetImageSize(void)        { return nj.width * nj.height * nj.ncomp; }
 
 void njUnlinkImageData(void) {
-    if (nj.comp == 1) {
+    if (nj.ncomp == 1) {
         nj.comp[0].pixels = NULL;
     } else {
         nj.rgb = NULL;

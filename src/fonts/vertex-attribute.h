@@ -209,7 +209,7 @@ typedef struct vertex_attribute_t
     /**
      * index of the generic vertex attribute to be modified.
      */
-    GLuint index;
+    GLint index;
 
     /**
      * Number of components per generic vertex attribute.

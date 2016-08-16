@@ -18,7 +18,7 @@
 #include <sys/time.h>
 
 //return the current time in msec
-static double getTime(void) {
+static double __attribute__((unused)) getTime(void) {
     timeval time;
 
     gettimeofday(&time, NULL);
@@ -37,7 +37,7 @@ static double getTime(void) {
 #include <sys/time.h>
 
 //return the current time in msec
-static double getTime(void) {
+static double __attribute__((unused)) getTime(void) {
     timeval time;
 
     gettimeofday(&time, NULL);
@@ -60,7 +60,7 @@ static double getTime(void) {
 #include <time.h>
 
 //return the current time in msec
-static double getTime(void) {
+static double __attribute__((unused)) getTime(void) {
     struct timespec res;
 
     clock_gettime(CLOCK_REALTIME, &res);

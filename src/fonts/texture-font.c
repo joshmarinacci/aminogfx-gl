@@ -428,7 +428,7 @@ texture_font_find_glyph( texture_font_t * self,
         glyph = *(texture_glyph_t **) vector_get( self->glyphs, i );
         // If codepoint is -1, we don't care about outline type or thickness
         if( (glyph->codepoint == ucodepoint) &&
-            ((ucodepoint == -1) ||
+            ((ucodepoint == UINT32_MAX) ||
              ((glyph->rendermode == self->rendermode) &&
               (glyph->outline_thickness == self->outline_thickness)) ))
         {
