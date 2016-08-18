@@ -186,9 +186,11 @@ void AminoGfx::setupRenderer() {
     }
 
     //set hints
+#ifdef MAC
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+#endif
 
     //init values
 	colorShader = new ColorShader();
