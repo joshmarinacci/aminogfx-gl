@@ -969,7 +969,7 @@ void* AminoJSObject::FloatArrayProperty::getAsyncData(v8::Local<v8::Value> &valu
         std::size_t count = contents.ByteLength() / sizeof(float);
 
         //debug
-        //printf("is Float32Array (size: %i)\n", (int)count); //cbx
+        //printf("is Float32Array (size: %i)\n", (int)count);
 
         //copy to vector
         vector = new std::vector<float>();

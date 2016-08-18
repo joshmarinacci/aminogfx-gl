@@ -229,6 +229,11 @@ private:
         glfwSetWindowSizeCallback(window, handleWindowSizeChanged);
         glfwSetWindowPosCallback(window, handleWindowPosChanged);
         glfwSetWindowCloseCallback(window, handleWindowCloseEvent);
+
+        //hints
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     }
 
     /**
