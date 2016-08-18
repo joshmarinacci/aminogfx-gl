@@ -16,18 +16,12 @@
     "url": "https://github.com/joshmarinacci/aminogfx-gl.git"
   },
   "dependencies": {
-    "aminogfx": "^0.0.21",
     "async": "^2.0.0-rc.6",
     "feedparser": "^1.1.4",
-    "jpeg-js": "^0.2.0",
     "moment": "^2.13.0",
     "nan": "^2.0.9",
     "node-pre-gyp": "0.6.x",
-    "ometa-js": "^1.4.2",
-    "onecolor": "^3.0.4",
-    "opentype.js": "^0.6.3",
-    "pngjs": "^3.0.0",
-    "wrench": "^1.5.8"
+    "onecolor": "^3.0.4"
   },
   "author": {
     "name": "Josh Marinacci",
