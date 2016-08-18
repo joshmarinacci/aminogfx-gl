@@ -1147,7 +1147,7 @@ Polygon.prototype.init = function () {
         filled: true,
 
         dimension: 2, //2D
-        geometry: []
+        geometry: null
     });
 
     this.fill.watch(setFill);
@@ -1223,14 +1223,15 @@ Circle.prototype.init = function () {
     var self = this;
 
     this.radius.watch(function (r) {
-        var points = [];
         var steps = self.steps();
+        var points = new Float32Array(steps * 2);
+        var pos = 0;
 
         for (var i = 0; i < steps; i++) {
             var theta = Math.PI * 2 / steps * i;
 
-            points.push(Math.sin(theta) * r);
-            points.push(Math.cos(theta) * r);
+            points[pos++] = Math.sin(theta) * r;
+            points[pos++] = Math.cos(theta) * r;
         }
 
         self.geometry(points);

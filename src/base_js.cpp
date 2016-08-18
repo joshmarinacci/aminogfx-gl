@@ -933,8 +933,13 @@ std::string AminoJSObject::FloatArrayProperty::toString() {
  * Get JS value.
  */
 v8::Local<v8::Value> AminoJSObject::FloatArrayProperty::toValue() {
-    v8::Local<v8::Array> arr = Nan::New<v8::Array>();
     std::size_t count = value.size();
+
+    //typed array
+    v8::Local<v8::Float32Array> arr = v8::Float32Array::New(v8::ArrayBuffer::New(v8::Isolate::GetCurrent(), count * sizeof(float)), 0, count);
+
+    //normal array
+    //v8::Local<v8::Array> arr = Nan::New<v8::Array>();
 
     for (unsigned int i = 0; i < count; i++) {
         Nan::Set(arr, Nan::New<v8::Uint32>(i), Nan::New<v8::Number>(value[i]));
@@ -954,15 +959,38 @@ void* AminoJSObject::FloatArrayProperty::getAsyncData(v8::Local<v8::Value> &valu
         return NULL;
     }
 
-    v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
-    std::vector<float> *vector = new std::vector<float>();
-    std::size_t count = arr->Length();
+    std::vector<float> *vector =  NULL;
 
-    for (std::size_t i = 0; i < count; i++) {
-        vector->push_back((float)(arr->Get(i)->NumberValue()));
+    if (value->IsFloat32Array()) {
+        //Float32Array
+        v8::Handle<v8::Float32Array> arr = v8::Handle<v8::Float32Array>::Cast(value);
+        v8::ArrayBuffer::Contents contents = arr->Buffer()->GetContents();
+        float *data = (float *)contents.Data();
+        std::size_t count = contents.ByteLength() / sizeof(float);
+
+        //debug
+        //printf("is Float32Array (size: %i)\n", (int)count); //cbx
+
+        //copy to vector
+        vector = new std::vector<float>();
+
+        vector->assign(data, data + count);
+
+        valid = true;
+    } else if (value->IsArray()) {
+        v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+        std::size_t count = arr->Length();
+
+        vector = new std::vector<float>();
+
+        for (std::size_t i = 0; i < count; i++) {
+            vector->push_back((float)(arr->Get(i)->NumberValue()));
+        }
+
+        valid = true;
+    } else {
+        valid = false;
     }
-
-    valid = true;
 
     return vector;
 }
