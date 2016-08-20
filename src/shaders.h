@@ -3,33 +3,91 @@
 
 #include "gfx.h"
 
+#include <string>
+
 /**
- * Color Shader properties.
+ * Shader base class.
  */
-class ColorShader {
+class AnyShader {
 public:
-    GLuint prog = INVALID_PROGRAM;
-    GLint u_matrix, u_trans, u_color;
-    GLint attr_pos;
+    AnyShader();
+    virtual ~AnyShader();
 
-    ColorShader();
-
+    bool create();
     void destroy();
+
+    void useShader();
+
+protected:
+    //code
+    std::string vertexShader;
+    std::string fragmentShader;
+
+    //compiled
+    GLuint prog = INVALID_PROGRAM;
+    bool failed = false;
+    std::string error;
+
+    virtual void initShader() = 0;
+    GLint getAttributeLocation(std::string name);
+    GLint getUniformLocation(std::string name);
+
+private:
+    GLuint compileShader(std::string source, const GLenum type);
 };
 
 /**
- * Texture Shader properties.
+ * Any AminoGfx shader.
  */
-class TextureShader {
+class AnyAminoShader : public AnyShader {
 public:
-    GLuint prog = INVALID_PROGRAM;
-    GLint u_matrix, u_trans, u_opacity;
-    GLint attr_pos;
-    GLint attr_texcoords;
+    AnyAminoShader();
 
+    void setTransformation(GLfloat modelView[16], GLfloat transition[16]);
+
+    void drawTriangles(GLfloat *verts, GLsizei dim, GLsizei vertices, GLenum mode);
+
+protected:
+    //position
+    GLint aPos;
+
+    //transition
+    GLint uMVP, uTrans;
+
+    void initShader() override;
+};
+
+/**
+ * Color Shader.
+ */
+class ColorShader : public AnyAminoShader {
+public:
+    ColorShader();
+
+    void setColor(GLfloat color[4]);
+
+protected:
+    GLint uColor;
+
+    void initShader() override;
+};
+
+/**
+ * Texture Shader.
+ */
+class TextureShader : public AnyAminoShader {
+public:
     TextureShader();
 
-    void destroy();
+    void setOpacity(GLfloat opacity);
+
+    void drawTexture(GLfloat *verts, GLsizei dim, GLfloat texcoords[][2], GLsizei vertices, GLenum mode = GL_TRIANGLES);
+
+protected:
+    GLint aTexCoord;
+    GLint uOpacity, uTex;
+
+    void initShader() override;
 };
 
 #endif

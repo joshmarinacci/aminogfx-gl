@@ -27,7 +27,7 @@ void SimpleRenderer::startRender(AminoNode *root) {
 /**
  * Render a node.
  */
-void SimpleRenderer::render(GLContext *c, AminoNode *root) {
+void SimpleRenderer::render(GLContext *ctx, AminoNode *root) {
     if (DEBUG_RENDERER) {
         printf("-> render()\n");
     }
@@ -42,39 +42,39 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
         return;
     }
 
-    c->save();
+    ctx->save();
 
     //transform
     if (root->propW) {
         //apply origin
-        c->translate(root->propW->value* root->propOriginX->value, root->propH->value * root->propOriginY->value);
+        ctx->translate(root->propW->value* root->propOriginX->value, root->propH->value * root->propOriginY->value);
     }
 
-    c->translate(root->propX->value, root->propY->value, root->propZ->value);
-    c->scale(root->propScaleX->value, root->propScaleY->value);
-    c->rotate(root->propRotateX->value, root->propRotateY->value, root->propRotateZ->value);
+    ctx->translate(root->propX->value, root->propY->value, root->propZ->value);
+    ctx->scale(root->propScaleX->value, root->propScaleY->value);
+    ctx->rotate(root->propRotateX->value, root->propRotateY->value, root->propRotateZ->value);
 
     if (root->propW) {
         //apply origin
-        c->translate(- (root->propW->value* root->propOriginX->value), - (root->propH->value * root->propOriginY->value));
+        ctx->translate(- (root->propW->value* root->propOriginX->value), - (root->propH->value * root->propOriginY->value));
     }
 
     //draw
     switch (root->type) {
         case GROUP:
-            this->drawGroup(c, (AminoGroup *)root);
+            this->drawGroup(ctx, (AminoGroup *)root);
             break;
 
         case RECT:
-            this->drawRect(c, (AminoRect *)root);
+            this->drawRect(ctx, (AminoRect *)root);
             break;
 
         case POLY:
-            this->drawPoly(c, (AminoPolygon *)root);
+            this->drawPoly(ctx, (AminoPolygon *)root);
             break;
 
         case TEXT:
-            this->drawText(c, (AminoText *)root);
+            this->drawText(ctx, (AminoText *)root);
             break;
 
         default:
@@ -88,76 +88,64 @@ void SimpleRenderer::render(GLContext *c, AminoNode *root) {
     }
 
     //done
-    c->restore();
+    ctx->restore();
 }
 
 /**
  * Use solid color shader.
  */
-void applyColorShader(GLContext *ctx, ColorShader* shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat color[4]) {
-    ctx->useProgram(shader->prog);
+void SimpleRenderer::applyColorShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode) {
+    //use shader
+    ctx->useShader(colorShader);
 
-    //set uniforms
-    glUniformMatrix4fv(shader->u_matrix, 1, GL_FALSE, modelView);
-    glUniformMatrix4fv(shader->u_trans,  1, GL_FALSE, ctx->globaltx);
-    glUniform4f(shader->u_color, color[0], color[1], color[2], color[3]);
+    colorShader->setTransformation(modelView, ctx->globaltx);
+    colorShader->setColor(color);
 
     if (color[3] != 1.0) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
-    //set attributes (vertex pos & color)
-    glVertexAttribPointer(shader->attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-    glEnableVertexAttribArray(shader->attr_pos);
+    //draw
+    colorShader->drawTriangles(verts, dim, count, mode);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glDisableVertexAttribArray(shader->attr_pos);
+    //cleanup
     glDisable(GL_BLEND);
 }
 
 /**
  * Draw texture.
  */
-void applyTextureShader(GLContext *ctx, TextureShader *shader, GLfloat modelView[16], GLfloat verts[][2], GLfloat texcoords[][2], GLuint texId, GLfloat opacity) {
+void SimpleRenderer::applyTextureShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity) {
     //printf("doing texture shader apply %d opacity = %f\n", texId, opacity);
 
-    ctx->useProgram(shader->prog);
+    //use shader
+    ctx->useShader(textureShader);
 
     //blend
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     //shader values
-    glUniformMatrix4fv(shader->u_matrix, 1, GL_FALSE, modelView);
-    glUniformMatrix4fv(shader->u_trans,  1, GL_FALSE, ctx->globaltx);
-    glUniform1f(shader->u_opacity, opacity);
+    textureShader->setTransformation(modelView, ctx->globaltx);
+    textureShader->setOpacity(opacity);
 
-    glVertexAttribPointer(shader->attr_texcoords, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
-    glEnableVertexAttribArray(shader->attr_texcoords);
-
-    glVertexAttribPointer(shader->attr_pos, 2, GL_FLOAT, GL_FALSE, 0, verts);
-    glEnableVertexAttribArray(shader->attr_pos);
-    glActiveTexture(GL_TEXTURE0);
-
-    //render
+    //draw
     ctx->bindTexture(texId);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    textureShader->drawTexture(verts, dim, texcoords, count);
 
-    glDisableVertexAttribArray(shader->attr_pos);
-    glDisableVertexAttribArray(shader->attr_texcoords);
+    //cleanup
     glDisable(GL_BLEND);
 }
 
-void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
+void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
     if (DEBUG_RENDERER) {
         printf("-> drawGroup()\n");
     }
 
     if (group->propDepth->value) {
         //enable depth mask
-        c->enableDepth();
+        ctx->enableDepth();
     }
 
     if (group->propCliprect->value) {
@@ -196,7 +184,7 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
 
         GLfloat color[4] = { 1.0, 1.0, 1.0, 1.0 };
 
-        applyColorShader(c, colorShader, modelView, verts, color);
+        applyColorShader(ctx, (float *)verts, 2, 6, color);
 
         //set function to draw pixels where the buffer is equal to 1
         glStencilFunc(GL_EQUAL, 0x1, 0xFF);
@@ -207,18 +195,18 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
     }
 
     //group opacity
-    c->saveOpacity();
-    c->applyOpacity(group->propOpacity->value);
+    ctx->saveOpacity();
+    ctx->applyOpacity(group->propOpacity->value);
 
     //render items
     std::size_t count = group->children.size();
 
     for (std::size_t i = 0; i < count; i++) {
-        this->render(c, group->children[i]);
+        this->render(ctx, group->children[i]);
     }
 
     //restore opacity
-    c->restoreOpacity();
+    ctx->restoreOpacity();
 
     if (group->propCliprect->value) {
         glDisable(GL_STENCIL_TEST);
@@ -226,7 +214,7 @@ void SimpleRenderer::drawGroup(GLContext *c, AminoGroup *group) {
 
     if (group->propDepth->value) {
         //disable depth mask again
-        c->disableDepth();
+        ctx->disableDepth();
     }
 }
 
@@ -238,66 +226,37 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
         printf("-> drawPoly()\n");
     }
 
-    //setup shader
-    ctx->useProgram(colorShader->prog);
-
-    glUniformMatrix4fv(colorShader->u_matrix, 1, GL_FALSE, modelView);
-    glUniformMatrix4fv(colorShader->u_trans,  1, GL_FALSE, ctx->globaltx);
-
-    //color
-    GLfloat opacity = poly->propOpacity->value * ctx->opacity;
-
-    glUniform4f(colorShader->u_color, poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity);
-
-    if (opacity != 1.0) {
-        //blend mode needed
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-
     //vertices
     std::vector<float> *geometry = &poly->propGeometry->value;
     int len = geometry->size();
     int dim = poly->propDimension->value;
-    GLfloat verts[len][dim];
-
-    for (int i = 0; i < len / dim; i++) {
-        verts[i][0] = geometry->at(i * dim);
-
-        if (dim >=2) {
-            verts[i][1] = geometry->at(i * dim + 1);
-        }
-        if (dim >=3) {
-            verts[i][2] = geometry->at(i * dim + 2);
-        }
-    }
+    GLfloat *verts = geometry->data();
 
     assert(dim == 2 || dim == 3);
 
-    glVertexAttribPointer(colorShader->attr_pos, dim, GL_FLOAT, GL_FALSE, 0, verts);
-    glEnableVertexAttribArray(colorShader->attr_pos);
+    //draw
+    GLenum mode;
 
     if (poly->propFilled->value) {
         //filled polygon
-        glDrawArrays(GL_TRIANGLE_FAN, 0, len / dim);
+        mode = GL_TRIANGLE_FAN;
     } else {
         //draw outline (glLineWidth() not used yet)
-        glDrawArrays(GL_LINE_LOOP, 0, len / dim);
+        mode = GL_LINE_LOOP;
     }
 
-    glDisableVertexAttribArray(colorShader->attr_pos);
+    GLfloat opacity = poly->propOpacity->value * ctx->opacity;
+    GLfloat color[4] = { poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity };
 
-    if (opacity != 1.0) {
-        glDisable(GL_BLEND);
-    }
+    applyColorShader(ctx, verts, dim, len / dim, color, mode);
 }
 
-void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
+void SimpleRenderer::drawRect(GLContext *ctx, AminoRect *rect) {
     if (DEBUG_RENDERER) {
         printf("-> drawRect() hasImage=%s\n", rect->hasImage ? "true":"false");
     }
 
-    c->save();
+    ctx->save();
 
     //two triangles
     float x =  0;
@@ -321,7 +280,7 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
     verts[5][0] = x;
     verts[5][1] = y;
 
-    GLfloat opacity = rect->propOpacity->value * c->opacity;
+    GLfloat opacity = rect->propOpacity->value * ctx->opacity;
 
     if (rect->hasImage) {
         //has optional texture
@@ -348,22 +307,22 @@ void SimpleRenderer::drawRect(GLContext *c, AminoRect *rect) {
             texCoords[4][0] = tx;    texCoords[4][1] = ty2;
             texCoords[5][0] = tx;    texCoords[5][1] = ty;
 
-            applyTextureShader(c, textureShader, modelView, verts, texCoords, texture->textureId, opacity);
+            applyTextureShader(ctx, (float *)verts, 2, 6, texCoords, texture->textureId, opacity);
         }
     } else {
         //color only
         GLfloat color[4] = { rect->propR->value, rect->propG->value, rect->propB->value, opacity };
 
-        applyColorShader(c, colorShader, modelView, verts, color);
+        applyColorShader(ctx, (float *)verts, 2, 6, color);
     }
 
-    c->restore();
+    ctx->restore();
 }
 
 /**
  * Render text.
  */
-void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
+void SimpleRenderer::drawText(GLContext *ctx, AminoText *text) {
     if (DEBUG_RENDERER) {
         printf("-> drawText()\n");
     }
@@ -372,10 +331,10 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
         return;
     }
 
-    c->save();
+    ctx->save();
 
     //flip the y axis
-    c->scale(1, -1);
+    ctx->scale(1, -1);
 
     //baseline at top/left
     texture_font_t *tf = text->fontSize->fontTexture;
@@ -385,15 +344,15 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
 
     switch (text->vAlign) {
         case AminoText::VALIGN_TOP:
-            c->translate(0, -tf->ascender);
+            ctx->translate(0, -tf->ascender);
             break;
 
         case AminoText::VALIGN_BOTTOM:
-            c->translate(0,  - text->propH->value - tf->descender + (text->lineNr - 1) * tf->height);
+            ctx->translate(0,  - text->propH->value - tf->descender + (text->lineNr - 1) * tf->height);
             break;
 
         case AminoText::VALIGN_MIDDLE:
-            c->translate(0, - tf->ascender - (text->propH->value - text->lineNr * tf->height) / 2);
+            ctx->translate(0, - tf->ascender - (text->propH->value - text->lineNr * tf->height) / 2);
             break;
 
         case AminoText::VALIGN_BASELINE:
@@ -409,22 +368,21 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
     }
 
     glActiveTexture(GL_TEXTURE0);
-    c->bindTexture(texture);
+    ctx->bindTexture(texture);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    c->useProgram(fontShader->shader);
+    //font shader
+    ctx->useShader(fontShader);
 
     //color & opacity
-    GLfloat color[4] = { text->propR->value, text->propG->value, text->propB->value, c->opacity * text->propOpacity->value };
+    fontShader->setTransformation(modelView, ctx->globaltx);
+    fontShader->setOpacity(ctx->opacity * text->propOpacity->value);
 
-    glUniform4fv(fontShader->colorUni, 1, color);
-    glUniform1i(fontShader->texUni, 0); //GL_TEXTURE0
-    glUniformMatrix4fv(fontShader->mvpUni, 1, 0, modelView);
+    GLfloat color[3] = { text->propR->value, text->propG->value, text->propB->value };
 
-    //only the global transform will change each time
-    glUniformMatrix4fv(fontShader->transUni, 1, 0, c->globaltx);
+    fontShader->setColor(color);
 
     if (DEBUG_RENDERER_ERRORS) {
         showGLErrors("before text rendering");
@@ -437,7 +395,10 @@ void SimpleRenderer::drawText(GLContext *c, AminoText *text) {
         showGLErrors("after text rendering");
     }
 
-    c->restore();
+    //cleanup
+    glDisable(GL_BLEND);
+
+    ctx->restore();
 }
 
 /**

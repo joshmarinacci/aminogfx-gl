@@ -387,38 +387,44 @@ AminoJSObject* AminoFontSizeFactory::create() {
 // AminoFontShader
 //
 
-/**
- * Create font shader.
- */
-AminoFontShader::AminoFontShader(std::string shaderPath) {
-    loadShader(shaderPath);
+AminoFontShader::AminoFontShader() : TextureShader() {
+    //shader
+
+    //Note: using unmodified vertex shader
+    fragmentShader = R"(
+        #ifdef GL_ES
+            precision mediump float;
+        #endif
+
+        uniform float opacity;
+        uniform vec3 color;
+        uniform sampler2D tex;
+
+        varying vec2 uv;
+
+        void main() {
+            float a = texture2D(tex, uv).a;
+
+            gl_FragColor = vec4(color, opacity * a);
+        }
+    )";
 }
 
 /**
- * Free font shader.
- *
- * Note: has to run on rendering thread.
+ * Initialize the font shader.
  */
-AminoFontShader::~AminoFontShader() {
-    glDeleteProgram(shader);
+void AminoFontShader::initShader() {
+    TextureShader::initShader();
+
+    //uniforms
+    uColor = getUniformLocation("color");
 }
 
 /**
- * Load vertex and fragment shader.
+ * Set color.
  */
-void AminoFontShader::loadShader(std::string shaderPath) {
-    std::string vert = shaderPath + "/v3f-t2f.vert";
-    std::string frag = shaderPath + "/v3f-t2f.frag";
-
-    //printf("shader: vertex=%s fragment=%s\n", vert.c_str(), frag.c_str());
-
-    shader = shader_load(vert.c_str(), frag.c_str());
-
-    //get uniforms
-    texUni   = glGetUniformLocation(shader, "texture");
-    mvpUni   = glGetUniformLocation(shader, "mvp");
-    transUni = glGetUniformLocation(shader, "trans");
-    colorUni = glGetUniformLocation(shader, "color");
+void AminoFontShader::setColor(GLfloat color[3]) {
+    glUniform3f(uColor, color[0], color[1], color[2]);
 }
 
 /**

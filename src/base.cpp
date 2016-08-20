@@ -53,11 +53,6 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetPrototypeMethod(tpl, "_start", Start);
     Nan::SetPrototypeMethod(tpl, "_destroy", Destroy);
 
-    // shader
-    Nan::SetPrototypeMethod(tpl, "initColorShader", InitColorShader);
-    Nan::SetPrototypeMethod(tpl, "initTextureShader", InitTextureShader);
-    Nan::SetPrototypeMethod(tpl, "initFontShader", InitFontShader);
-
     // group
     Nan::SetPrototypeMethod(tpl, "_setRoot", SetRoot);
     Nan::SetTemplate(tpl, "Group", AminoGroup::GetInitFunction());
@@ -69,9 +64,6 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetTemplate(tpl, "Polygon", AminoPolygon::GetInitFunction());
     Nan::SetTemplate(tpl, "Text", AminoText::GetInitFunction());
     Nan::SetTemplate(tpl, "Anim", AminoAnim::GetInitFunction());
-
-    //special: GL object
-    Nan::SetTemplate(tpl, "GL", createGLObject());
 
     //stats
     Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
@@ -188,78 +180,27 @@ void AminoGfx::setupRenderer() {
     //set hints
     glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
 
-    //init values
+    //color shader
 	colorShader = new ColorShader();
+
+    bool res = colorShader->create();
+
+    assert(res);
+
+    //texture shader
 	textureShader = new TextureShader();
+    res = textureShader->create();
 
+    assert(res);
+
+    //font shader
+    fontShader = new AminoFontShader();
+    res = fontShader->create();
+
+    assert(res);
+
+    //matrix
     modelView = new GLfloat[16];
-}
-
-/**
- * Set color shader bindings.
- */
-NAN_METHOD(AminoGfx::InitColorShader) {
-    if (DEBUG_BASE) {
-        printf("-> InitColorShader()\n");
-    }
-
-    if (info.Length() < 4) {
-        printf("initColorShader: not enough args\n");
-        exit(1);
-    };
-
-    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-    assert(obj);
-
-    ColorShader *colorShader = obj->colorShader;
-
-    colorShader->prog        = info[0]->Uint32Value();
-    colorShader->u_matrix    = info[1]->Uint32Value();
-    colorShader->u_trans     = info[2]->Uint32Value();
-    colorShader->u_color     = info[3]->Uint32Value();
-
-    colorShader->attr_pos    = info[4]->Uint32Value();
-}
-
-/**
- * Set texture shader bindings.
- */
-NAN_METHOD(AminoGfx::InitTextureShader) {
-    if (DEBUG_BASE) {
-        printf("-> InitTextureShader()\n");
-    }
-
-    if (info.Length() < 6) {
-        printf("initTextureShader: not enough args\n");
-        exit(1);
-    };
-
-    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-    assert(obj);
-
-    TextureShader *textureShader = obj->textureShader;
-
-    textureShader->prog        = info[0]->Uint32Value();
-    textureShader->u_matrix    = info[1]->Uint32Value();
-    textureShader->u_trans     = info[2]->Uint32Value();
-    textureShader->u_opacity   = info[3]->Uint32Value();
-
-    textureShader->attr_pos       = info[4]->Uint32Value();
-    textureShader->attr_texcoords = info[5]->Uint32Value();
-}
-
-NAN_METHOD(AminoGfx::InitFontShader) {
-    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-
-    assert(obj);
-
-    v8::String::Utf8Value path(info[0]);
-
-    assert(!obj->fontShader);
-
-    obj->fontShader = new AminoFontShader(*path);
 }
 
 /**
@@ -618,14 +559,22 @@ void AminoGfx::destroy() {
 
         //renderer (shader programs)
         if (colorShader) {
+            //color shader
             colorShader->destroy();
             delete colorShader;
             colorShader = NULL;
 
+            //texture shader
             textureShader->destroy();
             delete textureShader;
             textureShader = NULL;
 
+            //font shader
+            fontShader->destroy();
+            delete fontShader;
+            fontShader = NULL;
+
+            //matrix
             delete[] modelView;
             modelView = NULL;
         }
@@ -728,37 +677,6 @@ bool AminoGfx::handleSyncUpdate(AnyProperty *property, void *data) {
     }
 
     return false;
-}
-
-/**
- * Create OpenGL bindings for JS.
- */
-v8::Local<v8::Object> AminoGfx::createGLObject() {
-    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
-
-    //functions
-	Nan::Set(obj, Nan::New("glCreateShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateShader)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glShaderSource").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glShaderSource)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glCompileShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCompileShader)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glGetShaderiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetShaderiv)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glCreateProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glCreateProgram)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glAttachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glAttachShader)).ToLocalChecked());
-    Nan::Set(obj, Nan::New("glDetachShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glDetachShader)).ToLocalChecked());
-    Nan::Set(obj, Nan::New("glDeleteShader").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glDeleteShader)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glUseProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glUseProgram)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glLinkProgram").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glLinkProgram)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glGetProgramiv").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramiv)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glGetAttribLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetAttribLocation)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glGetUniformLocation").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetUniformLocation)).ToLocalChecked());
-	Nan::Set(obj, Nan::New("glGetProgramInfoLog").ToLocalChecked(), Nan::GetFunction(Nan::New<v8::FunctionTemplate>(node_glGetProgramInfoLog)).ToLocalChecked());
-
-    //constants
-    Nan::Set(obj, Nan::New("GL_VERTEX_SHADER").ToLocalChecked(),    Nan::New(GL_VERTEX_SHADER));
-	Nan::Set(obj, Nan::New("GL_FRAGMENT_SHADER").ToLocalChecked(),  Nan::New(GL_FRAGMENT_SHADER));
-	Nan::Set(obj, Nan::New("GL_COMPILE_STATUS").ToLocalChecked(),   Nan::New(GL_COMPILE_STATUS));
-	Nan::Set(obj, Nan::New("GL_LINK_STATUS").ToLocalChecked(),      Nan::New(GL_LINK_STATUS));
-
-    return obj;
 }
 
 NAN_METHOD(AminoGfx::SetRoot) {
@@ -1097,8 +1015,7 @@ GLuint AminoText::updateTexture() {
 /**
  * Render text to vertices.
  */
-static void add_text(vertex_buffer_t *buffer, texture_font_t *font,
-               const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
+static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
 
@@ -1325,7 +1242,7 @@ bool AminoText::layoutText() {
         vertex_buffer_clear(buffer);
     } else {
         //vertex & texture coordinates
-        buffer = vertex_buffer_new("vertex:3f,tex_coord:2f");
+        buffer = vertex_buffer_new("pos:3f,tex_coord:2f");
     }
 
     texture_font_t *f = fontSize->fontTexture;
@@ -1344,118 +1261,4 @@ bool AminoText::layoutText() {
     }
 
     return true;
-}
-
-NAN_METHOD(node_glCreateShader) {
-  int type   = info[0]->Uint32Value();
-  int shader = glCreateShader(type);
-
-  info.GetReturnValue().Set(shader);
-}
-
-NAN_METHOD(node_glShaderSource) {
-  int shader = info[0]->Uint32Value();
-  int count  = info[1]->Uint32Value();
-  v8::String::Utf8Value jsource(info[2]);
-  const char *source = *jsource;
-
-  glShaderSource(shader, count, &source, NULL);
-}
-
-NAN_METHOD(node_glCompileShader) {
-  int shader = info[0]->Uint32Value();
-
-  glCompileShader(shader);
-}
-
-NAN_METHOD(node_glGetShaderiv) {
-  int shader = info[0]->Uint32Value();
-  int flag   = info[1]->Uint32Value();
-  GLint status;
-
-  glGetShaderiv(shader, flag, &status);
-
-  info.GetReturnValue().Set(status);
-}
-
-NAN_METHOD(node_glGetProgramiv) {
-  int prog = info[0]->Uint32Value();
-  int flag = info[1]->Uint32Value();
-  GLint status;
-
-  glGetProgramiv(prog, flag, &status);
-
-  info.GetReturnValue().Set(status);
-}
-
-NAN_METHOD(node_glGetShaderInfoLog) {
-  int shader = info[0]->Uint32Value();
-  char buffer[513];
-
-  glGetShaderInfoLog(shader, 512, NULL, buffer);
-
-  info.GetReturnValue().Set(Nan::New(buffer, strlen(buffer)).ToLocalChecked());
-}
-
-NAN_METHOD(node_glGetProgramInfoLog) {
-  int shader = info[0]->Uint32Value();
-  char buffer[513];
-
-  glGetProgramInfoLog(shader, 512, NULL, buffer);
-
-  info.GetReturnValue().Set(Nan::New(buffer, strlen(buffer)).ToLocalChecked());
-}
-
-NAN_METHOD(node_glCreateProgram) {
-  int prog = glCreateProgram();
-
-  info.GetReturnValue().Set(prog);
-}
-
-NAN_METHOD(node_glAttachShader) {
-  int prog   = info[0]->Uint32Value();
-  int shader = info[1]->Uint32Value();
-
-  glAttachShader(prog, shader);
-}
-
-NAN_METHOD(node_glDetachShader) {
-  int prog   = info[0]->Uint32Value();
-  int shader = info[1]->Uint32Value();
-
-  glDetachShader(prog, shader);
-}
-
-NAN_METHOD(node_glDeleteShader) {
-  int shader = info[0]->Uint32Value();
-
-  glDeleteShader(shader);
-}
-
-NAN_METHOD(node_glLinkProgram) {
-    GLuint prog = info[0]->Uint32Value();
-
-    glLinkProgram(prog);
-}
-
-NAN_METHOD(node_glUseProgram) {
-    GLuint prog = info[0]->Uint32Value();
-
-    glUseProgram(prog);
-}
-
-NAN_METHOD(node_glGetAttribLocation) {
-  int prog = info[0]->Uint32Value();
-  v8::String::Utf8Value name(info[1]);
-  int loc = glGetAttribLocation(prog, *name);
-
-  info.GetReturnValue().Set(loc);
-}
-
-NAN_METHOD(node_glGetUniformLocation) {
-    int prog = info[0]->Uint32Value();
-    v8::String::Utf8Value name(info[1]);
-    int loc = glGetUniformLocation(prog, *name);
-
-    info.GetReturnValue().Set(loc);
 }

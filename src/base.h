@@ -11,12 +11,10 @@
 #include "shaders.h"
 #include "mathutils.h"
 #include <stdio.h>
-#include <string.h>
 #include <vector>
 #include <stack>
 #include <stdlib.h>
 #include <string>
-#include <string.h>
 #include <map>
 
 #include "freetype-gl.h"
@@ -143,14 +141,9 @@ private:
     //JS methods
     static NAN_METHOD(Start);
     static NAN_METHOD(Destroy);
-    static NAN_METHOD(InitColorShader);
-    static NAN_METHOD(InitTextureShader);
-    static NAN_METHOD(InitFontShader);
+
     static NAN_METHOD(SetRoot);
     static NAN_METHOD(GetStats);
-
-    //GL
-    static v8::Local<v8::Object> createGLObject();
 
     //animation
     void addAnimation(AsyncValueUpdate *update, int state);
@@ -1301,23 +1294,5 @@ typedef struct {
     float x, y, z;    // position
     float s, t;       // texture pos
 } vertex_t;
-
-//OpenGL JavaScript bindings
-
-NAN_METHOD(node_glCreateShader);
-NAN_METHOD(node_glShaderSource);
-NAN_METHOD(node_glCompileShader);
-NAN_METHOD(node_glGetShaderiv);
-NAN_METHOD(node_glGetProgramiv);
-NAN_METHOD(node_glGetShaderInfoLog);
-NAN_METHOD(node_glGetProgramInfoLog);
-NAN_METHOD(node_glCreateProgram);
-NAN_METHOD(node_glAttachShader);
-NAN_METHOD(node_glDetachShader);
-NAN_METHOD(node_glDeleteShader);
-NAN_METHOD(node_glLinkProgram);
-NAN_METHOD(node_glUseProgram);
-NAN_METHOD(node_glGetAttribLocation);
-NAN_METHOD(node_glGetUniformLocation);
 
 #endif

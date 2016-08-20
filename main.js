@@ -14,20 +14,8 @@ const path = require('path');
 const binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
 const native = require(binding_path);
 
-const shaders = require('./src/shaders.js');
 const fs = require('fs');
 const util =  require('util');
-
-//detect platform
-var OS;
-
-if (process.arch == 'arm') {
-    OS = 'RPI';
-}
-
-if (process.platform == 'darwin') {
-    OS ='MAC';
-}
 
 //
 //  AminoGfx
@@ -128,33 +116,20 @@ function parseRGBString(Fill) {
 AminoGfx.prototype.start = function (done) {
     var self = this;
 
-    //preload shaders
-    shaders.preloadShaders(OS, function (err) {
+    //pass to native code
+    this._start(function (err) {
         if (err) {
-            done(err);
+            done.call(self, err);
             return;
         }
 
-        //pass to native code
-        self._start(function (err) {
-            if (err) {
-                done.call(self, err);
-                return;
-            }
+        //ready (Note: this points to the instance)
+        done.call(self, err);
 
-            //init shaders (in current context)
-            self.GL = AminoGfx.GL;
-            shaders.init(self, OS);
-            self.initFontShader(path.join(__dirname, '/src/shaders'));
-
-            //ready (Note: this points to the instance)
-            done.call(self, err);
-
-            //check root
-            if (!self.root) {
-                throw new Error('Missing root!');
-            }
-        });
+        //check root
+        if (!self.root) {
+            throw new Error('Missing root!');
+        }
     });
 };
 
@@ -2029,7 +2004,7 @@ exports.AminoWeakReference = native.AminoWeakReference;
 var input = require('./src/core/aminoinput');
 
 // initialize input handler
-input.init(OS);
+input.init();
 
 exports.input = input;
 

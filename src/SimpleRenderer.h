@@ -11,7 +11,7 @@ public:
 
     int depth = 0;
 
-    GLuint prevProg = INVALID_PROGRAM;
+    AnyAminoShader *prevShader = NULL;
     GLuint prevTex = INVALID_TEXTURE;
 
     GLContext() {
@@ -107,11 +107,13 @@ public:
         assert(globaltx);
     }
 
-    void useProgram(GLuint prog) {
-        if (prog != prevProg) {
-            glUseProgram(prog);
+    void useShader(AnyAminoShader *shader) {
+        if (shader != prevShader) {
+            assert(shader);
 
-            prevProg = prog;
+            shader->useShader();
+
+            prevShader = shader;
         }
     }
 
@@ -149,12 +151,12 @@ public:
     virtual ~SimpleRenderer() { }
 
     virtual void startRender(AminoNode *node);
-    virtual void render(GLContext *c, AminoNode *node);
+    virtual void render(GLContext *ctx, AminoNode *node);
 
-    virtual void drawGroup(GLContext *c, AminoGroup *group);
-    virtual void drawRect(GLContext *c, AminoRect *rect);
-    virtual void drawPoly(GLContext *c, AminoPolygon *poly);
-    virtual void drawText(GLContext *c, AminoText *text);
+    virtual void drawGroup(GLContext *ctx, AminoGroup *group);
+    virtual void drawRect(GLContext *ctx, AminoRect *rect);
+    virtual void drawPoly(GLContext *ctx, AminoPolygon *poly);
+    virtual void drawText(GLContext *ctx, AminoText *text);
 
     static int showGLErrors();
     static int showGLErrors(std::string msg);
@@ -164,7 +166,9 @@ private:
     ColorShader *colorShader;
     TextureShader *textureShader;
     GLfloat *modelView;
-};
 
+    void applyColorShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode = GL_TRIANGLES);
+    void applyTextureShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity);
+};
 
 #endif

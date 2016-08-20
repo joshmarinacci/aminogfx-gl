@@ -8,6 +8,7 @@
 
 #include "base_js.h"
 #include "gfx.h"
+#include "shaders.h"
 
 class AminoFontsFactory;
 
@@ -134,28 +135,25 @@ struct amino_atlas_t {
     size_t lastGlyphUpdate;
 };
 
+
 /**
- * Amino OpenGL font handler.
+ * Font Shader.
  */
-class AminoFontShader {
+class AminoFontShader : public TextureShader {
 public:
-    //shader
-    GLuint shader;
-    GLint texUni;
-    GLint mvpUni;
-    GLint transUni;
-    GLint colorUni;
+    AminoFontShader();
+
+    void setColor(GLfloat color[3]);
+
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
+
+protected:
+    GLint uColor;
 
     //textures (Note: never destroyed)
     std::map<texture_atlas_t *, amino_atlas_t> atlasTextures;
 
-    AminoFontShader(std::string shaderPath);
-    virtual ~AminoFontShader();
-
-    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
-
-private:
-    void loadShader(std::string shaderPath);
+    void initShader() override;
 };
 
 #endif
