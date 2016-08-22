@@ -115,9 +115,9 @@ GLuint AnyShader::compileShader(std::string source, const GLenum type) {
     source = "#version 100\n" + source;
 #endif
 
-    char *src = (char *)source.c_str();
+    GLchar *src = (GLchar *)source.c_str();
 
-    glShaderSource(handle, 1, &src, NULL);
+    glShaderSource(handle, 1, (const GLchar **)&src, NULL);
     glCompileShader(handle);
 
     //get status
