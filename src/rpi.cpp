@@ -233,7 +233,7 @@ private:
 
         AminoGfx::initRenderer();
 
-        //set display size
+        //set display size & viewport
         updateSize(screenW, screenH);
         updatePosition(0, 0);
 
@@ -633,8 +633,10 @@ private:
      */
     void updateWindowSize() override {
         //not supported
+
+        //reset to screen values
         propW->setValue(screenW);
-        propW->setValue(screenH);
+        propH->setValue(screenH);
     }
 
     /**

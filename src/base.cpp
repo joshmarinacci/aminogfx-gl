@@ -461,6 +461,9 @@ bool AminoGfx::isRendering() {
     return rendering;
 }
 
+/**
+ * Setup matrix, viewport and clear screen.
+ */
 void AminoGfx::setupViewport() {
     if (viewportChanged) {
         viewportChanged = false;
@@ -653,7 +656,10 @@ bool AminoGfx::handleSyncUpdate(AnyProperty *property, void *data) {
 
     //size changes
     if (property == propW || property == propH) {
+        //set new value
         property->setAsyncData(NULL, data);
+
+        //update native window
         updateWindowSize();
 
         return true;
