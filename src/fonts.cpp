@@ -446,13 +446,12 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        //FIXME seeing vertical lines on macOS retina displays!
-        //-> https://github.com/rougier/freetype-gl/issues/123
-        //subpixel error on Mac retina display at edges
+        //best quality
+        //Note: padding adjustment in freetype-gl needed to solve vertical thin line issue at boundaries (see https://github.com/rougier/freetype-gl/issues/123)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-        //worse quality on macOS retina (but still a few pixels errors)
+        //much worse quality
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 

@@ -639,6 +639,9 @@ cleanup_stroker:
         padding.left = 1;
     }
 
+    //@appamics.CB: fix for vertical lines from next glyph in atlas
+    padding.left = 1;//cbx TODO more checks
+
     size_t src_w = ft_bitmap.width/depth;
     size_t src_h = ft_bitmap.rows;
 
