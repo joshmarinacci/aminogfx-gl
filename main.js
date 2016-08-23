@@ -1519,8 +1519,37 @@ AminoFont.prototype.getSize = function (size, callback) {
 
 var AminoFontSize = AminoFonts.FontSize;
 
+/**
+ * Calculate text width.
+ */
 AminoFontSize.prototype.calcTextWidth = function (text, callback) {
     callback(null, this._calcTextWidth(text));
+};
+
+//
+// AminoGfxTexture
+//
+
+var Texture = AminoGfx.Texture;
+
+/**
+ * Load texture.
+ */
+Texture.prototype.loadTexture = function (src, callback) {
+    if (!src) {
+        this.loadTextureFromBuffer(null, callback);
+        return;
+    }
+
+    if (src instanceof AminoImage) {
+        this.loadTextureFromImage(src, callback);
+    } else if (Buffer.isBuffer(src)) {
+        this.loadTextureFromBuffer(src, callback);
+    } else if (src instanceof AminoFontSize) {
+        this.loadTextureFromFont(src, callback);
+    } else {
+        throw new Error('unknown source');
+    }
 };
 
 //
@@ -1635,6 +1664,7 @@ Text.prototype.updateFont = function (val, prop, obj) {
         weight: obj.fontWeight(),
         style: obj.fontStyle(),
     }, function (err, font) {
+        //handle errors
         if (err) {
             console.log('could not load font: ' + err.message);
 
@@ -1658,6 +1688,8 @@ Text.prototype.updateFont = function (val, prop, obj) {
             });
             return;
         }
+
+        //attach font
 
         //console.log('got font: ' + JSON.stringify(font));
 

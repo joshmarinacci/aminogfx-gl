@@ -842,6 +842,8 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
 
 /**
  * Get texture for atlas.
+ *
+ * Note: has to be called on OpenGL thread.
  */
 amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas) {
     assert(fontShader);
@@ -957,8 +959,6 @@ GLuint AminoText::updateTexture() {
 
     if (texture.textureId == INVALID_TEXTURE) {
         //create texture (for atlas)
-        texture_atlas_t *atlas = fontSize->fontTexture->atlas;
-
         texture = getAminoGfx()->getAtlasTexture(atlas);
 
         assert(texture.textureId != INVALID_TEXTURE);

@@ -429,6 +429,8 @@ void AminoFontShader::setColor(GLfloat color[3]) {
 
 /**
  * Get texture for atlas.
+ *
+ * Note: has to be called on OpenGL thread.
  */
 amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
     std::map<texture_atlas_t *, amino_atlas_t>::iterator it = atlasTextures.find(atlas);

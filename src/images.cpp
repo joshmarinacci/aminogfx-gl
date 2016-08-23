@@ -500,7 +500,7 @@ void AminoTexture::destroy() {
 
     if (textureId != INVALID_TEXTURE) {
         //Note: we are on the main thread
-        if (eventHandler) {
+        if (eventHandler && ownTexture) {
             ((AminoGfx *)eventHandler)->deleteTextureAsync(textureId);
         }
 
@@ -540,6 +540,7 @@ v8::Local<v8::Function> AminoTexture::GetInitFunction() {
     //methods
     Nan::SetPrototypeMethod(tpl, "loadTextureFromImage", LoadTextureFromImage);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
+    Nan::SetPrototypeMethod(tpl, "loadTextureFromFont", LoadTextureFromFont);
 
     //template function
     return Nan::GetFunction(tpl).ToLocalChecked();
@@ -631,6 +632,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
         if (textureId != INVALID_TEXTURE) {
             //set values
             this->textureId = textureId;
+            ownTexture = true;
 
             w = img->w;
             h = img->h;
@@ -681,6 +683,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromBuffer) {
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
 
     assert(obj);
+    assert(obj->ownTexture);
 
     //data
     v8::Local<v8::Value> data = info[0];
@@ -768,6 +771,98 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
     }
 }
 
+NAN_METHOD(AminoTexture::LoadTextureFromFont) {
+    if (DEBUG_IMAGES) {
+        printf("-> loadTextureFromBuffer()\n");
+    }
+
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    //callback
+    v8::Local<v8::Function> callback = info[1].As<v8::Function>();
+
+    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+        //already set
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
+
+        callback->Call(info.This(), argc, argv);
+        return;
+    }
+
+    //font
+    AminoFontSize *fontSize = Nan::ObjectWrap::Unwrap<AminoFontSize>(info[0]->ToObject());
+
+    //async loading
+    obj->callback = new Nan::Callback(callback);
+    obj->enqueueValueUpdate(fontSize, (asyncValueCallback)&AminoTexture::createTextureFromFont);
+}
+
+/**
+ * Create texture.
+ */
+void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
+    if (state == AsyncValueUpdate::STATE_APPLY) {
+        //create texture on OpenGL thread
+
+        if (DEBUG_IMAGES) {
+            printf("-> createTextureFromFont()\n");
+        }
+
+        AminoFontSize *fontSize = (AminoFontSize *)update->valueObj;
+
+        assert(fontSize);
+
+        //use current font texture
+        texture_atlas_t *atlas = fontSize->fontTexture->atlas;
+        GLuint textureId = ((AminoGfx *)eventHandler)->getAtlasTexture(atlas).textureId;
+
+        if (textureId != INVALID_TEXTURE) {
+            //set values
+            this->textureId = textureId;
+            ownTexture = false;
+
+            w = atlas->width;
+            h = atlas->height;
+        }
+    } else if (state == AsyncValueUpdate::STATE_DELETE) {
+        //on main thread
+        AminoFontSize *fontSize = (AminoFontSize *)update->valueObj;
+
+        assert(fontSize);
+
+        if (this->textureId == INVALID_TEXTURE) {
+            //failed
+
+            if (callback) {
+                int argc = 1;
+                v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
+
+                callback->Call(handle(), argc, argv);
+                delete callback;
+            }
+
+            return;
+        }
+
+        v8::Local<v8::Object> obj = handle();
+
+        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+
+        //callback
+        if (callback) {
+            int argc = 2;
+            v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
+
+            callback->Call(obj, argc, argv);
+            delete callback;
+        }
+    }
+}
+
 //
 //  AminoTextureFactory
 //
@@ -780,7 +875,7 @@ AminoTextureFactory::AminoTextureFactory(Nan::FunctionCallback callback): AminoJ
 }
 
 /**
- * Create AminoGfx instance.
+ * Create AminoTexture instance.
  */
 AminoJSObject* AminoTextureFactory::create() {
     return new AminoTexture();

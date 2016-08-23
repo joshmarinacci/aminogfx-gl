@@ -64,6 +64,7 @@ class AminoTextureFactory;
 class AminoTexture : public AminoJSObject {
 public:
     GLuint textureId = INVALID_TEXTURE;
+    bool ownTexture = true;
     int w = 0;
     int h = 0;
 
@@ -89,9 +90,11 @@ private:
     //JS methods
     static NAN_METHOD(LoadTextureFromImage);
     static NAN_METHOD(LoadTextureFromBuffer);
+    static NAN_METHOD(LoadTextureFromFont);
 
     void createTexture(AsyncValueUpdate *update, int state);
     void createTextureFromBuffer(AsyncValueUpdate *update, int state);
+    void createTextureFromFont(AsyncValueUpdate *update, int state);
 };
 
 /**
