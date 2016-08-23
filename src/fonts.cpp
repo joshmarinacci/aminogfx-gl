@@ -158,7 +158,7 @@ void AminoFont::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     this->fontData.Reset(bufferObj);
 
     //create atlas
-    atlas = texture_atlas_new(512, 512, 1);
+    atlas = texture_atlas_new(512, 512, 1); //depth must be 1
 
     if (!atlas) {
         Nan::ThrowTypeError("could not create atlas");
@@ -446,13 +446,14 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+        //FIXME seeing vertical lines on macOS retina displays!
         //subpixel error on Mac retina display at edges
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-        //worse on retina but no pixel errors
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        //worse quality on macOS retina (still a few pixels errors)
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
         amino_atlas_t item;
 

@@ -46,7 +46,11 @@ gfx.start(function (err) {
     //text
     var text = this.createText().fontName('Oswald')
         .text('The quick brown fox jumps over the lazy dog.')
-        .y(-100) //outside viewport
+        .y(200) //outside viewport
+        .w(512)
+        .fill('#0000FF')
+        .vAlign('top')
+        .wrap('word')
         .fontSize(80)
         .fontWeight(200);
 

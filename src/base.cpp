@@ -1008,7 +1008,12 @@ GLuint AminoText::updateTexture() {
 
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
+    if (atlas->depth == 1) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
+    } else if (atlas->depth == 3) {
+        //Note: not supported so far
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, atlas->width, atlas->height, 0, GL_RGB, GL_UNSIGNED_BYTE, atlas->data);
+    }
 
     texture.lastGlyphUpdate = fontSize->fontTexture->glyphs->size;
 
