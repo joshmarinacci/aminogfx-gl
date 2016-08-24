@@ -252,7 +252,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
 
     GLfloat opacity = poly->propOpacity->value * ctx->opacity;
     GLfloat color[4] = { poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity };
-
+printf("applyColorShader %i %i\n", dim, len); //FIXME cbx
     applyColorShader(ctx, verts, dim, len / dim, color, mode);
 }
 
