@@ -211,7 +211,9 @@ exports.go = function () {
 			gfx.fill('#ff0000');
 		}, 2000);
 
+		//use transparent background after 4 seconds
 		setTimeout(function () {
+			//set transparent background
             gfx.opacity(0.1);
 		}, 4000);
 

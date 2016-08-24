@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 //cbx check
-#define EGL_USE_ALPHA false
+//#define EGL_USE_ALPHA
 
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
