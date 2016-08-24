@@ -1810,7 +1810,7 @@ void AminoJSEventObject::processAsyncQueue() {
     assert(asyncUpdates);
 
     pthread_mutex_lock(&asyncLock);
-
+printf("async updates: %i\n", asyncUpdates->size()); //FIXME cbx
     for (std::size_t i = 0; i < asyncUpdates->size(); i++) {
         AnyAsyncUpdate *item = (*asyncUpdates)[i];
 
@@ -1914,6 +1914,7 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
 
     //async handling
     pthread_mutex_lock(&asyncLock);
+//cbx
     asyncUpdates->push_back(new AsyncPropertyUpdate(prop, data));
     pthread_mutex_unlock(&asyncLock);
 
