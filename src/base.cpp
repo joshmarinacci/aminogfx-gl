@@ -6,7 +6,7 @@
 #include "SimpleRenderer.h"
 #include "fonts/utf8-utils.h"
 
-#define DEBUG_RENDERER false
+#define DEBUG_RENDERER true
 //cbx deactivate later on
 #define DEBUG_RENDERER_ERRORS true
 #define DEBUG_FONT_TEXTURE false
@@ -434,6 +434,7 @@ void AminoGfx::render() {
     if (destroyed || !bindContext()) {
         return;
     }
+
     rendering = true;
 
     //updates
