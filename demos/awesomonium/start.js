@@ -2,6 +2,8 @@
 
 //Attention: increase GPU memory! With 64 MB the rendering suddenly gets very slow while drawing polygons!!!
 
+//Raspberry Pi 3: 13 fps (polygons could be improved)
+
 var amino = require('../../main.js');
 var data = require('./countries.js');
 var onecolor = require('onecolor');
