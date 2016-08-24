@@ -143,12 +143,16 @@ void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
         printf("-> drawGroup()\n");
     }
 
-    if (group->propDepth->value) {
+    bool useDepth = group->propDepth->value;
+
+    if (useDepth) {
         //enable depth mask
         ctx->enableDepth();
     }
 
-    if (group->propCliprect->value) {
+    bool useClipping = group->propCliprect->value;
+
+    if (useClipping) {
         //turn on stenciling
         glEnable(GL_STENCIL_TEST);
 
@@ -208,11 +212,11 @@ void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
     //restore opacity
     ctx->restoreOpacity();
 
-    if (group->propCliprect->value) {
+    if (useClipping) {
         glDisable(GL_STENCIL_TEST);
     }
 
-    if (group->propDepth->value) {
+    if (useDepth) {
         //disable depth mask again
         ctx->disableDepth();
     }

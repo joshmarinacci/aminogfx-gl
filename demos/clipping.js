@@ -14,7 +14,7 @@ gfx.start(function (err) {
 
     this.setRoot(root);
 
-    //add circle
+    //add circle (0/0 to 50/50; bottom-right quadrant visible)
     var circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(0).y(0);
