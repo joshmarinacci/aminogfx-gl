@@ -263,11 +263,13 @@ private:
 
         VC_DISPMANX_ALPHA_T dispman_alpha;
 
-/* cbx
+        //Notes: works but seeing issues with font shader which uses transparent pixels! The background is visible at the border pixels of the font!
+        /*
         dispman_alpha.flags = DISPMANX_FLAGS_ALPHA_FROM_SOURCE;
         dispman_alpha.opacity = 255;
         dispman_alpha.mask = 0;
-*/
+        */
+
         dispman_alpha.flags = DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS;
         dispman_alpha.opacity = 0xFF;
         dispman_alpha.mask = 0;
