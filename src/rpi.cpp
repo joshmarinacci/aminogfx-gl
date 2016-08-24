@@ -109,14 +109,26 @@ private:
         //get an appropriate EGL frame buffer configuration
         //this uses a BRCM extension that gets the closest match, rather than standard which returns anything that matches
         static const EGLint attribute_list[] = {
+            //RGBA
             EGL_RED_SIZE, 8,
             EGL_GREEN_SIZE, 8,
             EGL_BLUE_SIZE, 8,
             EGL_ALPHA_SIZE, 8,
 
+            //OpenGL ES 2.0
+            EGL_CONFORMANT, EGL_OPENGL_ES2_BIT,
+
+            //buffers
             EGL_STENCIL_SIZE, 8,
             EGL_DEPTH_SIZE, 16,
+
+            //sampling (quality)
+            EGL_SAMPLE_BUFFERS, 1,
+            EGL_SAMPLES, 4, //4x MSAA
+
+            //window
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+
             EGL_NONE
         };
 
