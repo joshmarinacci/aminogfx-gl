@@ -6,10 +6,11 @@
 #include "SimpleRenderer.h"
 #include "fonts/utf8-utils.h"
 
-#define DEBUG_RENDERER true
+#define DEBUG_RENDERER false
 //cbx deactivate later on
 #define DEBUG_RENDERER_ERRORS true
 #define DEBUG_FONT_TEXTURE false
+//cbx deactivate later on
 #define DEBUG_FPS true
 
 //

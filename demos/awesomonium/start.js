@@ -1,5 +1,7 @@
 'use strict';
 
+//Attention: increase GPU memory! With 64 MB the rendering suddenly gets very slow while drawing polygons!!!
+
 var amino = require('../../main.js');
 var data = require('./countries.js');
 var onecolor = require('onecolor');
@@ -322,7 +324,6 @@ function createBar1(w, h, count, color) {
 
     function update() {
         rects.forEach(function (rect) {
-//cbx rendering stops on RPi! Seeing overflow!
             rect.h(20 + Math.random() * (h - 20));
         });
     }

@@ -1,7 +1,6 @@
 #include "SimpleRenderer.h"
 
-//cbx
-#define DEBUG_RENDERER true
+#define DEBUG_RENDERER false
 #define DEBUG_RENDERER_ERRORS false
 
 SimpleRenderer::SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): fontShader(fontShader), colorShader(colorShader), textureShader(textureShader), modelView(modelView) {
@@ -252,7 +251,7 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
 
     GLfloat opacity = poly->propOpacity->value * ctx->opacity;
     GLfloat color[4] = { poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity };
-printf("applyColorShader %i %i\n", dim, len); //FIXME cbx
+
     applyColorShader(ctx, verts, dim, len / dim, color, mode);
 }
 
