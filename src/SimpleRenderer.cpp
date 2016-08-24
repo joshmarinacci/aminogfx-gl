@@ -1,6 +1,7 @@
 #include "SimpleRenderer.h"
 
-#define DEBUG_RENDERER false
+//cbx
+#define DEBUG_RENDERER true
 #define DEBUG_RENDERER_ERRORS false
 
 SimpleRenderer::SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): fontShader(fontShader), colorShader(colorShader), textureShader(textureShader), modelView(modelView) {

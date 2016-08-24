@@ -385,6 +385,10 @@ void AminoGfx::handleRenderEvents(uv_async_t *handle) {
 
     //handle events
     gfx->handleSystemEvents();
+
+    if (DEBUG_RENDERER) {
+        printf(" -> done\n");
+    }
 }
 
 /**
