@@ -70,6 +70,11 @@ protected:
     AminoFontShader *fontShader = NULL;
     GLfloat *modelView = NULL;
 
+    //performance
+    double fpsStart = 0;
+    double fpsCycleStart = 0;
+    int fpsCount = 0;
+
     //thread
     uv_thread_t thread;
     bool threadRunning = false;
@@ -151,6 +156,10 @@ private:
 
     //texture
     void deleteTexture(AsyncValueUpdate *update, int state);
+
+    //debug
+    void measureRenderingStart();
+    void measureRenderingEnd();
 };
 
 /**

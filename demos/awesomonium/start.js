@@ -182,6 +182,7 @@ function makeFooterSymbols(root) {
         var len = Math.random() * 5000 + 5000;
 
         if (animated) {
+            //rotate
             sun.rz.anim().from(start).to(start + 90).dur(len).loop(-1).autoreverse(true).start();
         }
 
@@ -298,6 +299,7 @@ function buildGlobe(group) {
 
     // spin it forever
     if (animated) {
+        //rotate the globe
         group.rz.anim().from(0).to(360).dur(60 * 1000).loop(-1).start();
     }
 }
@@ -325,6 +327,7 @@ function createBar1(w, h, count, color) {
     }
 
     if (animated) {
+        //resize bars (10x a second)
         setInterval(update, 100);
     }
 

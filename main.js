@@ -1,7 +1,6 @@
 'use strict';
 
 const DEBUG = false;
-const DEBUG_FPS = false;
 const DEBUG_ERRORS = true;
 
 if (DEBUG) {

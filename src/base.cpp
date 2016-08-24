@@ -10,6 +10,7 @@
 //cbx deactivate later on
 #define DEBUG_RENDERER_ERRORS true
 #define DEBUG_FONT_TEXTURE false
+#define DEBUG_FPS true
 
 //
 //  AminoGfx
@@ -292,12 +293,50 @@ void AminoGfx::renderingThread(void *arg) {
     AminoGfx *gfx = (AminoGfx *)arg;
 
     while (gfx->isRenderingThreadRunning()) {
+        if (DEBUG_FPS) {
+            gfx->measureRenderingStart();
+        }
+
         gfx->render();
+
+        if (DEBUG_FPS) {
+            gfx->measureRenderingEnd();
+        }
 
         //check errors
         if (DEBUG_RENDERER || DEBUG_RENDERER_ERRORS) {
             SimpleRenderer::showGLErrors();
         }
+    }
+}
+
+/**
+ * Rendering has started.
+ */
+void AminoGfx::measureRenderingStart() {
+    double time = getTime();
+
+    if (fpsStart == 0) {
+        fpsStart = time;
+        fpsCount = 0;
+    }
+
+    fpsCycleStart = time;
+}
+
+/**
+ * Rendering done.
+ */
+void AminoGfx::measureRenderingEnd() {
+    double time = getTime();
+    double diff = time - fpsStart;
+
+    fpsCount++;
+
+    if (diff >= 1000) {
+        fpsStart = 0;
+
+        printf("%i FPS\n", (int)(fpsCount * 1000 / diff));
     }
 }
 
