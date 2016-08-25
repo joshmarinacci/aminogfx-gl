@@ -320,6 +320,9 @@ void AminoGfx::measureRenderingStart() {
     if (fpsStart == 0) {
         fpsStart = time;
         fpsCount = 0;
+        fpsCycleMin = 0;
+        fpsCycleMax = 0;
+        fpsCycleAvg = 0;
     }
 
     fpsCycleStart = time;
@@ -332,12 +335,26 @@ void AminoGfx::measureRenderingEnd() {
     double time = getTime();
     double diff = time - fpsStart;
 
+    //cycle
     fpsCount++;
 
+    double cycle = fpsCycleEnd - fpsCycleStart;
+
+    if (fpsCycleMin == 0 || cycle < fpsCycleMin) {
+        fpsCycleMin = cycle;
+    }
+
+    if (cycle > fpsCycleMax) {
+        fpsCycleMax = cycle;
+    }
+
+    fpsCycleAvg += cycle;
+
+    //output every second
     if (diff >= 1000) {
         fpsStart = 0;
 
-        printf("%i FPS\n", (int)(fpsCount * 1000 / diff));
+        printf("%i FPS (max: %i ms, min: %i ms, avg: %i ms)\n", (int)(fpsCount * 1000 / diff), (int)fpsCycleMax, (int)fpsCycleMin, (int)(fpsCycleAvg / fpsCount));
     }
 }
 
@@ -470,6 +487,10 @@ void AminoGfx::render() {
     renderScene();
 
     //done
+    if (DEBUG_FPS) {
+        fpsCycleEnd = getTime();
+    }
+
     if (DEBUG_RENDERER) {
         printf("-> renderer: renderingDone()\n");
     }

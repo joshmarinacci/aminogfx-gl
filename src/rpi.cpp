@@ -467,7 +467,7 @@ private:
             printf("renderingDone()\n");
         }
 
-        //swap
+        //swap buffer
         EGLBoolean res = eglSwapBuffers(display, surface);
 
         assert(res == EGL_TRUE);

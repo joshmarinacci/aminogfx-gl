@@ -502,7 +502,7 @@ private:
         //debug
         //printf("renderingDone()\n");
 
-        //swap
+        //swap buffer
         assert(window);
 
         glfwSwapBuffers(window);

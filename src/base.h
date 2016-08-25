@@ -70,10 +70,14 @@ protected:
     AminoFontShader *fontShader = NULL;
     GLfloat *modelView = NULL;
 
-    //performance
+    //performance (FPS)
     double fpsStart = 0;
-    double fpsCycleStart = 0;
-    int fpsCount = 0;
+    double fpsCycleStart;
+    double fpsCycleEnd;
+    double fpsCycleMin;
+    double fpsCycleMax;
+    double fpsCycleAvg;
+    int fpsCount;
 
     //thread
     uv_thread_t thread;
