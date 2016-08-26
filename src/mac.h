@@ -2,7 +2,7 @@
 #define _AMINO_MAC_H
 
 #include "base.h"
-#include "SimpleRenderer.h"
+#include "renderer.h"
 
 class AminoGfxMacFactory : public AminoJSObjectFactory {
 public:

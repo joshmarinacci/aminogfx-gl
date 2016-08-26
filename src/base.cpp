@@ -3,7 +3,7 @@
 #include <cwctype>
 #include <algorithm>
 
-#include "SimpleRenderer.h"
+#include "renderer.h"
 #include "fonts/utf8-utils.h"
 
 #define DEBUG_RENDERER false
@@ -180,30 +180,10 @@ void AminoGfx::setupRenderer() {
         printf("-> setupRenderer()\n");
     }
 
-    //set hints
-    glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+    assert(!renderer);
 
-    //color shader
-	colorShader = new ColorShader();
-
-    bool res = colorShader->create();
-
-    assert(res);
-
-    //texture shader
-	textureShader = new TextureShader();
-    res = textureShader->create();
-
-    assert(res);
-
-    //font shader
-    fontShader = new AminoFontShader();
-    res = fontShader->create();
-
-    assert(res);
-
-    //matrix
-    modelView = new GLfloat[16];
+    renderer = new AminoRenderer();
+    renderer->setup();
 }
 
 /**
@@ -306,7 +286,7 @@ void AminoGfx::renderingThread(void *arg) {
 
         //check errors
         if (DEBUG_RENDERER || DEBUG_RENDERER_ERRORS) {
-            SimpleRenderer::showGLErrors();
+            AminoRenderer::showGLErrors();
         }
     }
 }
@@ -472,14 +452,7 @@ void AminoGfx::render() {
 
     assert(res == 0);
 
-    //viewport
-    if (DEBUG_RENDERER) {
-        printf("-> renderer: setupViewport()\n");
-    }
-
-    setupViewport();
-
-    //root
+    //render scene (root node)
     if (DEBUG_RENDERER) {
         printf("-> renderer: renderScene()\n");
     }
@@ -529,61 +502,6 @@ bool AminoGfx::isRendering() {
 }
 
 /**
- * Setup matrix, viewport and clear screen.
- */
-void AminoGfx::setupViewport() {
-    if (viewportChanged) {
-        viewportChanged = false;
-
-        //set up the viewport (y-inversion, top-left origin)
-        float width = propW->value;
-        float height = propH->value;
-
-        //scale
-        GLfloat *scaleM = new GLfloat[16];
-
-        make_scale_matrix(1, -1, 1, scaleM);
-
-        //translate
-        GLfloat *transM = new GLfloat[16];
-
-        make_trans_matrix(- width / 2, height / 2, 0, transM);
-
-        //combine
-        GLfloat *m4 = new GLfloat[16];
-
-        mul_matrix(m4, transM, scaleM);
-
-        //3D perspective
-        GLfloat *pixelM = new GLfloat[16];
-        const float near = 150;
-        const float far = -300;
-        const float eye = 600;
-
-        loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
-        mul_matrix(modelView, pixelM, m4);
-
-        delete[] m4;
-        delete[] pixelM;
-        delete[] scaleM;
-        delete[] transM;
-
-        glViewport(0, 0, viewportW, viewportH);
-    }
-
-    //enable depth mask
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-
-    //prepare
-    glClearColor(propR->value, propG->value, propB->value, propOpacity->value);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //disable depth mask (use painter's algorithm by default)
-    glDepthMask(GL_FALSE);
-}
-
-/**
  * Render the root node and all its children.
  */
 void AminoGfx::renderScene() {
@@ -591,10 +509,14 @@ void AminoGfx::renderScene() {
         return;
     }
 
-    SimpleRenderer *renderer = new SimpleRenderer(fontShader, colorShader, textureShader, modelView);
+    if (viewportChanged) {
+        viewportChanged = false;
 
-    renderer->startRender(root);
-    delete renderer;
+        renderer->updateViewport(propW->value, propH->value, viewportW, viewportH);
+    }
+
+    renderer->initScene(propR->value, propG->value, propB->value, propOpacity->value);
+    renderer->renderScene(root);
 }
 
 /**
@@ -627,26 +549,10 @@ void AminoGfx::destroy() {
 
         assert(res);
 
-        //renderer (shader programs)
-        if (colorShader) {
-            //color shader
-            colorShader->destroy();
-            delete colorShader;
-            colorShader = NULL;
-
-            //texture shader
-            textureShader->destroy();
-            delete textureShader;
-            textureShader = NULL;
-
-            //font shader
-            fontShader->destroy();
-            delete fontShader;
-            fontShader = NULL;
-
-            //matrix
-            delete[] modelView;
-            modelView = NULL;
+        //renderer
+        if (renderer) {
+            delete renderer;
+            renderer = NULL;
         }
     }
 
@@ -913,9 +819,9 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
  * Note: has to be called on OpenGL thread.
  */
 amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas) {
-    assert(fontShader);
+    assert(renderer);
 
-    return fontShader->getAtlasTexture(atlas);
+    return renderer->getAtlasTexture(atlas);
 }
 
 //

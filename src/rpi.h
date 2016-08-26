@@ -2,7 +2,7 @@
 #define _AMINO_RPI_H
 
 #include "base.h"
-#include "SimpleRenderer.h"
+#include "renderer.h"
 
 class AminoGfxRPiFactory : public AminoJSObjectFactory {
 public:

@@ -3,6 +3,13 @@
 
 #include "base.h"
 
+#include "mathutils.h"
+
+#include <stack>
+
+/**
+ * Rendering context.
+ */
 class GLContext {
 public:
     std::stack<void *> matrixStack;
@@ -22,6 +29,10 @@ public:
     virtual ~GLContext() {
         assert(matrixStack.size() == 0);
         delete[] globaltx;
+    }
+
+    void reset() {
+        assert(matrixStack.size() == 0);
     }
 
     void dumpGlobalTransform() {
@@ -58,6 +69,9 @@ public:
         copy_matrix(globaltx,temp);
     }
 
+    /**
+     * Scale in x und y directions.
+     */
     void scale(GLfloat x, GLfloat y) {
         GLfloat scale[16];
         GLfloat temp[16];
@@ -67,12 +81,18 @@ public:
         copy_matrix(globaltx, temp);
     }
 
+    /**
+     * Set opacity value.
+     */
     GLfloat applyOpacity(GLfloat opacity) {
         this->opacity *= opacity;
 
         return this->opacity;
     }
 
+    /**
+     * Save opacity.
+     */
     void saveOpacity() {
         GLfloat *temp = new GLfloat[1];
 
@@ -80,6 +100,9 @@ public:
         matrixStack.push(temp);
     }
 
+    /**
+     * Restore the opacity.
+     */
     void restoreOpacity() {
         GLfloat *temp = (GLfloat *)matrixStack.top();
 
@@ -89,6 +112,9 @@ public:
         delete[] temp;
     }
 
+    /**
+     * Save matrix.
+     */
     void save() {
         //matrix
         GLfloat *temp = new GLfloat[16];
@@ -98,6 +124,9 @@ public:
         globaltx = temp;
     }
 
+    /**
+     * Restore matrix.
+     */
     void restore() {
         //matrix
         delete[] globaltx;
@@ -107,16 +136,28 @@ public:
         assert(globaltx);
     }
 
+    /**
+     * Use a shader.
+     */
     void useShader(AnyAminoShader *shader) {
         if (shader != prevShader) {
+            //shader changed
             assert(shader);
 
-            shader->useShader();
+            shader->useShader(false);
 
             prevShader = shader;
+        } else {
+            //same shader
+            assert(shader);
+
+            shader->useShader(true);
         }
     }
 
+    /**
+     * Use texture.
+     */
     void bindTexture(GLuint tex) {
         if (prevTex != tex) {
             glBindTexture(GL_TEXTURE_2D, tex);
@@ -125,6 +166,9 @@ public:
         }
     }
 
+    /**
+     * Enabled 3D rendering using depth buffer.
+     */
     void enableDepth() {
         depth++;
 
@@ -136,6 +180,9 @@ public:
         }
     }
 
+    /**
+     * Disable 3D rendering.
+     */
     void disableDepth() {
         depth--;
 
@@ -145,30 +192,43 @@ public:
     }
 };
 
-class SimpleRenderer {
+/**
+ * OpenGL ES 2.0 renderer.
+ */
+class AminoRenderer {
 public:
-    SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView);
-    virtual ~SimpleRenderer() { }
+    AminoRenderer();
+    virtual ~AminoRenderer();
 
-    virtual void startRender(AminoNode *node);
-    virtual void render(GLContext *ctx, AminoNode *node);
+    virtual void setup();
 
-    virtual void drawGroup(GLContext *ctx, AminoGroup *group);
-    virtual void drawRect(GLContext *ctx, AminoRect *rect);
-    virtual void drawPoly(GLContext *ctx, AminoPolygon *poly);
-    virtual void drawText(GLContext *ctx, AminoText *text);
+    virtual void updateViewport(GLfloat width, GLfloat height, GLfloat viewportW, GLfloat viewportH);
+    virtual void initScene(GLfloat r, GLfloat g, GLfloat b, GLfloat opacity);
+    virtual void renderScene(AminoNode *node);
+
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
+
 
     static int showGLErrors();
     static int showGLErrors(std::string msg);
 
-private:
-    AminoFontShader *fontShader;
-    ColorShader *colorShader;
-    TextureShader *textureShader;
-    GLfloat *modelView;
+protected:
+    virtual void render(AminoNode *node);
 
-    void applyColorShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode = GL_TRIANGLES);
-    void applyTextureShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity);
+    virtual void drawGroup(AminoGroup *group);
+    virtual void drawRect(AminoRect *rect);
+    virtual void drawPoly(AminoPolygon *poly);
+    virtual void drawText(AminoText *text);
+
+private:
+    AminoFontShader *fontShader = NULL;
+    ColorShader *colorShader = NULL;
+    TextureShader *textureShader = NULL;
+    GLfloat modelView[16];
+    GLContext *ctx = NULL;
+
+    void applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode = GL_TRIANGLES);
+    void applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity);
 };
 
 #endif

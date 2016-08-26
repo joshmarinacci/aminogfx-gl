@@ -16,7 +16,7 @@ public:
     bool create();
     void destroy();
 
-    void useShader();
+    void useShader(bool active);
 
 protected:
     //code
@@ -88,6 +88,14 @@ protected:
     GLint uOpacity, uTex;
 
     void initShader() override;
+};
+
+/**
+ * Texture shader supporting clamp to border.
+ */
+class TextureClampToBorderShader : public TextureShader {
+public:
+    TextureClampToBorderShader();
 };
 
 #endif

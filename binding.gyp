@@ -24,7 +24,7 @@
                 "src/images.cpp",
 
                 "src/shaders.cpp",
-                "src/SimpleRenderer.cpp",
+                "src/renderer.cpp",
                 "src/mathutils.cpp"
             ],
             "include_dirs": [

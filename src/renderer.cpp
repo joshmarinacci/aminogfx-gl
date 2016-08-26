@@ -1,33 +1,153 @@
-#include "SimpleRenderer.h"
+#include "renderer.h"
 
 #define DEBUG_RENDERER false
 #define DEBUG_RENDERER_ERRORS false
 
-SimpleRenderer::SimpleRenderer(AminoFontShader *fontShader, ColorShader *colorShader, TextureShader *textureShader, GLfloat *modelView): fontShader(fontShader), colorShader(colorShader), textureShader(textureShader), modelView(modelView) {
+/**
+ * OpenGL ES 2.0 renderer.
+ */
+AminoRenderer::AminoRenderer() {
     if (DEBUG_RENDERER) {
-        printf("created SimpleRenderer\n");
+        printf("created AminoRenderer\n");
     }
 }
 
-void SimpleRenderer::startRender(AminoNode *root) {
-    if (DEBUG_RENDERER) {
-        printf("-> startRender()\n");
+AminoRenderer::~AminoRenderer () {
+    //renderer (shader programs)
+
+    //color shader
+    if (colorShader) {
+        colorShader->destroy();
+        delete colorShader;
+        colorShader = NULL;
     }
 
-    GLContext *c = new GLContext();
-
-    this->render(c, root);
-    delete c;
-
-    if (DEBUG_RENDERER) {
-        printf("-> startRender() done\n");
+    //texture shader
+    if (textureShader) {
+        textureShader->destroy();
+        delete textureShader;
+        textureShader = NULL;
     }
+
+    //font shader
+    if (fontShader) {
+        fontShader->destroy();
+        delete fontShader;
+        fontShader = NULL;
+    }
+
+    //context
+    if (ctx) {
+        delete ctx;
+        ctx = NULL;
+    }
+ }
+
+/**
+ * Setup renderer.
+ */
+void AminoRenderer::setup() {
+    if (DEBUG_RENDERER) {
+        printf("-> setup()\n");
+    }
+
+    //set hints
+    glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+
+    //color shader
+	colorShader = new ColorShader();
+
+    bool res = colorShader->create();
+
+    assert(res);
+
+    //texture shader
+	textureShader = new TextureShader();
+    res = textureShader->create();
+
+    assert(res);
+
+    //font shader
+    fontShader = new AminoFontShader();
+    res = fontShader->create();
+
+    assert(res);
+
+    //context
+    ctx = new GLContext();
+}
+
+/**
+ * Update the model view projection matrix.
+ */
+void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewportW, GLfloat viewportH) {
+    //set up the viewport (y-inversion, top-left origin)
+
+    //scale
+    GLfloat *scaleM = new GLfloat[16];
+
+    make_scale_matrix(1, -1, 1, scaleM);
+
+    //translate
+    GLfloat *transM = new GLfloat[16];
+
+    make_trans_matrix(- width / 2, height / 2, 0, transM);
+
+    //combine
+    GLfloat *m4 = new GLfloat[16];
+
+    mul_matrix(m4, transM, scaleM);
+
+    //3D perspective
+    GLfloat *pixelM = new GLfloat[16];
+    const float near = 150;
+    const float far = -300;
+    const float eye = 600;
+
+    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
+    mul_matrix(modelView, pixelM, m4);
+
+    delete[] m4;
+    delete[] pixelM;
+    delete[] scaleM;
+    delete[] transM;
+
+    glViewport(0, 0, viewportW, viewportH);
+}
+
+/**
+ * Init the scene.
+ */
+void AminoRenderer::initScene(GLfloat r, GLfloat g, GLfloat b, GLfloat opacity) {
+    //enable depth mask
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+
+    //prepare
+    glClearColor(r, g, b, opacity);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //disable depth mask (use painter's algorithm by default)
+    glDepthMask(GL_FALSE);
+}
+
+/**
+ * Render a complete scene.
+ */
+void AminoRenderer::renderScene(AminoNode *node) {
+    if (DEBUG_RENDERER) {
+        printf("-> renderScene()\n");
+    }
+
+    render(node);
+
+    ctx->reset();
 }
 
 /**
  * Render a node.
  */
-void SimpleRenderer::render(GLContext *ctx, AminoNode *root) {
+void AminoRenderer::render(AminoNode *root) {
     if (DEBUG_RENDERER) {
         printf("-> render()\n");
     }
@@ -62,19 +182,19 @@ void SimpleRenderer::render(GLContext *ctx, AminoNode *root) {
     //draw
     switch (root->type) {
         case GROUP:
-            this->drawGroup(ctx, (AminoGroup *)root);
+            this->drawGroup((AminoGroup *)root);
             break;
 
         case RECT:
-            this->drawRect(ctx, (AminoRect *)root);
+            this->drawRect((AminoRect *)root);
             break;
 
         case POLY:
-            this->drawPoly(ctx, (AminoPolygon *)root);
+            this->drawPoly((AminoPolygon *)root);
             break;
 
         case TEXT:
-            this->drawText(ctx, (AminoText *)root);
+            this->drawText((AminoText *)root);
             break;
 
         default:
@@ -94,7 +214,7 @@ void SimpleRenderer::render(GLContext *ctx, AminoNode *root) {
 /**
  * Use solid color shader.
  */
-void SimpleRenderer::applyColorShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode) {
+void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode) {
     //use shader
     ctx->useShader(colorShader);
 
@@ -116,12 +236,12 @@ void SimpleRenderer::applyColorShader(GLContext *ctx, GLfloat *verts, GLsizei di
 /**
  * Draw texture.
  */
-void SimpleRenderer::applyTextureShader(GLContext *ctx, GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity) {
+void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity) {
     //printf("doing texture shader apply %d opacity = %f\n", texId, opacity);
 
     //use shader
     ctx->useShader(textureShader);
-
+//cbx clamp
     //blend
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -138,7 +258,10 @@ void SimpleRenderer::applyTextureShader(GLContext *ctx, GLfloat *verts, GLsizei 
     glDisable(GL_BLEND);
 }
 
-void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
+/**
+ * Draw group.
+ */
+void AminoRenderer::drawGroup(AminoGroup *group) {
     if (DEBUG_RENDERER) {
         printf("-> drawGroup()\n");
     }
@@ -188,7 +311,7 @@ void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
 
         GLfloat color[4] = { 1.0, 1.0, 1.0, 1.0 };
 
-        applyColorShader(ctx, (float *)verts, 2, 6, color);
+        applyColorShader((float *)verts, 2, 6, color);
 
         //set function to draw pixels where the buffer is equal to 1
         glStencilFunc(GL_EQUAL, 0x1, 0xFF);
@@ -206,7 +329,7 @@ void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
     std::size_t count = group->children.size();
 
     for (std::size_t i = 0; i < count; i++) {
-        this->render(ctx, group->children[i]);
+        this->render(group->children[i]);
     }
 
     //restore opacity
@@ -225,7 +348,7 @@ void SimpleRenderer::drawGroup(GLContext *ctx, AminoGroup *group) {
 /**
  * Draw a polygon.
  */
-void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
+void AminoRenderer::drawPoly(AminoPolygon *poly) {
     if (DEBUG_RENDERER) {
         printf("-> drawPoly()\n");
     }
@@ -252,10 +375,13 @@ void SimpleRenderer::drawPoly(GLContext *ctx, AminoPolygon *poly) {
     GLfloat opacity = poly->propOpacity->value * ctx->opacity;
     GLfloat color[4] = { poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity };
 
-    applyColorShader(ctx, verts, dim, len / dim, color, mode);
+    applyColorShader(verts, dim, len / dim, color, mode);
 }
 
-void SimpleRenderer::drawRect(GLContext *ctx, AminoRect *rect) {
+/**
+ * Draw rect.
+ */
+void AminoRenderer::drawRect(AminoRect *rect) {
     if (DEBUG_RENDERER) {
         printf("-> drawRect() hasImage=%s\n", rect->hasImage ? "true":"false");
     }
@@ -311,13 +437,13 @@ void SimpleRenderer::drawRect(GLContext *ctx, AminoRect *rect) {
             texCoords[4][0] = tx;    texCoords[4][1] = ty2;
             texCoords[5][0] = tx;    texCoords[5][1] = ty;
 
-            applyTextureShader(ctx, (float *)verts, 2, 6, texCoords, texture->textureId, opacity);
+            applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity);
         }
     } else {
         //color only
         GLfloat color[4] = { rect->propR->value, rect->propG->value, rect->propB->value, opacity };
 
-        applyColorShader(ctx, (float *)verts, 2, 6, color);
+        applyColorShader((float *)verts, 2, 6, color);
     }
 
     ctx->restore();
@@ -326,7 +452,7 @@ void SimpleRenderer::drawRect(GLContext *ctx, AminoRect *rect) {
 /**
  * Render text.
  */
-void SimpleRenderer::drawText(GLContext *ctx, AminoText *text) {
+void AminoRenderer::drawText(AminoText *text) {
     if (DEBUG_RENDERER) {
         printf("-> drawText()\n");
     }
@@ -406,9 +532,20 @@ void SimpleRenderer::drawText(GLContext *ctx, AminoText *text) {
 }
 
 /**
+ * Get texture for atlas.
+ *
+ * Note: has to be called on OpenGL thread.
+ */
+amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas) {
+    assert(fontShader);
+
+    return fontShader->getAtlasTexture(atlas);
+}
+
+/**
  * Output all occured OpenGL errors.
  */
-int SimpleRenderer::showGLErrors() {
+int AminoRenderer::showGLErrors() {
     GLenum err = GL_NO_ERROR;
     int count = 0;
 
@@ -423,7 +560,7 @@ int SimpleRenderer::showGLErrors() {
 /**
  * Output all occured OpenGL errors.
  */
-int SimpleRenderer::showGLErrors(std::string msg) {
+int AminoRenderer::showGLErrors(std::string msg) {
     int res = showGLErrors();
 
     if (res) {

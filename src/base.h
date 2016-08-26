@@ -36,6 +36,7 @@ const int POLY  = 5;
 
 class AminoGroup;
 class AminoAnim;
+class AminoRenderer;
 
 /**
  * Amino main class to call from JavaScript.
@@ -61,14 +62,11 @@ protected:
     Nan::Callback *startCallback = NULL;
 
     //renderer
+    AminoRenderer *renderer = NULL;
     AminoGroup *root = NULL;
     int viewportW;
     int viewportH;
     bool viewportChanged;
-    ColorShader *colorShader = NULL;
-    TextureShader *textureShader = NULL;
-    AminoFontShader *fontShader = NULL;
-    GLfloat *modelView = NULL;
 
     //performance (FPS)
     double fpsStart = 0;
@@ -126,7 +124,6 @@ protected:
     virtual void render();
     void processAnimations();
     virtual bool bindContext() = 0;
-    virtual void setupViewport();
     virtual void renderScene();
     virtual void renderingDone() = 0;
     bool isRendering();
