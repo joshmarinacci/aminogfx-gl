@@ -157,6 +157,7 @@ vertex_buffer_delete( vertex_buffer_t *self )
 #ifdef FREETYPE_GL_USE_VAO
     if( self->VAO_id )
     {
+        //needs OpenGL ES 3.0
         glDeleteVertexArrays( 1, &self->VAO_id );
     }
     self->VAO_id = 0;

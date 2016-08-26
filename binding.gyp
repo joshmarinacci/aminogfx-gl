@@ -58,6 +58,9 @@
                         "MAC",
                         "GLFW_NO_GLU",
                         "GLFW_INCLUDE_GL3",
+
+                        # VAO not working
+                        #"FREETYPE_GL_USE_VAO"
                     ],
                     "xcode_settings": {
                         "OTHER_CPLUSPLUSFLAGS": [
@@ -116,17 +119,14 @@
                 }]
             ]
         },
-  {
-      "target_name": "action_after_build",
-      "type": "none",
-      "dependencies": [ "<(module_name)" ],
-      "copies": [
         {
-          "files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
-          "destination": "<(module_path)"
+            "target_name": "action_after_build",
+            "type": "none",
+            "dependencies": [ "<(module_name)" ],
+            "copies": [{
+                "files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
+                "destination": "<(module_path)"
+            }]
         }
-      ]
-    }
-
     ]
 }
