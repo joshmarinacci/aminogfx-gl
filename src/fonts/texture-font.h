@@ -34,6 +34,13 @@
 #ifndef __TEXTURE_FONT_H__
 #define __TEXTURE_FONT_H__
 
+//@appamics.CB: needed
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_STROKER_H
+// #include FT_ADVANCES_H
+#include FT_LCD_FILTER_H
+
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -348,6 +355,11 @@ typedef struct texture_font_t
      * formats.
      */
     float underline_thickness;
+
+
+    //FreeType instance
+    FT_Library library;
+    FT_Face face;
 
 } texture_font_t;
 

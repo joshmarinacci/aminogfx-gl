@@ -325,7 +325,7 @@ float AminoFontSize::getTextWidth(const char *text) {
         texture_glyph_t *glyph = texture_font_get_glyph(fontTexture, textPos);
 
         if (!glyph) {
-            printf("Error: got empty glyph from texture_font_get_glyph\n");
+            printf("Error: got empty glyph from texture_font_get_glyph()\n");
             continue;
         }
 
