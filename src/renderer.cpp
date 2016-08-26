@@ -29,6 +29,13 @@ AminoRenderer::~AminoRenderer () {
         textureShader = NULL;
     }
 
+    //texture clamp to border shader
+    if (textureClampToBorderShader) {
+        textureClampToBorderShader->destroy();
+        delete textureClampToBorderShader;
+        textureClampToBorderShader = NULL;
+    }
+
     //font shader
     if (fontShader) {
         fontShader->destroy();
@@ -236,23 +243,42 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
 /**
  * Draw texture.
  */
-void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity) {
+void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder) {
     //printf("doing texture shader apply %d opacity = %f\n", texId, opacity);
 
     //use shader
-    ctx->useShader(textureShader);
-//cbx clamp
+    TextureShader *shader;
+
+    if (needsClampToBorder) {
+        if (!textureClampToBorderShader) {
+            textureClampToBorderShader = new TextureClampToBorderShader();
+
+            bool res = textureClampToBorderShader->create();
+
+            assert(res);
+        }
+
+        shader = textureClampToBorderShader;
+
+        //debug
+        //printf("using clamp to border shader\n");
+    } else {
+        shader = textureShader;
+    }
+
+    ctx->useShader(shader);
+
     //blend
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     //shader values
-    textureShader->setTransformation(modelView, ctx->globaltx);
-    textureShader->setOpacity(opacity);
+    shader->setTransformation(modelView, ctx->globaltx);
+    shader->setOpacity(opacity);
 
     //draw
     ctx->bindTexture(texId);
-    textureShader->drawTexture(verts, dim, texcoords, count);
+    shader->drawTexture(verts, dim, texcoords, count);
 
     //cleanup
     glDisable(GL_BLEND);
@@ -437,7 +463,10 @@ void AminoRenderer::drawRect(AminoRect *rect) {
             texCoords[4][0] = tx;    texCoords[4][1] = ty2;
             texCoords[5][0] = tx;    texCoords[5][1] = ty;
 
-            applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity);
+            //check clamp to border
+            bool needsClampToBorder = (tx < 0 || tx > 1) || (tx2 < 0 || tx2 > 1) || (ty < 0 || ty > 1) || (ty2 < 0 || ty2 > 1);
+
+            applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity, needsClampToBorder);
         }
     } else {
         //color only
