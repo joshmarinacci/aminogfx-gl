@@ -495,6 +495,8 @@ private:
     static NAN_METHOD(New) {
         AminoJSObject::createInstance(info, getFactory());
     }
+
+    static void addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr);
 };
 
 /**

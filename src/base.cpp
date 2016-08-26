@@ -999,7 +999,7 @@ GLuint AminoText::updateTexture() {
 /**
  * Render text to vertices.
  */
-static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
+void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
 
@@ -1010,7 +1010,7 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *
     float penXStart = pen->x;
 
     //debug
-    //printf("add_text: wrap=%i width=%i\n", wrap, width);
+    //printf("addTextGlyphs: wrap=%i width=%i\n", wrap, width);
 
     //add glyphs (by iterating Unicode characters)
     char *textPos = (char *)text;
@@ -1032,9 +1032,10 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *
             }
 
             //wrap
+            bool skip = false;
+
             if (wrap != AminoText::WRAP_NONE) {
                 bool newLine = false;
-                bool skip = false;
                 bool wordWrap = false;
 
                 //check new line
@@ -1056,7 +1057,7 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *
                 }
 
                 //check white space
-                if (!skip && (newLine || lineStart == i) && std::iswspace(glyph->codepoint)) {
+                if (!skip && (newLine || (lineStart == i && *lineNr > 1)) && std::iswspace(glyph->codepoint)) {
                     skip = true;
                 }
 
@@ -1144,43 +1145,45 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *
 
                 if (skip) {
                     lineStart++;
-                    continue;
                 }
             }
 
-            pen->x += kerning;
+            //add glyph
+            if (!skip) {
+                pen->x += kerning;
 
-            //glyph position
-            float x0  = ( pen->x + glyph->offset_x );
-            float y0  = ( pen->y + glyph->offset_y );
-            float x1  = ( x0 + glyph->width );
-            float y1  = ( y0 - glyph->height );
-            float s0 = glyph->s0;
-            float t0 = glyph->t0;
-            float s1 = glyph->s1;
-            float t1 = glyph->t1;
-            float advance = glyph->advance_x;
+                //glyph position
+                float x0  = ( pen->x + glyph->offset_x );
+                float y0  = ( pen->y + glyph->offset_y );
+                float x1  = ( x0 + glyph->width );
+                float y1  = ( y0 - glyph->height );
+                float s0 = glyph->s0;
+                float t0 = glyph->t0;
+                float s1 = glyph->s1;
+                float t1 = glyph->t1;
+                float advance = glyph->advance_x;
 
-            //skip special characters
-            if (glyph->codepoint == 0x9d) {
-                //hide
-                x1 = x0;
-                y1 = y0;
-                advance = 0;
+                //skip special characters
+                if (glyph->codepoint == 0x9d) {
+                    //hide
+                    x1 = x0;
+                    y1 = y0;
+                    advance = 0;
+                }
+
+                GLushort indices[6] = {0,1,2, 0,2,3};
+                vertex_t vertices[4] = { { x0, y0, 0,  s0, t0 },
+                                         { x0, y1, 0,  s0, t1 },
+                                         { x1, y1, 0,  s1, t1 },
+                                         { x1, y0, 0,  s1, t0 } };
+
+                //append
+                vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
+                linePos++;
+
+                //next
+                pen->x += advance;
             }
-
-            GLushort indices[6] = {0,1,2, 0,2,3};
-            vertex_t vertices[4] = { { x0, y0, 0,  s0, t0 },
-                                     { x0, y1, 0,  s0, t1 },
-                                     { x1, y1, 0,  s1, t1 },
-                                     { x1, y0, 0,  s1, t0 } };
-
-            //append
-            vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
-            linePos++;
-
-            //next
-            pen->x += advance;
         } else {
             //not enough space for glyph
 
@@ -1191,6 +1194,8 @@ static void add_text(vertex_buffer_t *buffer, texture_font_t *font, const char *
 
             //show error
             printf("no space for glyph: %lc\n", (wchar_t)ch32);
+
+            //continue with glyphs in atlas
         }
 
         //next glyph pos
@@ -1238,7 +1243,7 @@ bool AminoText::layoutText() {
     pen.x = 0;
     pen.y = 0;
 
-    add_text(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
+    addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
 
     if (DEBUG_BASE) {
         printf("-> layoutText() done\n");

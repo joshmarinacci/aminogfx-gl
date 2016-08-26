@@ -45,6 +45,7 @@ gfx.start(function (err) {
     //text
     var text = this.createText().fontName('Oswald')
         .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
+        //.text('This is a very long text which is wrapped. ')
         //.text('Aaaaaaaaa_ Bbbbbbbbb_ Ccccccccc_ Ddddddddd_ Eeeeeeeee_ Fffffffff_')
         .fontSize(80)
         .fontWeight(200)
@@ -59,5 +60,12 @@ gfx.start(function (err) {
         .fill('#ffff00');
 
     root.add(text);
+
+    //anim
+    setInterval(() => {
+        var value = text.text();
+
+        text.text(value.substring(1) + value[0]);
+    }, 1000);
 
 });
