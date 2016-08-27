@@ -438,7 +438,9 @@ texture_font_delete( texture_font_t *self )
     }
 
     if (self->library) {
-        FT_Done_FreeType(self->library);
+        if (!self->libraryShared) {
+            FT_Done_FreeType(self->library);
+        }
         self->library = NULL;
     }
 
