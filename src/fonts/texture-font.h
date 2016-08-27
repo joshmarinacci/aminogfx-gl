@@ -359,6 +359,7 @@ typedef struct texture_font_t
 
     //FreeType instance
     FT_Library library;
+    int libraryShared;
     FT_Face face;
 
 } texture_font_t;
@@ -382,7 +383,8 @@ typedef struct texture_font_t
   texture_font_t *
   texture_font_new_from_file( texture_atlas_t * atlas,
                               const float pt_size,
-                              const char * filename );
+                              const char * filename,
+                              FT_Library library );
 
 
 /**
@@ -404,7 +406,8 @@ typedef struct texture_font_t
   texture_font_new_from_memory( texture_atlas_t *atlas,
                                 float pt_size,
                                 const void *memory_base,
-                                size_t memory_size );
+                                size_t memory_size,
+                                FT_Library library );
 
 /**
  * Delete a texture font. Note that this does not delete the glyph from the

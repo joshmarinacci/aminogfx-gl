@@ -195,10 +195,13 @@ texture_font_t *AminoFont::getFontWithSize(int size) {
         size_t bufferLen = node::Buffer::Length(bufferObj);
 
         //Note: has texture id but we use our own handling
-        fontSize = texture_font_new_from_memory(atlas, size, buffer, bufferLen);
+        fontSize = texture_font_new_from_memory(atlas, size, buffer, bufferLen, library);
 
         if (fontSize) {
             fontSizes[size] = fontSize;
+
+            //use single FreeType instance
+            library = fontSize->library;
         }
 
         if (DEBUG_FONTS) {
@@ -210,6 +213,8 @@ texture_font_t *AminoFont::getFontWithSize(int size) {
 
     return fontSize;
 }
+
+FT_Library AminoFont::library = NULL;
 
 //
 //  AminoFontFactory

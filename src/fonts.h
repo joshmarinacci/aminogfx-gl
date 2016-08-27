@@ -64,6 +64,9 @@ public:
     static v8::Local<v8::Function> GetInitFunction();
 
 private:
+    //Note: instance kept
+    static FT_Library library;
+
     //JS constructor
     static NAN_METHOD(New);
 

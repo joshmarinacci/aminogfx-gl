@@ -75,14 +75,18 @@ texture_font_load_face(texture_font_t *self, float size)
     assert(size);
 
     /* Initialize library */
-    error = FT_Init_FreeType(&self->library);
-    if(error) {
-        fprintf(stderr, "FT_Error (0x%02x) : %s\n",
-                FT_Errors[error].code, FT_Errors[error].message);
-        goto cleanup;
-    }
+    if (!self->library) {
+        //printf("init FreeType instance\n");
 
-    assert(self->library);
+        error = FT_Init_FreeType(&self->library);
+        if(error) {
+            fprintf(stderr, "FT_Error (0x%02x) : %s\n",
+                    FT_Errors[error].code, FT_Errors[error].message);
+            goto cleanup;
+        }
+
+        assert(self->library);
+    }
 
     /* Load face */
     switch (self->location) {
@@ -169,8 +173,12 @@ texture_font_load_face(texture_font_t *self, float size)
 
 cleanup_face:
     FT_Done_Face( self->face );
+    self->face = NULL;
 cleanup_library:
-    FT_Done_FreeType( self->library );
+    if (!self->libraryShared) {
+        FT_Done_FreeType( self->library );
+        self->library = NULL;
+    }
 cleanup:
     return 0;
 }
@@ -274,7 +282,7 @@ texture_font_generate_kerning( texture_font_t *self)
 
 // ------------------------------------------------------ texture_font_init ---
 static int
-texture_font_init(texture_font_t *self)
+texture_font_init(texture_font_t *self, FT_Library library)
 {
     FT_Size_Metrics metrics;
 
@@ -302,7 +310,13 @@ texture_font_init(texture_font_t *self)
     self->lcd_weights[3] = 0x40;
     self->lcd_weights[4] = 0x10;
 
-    self->library = NULL;
+    if (library) {
+        self->library = library;
+        self->libraryShared = 1;
+    } else {
+        self->library = NULL;
+        self->libraryShared = 0;
+    }
     self->face = NULL;
 
     if (!texture_font_load_face(self, self->size))
@@ -340,7 +354,7 @@ texture_font_init(texture_font_t *self)
 // --------------------------------------------- texture_font_new_from_file ---
 texture_font_t *
 texture_font_new_from_file(texture_atlas_t *atlas, const float pt_size,
-        const char *filename)
+        const char *filename, FT_Library library)
 {
     texture_font_t *self;
 
@@ -359,7 +373,7 @@ texture_font_new_from_file(texture_atlas_t *atlas, const float pt_size,
     self->location = TEXTURE_FONT_FILE;
     self->filename = strdup(filename);
 
-    if (texture_font_init(self)) {
+    if (texture_font_init(self, library)) {
         texture_font_delete(self);
         return NULL;
     }
@@ -370,7 +384,7 @@ texture_font_new_from_file(texture_atlas_t *atlas, const float pt_size,
 // ------------------------------------------- texture_font_new_from_memory ---
 texture_font_t *
 texture_font_new_from_memory(texture_atlas_t *atlas, float pt_size,
-        const void *memory_base, size_t memory_size)
+        const void *memory_base, size_t memory_size, FT_Library library)
 {
     texture_font_t *self;
 
@@ -391,7 +405,7 @@ texture_font_new_from_memory(texture_atlas_t *atlas, float pt_size,
     self->memory.base = memory_base;
     self->memory.size = memory_size;
 
-    if (texture_font_init(self)) {
+    if (texture_font_init(self, library)) {
         texture_font_delete(self);
         return NULL;
     }
@@ -417,11 +431,16 @@ texture_font_delete( texture_font_t *self )
         texture_glyph_delete( glyph );
     }
 
-    //@appamics.CB: free instance
-    FT_Done_Face(self->face);
-    self->face = NULL;
-    FT_Done_FreeType(self->library);
-    self->library = NULL;
+    //free instance
+    if (self->face) {
+        FT_Done_Face(self->face);
+        self->face = NULL;
+    }
+
+    if (self->library) {
+        FT_Done_FreeType(self->library);
+        self->library = NULL;
+    }
 
     vector_delete( self->glyphs );
     free( self );
