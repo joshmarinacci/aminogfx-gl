@@ -1243,6 +1243,7 @@ bool AminoText::layoutText() {
     pen.x = 0;
     pen.y = 0;
 
+    //Note: consider using async task to avoid performance issues
     addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
 
     if (DEBUG_BASE) {
