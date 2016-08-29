@@ -980,7 +980,7 @@ GLuint AminoText::updateTexture() {
     }
 
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
-
+//cbx check font bottleneck
     if (atlas->depth == 1) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
     } else if (atlas->depth == 3) {

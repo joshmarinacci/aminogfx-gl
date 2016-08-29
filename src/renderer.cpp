@@ -496,7 +496,7 @@ void AminoRenderer::drawText(AminoText *text) {
     ctx->save();
 
     diff = getTime() - startTime;
-    if (diff > 0) {
+    if (diff > 5) {
         printf("layoutText: %i ms\n", (int)diff); //cbx
     }
 
@@ -532,7 +532,7 @@ void AminoRenderer::drawText(AminoText *text) {
     GLuint texture = text->updateTexture();
 
     diff = getTime() - startTime;
-    if (diff > 0) {
+    if (diff > 5) {
         printf("updateTexture: %i ms\n", (int)diff); //cbx
     }
 
