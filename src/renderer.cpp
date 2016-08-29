@@ -486,11 +486,19 @@ void AminoRenderer::drawText(AminoText *text) {
         printf("-> drawText()\n");
     }
 
+    //debug
+    double startTime = getTime(), diff; //cbx
+
     if (!text->layoutText()) {
         return;
     }
 
     ctx->save();
+
+    diff = getTime() - startTime;
+    if (diff > 0) {
+        printf("layoutText: %i ms\n", (int)diff); //cbx
+    }
 
     //flip the y axis
     ctx->scale(1, -1);
@@ -520,7 +528,13 @@ void AminoRenderer::drawText(AminoText *text) {
     }
 
     //use texture
+    startTime = getTime();//cbx
     GLuint texture = text->updateTexture();
+
+    diff = getTime() - startTime;
+    if (diff > 0) {
+        printf("updateTexture: %i ms\n", (int)diff); //cbx
+    }
 
     if (DEBUG_RENDERER_ERRORS) {
         showGLErrors("updateTexture()");

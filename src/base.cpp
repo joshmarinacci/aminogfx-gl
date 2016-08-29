@@ -1002,7 +1002,7 @@ GLuint AminoText::updateTexture() {
 void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
-
+//cbx still too slow, even when all glyphs are in atlas (> 50 ms on RPi)
     *lineNr = 1;
 
     size_t lineStart = 0; //start of current line
