@@ -199,6 +199,7 @@ void AminoGfx::addRuntimeProperty() {
     Nan::Set(obj, Nan::New("renderer").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_RENDERER))).ToLocalChecked());
     Nan::Set(obj, Nan::New("version").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VERSION))).ToLocalChecked());
     Nan::Set(obj, Nan::New("vendor").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_VENDOR))).ToLocalChecked());
+    Nan::Set(obj, Nan::New("extensions").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_EXTENSIONS))).ToLocalChecked());
 
     // 2) texture size
     GLint maxTextureSize;
