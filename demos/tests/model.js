@@ -21,7 +21,8 @@ gfx.start(function (err) {
     //showTriangle(model1);
     //showTriangles(model1);
     //showRect(model1);
-    showQuad(model1);
+    //showQuad(model1);
+    showCube(model1);
 
     root.add(model1);
 
@@ -124,8 +125,62 @@ function showQuad(model) {
     ]);
 
     model.indices([
-        0, 1, 2, 1, 2, 3
+        0, 1, 2,
+        1, 2, 3
     ]);
+}
+
+function showCube(model) {
+    const x = 0;
+    const y = 0;
+    const w = 200;
+    const h = 200;
+    const d = 200;
+    const dh = d / 2;
+
+    model.vertices([
+        x, y, -dh,
+        x + w, y, -dh,
+        x + w, y + h, -dh,
+        x, y + h, -dh,
+
+        x, y, dh,
+        x + w, y, dh,
+        x + w, y + h, dh,
+        x, y + h, dh,
+    ]);
+
+    model.indices([
+        //below
+        0, 1, 2,
+        0, 2, 3,
+
+        //above
+        4, 5, 6,
+        4, 6, 7,
+
+        //left
+        0, 4, 7,
+        0, 3, 7,
+
+        //right
+        1, 5, 6,
+        1, 2, 6,
+
+        //top
+        0, 1, 5,
+        0, 4, 5,
+
+        //bottom
+        2, 3, 7,
+        2, 6, 7
+    ]);
+
+    model.opacity(.7);
+    model.originX(.5).originY(.5);
+    model.x(100).y(100);
+    model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
+    //model.rz.anim().from(0).to(360).dur(678).start();
 }
 
 //TODO texture
