@@ -63,9 +63,11 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // primitives
     Nan::SetTemplate(tpl, "Rect", AminoRect::GetRectInitFunction());
     Nan::SetTemplate(tpl, "ImageView", AminoRect::GetImageViewInitFunction());
-    Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
     Nan::SetTemplate(tpl, "Polygon", AminoPolygon::GetInitFunction());
+    Nan::SetTemplate(tpl, "Model", AminoModel::GetInitFunction());
     Nan::SetTemplate(tpl, "Text", AminoText::GetInitFunction());
+
+    Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
     Nan::SetTemplate(tpl, "Anim", AminoAnim::GetInitFunction());
 
     //stats
@@ -880,6 +882,24 @@ AminoJSObject* AminoPolygonFactory::create() {
 }
 
 //
+// AminoModelFactory
+//
+
+/**
+ * AminoModel factory constructor.
+ */
+AminoModelFactory::AminoModelFactory(Nan::FunctionCallback callback): AminoJSObjectFactory("AminoPolygon", callback) {
+    //empty
+}
+
+/**
+ * Create polygon instance.
+ */
+AminoJSObject* AminoModelFactory::create() {
+    return new AminoModel();
+}
+
+//
 // AminoAnimFactory
 //
 
@@ -1003,7 +1023,7 @@ GLuint AminoText::updateTexture() {
 void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
-//cbx still too slow, even when all glyphs are in atlas (> 50 ms on RPi)
+
     *lineNr = 1;
 
     size_t lineStart = 0; //start of current line

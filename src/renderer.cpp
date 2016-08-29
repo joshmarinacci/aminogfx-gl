@@ -201,6 +201,10 @@ void AminoRenderer::render(AminoNode *root) {
             this->drawPoly((AminoPolygon *)root);
             break;
 
+        case MODEL:
+            this->drawModel((AminoModel *)root);
+            break;
+
         case TEXT:
             this->drawText((AminoText *)root);
             break;
@@ -403,6 +407,30 @@ void AminoRenderer::drawPoly(AminoPolygon *poly) {
     GLfloat color[4] = { poly->propFillR->value, poly->propFillG->value, poly->propFillB->value, opacity };
 
     applyColorShader(verts, dim, len / dim, color, mode);
+}
+
+/**
+ * Draw 3D model.
+ */
+void AminoRenderer::drawModel(AminoModel *model) {
+    //enable depth mask
+    ctx->enableDepth();
+
+    //draw vertices
+    std::vector<float> *vecVertices = &model->propVertices->value;
+    GLfloat *vertices = vecVertices->data();
+
+    //shader
+
+    // 1) color shader
+    GLfloat opacity = model->propOpacity->value * ctx->opacity;
+    GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
+
+    applyColorShader(vertices, 3, vecVertices->size() / 3, color, GL_TRIANGLES);
+
+    //cbx more: index list, normals, texture shader
+
+    ctx->disableDepth();
 }
 
 /**

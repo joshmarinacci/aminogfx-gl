@@ -191,6 +191,13 @@ AminoGfx.prototype.createPolygon = function () {
 };
 
 /**
+ * Create model element.
+ */
+AminoGfx.prototype.createModel = function () {
+    return new AminoGfx.Model(this);
+};
+
+/**
  * Create circle element.
  */
 AminoGfx.prototype.createCircle = function () {
@@ -1165,6 +1172,86 @@ Polygon.prototype.scale = scaleFunc;
  * Rotate.
  */
 Polygon.prototype.rotate = rotateFunc;
+
+//
+// Model
+//
+
+var Model = AminoGfx.Model;
+
+Model.prototype.init = function () {
+    //bindings
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //size
+        w: 0,
+        h: 0,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //fill
+        fill: '#ff0000',
+        fillR: 1,
+        fillG: 0,
+        fillB: 0,
+        opacity: 1.,
+
+        //properties
+        vertices: null,
+        normals: null,
+        uv: null,
+
+        shader: 'color',
+        texture: null
+    });
+
+    this.fill.watch(setFill);
+};
+
+/**
+ * Check if point inside of model.
+ */
+Model.prototype.contains = function () {
+    return false;
+};
+
+/**
+ * Set position.
+ */
+Model.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Model.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Model.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Model.prototype.rotate = rotateFunc;
 
 //
 // Circle

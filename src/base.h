@@ -33,6 +33,7 @@ const int RECT  = 2;
 const int TEXT  = 3;
 const int ANIM  = 4;
 const int POLY  = 5;
+const int MODEL = 6;
 
 class AminoGroup;
 class AminoAnim;
@@ -1127,6 +1128,88 @@ public:
         }
 
         return polygonFactory;
+    }
+
+    /**
+     * Initialize Group template.
+     */
+    static v8::Local<v8::Function> GetInitFunction() {
+        v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
+
+        //no methods
+
+        //template function
+        return Nan::GetFunction(tpl).ToLocalChecked();
+    }
+
+    /**
+     * JS object construction.
+     */
+    static NAN_METHOD(New) {
+        AminoJSObject::createInstance(info, getFactory());
+    }
+};
+
+/**
+ * Model factory.
+ */
+class AminoModelFactory : public AminoJSObjectFactory {
+public:
+    AminoModelFactory(Nan::FunctionCallback callback);
+
+    AminoJSObject* create() override;
+};
+
+/**
+ * AminoModel node class.
+ */
+class AminoModel : public AminoNode {
+public:
+    //fill
+    FloatProperty *propFillR;
+    FloatProperty *propFillG;
+    FloatProperty *propFillB;
+
+    //arrays
+    FloatArrayProperty *propVertices;
+
+    AminoModel(): AminoNode(getFactory()->name, MODEL) {
+        //empty
+    }
+
+    ~AminoModel() {
+    }
+
+    void setup() override {
+        AminoNode::setup();
+
+        //register native properties
+        propW = createFloatProperty("w");
+        propH = createFloatProperty("h");
+
+        propOriginX = createFloatProperty("originX");
+        propOriginY = createFloatProperty("originY");
+
+        propFillR = createFloatProperty("fillR");
+        propFillG = createFloatProperty("fillG");
+        propFillB = createFloatProperty("fillB");
+
+        propVertices = createFloatArrayProperty("vertices");
+    }
+
+    //creation
+
+    /**
+     * Get polygon factory.
+     */
+    static AminoModelFactory* getFactory() {
+        static AminoModelFactory *modelFactory = NULL;
+
+        if (!modelFactory) {
+            modelFactory = new AminoModelFactory(New);
+        }
+
+        return modelFactory;
     }
 
     /**

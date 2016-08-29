@@ -218,6 +218,7 @@ protected:
     virtual void drawGroup(AminoGroup *group);
     virtual void drawRect(AminoRect *rect);
     virtual void drawPoly(AminoPolygon *poly);
+    virtual void drawModel(AminoModel *model);
     virtual void drawText(AminoText *text);
 
 private:
