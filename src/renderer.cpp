@@ -2,6 +2,7 @@
 
 #define DEBUG_RENDERER false
 #define DEBUG_RENDERER_ERRORS false
+#define DEBUG_FONT_PERFORMANCE 0
 
 /**
  * OpenGL ES 2.0 renderer.
@@ -486,8 +487,10 @@ void AminoRenderer::drawText(AminoText *text) {
         printf("-> drawText()\n");
     }
 
+#if (DEBUG_FONT_PERFORMANCE == 1)
     //debug
-    double startTime = getTime(), diff; //cbx
+    double startTime = getTime(), diff;
+#endif
 
     if (!text->layoutText()) {
         return;
@@ -495,10 +498,13 @@ void AminoRenderer::drawText(AminoText *text) {
 
     ctx->save();
 
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
     diff = getTime() - startTime;
     if (diff > 5) {
-        printf("layoutText: %i ms\n", (int)diff); //cbx
+        printf("layoutText: %i ms\n", (int)diff);
     }
+#endif
 
     //flip the y axis
     ctx->scale(1, -1);
@@ -528,13 +534,21 @@ void AminoRenderer::drawText(AminoText *text) {
     }
 
     //use texture
-    startTime = getTime();//cbx
+
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
+    startTime = getTime();
+#endif
+
     GLuint texture = text->updateTexture();
 
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
     diff = getTime() - startTime;
     if (diff > 5) {
-        printf("updateTexture: %i ms\n", (int)diff); //cbx
+        printf("updateTexture: %i ms\n", (int)diff);
     }
+#endif
 
     if (DEBUG_RENDERER_ERRORS) {
         showGLErrors("updateTexture()");
