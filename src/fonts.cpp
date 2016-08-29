@@ -468,7 +468,7 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
         atlasTextures[atlas] = item;
 
         //debug
-        //printf("create new atlas texture: %i\n", id);
+        //printf("create new atlas texture: %i (total: %i)\n", id, (int)atlasTextures.size());
 
         return item;
     }

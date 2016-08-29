@@ -124,8 +124,8 @@ private:
 
             //sampling (quality)
             EGL_SAMPLE_BUFFERS, 1,
-            EGL_SAMPLES, 4, //4x MSAA
-
+            EGL_SAMPLES, 1, //cbx 4, //4x MSAA
+//cbx add flag
             //window
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 
