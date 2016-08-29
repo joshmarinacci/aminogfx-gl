@@ -239,7 +239,13 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
     }
 
     //draw
-    colorShader->drawTriangles(verts, dim, count, mode);
+    if (dim == 0) {
+        //special case: VBO elements
+        colorShader->drawElements(0, count, mode);
+    } else {
+        //render vertices (array or VBO)
+        colorShader->drawTriangles(verts, dim, count, mode);
+    }
 
     //cleanup
     glDisable(GL_BLEND);
@@ -413,12 +419,38 @@ void AminoRenderer::drawPoly(AminoPolygon *poly) {
  * Draw 3D model.
  */
 void AminoRenderer::drawModel(AminoModel *model) {
+    //vertices
+    std::vector<float> *vecVertices = &model->propVertices->value;
+
+    if (vecVertices->empty()) {
+        return;
+    }
+
+    if (model->vboVertex == INVALID_BUFFER) {
+        glGenBuffers(1, &model->vboVertex);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, model->vboVertex);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecVertices->size(), vecVertices->data(), GL_STATIC_DRAW);
+
+    //indices (optional)
+    std::vector<ushort> *vecIndices = &model->propIndices->value;
+    bool useElements = !vecIndices->empty();
+
+    if (useElements) {
+        if (model->vboIndex == INVALID_BUFFER) {
+            glGenBuffers(1, &model->vboIndex);
+        }
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->vboIndex);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ushort) * vecIndices->size(), vecIndices->data(), GL_STATIC_DRAW);
+    } else if (model->vboIndex) {
+        glDeleteBuffers(1, &model->vboIndex);
+        model->vboIndex = INVALID_BUFFER;
+    }
+
     //enable depth mask
     ctx->enableDepth();
-
-    //draw vertices
-    std::vector<float> *vecVertices = &model->propVertices->value;
-    GLfloat *vertices = vecVertices->data();
 
     //shader
 
@@ -426,11 +458,17 @@ void AminoRenderer::drawModel(AminoModel *model) {
     GLfloat opacity = model->propOpacity->value * ctx->opacity;
     GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
 
-    applyColorShader(vertices, 3, vecVertices->size() / 3, color, GL_TRIANGLES);
+    if (useElements) {
+        applyColorShader(NULL, 0, vecIndices->size(), color, GL_TRIANGLES);
+    } else {
+        applyColorShader(NULL, 3, vecVertices->size() / 3, color, GL_TRIANGLES);
+    }
 
-    //cbx more: index list, normals, texture shader
+    //cbx more: normals, texture shader, update VBO on changes only
 
     ctx->disableDepth();
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 /**

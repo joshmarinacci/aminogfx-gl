@@ -243,13 +243,31 @@ void AnyAminoShader::setTransformation(GLfloat modelView[16], GLfloat transition
  * Draw triangles.
  */
 void AnyAminoShader::drawTriangles(GLfloat *verts, GLsizei dim, GLsizei vertices, GLenum mode) {
-    //x/y coords per vertex
+    /*
+     * Coords per vertex (2 or 3).
+     *
+     * Note: verts is NULL in case of VBO usage
+     */
     glVertexAttribPointer(aPos, dim, GL_FLOAT, GL_FALSE, 0, verts);
 
     //draw
     glEnableVertexAttribArray(aPos);
 
     glDrawArrays(mode, 0, vertices);
+
+    glDisableVertexAttribArray(aPos);
+}
+
+/**
+ * Draw elements.
+ */
+void AnyAminoShader::drawElements(GLushort *indices, GLsizei elements, GLenum mode) {
+    //Note: using fixed dimension of 3 (modify if different value needed)
+    glVertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    glEnableVertexAttribArray(aPos);
+
+    //Note: indices is offset in case of VBO
+    glDrawElements(mode, elements, GL_UNSIGNED_SHORT, indices);
 
     glDisableVertexAttribArray(aPos);
 }

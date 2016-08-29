@@ -99,6 +99,8 @@ function showQuad(model) {
         [Math.random() * w, Math.random() * h]
     ];
 
+    // 1) using vertex coordinates only
+    /*
     model.vertices([
         //triangle 1
         x + points[0][0], y + points[0][1], 0,
@@ -109,6 +111,20 @@ function showQuad(model) {
         x + points[1][0], y + points[1][1], 0,
         x + points[2][0], y + points[2][1], 0,
         x + points[3][0], y + points[3][1], 0
+    ]);
+    */
+
+    // 2) using index
+    model.vertices([
+        //quad points
+        x + points[0][0], y + points[0][1], 0,
+        x + points[1][0], y + points[1][1], 0,
+        x + points[2][0], y + points[2][1], 0,
+        x + points[3][0], y + points[3][1], 0
+    ]);
+
+    model.indices([
+        0, 1, 2, 1, 2, 3
     ]);
 }
 

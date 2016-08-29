@@ -1172,7 +1172,12 @@ public:
 
     //arrays
     FloatArrayProperty *propVertices;
+    UShortArrayProperty *propIndices;
 
+    //VBO
+    GLuint vboVertex = INVALID_BUFFER;
+    GLuint vboIndex = INVALID_BUFFER;
+//cbx destroy
     AminoModel(): AminoNode(getFactory()->name, MODEL) {
         //empty
     }
@@ -1195,6 +1200,7 @@ public:
         propFillB = createFloatProperty("fillB");
 
         propVertices = createFloatArrayProperty("vertices");
+        propIndices = createUShortArrayProperty("indices");
     }
 
     //creation

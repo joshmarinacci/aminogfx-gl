@@ -3,6 +3,7 @@
 
 #define INVALID_TEXTURE 0
 #define INVALID_PROGRAM 0
+#define INVALID_BUFFER 0
 
 /*
  * Platform specific headers.

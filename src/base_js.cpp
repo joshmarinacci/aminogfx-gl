@@ -312,6 +312,20 @@ AminoJSObject::FloatArrayProperty* AminoJSObject::createFloatArrayProperty(std::
 }
 
 /**
+ * Create ushort array property (bound to JS property).
+ *
+ * Note: has to be called in JS scope of setup()!
+ */
+AminoJSObject::UShortArrayProperty* AminoJSObject::createUShortArrayProperty(std::string name) {
+    int id = ++lastPropertyId;
+    UShortArrayProperty *prop = new UShortArrayProperty(this, name, id);
+
+    addProperty(prop);
+
+    return prop;
+}
+
+/**
  * Create int32 property (bound to JS property).
  *
  * Note: has to be called in JS scope of setup()!
@@ -1013,6 +1027,148 @@ void AminoJSObject::FloatArrayProperty::setAsyncData(AsyncPropertyUpdate *update
 void AminoJSObject::FloatArrayProperty::freeAsyncData(void *data) {
     if (data) {
         delete (std::vector<float> *)data;
+    }
+}
+
+//
+// AminoJSObject::UShortArrayProperty
+//
+
+/**
+ * UShortArrayProperty constructor.
+ */
+AminoJSObject::UShortArrayProperty::UShortArrayProperty(AminoJSObject *obj, std::string name, int id): AnyProperty(PROPERTY_USHORT_ARRAY, obj, name, id) {
+    //empty
+}
+
+/**
+ * FloatProperty destructor.
+ */
+AminoJSObject::UShortArrayProperty::~UShortArrayProperty() {
+    //empty
+}
+
+/**
+ * Update the float value.
+ *
+ * Note: only updates the JS value if modified!
+ */
+void AminoJSObject::UShortArrayProperty::setValue(std::vector<ushort> newValue) {
+    if (value != newValue) {
+        value = newValue;
+
+        if (connected) {
+            obj->updateProperty(this);
+        }
+    }
+}
+
+/**
+ * Convert to string value.
+ */
+std::string AminoJSObject::UShortArrayProperty::toString() {
+    std::ostringstream ss;
+    std::size_t count = value.size();
+
+    ss << "[";
+
+    for (unsigned int i = 0; i < count; i++) {
+        if (i > 0) {
+            ss << ", ";
+        }
+
+        ss << value[i];
+    }
+
+    ss << "]";
+
+    return std::string(ss.str());
+}
+
+/**
+ * Get JS value.
+ */
+v8::Local<v8::Value> AminoJSObject::UShortArrayProperty::toValue() {
+    std::size_t count = value.size();
+
+    //typed array
+    v8::Local<v8::Uint16Array> arr = v8::Uint16Array::New(v8::ArrayBuffer::New(v8::Isolate::GetCurrent(), count * sizeof(ushort)), 0, count);
+
+    //normal array
+    //v8::Local<v8::Array> arr = Nan::New<v8::Array>();
+
+    for (unsigned int i = 0; i < count; i++) {
+        Nan::Set(arr, Nan::New<v8::Uint32>(i), Nan::New<v8::Number>(value[i]));
+    }
+
+    return arr;
+}
+
+/**
+ * Get async data representation.
+ */
+void* AminoJSObject::UShortArrayProperty::getAsyncData(v8::Local<v8::Value> &value, bool &valid) {
+    if (value->IsNull()) {
+        //Note: only accepting empty arrays as values
+        valid = false;
+
+        return NULL;
+    }
+
+    std::vector<ushort> *vector =  NULL;
+
+    if (value->IsUint16Array()) {
+        //Uint16Array
+        v8::Handle<v8::Uint16Array> arr = v8::Handle<v8::Uint16Array>::Cast(value);
+        v8::ArrayBuffer::Contents contents = arr->Buffer()->GetContents();
+        ushort *data = (ushort *)contents.Data();
+        std::size_t count = contents.ByteLength() / sizeof(ushort);
+
+        //debug
+        //printf("is Float32Array (size: %i)\n", (int)count);
+
+        //copy to vector
+        vector = new std::vector<ushort>();
+
+        vector->assign(data, data + count);
+
+        valid = true;
+    } else if (value->IsArray()) {
+        v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+        std::size_t count = arr->Length();
+
+        vector = new std::vector<ushort>();
+
+        for (std::size_t i = 0; i < count; i++) {
+            vector->push_back((ushort)(arr->Get(i)->Uint32Value()));
+        }
+
+        valid = true;
+    } else {
+        valid = false;
+    }
+
+    return vector;
+}
+
+/**
+ * Apply async data.
+ */
+void AminoJSObject::UShortArrayProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
+    if (!data) {
+        value.clear();
+        return;
+    }
+
+    value = *((std::vector<ushort> *)data);
+}
+
+/**
+ * Free async data.
+ */
+void AminoJSObject::UShortArrayProperty::freeAsyncData(void *data) {
+    if (data) {
+        delete (std::vector<ushort> *)data;
     }
 }
 

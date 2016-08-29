@@ -46,6 +46,7 @@ public:
     void setTransformation(GLfloat modelView[16], GLfloat transition[16]);
 
     void drawTriangles(GLfloat *verts, GLsizei dim, GLsizei vertices, GLenum mode);
+    void drawElements(GLushort *indices, GLsizei elements, GLenum mode);
 
 protected:
     //position

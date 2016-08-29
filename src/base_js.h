@@ -64,13 +64,14 @@ protected:
     static std::string toString(v8::Local<v8::Value> &value);
     static std::string* toNewString(v8::Local<v8::Value> &value);
 
-    static const int PROPERTY_FLOAT       = 1;
-    static const int PROPERTY_FLOAT_ARRAY = 2;
-    static const int PROPERTY_INT32       = 3;
-    static const int PROPERTY_UINT32      = 4;
-    static const int PROPERTY_BOOLEAN     = 5;
-    static const int PROPERTY_UTF8        = 6;
-    static const int PROPERTY_OBJECT      = 7;
+    static const int PROPERTY_FLOAT        = 1;
+    static const int PROPERTY_FLOAT_ARRAY  = 2;
+    static const int PROPERTY_USHORT_ARRAY = 3;
+    static const int PROPERTY_INT32        = 4;
+    static const int PROPERTY_UINT32       = 5;
+    static const int PROPERTY_BOOLEAN      = 6;
+    static const int PROPERTY_UTF8         = 7;
+    static const int PROPERTY_OBJECT       = 8;
 
     class AsyncPropertyUpdate;
 
@@ -128,6 +129,26 @@ protected:
         ~FloatArrayProperty();
 
         void setValue(std::vector<float> newValue);
+
+        std::string toString() override;
+
+        //sync handling
+        v8::Local<v8::Value> toValue() override;
+
+        //async handling
+        void* getAsyncData(v8::Local<v8::Value> &value, bool &valid) override;
+        void setAsyncData(AsyncPropertyUpdate *update, void *data) override;
+        void freeAsyncData(void *data) override;
+    };
+
+    class UShortArrayProperty : public AnyProperty {
+    public:
+        std::vector<ushort> value;
+
+        UShortArrayProperty(AminoJSObject *obj, std::string name, int id);
+        ~UShortArrayProperty();
+
+        void setValue(std::vector<ushort> newValue);
 
         std::string toString() override;
 
@@ -247,6 +268,7 @@ protected:
 
     FloatProperty* createFloatProperty(std::string name);
     FloatArrayProperty* createFloatArrayProperty(std::string name);
+    UShortArrayProperty* createUShortArrayProperty(std::string name);
     Int32Property* createInt32Property(std::string name);
     UInt32Property* createUInt32Property(std::string name);
     BooleanProperty* createBooleanProperty(std::string name);

@@ -1216,6 +1216,7 @@ Model.prototype.init = function () {
 
         //properties
         vertices: null,
+        indices: null,
         normals: null,
         uv: null,
 
