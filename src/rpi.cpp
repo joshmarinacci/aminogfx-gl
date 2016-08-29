@@ -10,6 +10,7 @@
 #define DEBUG_RENDER false
 #define DEBUG_INPUT false
 
+#define AMINO_EGL_SAMPLES 4
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
 
 /**
@@ -124,8 +125,8 @@ private:
 
             //sampling (quality)
             EGL_SAMPLE_BUFFERS, 1,
-            EGL_SAMPLES, 1, //cbx 4, //4x MSAA
-//cbx add flag
+            EGL_SAMPLES, AMINO_EGL_SAMPLES, //4: 4x MSAA
+
             //window
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 
