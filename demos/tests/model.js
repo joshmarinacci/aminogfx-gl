@@ -19,7 +19,9 @@ gfx.start(function (err) {
     const model1 = gfx.createModel();
 
     //showTriangle(model1);
-    showTriangles(model1);
+    //showTriangles(model1);
+    //showRect(model1);
+    showQuad(model1);
 
     root.add(model1);
 
@@ -29,10 +31,19 @@ gfx.start(function (err) {
 });
 
 
+/**
+ * Simplest model.
+ */
 function showTriangle(model) {
-    model1.vertices([ 0,0,0, 100,50,0, 200, 200,0 ]);
+    model.vertices([
+        0, 0, 0,
+        100, 50, 0,
+        200, 200, 0 ]);
 }
 
+/**
+ * Many triangles.
+ */
 function showTriangles(model) {
     const count = 1000;
     const vertexCount = count * 3;
@@ -48,3 +59,57 @@ function showTriangles(model) {
 
     model.vertices(vertices);
 }
+
+/**
+ * Rectangle.
+ */
+function showRect(model) {
+    const x = 0;
+    const y = 0;
+    const w = 200;
+    const h = 200;
+
+    model.vertices([
+        //triangle 1
+        x, y, 0,
+        x + w, y, 0,
+        x, y + w, 0,
+
+        //triangle 2
+        x + w, y, 0,
+        x, y + h, 0,
+        x + w, y + h, 0
+    ]);
+}
+
+/**
+ * Quad.
+ */
+function showQuad(model) {
+    const x = 0;
+    const y = 0;
+    const w = 200;
+    const h = 200;
+
+    //Note: no sorting applied
+    const points = [
+        [Math.random() * w, Math.random() * h],
+        [Math.random() * w, Math.random() * h],
+        [Math.random() * w, Math.random() * h],
+        [Math.random() * w, Math.random() * h]
+    ];
+
+    model.vertices([
+        //triangle 1
+        x + points[0][0], y + points[0][1], 0,
+        x + points[1][0], y + points[1][1], 0,
+        x + points[2][0], y + points[2][1], 0,
+
+        //triangle 2
+        x + points[1][0], y + points[1][1], 0,
+        x + points[2][0], y + points[2][1], 0,
+        x + points[3][0], y + points[3][1], 0
+    ]);
+}
+
+//TODO texture
