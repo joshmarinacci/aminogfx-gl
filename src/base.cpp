@@ -817,6 +817,37 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
 }
 
 /**
+ * Delete buffer.
+ *
+ * Note: has to be called on main thread.
+ */
+void AminoGfx::deleteBufferAsync(GLuint bufferId) {
+    if (destroyed) {
+        return;
+    }
+
+    //enqueue
+    AminoJSObject::enqueueValueUpdate(bufferId, (asyncValueCallback)&AminoGfx::deleteBuffer);
+}
+
+/**
+ * Delete buffer.
+ */
+void AminoGfx::deleteBuffer(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    GLuint bufferId = update->valueUint32;
+
+    if (DEBUG_RESOURCES) {
+        printf("-> deleting buffer %i\n", bufferId);
+    }
+
+    glDeleteBuffers(1, &bufferId);
+}
+
+/**
  * Get texture for atlas.
  *
  * Note: has to be called on OpenGL thread.
@@ -1001,7 +1032,9 @@ GLuint AminoText::updateTexture() {
     }
 
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
-//cbx check font bottleneck
+
+    //FIXME cbx: texture too slow on RPi!
+
     if (atlas->depth == 1) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
     } else if (atlas->depth == 3) {

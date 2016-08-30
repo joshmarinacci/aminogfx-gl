@@ -233,7 +233,9 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
     colorShader->setTransformation(modelView, ctx->globaltx);
     colorShader->setColor(color);
 
-    if (color[3] != 1.0) {
+    bool hasAlpha = color[3] != 1.0;
+
+    if (hasAlpha) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
@@ -248,7 +250,9 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
     }
 
     //cleanup
-    glDisable(GL_BLEND);
+    if (hasAlpha) {
+        glDisable(GL_BLEND);
+    }
 }
 
 /**

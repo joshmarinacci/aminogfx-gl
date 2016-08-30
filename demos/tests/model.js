@@ -139,11 +139,13 @@ function showCube(model) {
     const dh = d / 2;
 
     model.vertices([
+        //lower
         x, y, -dh,
         x + w, y, -dh,
         x + w, y + h, -dh,
         x, y + h, -dh,
 
+        //upper
         x, y, dh,
         x + w, y, dh,
         x + w, y + h, dh,
@@ -176,8 +178,9 @@ function showCube(model) {
         2, 6, 7
     ]);
 
+    //cbx check facing FIXME not all sides are transparent
     model.opacity(.7);
-    model.originX(.5).originY(.5);
+    model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);
     model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
     //model.rz.anim().from(0).to(360).dur(678).start();

@@ -55,6 +55,8 @@ public:
     void removeAnimationAsync(AminoAnim *anim);
 
     void deleteTextureAsync(GLuint textureId);
+    void deleteBufferAsync(GLuint bufferId);
+
     amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
 
 protected:
@@ -156,8 +158,9 @@ private:
     void addAnimation(AsyncValueUpdate *update, int state);
     void removeAnimation(AsyncValueUpdate *update, int state);
 
-    //texture
+    //texture & buffer
     void deleteTexture(AsyncValueUpdate *update, int state);
+    void deleteBuffer(AsyncValueUpdate *update, int state);
 
     //debug
     void measureRenderingStart();
@@ -1177,7 +1180,7 @@ public:
     //VBO
     GLuint vboVertex = INVALID_BUFFER;
     GLuint vboIndex = INVALID_BUFFER;
-//cbx destroy
+
     AminoModel(): AminoNode(getFactory()->name, MODEL) {
         //empty
     }
@@ -1185,6 +1188,29 @@ public:
     ~AminoModel() {
     }
 
+    /**
+     * Free all resources.
+     */
+    void destroy() override {
+        AminoNode::destroy();
+
+        //free buffers
+        if (eventHandler) {
+            if (vboVertex != INVALID_BUFFER) {
+                ((AminoGfx *)eventHandler)->deleteBufferAsync(vboVertex);
+                vboVertex = INVALID_BUFFER;
+            }
+
+            if (vboIndex != INVALID_BUFFER) {
+                ((AminoGfx *)eventHandler)->deleteBufferAsync(vboIndex);
+                vboIndex = INVALID_BUFFER;
+            }
+        }
+    }
+
+    /**
+     * Setup properties.
+     */
     void setup() override {
         AminoNode::setup();
 
