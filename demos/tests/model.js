@@ -178,8 +178,9 @@ function showCube(model) {
         2, 6, 7
     ]);
 
-    //cbx check facing FIXME not all sides are transparent
+    //Note: no depth-sorting done, therefore transparent rendering wrong on screen
     model.opacity(.7);
+
     model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);
     model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
