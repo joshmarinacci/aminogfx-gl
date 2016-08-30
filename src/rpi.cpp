@@ -273,7 +273,25 @@ private:
             //cbx add flag
             //cbx VC_HDMI_UNPLUGGED,VC_HDMI_HDMI,VC_HDMI_DVI
             printf("State: %i", tvstate->state);
-            printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->width, tvstate->height, tvstate->frame_rate, tvstate->mode, tvstate->group);
+
+            //check HDMI
+            if (tvstate->state & VC_HDMI_UNPLUGGED == VC_HDMI_UNPLUGGED) {
+                printf("-> unplugged\n");
+
+                free(tvstate);
+                tvstate = NULL;
+            } else if (tvstate->state & (VC_HDMI_HDMI | VC_HDMI_DVI) == 0) {
+                printf("-> no HDMI display\n");
+
+                free(tvstate);
+                tvstate = NULL;
+            }
+
+            if (state) {
+                HDMI_DISPLAY_STATE_T *hdmi = tvstate->display;
+
+                printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", hdmi->width, hdmi->height, hdmi->frame_rate, hdmi->mode, hdmi->group);
+            }
         }
 
         //get display properties
@@ -284,7 +302,7 @@ private:
 
         if (tvstate) {
             //depends on attached screen
-            refreshRate = tvstate->frame_rate;
+            refreshRate = tvstate->display.frame_rate;
         }
 
         //free
