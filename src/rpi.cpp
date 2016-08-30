@@ -336,7 +336,7 @@ private:
      * Force HD resolution.
      */
     void force720p60() {
-        forceHdmiMode(HDMI_CEA_1080p60, 1280, 720);
+        forceHdmiMode(HDMI_CEA_720p60, 1280, 720);
     }
 
     /**
@@ -348,6 +348,7 @@ private:
         vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, code);
 
         //update framebuffer
+        //FIXME cbx 1) no output on screen, 2) EGL crash once
         char command[32];
 
         sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h);
