@@ -56,6 +56,10 @@ private:
     uint32_t screenW = 0;
     uint32_t screenH = 0;
 
+    //tvservice
+    VCHI_INSTANCE_T vchiInstance;
+    VCHI_CONNECTION_T *vchiConnections;
+
     //input
     std::vector<int> fds;
     int mouse_x = 0;
@@ -80,6 +84,9 @@ private:
         if (!glESInitialized) {
             //VideoCore IV
             bcm_host_init();
+
+            //tvservice
+            initTVService();
 
             glESInitialized = true;
         }
@@ -167,6 +174,39 @@ private:
     }
 
     /**
+     * Initialize the TV Service.
+     */
+    void initTVService() {
+        //initialize vcos/vchi
+        vcos_init();
+
+        if (vchi_initialise(&vchiInstance) != VCHIQ_SUCCESS) {
+            printf(stderr, "failed to open vchiq instance\n");
+            exit(-2);
+        }
+
+        //create a vchi connection
+        if (vchi_connect(NULL, 0, vchiInstance) != 0) {
+            fprintf(stderr, "failed to connect to VCHI\n");
+            exit(-3);
+        }
+
+        //connect to tvservice
+        if (vc_vchi_tv_init(vchiInstance, &vchiConnections, 1) != 0) {
+            fprintf(stderr, "failed to connect to tvservice\n");
+            exit(-4);
+        }
+
+        //register callback
+        vc_tv_register_callback(tvservice_cb, self);
+    }
+
+    static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2) {
+        //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
+        printf("tvservice state has changed\n");//cbx
+    }
+
+    /**
      * Destroy GLFW instance.
      */
     void destroy() override {
@@ -200,6 +240,9 @@ private:
         }
 
         if (instanceCount == 0) {
+            //tvservice
+            vc_tv_unregister_callback(tvservice_cb);
+
             //VideoCore IV
             bcm_host_deinit();
             glESInitialized = false;
@@ -214,11 +257,37 @@ private:
             printf("getScreenInfo\n");
         }
 
+        /*
+         * Get TV state.
+         *
+         * - https://github.com/bmx-ng/sdl.mod/blob/master/sdlgraphics.mod/rpi_glue.c
+         * - https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
+         */
+        TV_DISPLAY_STATE_T *tvstate = malloc(sizeof(TV_DISPLAY_STATE_T)));
+
+        if (vc_tv_get_display_state(tvstate) != 0) {
+            free(tvstate);
+            tvstate = NULL;
+        } else {
+            //cbx add flag
+            printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->hdmi.width, tvstate->hdmi.height, tvstate->hdmi.frame_rate, tvstate->hdmi.mode, tvstate->hdmi.group);
+        }
+
         //get display properties
         w = screenW;
         h = screenH;
         refreshRate = 0; //unknown
         fullscreen = true;
+
+        if (tvstate) {
+            //depends on attached screen
+            refreshRate = tvstate->hdmi.frame_rate;
+        }
+
+        //free
+        if (tvstate) {
+            free(tvstate);
+        }
 
         return true;
     }
