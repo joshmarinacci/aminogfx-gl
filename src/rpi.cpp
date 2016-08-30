@@ -10,6 +10,7 @@
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
 #define DEBUG_INPUT false
+#define DEBUG_HDMI false
 
 #define AMINO_EGL_SAMPLES 4
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -57,10 +58,6 @@ private:
     uint32_t screenW = 0;
     uint32_t screenH = 0;
 
-    //tvservice
-    VCHI_INSTANCE_T vchiInstance;
-    VCHI_CONNECTION_T *vchiConnections;
-
     //input
     std::vector<int> fds;
     int mouse_x = 0;
@@ -86,8 +83,18 @@ private:
             //VideoCore IV
             bcm_host_init();
 
-            //tvservice
-            initTVService();
+            //Note: tvservice and others are already initialized by bcm_host_init() call!
+            //      see https://github.com/raspberrypi/userland/blob/master/host_applications/linux/libs/bcm_host/bcm_host.c
+
+            /*
+             * register callback
+             *
+             * Note: never called with "hdmi_force_hotplug=1".
+             */
+            vc_tv_register_callback(tvservice_cb, NULL);
+
+            //fore mode cbx
+            force720p();
 
             glESInitialized = true;
         }
@@ -174,40 +181,11 @@ private:
         }
     }
 
-    /**
-     * Initialize the TV Service.
-     */
-    void initTVService() {
-/*
-        //initialize vcos/vchi
-        vcos_init();
-
-        if (vchi_initialise(&vchiInstance) != VCHIQ_SUCCESS) {
-            printf("failed to open vchiq instance\n");
-            exit(-2);
-        }
-
-        //create a vchi connection
-        if (vchi_connect(NULL, 0, vchiInstance) != 0) {
-            printf("failed to connect to VCHI\n");
-            exit(-3);
-        }
-
-        //connect to tvservice
-        //cbx vc_vchi_dispmanx_init
-        //FIXME fails!
-        if (vc_vchi_tv_init(vchiInstance, &vchiConnections, 1) < 0) {
-            printf("failed to connect to tvservice\n");
-            exit(-4);
-        }
-*/
-        //register callback
-        vc_tv_register_callback(tvservice_cb, NULL);
-    }
-
     static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2) {
         //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
-        printf("tvservice state has changed\n");//cbx
+
+        //Note: never called
+        printf("tvservice state has changed\n");
     }
 
     /**
@@ -273,24 +251,37 @@ private:
             free(tvstate);
             tvstate = NULL;
         } else {
-            //cbx add flag
-            //cbx VC_HDMI_UNPLUGGED,VC_HDMI_HDMI,VC_HDMI_DVI
-            printf("State: %i", tvstate->state);
+            /*
+             * Notes:
+             *
+             * - Raspberry Pi 3 default:
+             *    - hdmi_force_hotplug=1 is being used in /boot/config.txt
+             *    - 1920x1080@60Hz on HDMI (mode=16, group=1)
+             */
+
+            //debug
+            if (DEBUG_HDMI) {
+                printf("State: %i\n", tvstate->state);
+            }
 
             //check HDMI
             if ((tvstate->state & VC_HDMI_UNPLUGGED) == VC_HDMI_UNPLUGGED) {
-                printf("-> unplugged\n");
+                if (DEBUG_HDMI) {
+                    printf("-> unplugged\n");
+                }
 
                 free(tvstate);
                 tvstate = NULL;
             } else if ((tvstate->state & (VC_HDMI_HDMI | VC_HDMI_DVI)) == 0) {
-                printf("-> no HDMI display\n");
+                if (DEBUG_HDMI) {
+                    printf("-> no HDMI display\n");
+                }
 
                 free(tvstate);
                 tvstate = NULL;
             }
 
-            if (tvstate) {
+            if (tvstate && DEBUG_HDMI) {
                 printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->display.hdmi.width, tvstate->display.hdmi.height, tvstate->display.hdmi.frame_rate, tvstate->display.hdmi.mode, tvstate->display.hdmi.group);
             }
         }
@@ -312,6 +303,12 @@ private:
         }
 
         return true;
+    }
+
+    void force720p() {
+        //group: HDMI_RES_GROUP_CEA, HDMI_RES_GROUP_DMT
+        //CEA code: HDMI_CEA_720p60, HDMI_CEA_1080p60 (16)
+        vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, HDMI_CEA_720p60);
     }
 
     /**
