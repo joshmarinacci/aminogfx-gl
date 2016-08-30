@@ -240,6 +240,7 @@ private:
         //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
 
         if (DEBUG_HDMI) {
+            //reasons seen: VC_HDMI_HDMI
             printf("-> tvservice state has changed: %s\n", vc_tv_notification_name((VC_HDMI_NOTIFY_T)reason));
         }
 
@@ -329,35 +330,47 @@ private:
      * Force full HD resolution.
      */
     void force1080p60() {
-        forceHdmiMode(HDMI_CEA_1080p60, 1920, 1080);
+        forceHdmiMode(HDMI_CEA_1080p60);
     }
 
     /**
      * Force HD resolution.
      */
     void force720p60() {
-        forceHdmiMode(HDMI_CEA_720p60, 1280, 720);
+        forceHdmiMode(HDMI_CEA_720p60);
     }
 
     /**
      * Switch to HDMI mode.
      */
-    void forceHdmiMode(uint32_t code, int w, int h) {
+    void forceHdmiMode(uint32_t code) {
         if (DEBUG_HDMI) {
-            printf("Changing resolution: %ix%w code=%i", w, h, (int)code);
+            printf("Changing resolution: %ix%w code=%i\n", w, h, (int)code);
         }
 
         //Note: mode change takes some time (is asynchronous)
         //      see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
-        vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, code);
+        if (vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, code) != 0) {
+            printf("-> failed\n");
+            return;
+        }
 
-        //update framebuffer
-        //FIXME cbx 1) no output on screen, 2) EGL crash once
-        char command[32];
+        //get new state
+        TV_DISPLAY_STATE_T *tvState = getDisplayState();
 
-        //sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h);
-        sprintf(command, "fbset -g %4i %4i %4i %4i 16", w, h, w, h);
-        system(command);
+        if (tvState) {
+            //update framebuffer
+            //FIXME cbx 1) no output on screen, 2) EGL crash once
+            char command[32];
+            int w = tvState->display.hdmi.width;
+            int h = tvState->display.hdmi.height;
+
+            //sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h); //cbx check
+            sprintf(command, "fbset -g %4i %4i %4i %4i 16", w, h, w, h);
+            system(command);
+
+            free(tvState);
+        }
     }
 
     /**
