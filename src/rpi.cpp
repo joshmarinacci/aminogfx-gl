@@ -1,6 +1,7 @@
 #include "rpi.h"
 
 #include "bcm_host.h"
+#include "interface/vchiq_arm/vchiq_if.h"
 
 #include <linux/input.h>
 #include <dirent.h>
@@ -181,24 +182,24 @@ private:
         vcos_init();
 
         if (vchi_initialise(&vchiInstance) != VCHIQ_SUCCESS) {
-            printf(stderr, "failed to open vchiq instance\n");
+            printf("failed to open vchiq instance\n");
             exit(-2);
         }
 
         //create a vchi connection
         if (vchi_connect(NULL, 0, vchiInstance) != 0) {
-            fprintf(stderr, "failed to connect to VCHI\n");
+            printf("failed to connect to VCHI\n");
             exit(-3);
         }
 
         //connect to tvservice
         if (vc_vchi_tv_init(vchiInstance, &vchiConnections, 1) != 0) {
-            fprintf(stderr, "failed to connect to tvservice\n");
+            printf("failed to connect to tvservice\n");
             exit(-4);
         }
 
         //register callback
-        vc_tv_register_callback(tvservice_cb, self);
+        vc_tv_register_callback(tvservice_cb, NULL);
     }
 
     static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2) {
@@ -263,7 +264,7 @@ private:
          * - https://github.com/bmx-ng/sdl.mod/blob/master/sdlgraphics.mod/rpi_glue.c
          * - https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
          */
-        TV_DISPLAY_STATE_T *tvstate = malloc(sizeof(TV_DISPLAY_STATE_T)));
+        TV_DISPLAY_STATE_T *tvstate = (TV_DISPLAY_STATE_T *)malloc(sizeof(TV_DISPLAY_STATE_T));
 
         if (vc_tv_get_display_state(tvstate) != 0) {
             free(tvstate);
