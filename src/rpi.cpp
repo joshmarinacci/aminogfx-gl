@@ -343,6 +343,10 @@ private:
      * Switch to HDMI mode.
      */
     void forceHdmiMode(uint32_t code, int w, int h) {
+        if (DEBUG_HDMI) {
+            printf("Changing resolution: %ix%w code=%i", w, h, (int)code);
+        }
+
         //Note: mode change takes some time (is asynchronous)
         //      see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
         vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, code);
