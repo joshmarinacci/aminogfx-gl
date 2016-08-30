@@ -240,7 +240,7 @@ private:
         //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
 
         if (DEBUG_HDMI) {
-            printf("-> tvservice state has changed\n");
+            printf("-> tvservice state has changed: %s\n", vc_tv_notification_name(reason));
         }
 
         //check resolution
@@ -351,7 +351,8 @@ private:
         //FIXME cbx 1) no output on screen, 2) EGL crash once
         char command[32];
 
-        sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h);
+        //sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h);
+        sprintf(command, "fbset -g %4i %4i %4i %4i 16", w, h, w, h);
         system(command);
     }
 
