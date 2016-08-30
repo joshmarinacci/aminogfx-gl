@@ -356,21 +356,27 @@ private:
         }
 
         //get new state
+        /*
         TV_DISPLAY_STATE_T *tvState = getDisplayState();
 
         if (tvState) {
-            //update framebuffer
-            //FIXME cbx 1) no output on screen, 2) EGL crash once
+            //update framebuffer (info: fbset -i)
+            //FIXME cbx 1) no output on screen, 2) really required?
             char command[32];
             int w = tvState->display.hdmi.width;
             int h = tvState->display.hdmi.height;
 
-            //sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h); //cbx check
-            sprintf(command, "fbset -g %4i %4i %4i %4i 16", w, h, w, h);
+            sprintf(command, "fbset -g %4i %4i %4i %4i 32", w, h, w, h); //cbx check
+            //sprintf(command, "fbset -g %4i %4i %4i %4i 16", w, h, w, h);
             system(command);
+
+            if (DEBUG_HDMI) {
+                printf("-> changing frame buffer: %s\n", command);
+            }
 
             free(tvState);
         }
+        */
     }
 
     /**
@@ -406,8 +412,12 @@ private:
         viewportH = screenH;
         viewportChanged = true;
 
+        if (DEBUG_HDMI) {
+            printf("-> init Dispmanx\n");
+        }
+
         //Dispmanx init
-        DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0 /* LCD */);
+        DISPMANX_DISPLAY_HANDLE_T dispman_display = vc_dispmanx_display_open(0); //LCD
         DISPMANX_UPDATE_HANDLE_T dispman_update = vc_dispmanx_update_start(0);
 
         int LAYER = 0;
