@@ -10,7 +10,8 @@
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
 #define DEBUG_INPUT false
-#define DEBUG_HDMI false
+#define DEBUG_HDMI true
+//cbx
 
 #define AMINO_EGL_SAMPLES 4
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -94,7 +95,7 @@ private:
             vc_tv_register_callback(tvservice_cb, NULL);
 
             //fore mode cbx
-            force720p();
+            force720p60();
 
             glESInitialized = true;
         }
@@ -181,11 +182,75 @@ private:
         }
     }
 
+    static TV_DISPLAY_STATE_T *getDisplayState() {
+        /*
+         * Get TV state.
+         *
+         * - https://github.com/bmx-ng/sdl.mod/blob/master/sdlgraphics.mod/rpi_glue.c
+         * - https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
+         */
+        TV_DISPLAY_STATE_T *tvstate = (TV_DISPLAY_STATE_T *)malloc(sizeof(TV_DISPLAY_STATE_T));
+
+        if (vc_tv_get_display_state(tvstate) != 0) {
+            free(tvstate);
+            tvstate = NULL;
+        } else {
+            /*
+             * Notes:
+             *
+             * - Raspberry Pi 3 default:
+             *    - hdmi_force_hotplug=1 is being used in /boot/config.txt
+             *    - 1920x1080@60Hz on HDMI (mode=16, group=1)
+             */
+
+            //debug
+            if (DEBUG_HDMI) {
+                printf("State: %i\n", tvstate->state);
+            }
+
+            //check HDMI
+            if ((tvstate->state & VC_HDMI_UNPLUGGED) == VC_HDMI_UNPLUGGED) {
+                if (DEBUG_HDMI) {
+                    printf("-> unplugged\n");
+                }
+
+                free(tvstate);
+                tvstate = NULL;
+            } else if ((tvstate->state & (VC_HDMI_HDMI | VC_HDMI_DVI)) == 0) {
+                if (DEBUG_HDMI) {
+                    printf("-> no HDMI display\n");
+                }
+
+                free(tvstate);
+                tvstate = NULL;
+            }
+
+            if (tvstate && DEBUG_HDMI) {
+                printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->display.hdmi.width, tvstate->display.hdmi.height, tvstate->display.hdmi.frame_rate, tvstate->display.hdmi.mode, tvstate->display.hdmi.group);
+            }
+        }
+
+        return tvstate;
+    }
+
+    /**
+     * HDMI tvservice callback.
+     */
     static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2) {
         //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
 
-        //Note: never called
-        printf("tvservice state has changed\n");
+        if (DEBUG_HDMI) {
+            printf("-> tvservice state has changed\n");
+        }
+
+        //check resolution
+        TV_DISPLAY_STATE_T *tvState = getDisplayState();
+
+        if (tvState) {
+            //cbx update display size (AminoGfx)
+            //cbx update display info (property)
+            free(tvState);
+        }
     }
 
     /**
@@ -239,52 +304,7 @@ private:
             printf("getScreenInfo\n");
         }
 
-        /*
-         * Get TV state.
-         *
-         * - https://github.com/bmx-ng/sdl.mod/blob/master/sdlgraphics.mod/rpi_glue.c
-         * - https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
-         */
-        TV_DISPLAY_STATE_T *tvstate = (TV_DISPLAY_STATE_T *)malloc(sizeof(TV_DISPLAY_STATE_T));
-
-        if (vc_tv_get_display_state(tvstate) != 0) {
-            free(tvstate);
-            tvstate = NULL;
-        } else {
-            /*
-             * Notes:
-             *
-             * - Raspberry Pi 3 default:
-             *    - hdmi_force_hotplug=1 is being used in /boot/config.txt
-             *    - 1920x1080@60Hz on HDMI (mode=16, group=1)
-             */
-
-            //debug
-            if (DEBUG_HDMI) {
-                printf("State: %i\n", tvstate->state);
-            }
-
-            //check HDMI
-            if ((tvstate->state & VC_HDMI_UNPLUGGED) == VC_HDMI_UNPLUGGED) {
-                if (DEBUG_HDMI) {
-                    printf("-> unplugged\n");
-                }
-
-                free(tvstate);
-                tvstate = NULL;
-            } else if ((tvstate->state & (VC_HDMI_HDMI | VC_HDMI_DVI)) == 0) {
-                if (DEBUG_HDMI) {
-                    printf("-> no HDMI display\n");
-                }
-
-                free(tvstate);
-                tvstate = NULL;
-            }
-
-            if (tvstate && DEBUG_HDMI) {
-                printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->display.hdmi.width, tvstate->display.hdmi.height, tvstate->display.hdmi.frame_rate, tvstate->display.hdmi.mode, tvstate->display.hdmi.group);
-            }
-        }
+        TV_DISPLAY_STATE_T *tvState = getDisplayState();
 
         //get display properties
         w = screenW;
@@ -292,23 +312,46 @@ private:
         refreshRate = 0; //unknown
         fullscreen = true;
 
-        if (tvstate) {
+        if (tvState) {
             //depends on attached screen
-            refreshRate = tvstate->display.hdmi.frame_rate;
+            refreshRate = tvState->display.hdmi.frame_rate;
         }
 
         //free
-        if (tvstate) {
+        if (tvState) {
             free(tvstate);
         }
 
         return true;
     }
 
-    void force720p() {
-        //group: HDMI_RES_GROUP_CEA, HDMI_RES_GROUP_DMT
-        //CEA code: HDMI_CEA_720p60, HDMI_CEA_1080p60 (16)
-        vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, HDMI_CEA_720p60);
+    /**
+     * Force full HD resolution.
+     */
+    void force1080p60() {
+        forceHdmiMode(HDMI_CEA_1080p60, 1920, 1080);
+    }
+
+    /**
+     * Force HD resolution.
+     */
+    void force720p60() {
+        forceHdmiMode(HDMI_CEA_1080p60, 1280, 720);
+    }
+
+    /**
+     * Switch to HDMI mode.
+     */
+    void forceHdmiMode(uint32_t code, int w, int h) {
+        //Note: mode change takes some time (is asynchronous)
+        //      see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
+        vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, code);
+
+        //update framebuffer
+        char command[32];
+
+        sprintf(command, "fbset -g %4i %4i %4i %4i 24", w, h, w, h);
+        system(command);
     }
 
     /**
