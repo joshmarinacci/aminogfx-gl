@@ -319,7 +319,7 @@ private:
 
         //free
         if (tvState) {
-            free(tvstate);
+            free(tvState);
         }
 
         return true;
