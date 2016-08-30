@@ -178,6 +178,7 @@ private:
      * Initialize the TV Service.
      */
     void initTVService() {
+/*
         //initialize vcos/vchi
         vcos_init();
 
@@ -193,11 +194,13 @@ private:
         }
 
         //connect to tvservice
-        if (vc_vchi_tv_init(vchiInstance, &vchiConnections, 1) != 0) {
+        //cbx vc_vchi_dispmanx_init
+        //FIXME fails!
+        if (vc_vchi_tv_init(vchiInstance, &vchiConnections, 1) < 0) {
             printf("failed to connect to tvservice\n");
             exit(-4);
         }
-
+*/
         //register callback
         vc_tv_register_callback(tvservice_cb, NULL);
     }
