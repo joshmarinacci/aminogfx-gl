@@ -1181,6 +1181,9 @@ public:
     GLuint vboVertex = INVALID_BUFFER;
     GLuint vboIndex = INVALID_BUFFER;
 
+    bool vboVertexModified = true;
+    bool vboIndexModified = true;
+
     AminoModel(): AminoNode(getFactory()->name, MODEL) {
         //empty
     }
@@ -1261,6 +1264,23 @@ public:
      */
     static NAN_METHOD(New) {
         AminoJSObject::createInstance(info, getFactory());
+    }
+
+    /*
+     * Handle async property updates.
+     */
+    void handleAsyncUpdate(AsyncPropertyUpdate *update) override {
+        //default: set value
+        AminoJSObject::handleAsyncUpdate(update);
+
+        //check array updates
+        AnyProperty *property = update->property;
+
+        if (property == propVertices) {
+            vboVertexModified = true;
+        } else if (property == propIndices) {
+            vboIndexModified = true;
+        }
     }
 };
 

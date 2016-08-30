@@ -432,10 +432,15 @@ void AminoRenderer::drawModel(AminoModel *model) {
 
     if (model->vboVertex == INVALID_BUFFER) {
         glGenBuffers(1, &model->vboVertex);
+        model->vboVertexModified = true;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, model->vboVertex);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecVertices->size(), vecVertices->data(), GL_STATIC_DRAW);
+
+    if (model->vboVertexModified) {
+        model->vboVertexModified = false;
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecVertices->size(), vecVertices->data(), GL_STATIC_DRAW);
+    }
 
     //indices (optional)
     std::vector<ushort> *vecIndices = &model->propIndices->value;
@@ -444,13 +449,15 @@ void AminoRenderer::drawModel(AminoModel *model) {
     if (useElements) {
         if (model->vboIndex == INVALID_BUFFER) {
             glGenBuffers(1, &model->vboIndex);
+            model->vboIndexModified = true;
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->vboIndex);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ushort) * vecIndices->size(), vecIndices->data(), GL_STATIC_DRAW);
-    } else if (model->vboIndex) {
-        glDeleteBuffers(1, &model->vboIndex);
-        model->vboIndex = INVALID_BUFFER;
+
+        if (model->vboIndexModified) {
+            model->vboIndexModified = false;
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ushort) * vecIndices->size(), vecIndices->data(), GL_STATIC_DRAW);
+        }
     }
 
     //enable depth mask
@@ -468,11 +475,14 @@ void AminoRenderer::drawModel(AminoModel *model) {
         applyColorShader(NULL, 3, vecVertices->size() / 3, color, GL_TRIANGLES);
     }
 
-    //cbx more: normals, texture shader, update VBO on changes only
+    //cbx more: normals, texture shader
 
     ctx->disableDepth();
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    if (useElements) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
 }
 
 /**
