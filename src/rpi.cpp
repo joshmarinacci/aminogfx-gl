@@ -288,7 +288,7 @@ private:
             }
 
             if (tvstate) {
-                printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->width, tvstate->height, tvstate->frame_rate, tvstate->mode, tvstate->group);
+                printf("Currently outputting %ix%i@%iHz on HDMI (mode=%i, group=%i).\n", tvstate->display.hdmi.width, tvstate->display.hdmi.height, tvstate->display.hdmi.frame_rate, tvstate->display.hdmi.mode, tvstate->display.hdmi.group);
             }
         }
 
@@ -300,7 +300,7 @@ private:
 
         if (tvstate) {
             //depends on attached screen
-            refreshRate = tvstate->frame_rate;
+            refreshRate = tvstate->display.hdmi.frame_rate;
         }
 
         //free
