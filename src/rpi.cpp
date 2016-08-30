@@ -240,7 +240,7 @@ private:
         //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
 
         if (DEBUG_HDMI) {
-            printf("-> tvservice state has changed: %s\n", vc_tv_notification_name(reason));
+            printf("-> tvservice state has changed: %s\n", vc_tv_notification_name((VC_HDMI_NOTIFY_T)reason));
         }
 
         //check resolution
