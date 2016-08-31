@@ -22,7 +22,8 @@ gfx.start(function (err) {
     //showTriangles(model1);
     //showRect(model1);
     //showQuad(model1);
-    showCube(model1);
+    //showCube(model1);
+    showCubeLighted(model1);
 
     root.add(model1);
 
@@ -130,7 +131,7 @@ function showQuad(model) {
     ]);
 }
 
-function showCube(model) {
+function showCube(model, useLighting) {
     const x = 0;
     const y = 0;
     const w = 200;
@@ -185,6 +186,124 @@ function showCube(model) {
     model.x(100).y(100);
     model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
     //model.rz.anim().from(0).to(360).dur(678).start();
+}
+
+function showCubeLighted(model) {
+    const x = 0;
+    const y = 0;
+    const w = 200;
+    const h = 200;
+    const d = 200;
+    const dh = d / 2;
+
+    model.vertices([
+        //lower (0 .. 3)
+        x, y, -dh,
+        x + w, y, -dh,
+        x + w, y + h, -dh,
+        x, y + h, -dh,
+
+        //upper (4 .. 7)
+        x, y, dh,
+        x + w, y, dh,
+        x + w, y + h, dh,
+        x, y + h, dh,
+
+        //left (8 .. 11)
+        x, y, -dh,
+        x, y + h, -dh,
+        x, y, dh,
+        x, y + h, dh,
+
+        //right (12 .. 15)
+        x + w, y, -dh,
+        x + w, y + h, -dh,
+        x + w, y, dh,
+        x + w, y + h, dh,
+
+        //top (16 .. 19)
+        x, y, -dh,
+        x + w, y, -dh,
+        x, y, dh,
+        x + w, y, dh,
+
+        //bottom (20 .. 23)
+        x + w, y + h, -dh,
+        x, y + h, -dh,
+        x + w, y + h, dh,
+        x, y + h, dh
+    ]);
+
+    model.normals([
+        //below (0 .. 3)
+        0, 0, -1,
+        0, 0, -1,
+        0, 0, -1,
+        0, 0, -1,
+
+        //above (4 .. 7)
+        0, 0, 1,
+        0, 0, 1,
+        0, 0, 1,
+        0, 0, 1,
+
+        //left (8 .. 11)
+        -1, 0, 0,
+        -1, 0, 0,
+        -1, 0, 0,
+        -1, 0, 0,
+
+        //right (12 .. 15)
+        1, 0, 0,
+        1, 0, 0,
+        1, 0, 0,
+        1, 0, 0,
+
+        //top (16 .. 19)
+        0, -1, 0,
+        0, -1, 0,
+        0, -1, 0,
+        0, -1, 0,
+
+        //bottom (20 .. 23)
+        0, 1, 0,
+        0, 1, 0,
+        0, 1, 0,
+        0, 1, 0
+    ]);
+
+    //used for vertices and normals
+    model.indices([
+        //below (0 .. 3)
+        0, 1, 2,
+        0, 2, 3,
+
+        //above (4 .. 7)
+        4, 5, 6,
+        4, 6, 7,
+
+        //left (8 .. 11)
+        8, 10, 11,
+        8, 9, 11,
+
+        //right (12 .. 15)
+        12, 14, 15,
+        12, 13, 15,
+
+        //top (16 .. 19)
+        16, 17, 19,
+        16, 18, 19,
+
+        //bottom (20 .. 23)
+        20, 21, 23,
+        20, 22, 23
+    ]);
+
+    model.opacity(.2);
+
+    model.originX(.5).originY(.5).w(w).h(h);
+    model.x(100).y(100);
+    model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
 }
 
 //TODO texture

@@ -442,6 +442,24 @@ void AminoRenderer::drawModel(AminoModel *model) {
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecVertices->size(), vecVertices->data(), GL_STATIC_DRAW);
     }
 
+    //normals (optional)
+    std::vector<float> *vecNormals = &model->propVertices->value;
+    bool useNormals = !vecNormals->empty();
+
+    if (useNormals) {
+        if (model->vboNormal == INVALID_BUFFER) {
+            glGenBuffers(1, &model->vboNormal);
+            model->vboNormalModified = true;
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, model->vboNormal);
+
+        if (model->vboNormalModified) {
+            model->vboNormalModified = false;
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecNormals->size(), vecNormals->data(), GL_STATIC_DRAW);
+        }
+    }
+
     //indices (optional)
     std::vector<ushort> *vecIndices = &model->propIndices->value;
     bool useElements = !vecIndices->empty();
@@ -472,15 +490,18 @@ void AminoRenderer::drawModel(AminoModel *model) {
 
     // 1) color shader
     GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
-
+//cbx lighting shader
     if (useElements) {
+        //use indices
         applyColorShader(NULL, 0, vecIndices->size(), color, GL_TRIANGLES);
     } else {
+        //use vertices
         applyColorShader(NULL, 3, vecVertices->size() / 3, color, GL_TRIANGLES);
     }
 
     //cbx more: normals, texture shader
 
+    //cleanup
     if (opacity == 1.f) {
         ctx->disableDepth();
     }

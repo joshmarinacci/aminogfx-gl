@@ -1207,7 +1207,7 @@ Model.prototype.init = function () {
         ry: 0,
         rz: 0,
 
-        //fill
+        //fill (color mode)
         fill: '#ff0000',
         fillR: 1,
         fillG: 0,
@@ -1220,7 +1220,7 @@ Model.prototype.init = function () {
         normals: null,
         uv: null,
 
-        shader: 'color',
+        //shader: 'color',
         texture: null
     });
 

@@ -1175,13 +1175,16 @@ public:
 
     //arrays
     FloatArrayProperty *propVertices;
+    FloatArrayProperty *propNormals;
     UShortArrayProperty *propIndices;
 
     //VBO
     GLuint vboVertex = INVALID_BUFFER;
+    GLuint vboNormal = INVALID_BUFFER;
     GLuint vboIndex = INVALID_BUFFER;
 
     bool vboVertexModified = true;
+    bool vboNormalModified = true;
     bool vboIndexModified = true;
 
     AminoModel(): AminoNode(getFactory()->name, MODEL) {
@@ -1202,6 +1205,11 @@ public:
             if (vboVertex != INVALID_BUFFER) {
                 ((AminoGfx *)eventHandler)->deleteBufferAsync(vboVertex);
                 vboVertex = INVALID_BUFFER;
+            }
+
+            if (vboNormal != INVALID_BUFFER) {
+                ((AminoGfx *)eventHandler)->deleteBufferAsync(vboNormal);
+                vboNormal = INVALID_BUFFER;
             }
 
             if (vboIndex != INVALID_BUFFER) {
@@ -1229,6 +1237,7 @@ public:
         propFillB = createFloatProperty("fillB");
 
         propVertices = createFloatArrayProperty("vertices");
+        propNormals = createFloatArrayProperty("normals");
         propIndices = createUShortArrayProperty("indices");
     }
 
@@ -1278,6 +1287,8 @@ public:
 
         if (property == propVertices) {
             vboVertexModified = true;
+        } else if (property == propNormals) {
+            vboNormalModified = true;
         } else if (property == propIndices) {
             vboIndexModified = true;
         }
