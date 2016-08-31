@@ -178,8 +178,8 @@ function showCube(model) {
         2, 6, 7
     ]);
 
-    //Note: no depth-sorting done, therefore transparent rendering wrong on screen
-    model.opacity(.7);
+    //Note: without lighting see front and back side, therefore combined alpha value
+    model.opacity(.2);
 
     model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);

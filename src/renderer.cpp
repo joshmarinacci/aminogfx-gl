@@ -461,12 +461,16 @@ void AminoRenderer::drawModel(AminoModel *model) {
     }
 
     //enable depth mask
-    ctx->enableDepth();
+    GLfloat opacity = model->propOpacity->value * ctx->opacity;
+
+    if (opacity == 1.f) {
+        //use depth mask (if not transparent)
+        ctx->enableDepth();
+    }
 
     //shader
 
     // 1) color shader
-    GLfloat opacity = model->propOpacity->value * ctx->opacity;
     GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
 
     if (useElements) {
@@ -477,7 +481,10 @@ void AminoRenderer::drawModel(AminoModel *model) {
 
     //cbx more: normals, texture shader
 
-    ctx->disableDepth();
+    if (opacity == 1.f) {
+        ctx->disableDepth();
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     if (useElements) {
