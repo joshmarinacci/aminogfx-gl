@@ -345,7 +345,7 @@ private:
      */
     void forceHdmiMode(uint32_t code) {
         if (DEBUG_HDMI) {
-            printf("Changing resolution: %ix%w code=%i\n", w, h, (int)code);
+            printf("Changing resolution to CEA code %i\n", (int)code);
         }
 
         //Note: mode change takes some time (is asynchronous)
