@@ -153,6 +153,9 @@ NAN_METHOD(AminoGfx::Start) {
     obj->initRenderer();
     obj->setupRenderer();
 
+    //debug cbx
+    AminoRenderer::checkTexturePerformance();
+
     //runtime info
     obj->addRuntimeProperty();
 

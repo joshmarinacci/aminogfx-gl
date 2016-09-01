@@ -734,3 +734,74 @@ int AminoRenderer::showGLErrors(std::string msg) {
 
     return res;
 }
+
+/**
+ * Check texture CPU to GPU performance.
+ */
+void AminoRenderer::checkTexturePerformance() {
+    GLint textureW = 512;
+    GLint textureH = 512;
+    char *data = new char[textureW * textureH * 4]; //RGBA
+
+    //create texture
+    GLuint textureId;
+
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    //intro
+    double startTime, diff;
+
+    printf("Texture performance: %ix%i\n", textureW, textureH);
+
+    //depth 1, alpha
+    startTime = getTime();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, textureW, textureH, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data);
+
+    diff = getTime() - startTime;
+    printf("-> GL_ALPHA: %i ms\n", (int)diff);
+
+    //depth 1, red
+    startTime = getTime();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, textureW, textureH, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+
+    diff = getTime() - startTime;
+    printf("-> GL_RED: %i ms\n", (int)diff);
+
+    //depth 1, grayscale
+    startTime = getTime();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, textureW, textureH, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+
+    diff = getTime() - startTime;
+    printf("-> GL_LUMINANCE: %i ms\n", (int)diff);
+
+    //depth 3, RGB
+    startTime = getTime();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureW, textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    diff = getTime() - startTime;
+    printf("-> GL_RED: %i ms\n", (int)diff);
+
+    //depth 4, RGBA
+    startTime = getTime();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    diff = getTime() - startTime;
+    printf("-> GL_RED: %i ms\n", (int)diff);
+
+    //cleanup
+    delete[] data;
+
+    glDeleteTextures(1, &textureId);
+}

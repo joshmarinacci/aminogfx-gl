@@ -208,9 +208,10 @@ public:
 
     amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
 
-
     static int showGLErrors();
     static int showGLErrors(std::string msg);
+
+    static void checkTexturePerformance();
 
 protected:
     virtual void render(AminoNode *node);
