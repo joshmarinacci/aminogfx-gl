@@ -2,7 +2,8 @@
 
 #define DEBUG_RENDERER false
 #define DEBUG_RENDERER_ERRORS false
-#define DEBUG_FONT_PERFORMANCE 0
+#define DEBUG_FONT_PERFORMANCE 1
+//cbx
 
 /**
  * OpenGL ES 2.0 renderer.
@@ -744,9 +745,12 @@ void AminoRenderer::checkTexturePerformance() {
     char *data = new char[textureW * textureH * 4]; //RGBA
 
     //create texture
-    GLuint textureId;
+    GLuint textureId = INVALID_TEXTURE;
 
     glGenTextures(1, &textureId);
+
+    assert(textureId != INVALID_TEXTURE);
+
     glBindTexture(GL_TEXTURE_2D, textureId);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -754,6 +758,8 @@ void AminoRenderer::checkTexturePerformance() {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     //intro
     double startTime, diff;
@@ -763,7 +769,9 @@ void AminoRenderer::checkTexturePerformance() {
     //depth 1, alpha
     startTime = getTime();
 
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, textureW, textureH, 0, GL_ALPHA, GL_UNSIGNED_BYTE, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     diff = getTime() - startTime;
     printf("-> GL_ALPHA: %i ms\n", (int)diff);
@@ -771,7 +779,9 @@ void AminoRenderer::checkTexturePerformance() {
     //depth 1, grayscale
     startTime = getTime();
 
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, textureW, textureH, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     diff = getTime() - startTime;
     printf("-> GL_LUMINANCE: %i ms\n", (int)diff);
@@ -779,18 +789,22 @@ void AminoRenderer::checkTexturePerformance() {
     //depth 3, RGB
     startTime = getTime();
 
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureW, textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     diff = getTime() - startTime;
-    printf("-> GL_RED: %i ms\n", (int)diff);
+    printf("-> GL_RGB: %i ms\n", (int)diff);
 
     //depth 4, RGBA
     startTime = getTime();
 
+    glBindTexture(GL_TEXTURE_2D, textureId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     diff = getTime() - startTime;
-    printf("-> GL_RED: %i ms\n", (int)diff);
+    printf("-> GL_RGBA: %i ms\n", (int)diff);
 
     //cleanup
     delete[] data;
