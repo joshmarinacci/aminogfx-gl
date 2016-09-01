@@ -866,6 +866,7 @@ private:
 
 int AminoGfxRPi::instanceCount = 0;
 bool AminoGfxRPi::glESInitialized = false;
+sem_t AminoGfxRPi::resSem;
 bool AminoGfxRPi::resSemValid = false;
 
 //
