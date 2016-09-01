@@ -11,8 +11,7 @@
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
 #define DEBUG_INPUT false
-#define DEBUG_HDMI true
-//cbx
+#define DEBUG_HDMI false
 
 #define AMINO_EGL_SAMPLES 4
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -99,7 +98,7 @@ private:
              */
             vc_tv_register_callback(tvservice_cb, NULL);
 
-            //test: force mode cbx
+            //test: force mode cbx TODO add prefRes option
             force720p60();
 
             glESInitialized = true;
@@ -253,8 +252,7 @@ private:
         TV_DISPLAY_STATE_T *tvState = getDisplayState();
 
         if (tvState) {
-            //TODO update display size (AminoGfx)
-            //TODO update display info (property)
+            //Note: new resolution used by DispmanX calls
             free(tvState);
         }
 
@@ -358,8 +356,6 @@ private:
             printf("Changing resolution to CEA code %i\n", (int)code);
         }
 
-        //FIXME changes screen resolution but not output on screen! cbx
-
         //Note: mode change takes some time (is asynchronous)
         //      see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
         sem_init(&resSem, 0, 0);
@@ -374,29 +370,6 @@ private:
         sem_wait(&resSem);
         sem_destroy(&resSem);
         resSemValid = false;
-
-        //get new state
-        /*
-        TV_DISPLAY_STATE_T *tvState = getDisplayState();
-
-        if (tvState) {
-            //update framebuffer (info: fbset -i)
-            //FIXME 1) no output on screen, 2) really required?
-            char command[32];
-            int w = tvState->display.hdmi.width;
-            int h = tvState->display.hdmi.height;
-
-            sprintf(command, "fbset -g %4i %4i %4i %4i 32", w, h, w, h); //cbx check
-            //sprintf(command, "fbset -g %4i %4i %4i %4i 16", w, h, w, h);
-            system(command);
-
-            if (DEBUG_HDMI) {
-                printf("-> changing frame buffer: %s\n", command);
-            }
-
-            free(tvState);
-        }
-        */
     }
 
     /**
