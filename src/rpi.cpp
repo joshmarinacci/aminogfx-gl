@@ -61,8 +61,8 @@ private:
     uint32_t screenH = 0;
 
     //resolution
-    sem_t resSem;
-    bool resSemValid = false;
+    static sem_t resSem;
+    static bool resSemValid;
 
     //input
     std::vector<int> fds;
@@ -866,6 +866,7 @@ private:
 
 int AminoGfxRPi::instanceCount = 0;
 bool AminoGfxRPi::glESInitialized = false;
+bool AminoGfxRPi::resSemValid = false;
 
 //
 // AminoGfxRPiFactory
