@@ -6,6 +6,7 @@
 #include <linux/input.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <semaphore.h>
 
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
