@@ -59,6 +59,10 @@ private:
     uint32_t screenW = 0;
     uint32_t screenH = 0;
 
+    //resolution
+    sem_t resSem;
+    bool resSemValid = false;
+
     //input
     std::vector<int> fds;
     int mouse_x = 0;
@@ -94,7 +98,7 @@ private:
              */
             vc_tv_register_callback(tvservice_cb, NULL);
 
-            //fore mode cbx
+            //test: force mode cbx
             force720p60();
 
             glESInitialized = true;
@@ -248,9 +252,14 @@ private:
         TV_DISPLAY_STATE_T *tvState = getDisplayState();
 
         if (tvState) {
-            //cbx update display size (AminoGfx)
-            //cbx update display info (property)
+            //TODO update display size (AminoGfx)
+            //TODO update display info (property)
             free(tvState);
+        }
+
+        //check sem
+        if (resSemValid) {
+            sem_post(&resSem);
         }
     }
 
@@ -348,12 +357,22 @@ private:
             printf("Changing resolution to CEA code %i\n", (int)code);
         }
 
+        //FIXME changes screen resolution but not output on screen! cbx
+
         //Note: mode change takes some time (is asynchronous)
         //      see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
+        sem_init(&resSem, 0, 0);
+        resSemValid = true;
+
         if (vc_tv_hdmi_power_on_explicit(HDMI_MODE_HDMI, HDMI_RES_GROUP_CEA, code) != 0) {
             printf("-> failed\n");
             return;
         }
+
+        //wait for change to occur before DispmanX is initialized
+        sem_wait(&resSem);
+        sem_destroy(&resSem);
+        resSemValid = false;
 
         //get new state
         /*
@@ -361,7 +380,7 @@ private:
 
         if (tvState) {
             //update framebuffer (info: fbset -i)
-            //FIXME cbx 1) no output on screen, 2) really required?
+            //FIXME 1) no output on screen, 2) really required?
             char command[32];
             int w = tvState->display.hdmi.width;
             int h = tvState->display.hdmi.height;
