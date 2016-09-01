@@ -768,14 +768,6 @@ void AminoRenderer::checkTexturePerformance() {
     diff = getTime() - startTime;
     printf("-> GL_ALPHA: %i ms\n", (int)diff);
 
-    //depth 1, red
-    startTime = getTime();
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, textureW, textureH, 0, GL_RED, GL_UNSIGNED_BYTE, data);
-
-    diff = getTime() - startTime;
-    printf("-> GL_RED: %i ms\n", (int)diff);
-
     //depth 1, grayscale
     startTime = getTime();
 
