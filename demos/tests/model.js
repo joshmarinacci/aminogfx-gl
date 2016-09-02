@@ -28,8 +28,8 @@ gfx.start(function (err) {
     //showTriangleLighted(model1);
     //showCubeLighted(model1, false); //color
 
-    showTriangleTexture(model1);
-    //showCubeLighted(model1, true); //use texture
+    //showTriangleTexture(model1);
+    showCubeLighted(model1, true); //use texture
 
     root.add(model1);
 

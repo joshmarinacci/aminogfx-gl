@@ -1288,7 +1288,7 @@ bool AminoText::layoutText() {
         vertex_buffer_clear(buffer);
     } else {
         //vertex & texture coordinates
-        buffer = vertex_buffer_new("pos:3f,tex_coord:2f");
+        buffer = vertex_buffer_new("pos:3f,texCoord:2f");
     }
 
     texture_font_t *f = fontSize->fontTexture;

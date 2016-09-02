@@ -231,6 +231,7 @@ private:
 
     //model shaders
     ColorLightingShader *colorLightingShader = NULL;
+    TextureLightingShader *textureLightingShader = NULL;
 
     GLfloat modelView[16];
     GLContext *ctx = NULL;

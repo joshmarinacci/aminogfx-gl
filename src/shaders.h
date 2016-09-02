@@ -119,6 +119,7 @@ public:
 
     //draw
     void drawTriangles(GLsizei vertices, GLenum mode) override;
+    void drawElements(GLushort *indices, GLsizei elements, GLenum mode) override;
 
 protected:
     GLint aTexCoord;
@@ -133,6 +134,30 @@ protected:
 class TextureClampToBorderShader : public TextureShader {
 public:
     TextureClampToBorderShader();
+};
+
+/**
+ * Texture Lighting Shader.
+ */
+class TextureLightingShader : public TextureShader {
+public:
+    TextureLightingShader();
+
+    //params
+    void setLightDirection(GLfloat color[3]);
+
+    //per vertex values
+    void setNormalVectors(GLfloat *normals);
+
+    //draw
+    void drawTriangles(GLsizei vertices, GLenum mode) override;
+    void drawElements(GLushort *indices, GLsizei elements, GLenum mode) override;
+
+protected:
+    GLint aNormal;
+    GLint uLightDir;
+
+    void initShader() override;
 };
 
 #endif

@@ -449,13 +449,13 @@ TextureShader::TextureShader() : AnyAminoShader() {
         uniform mat4 trans;
 
         attribute vec4 pos;
-        attribute vec2 tex_coord;
+        attribute vec2 texCoord;
 
         varying vec2 uv;
 
         void main() {
             gl_Position = mvp * trans * pos;
-            uv = tex_coord;
+            uv = texCoord;
         }
     )";
 
@@ -480,7 +480,7 @@ void TextureShader::initShader() {
     AnyAminoShader::initShader();
 
     //attributes
-    aTexCoord = getAttributeLocation("tex_coord");
+    aTexCoord = getAttributeLocation("texCoord");
 
     //uniforms
     uOpacity = getUniformLocation("opacity");
@@ -517,6 +517,19 @@ void TextureShader::drawTriangles(GLsizei vertices, GLenum mode) {
     glDisableVertexAttribArray(aTexCoord);
 }
 
+/**
+ * Draw elements.
+ */
+void TextureShader::drawElements(GLushort *indices, GLsizei elements, GLenum mode) {
+    glEnableVertexAttribArray(aTexCoord);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    AnyAminoShader::drawElements(indices, elements, mode);
+
+    glDisableVertexAttribArray(aTexCoord);
+}
+
 //
 // TextureClampToBorderShader
 //
@@ -544,4 +557,107 @@ TextureClampToBorderShader::TextureClampToBorderShader() : TextureShader() {
             gl_FragColor = vec4(pixel.rgb, pixel.a * opacity * clamp_to_border_factor(uv));
         }
     )";
+}
+
+//
+// TextureLightingShader
+//
+
+/**
+ * Create color lighting shader.
+ */
+TextureLightingShader::TextureLightingShader() : TextureShader() {
+    //shaders
+    vertexShader = R"(
+        uniform mat4 mvp;
+        uniform mat4 trans;
+
+        uniform vec3 lightDir;
+
+        attribute vec4 pos;
+        attribute vec2 texCoord;
+        attribute vec3 normal;
+
+        varying vec2 uv;
+        varying float lightFac;
+
+        void main() {
+            gl_Position = mvp * trans * pos;
+
+            uv = texCoord;
+
+            vec4 normalTrans = trans * vec4(normal, 0.);
+
+            lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
+        }
+    )";
+
+    fragmentShader = R"(
+        varying vec2 uv;
+        varying float lightFac;
+
+        uniform float opacity;
+        uniform sampler2D tex;
+
+        void main() {
+            vec4 pixel = texture2D(tex, uv);
+
+            gl_FragColor = vec4(pixel.rgb * lightFac, pixel.a * opacity);
+        }
+    )";
+}
+
+/**
+ * Initialize the color lighting shader.
+ */
+void TextureLightingShader::initShader() {
+    TextureShader::initShader();
+
+    //attributes
+    aNormal = getAttributeLocation("normal");
+
+    //uniforms
+    //uNormalMatrix = getUniformLocation("normalMatrix");
+    uLightDir = getUniformLocation("lightDir");
+
+    //default values
+    GLfloat lightDir[3] = { 0, 0, -1 }; //parallel light on screen
+
+    setLightDirection(lightDir);
+}
+
+/**
+ * Set light direction.
+ */
+void TextureLightingShader::setLightDirection(GLfloat dir[3]) {
+    glUniform3f(uLightDir, dir[0], dir[1], dir[2]);
+}
+
+/**
+ * Set normal vectors.
+ */
+void TextureLightingShader::setNormalVectors(GLfloat *normals) {
+    glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 0, normals);
+}
+
+/**
+ * Draw triangles.
+ */
+void TextureLightingShader::drawTriangles(GLsizei vertices, GLenum mode) {
+    glEnableVertexAttribArray(aNormal);
+
+    TextureShader::drawTriangles(vertices, mode);
+
+    glDisableVertexAttribArray(aNormal);
+}
+
+/**
+ * Draw elements.
+ */
+void TextureLightingShader::drawElements(GLushort *indices, GLsizei elements, GLenum mode) {
+    glEnableVertexAttribArray(aNormal);
+
+    TextureShader::drawElements(indices, elements, mode);
+
+    glDisableVertexAttribArray(aNormal);
 }

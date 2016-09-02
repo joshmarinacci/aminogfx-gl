@@ -51,6 +51,13 @@ AminoRenderer::~AminoRenderer () {
         colorLightingShader = NULL;
     }
 
+    //texture lighting shader
+    if (textureLightingShader) {
+        textureLightingShader->destroy();
+        delete textureLightingShader;
+        textureLightingShader = NULL;
+    }
+
     //context
     if (ctx) {
         delete ctx;
@@ -482,27 +489,13 @@ void AminoRenderer::drawModel(AminoModel *model) {
     bool hasAlpha = false;
 
     if (useNormals) {
+        //use lighting shader
+
         if (!useElements) {
             assert(vecNormals->size() == vecVertices->size());
         }
 
-        //cbx texture
-
-        //use lighting shader
-        if (!colorLightingShader) {
-            colorLightingShader = new ColorLightingShader();
-
-            bool res = colorLightingShader->create();
-
-            assert(res);
-        }
-
-        colorShader = colorLightingShader;
-        shader = colorShader;
-
-        ctx->useShader(shader);
-
-        //set normals
+        //get normals
         if (model->vboNormal == INVALID_BUFFER) {
             glGenBuffers(1, &model->vboNormal);
             model->vboNormalModified = true;
@@ -515,7 +508,42 @@ void AminoRenderer::drawModel(AminoModel *model) {
             glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecNormals->size(), vecNormals->data(), GL_STATIC_DRAW);
         }
 
-        colorLightingShader->setNormalVectors(NULL);
+        //get shader
+        if (useUVs) {
+            //texture lighting shader
+            if (!textureLightingShader) {
+                textureLightingShader = new TextureLightingShader();
+
+                bool res = textureLightingShader->create();
+
+                assert(res);
+            }
+
+            textureShader = textureLightingShader;
+            shader = textureShader;
+
+            //set normals
+            ctx->useShader(shader);
+
+            textureLightingShader->setNormalVectors(NULL);
+        } else {
+            //color lighting shader
+            if (!colorLightingShader) {
+                colorLightingShader = new ColorLightingShader();
+
+                bool res = colorLightingShader->create();
+
+                assert(res);
+            }
+
+            colorShader = colorLightingShader;
+            shader = colorShader;
+
+            //set normals
+            ctx->useShader(shader);
+
+            colorLightingShader->setNormalVectors(NULL);
+        }
     } else {
         //without lighting
 
