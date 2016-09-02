@@ -1906,14 +1906,14 @@ var timeFuncs = ['linear', 'cubicIn', 'cubicOut', 'cubicInOut'];
 /**
  * Time function.
  */
-Anim.prototype.timeFunc = function (val) {
+Anim.prototype.timeFunc = function (value) {
     this.checkStarted();
 
     if (timeFuncs.indexOf(value) === -1) {
         throw new Error('unknown time function: ' + val);
     }
 
-    this._timeFunc = tf;
+    this._timeFunc = value;
 
     return this;
 };
