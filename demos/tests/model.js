@@ -319,7 +319,9 @@ function showCubeLighted(model, useTexture) {
     ]);
 
     if (useTexture) {
-        model.src(path.join(__dirname, '../images/tree.png'));
+        //model.src(path.join(__dirname, '../images/tree.png'));
+        //model.src(path.join(__dirname, '../images/yose.jpg'));
+        model.src(path.join(__dirname, '../slideshow/images/DSC_0041.jpg'));
 
         //TODO coordinates not verified
         model.uvs([
@@ -388,7 +390,7 @@ function showCubeLighted(model, useTexture) {
         20, 22, 23
     ]);
 
-    model.opacity(.2);
+    model.opacity(.4);
 
     model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);
