@@ -134,7 +134,15 @@ GLuint AnyShader::compileShader(std::string source, const GLenum type) {
         glGetShaderInfoLog(handle, sizeof(messages), 0, &messages[0]);
 
         if (DEBUG_SHADER_ERRORS) {
-            printf("shader compilation error: %s\n", messages);
+            std::string typeStr;
+
+            if (type == GL_VERTEX_SHADER) {
+                typeStr = "vertex shader";
+            } else if (type == GL_FRAGMENT_SHADER) {
+                typeStr = "fragment shader";
+            }
+
+            printf("shader compilation error: %s\ntype: %s\n", messages, typeStr.c_str());
         }
 
         error = std::string(messages);
@@ -240,17 +248,22 @@ void AnyAminoShader::setTransformation(GLfloat modelView[16], GLfloat transition
 }
 
 /**
- * Draw triangles.
+ * Set vertex data.
  */
-void AnyAminoShader::drawTriangles(GLfloat *verts, GLsizei dim, GLsizei vertices, GLenum mode) {
+void AnyAminoShader::setVertexData(GLsizei dim, GLfloat *vertices) {
     /*
      * Coords per vertex (2 or 3).
      *
-     * Note: verts is NULL in case of VBO usage
+     * Note: vertices is NULL in case of VBO usage
      */
-    glVertexAttribPointer(aPos, dim, GL_FLOAT, GL_FALSE, 0, verts);
 
-    //draw
+    glVertexAttribPointer(aPos, dim, GL_FLOAT, GL_FALSE, 0, vertices);
+}
+
+/**
+ * Draw triangles.
+ */
+void AnyAminoShader::drawTriangles(GLsizei vertices, GLenum mode) {
     glEnableVertexAttribArray(aPos);
 
     glDrawArrays(mode, 0, vertices);
@@ -262,8 +275,6 @@ void AnyAminoShader::drawTriangles(GLfloat *verts, GLsizei dim, GLsizei vertices
  * Draw elements.
  */
 void AnyAminoShader::drawElements(GLushort *indices, GLsizei elements, GLenum mode) {
-    //Note: using fixed dimension of 3 (modify if different value needed)
-    glVertexAttribPointer(aPos, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(aPos);
 
     //Note: indices is offset in case of VBO
@@ -305,6 +316,99 @@ void ColorShader::initShader() {
  */
 void ColorShader::setColor(GLfloat color[4]) {
     glUniform4f(uColor, color[0], color[1], color[2], color[3]);
+}
+
+//
+// ColorLightingShader
+//
+
+/**
+ * Create color lighting shader.
+ */
+ColorLightingShader::ColorLightingShader() : ColorShader() {
+    //shaders
+    vertexShader = R"(
+        uniform mat4 mvp;
+        uniform mat4 trans;
+        uniform vec3 lightDir;
+
+        attribute vec4 pos;
+        attribute vec3 normal;
+
+        varying float lightFac;
+
+        void main() {
+            gl_Position = mvp * trans * pos;
+
+            vec4 normalTrans = trans * vec4(normal, 0.);
+
+            lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
+        }
+    )";
+
+    fragmentShader = R"(
+        varying float lightFac;
+
+        uniform vec4 color;
+
+        void main() {
+            gl_FragColor = vec4(color.rgb * lightFac, color.a);
+        }
+    )";
+}
+
+/**
+ * Initialize the color lighting shader.
+ */
+void ColorLightingShader::initShader() {
+    ColorShader::initShader();
+
+    //attributes
+    aNormal = getAttributeLocation("normal");
+
+    //uniforms
+    uLightDir = getUniformLocation("lightDir");
+
+    //default values
+    GLfloat lightDir[3] = { 0, 0, -1 }; //parallel light on screen
+
+    setLightDirection(lightDir);
+}
+
+/**
+ * Set light direction.
+ */
+void ColorLightingShader::setLightDirection(GLfloat dir[3]) {
+    glUniform3f(uLightDir, dir[0], dir[1], dir[2]);
+}
+
+/**
+ * Set normal vectors.
+ */
+void ColorLightingShader::setNormalVectors(GLfloat *normals) {
+    glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 0, normals);
+}
+
+/**
+ * Draw triangles.
+ */
+void ColorLightingShader::drawTriangles(GLsizei vertices, GLenum mode) {
+    glEnableVertexAttribArray(aNormal);
+
+    AnyAminoShader::drawTriangles(vertices, mode);
+
+    glDisableVertexAttribArray(aNormal);
+}
+
+/**
+ * Draw elements.
+ */
+void ColorLightingShader::drawElements(GLushort *indices, GLsizei elements, GLenum mode) {
+    glEnableVertexAttribArray(aNormal);
+
+    AnyAminoShader::drawElements(indices, elements, mode);
+
+    glDisableVertexAttribArray(aNormal);
 }
 
 //
@@ -367,15 +471,21 @@ void TextureShader::setOpacity(GLfloat opacity) {
 }
 
 /**
+ * Set texture coordinates.
+ */
+void TextureShader::setTextureCoordinates(GLfloat uv[][2]) {
+    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, uv);
+}
+
+/**
  * Draw texture.
  */
-void TextureShader::drawTexture(GLfloat *verts, GLsizei dim, GLfloat texcoords[][2], GLsizei vertices, GLenum mode) {
-    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, texcoords);
+void TextureShader::drawTriangles(GLsizei vertices, GLenum mode) {
     glEnableVertexAttribArray(aTexCoord);
 
     glActiveTexture(GL_TEXTURE0);
 
-    drawTriangles(verts, dim, vertices, mode);
+    AnyAminoShader::drawTriangles(vertices, mode);
 
     glDisableVertexAttribArray(aTexCoord);
 }

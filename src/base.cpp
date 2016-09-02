@@ -153,8 +153,8 @@ NAN_METHOD(AminoGfx::Start) {
     obj->initRenderer();
     obj->setupRenderer();
 
-    //debug cbx
-    AminoRenderer::checkTexturePerformance();
+    //debug
+    //AminoRenderer::checkTexturePerformance();
 
     //runtime info
     obj->addRuntimeProperty();
@@ -1036,7 +1036,7 @@ GLuint AminoText::updateTexture() {
 
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
 
-    //FIXME cbx: texture too slow on RPi!
+    //TODO optimize texture performance on RPi
 
     if (atlas->depth == 1) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);

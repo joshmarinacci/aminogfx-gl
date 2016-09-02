@@ -43,10 +43,15 @@ class AnyAminoShader : public AnyShader {
 public:
     AnyAminoShader();
 
+    //params
     void setTransformation(GLfloat modelView[16], GLfloat transition[16]);
 
-    void drawTriangles(GLfloat *verts, GLsizei dim, GLsizei vertices, GLenum mode);
-    void drawElements(GLushort *indices, GLsizei elements, GLenum mode);
+    //per vertex data
+    void setVertexData(GLsizei dim, GLfloat *vertices);
+
+    //draw
+    virtual void drawTriangles(GLsizei vertices, GLenum mode);
+    virtual void drawElements(GLushort *indices, GLsizei elements, GLenum mode);
 
 protected:
     //position
@@ -74,15 +79,44 @@ protected:
 };
 
 /**
+ * Color Lighting Shader.
+ */
+class ColorLightingShader : public ColorShader {
+public:
+    ColorLightingShader();
+
+    //params
+    void setLightDirection(GLfloat color[3]);
+
+    //per vertex values
+    void setNormalVectors(GLfloat *normals);
+
+    //draw
+    void drawTriangles(GLsizei vertices, GLenum mode) override;
+    void drawElements(GLushort *indices, GLsizei elements, GLenum mode) override;
+
+protected:
+    GLint aNormal;
+    GLint uLightDir;
+
+    void initShader() override;
+};
+
+/**
  * Texture Shader.
  */
 class TextureShader : public AnyAminoShader {
 public:
     TextureShader();
 
+    //params
     void setOpacity(GLfloat opacity);
 
-    void drawTexture(GLfloat *verts, GLsizei dim, GLfloat texcoords[][2], GLsizei vertices, GLenum mode = GL_TRIANGLES);
+    //per vertex data
+    void setTextureCoordinates(GLfloat uv[][2]);
+
+    //draw
+    void drawTriangles(GLsizei vertices, GLenum mode) override;
 
 protected:
     GLint aTexCoord;

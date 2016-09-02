@@ -223,15 +223,20 @@ protected:
     virtual void drawText(AminoText *text);
 
 private:
+    //basic shaders
     AminoFontShader *fontShader = NULL;
     ColorShader *colorShader = NULL;
     TextureShader *textureShader = NULL;
     TextureClampToBorderShader *textureClampToBorderShader = NULL;
+
+    //model shaders
+    ColorLightingShader *colorLightingShader = NULL;
+
     GLfloat modelView[16];
     GLContext *ctx = NULL;
 
     void applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat color[4], GLenum mode = GL_TRIANGLES);
-    void applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder);
+    void applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat uv[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder);
 };
 
 #endif

@@ -2,8 +2,7 @@
 
 #define DEBUG_RENDERER false
 #define DEBUG_RENDERER_ERRORS false
-#define DEBUG_FONT_PERFORMANCE 1
-//cbx
+#define DEBUG_FONT_PERFORMANCE 0
 
 /**
  * OpenGL ES 2.0 renderer.
@@ -43,6 +42,13 @@ AminoRenderer::~AminoRenderer () {
         fontShader->destroy();
         delete fontShader;
         fontShader = NULL;
+    }
+
+    //color lighting shader
+    if (colorLightingShader) {
+        colorLightingShader->destroy();
+        delete colorLightingShader;
+        colorLightingShader = NULL;
     }
 
     //context
@@ -241,13 +247,16 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
+    //vertex data
+    colorShader->setVertexData(dim, verts);
+
     //draw
     if (dim == 0) {
         //special case: VBO elements
-        colorShader->drawElements(0, count, mode);
+        colorShader->drawElements(NULL, count, mode);
     } else {
         //render vertices (array or VBO)
-        colorShader->drawTriangles(verts, dim, count, mode);
+        colorShader->drawTriangles(count, mode);
     }
 
     //cleanup
@@ -259,7 +268,7 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
 /**
  * Draw texture.
  */
-void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat texcoords[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder) {
+void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat uv[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder) {
     //printf("doing texture shader apply %d opacity = %f\n", texId, opacity);
 
     //use shader
@@ -294,7 +303,9 @@ void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei coun
 
     //draw
     ctx->bindTexture(texId);
-    shader->drawTexture(verts, dim, texcoords, count);
+    shader->setVertexData(dim, verts);
+    shader->setTextureCoordinates(uv);
+    shader->drawTriangles(count, GL_TRIANGLES);
 
     //cleanup
     glDisable(GL_BLEND);
@@ -424,44 +435,16 @@ void AminoRenderer::drawPoly(AminoPolygon *poly) {
  * Draw 3D model.
  */
 void AminoRenderer::drawModel(AminoModel *model) {
-    //vertices
+    //check rendering mode
+
+    // 1) vertices
     std::vector<float> *vecVertices = &model->propVertices->value;
 
     if (vecVertices->empty()) {
         return;
     }
 
-    if (model->vboVertex == INVALID_BUFFER) {
-        glGenBuffers(1, &model->vboVertex);
-        model->vboVertexModified = true;
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, model->vboVertex);
-
-    if (model->vboVertexModified) {
-        model->vboVertexModified = false;
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecVertices->size(), vecVertices->data(), GL_STATIC_DRAW);
-    }
-
-    //normals (optional)
-    std::vector<float> *vecNormals = &model->propVertices->value;
-    bool useNormals = !vecNormals->empty();
-
-    if (useNormals) {
-        if (model->vboNormal == INVALID_BUFFER) {
-            glGenBuffers(1, &model->vboNormal);
-            model->vboNormalModified = true;
-        }
-
-        glBindBuffer(GL_ARRAY_BUFFER, model->vboNormal);
-
-        if (model->vboNormalModified) {
-            model->vboNormalModified = false;
-            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecNormals->size(), vecNormals->data(), GL_STATIC_DRAW);
-        }
-    }
-
-    //indices (optional)
+    // 2) indices (optional)
     std::vector<ushort> *vecIndices = &model->propIndices->value;
     bool useElements = !vecIndices->empty();
 
@@ -479,31 +462,107 @@ void AminoRenderer::drawModel(AminoModel *model) {
         }
     }
 
-    //enable depth mask
-    GLfloat opacity = model->propOpacity->value * ctx->opacity;
+    // 3) normals (optional)
+    std::vector<float> *vecNormals = &model->propNormals->value;
+    bool useNormals = !vecNormals->empty();
 
-    if (opacity == 1.f) {
+    //shader
+    AnyAminoShader *shader = NULL;
+    ColorShader *colorShader = NULL;
+    bool hasAlpha = false;
+
+    if (useNormals) {
+        if (!useElements) {
+            assert(vecNormals->size() == vecVertices->size());
+        }
+
+        //use lighting shader
+        if (!colorLightingShader) {
+            colorLightingShader = new ColorLightingShader();
+
+            bool res = colorLightingShader->create();
+
+            assert(res);
+        }
+
+        colorShader = colorLightingShader;
+        shader = colorShader;
+
+        ctx->useShader(shader);
+
+        //set normals
+        if (model->vboNormal == INVALID_BUFFER) {
+            glGenBuffers(1, &model->vboNormal);
+            model->vboNormalModified = true;
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, model->vboNormal);
+
+        if (model->vboNormalModified) {
+            model->vboNormalModified = false;
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecNormals->size(), vecNormals->data(), GL_STATIC_DRAW);
+        }
+
+        colorLightingShader->setNormalVectors(NULL);
+    } else {
+        //color shader
+        colorShader = this->colorShader;
+        shader = colorShader;
+
+        ctx->useShader(shader);
+    }
+
+    //color shader
+    if (colorShader) {
+        GLfloat opacity = model->propOpacity->value * ctx->opacity;
+        GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
+
+        colorShader->setColor(color);
+        hasAlpha = color[3] != 1.0;
+    }
+
+    //alpha
+    if (hasAlpha) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    //vertices
+    if (model->vboVertex == INVALID_BUFFER) {
+        glGenBuffers(1, &model->vboVertex);
+        model->vboVertexModified = true;
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, model->vboVertex);
+
+    if (model->vboVertexModified) {
+        model->vboVertexModified = false;
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecVertices->size(), vecVertices->data(), GL_STATIC_DRAW);
+    }
+
+    shader->setVertexData(3, NULL);
+
+    //enable depth mask
+    if (!hasAlpha) {
         //use depth mask (if not transparent)
         ctx->enableDepth();
     }
 
-    //shader
+    //draw
+    shader->setTransformation(modelView, ctx->globaltx);
 
-    // 1) color shader
-    GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
-//cbx lighting shader
     if (useElements) {
-        //use indices
-        applyColorShader(NULL, 0, vecIndices->size(), color, GL_TRIANGLES);
+        //special case: VBO elements
+        shader->drawElements(NULL, vecIndices->size(), GL_TRIANGLES);
     } else {
-        //use vertices
-        applyColorShader(NULL, 3, vecVertices->size() / 3, color, GL_TRIANGLES);
+        //render vertices (array or VBO)
+        shader->drawTriangles(vecVertices->size() / 3, GL_TRIANGLES);
     }
 
-    //cbx more: normals, texture shader
+    //cbx more: texture shader
 
     //cleanup
-    if (opacity == 1.f) {
+    if (!hasAlpha) {
         ctx->disableDepth();
     }
 
@@ -511,6 +570,10 @@ void AminoRenderer::drawModel(AminoModel *model) {
 
     if (useElements) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    if (hasAlpha) {
+        glDisable(GL_BLEND);
     }
 }
 

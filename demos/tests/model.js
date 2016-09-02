@@ -18,11 +18,12 @@ gfx.start(function (err) {
     //triangle
     const model1 = gfx.createModel();
 
-    //showTriangle(model1);
+    showTriangle(model1);
     //showTriangles(model1);
     //showRect(model1);
     //showQuad(model1);
     //showCube(model1);
+    //showTriangleLighted(model1);
     showCubeLighted(model1);
 
     root.add(model1);
@@ -41,6 +42,22 @@ function showTriangle(model) {
         0, 0, 0,
         100, 50, 0,
         200, 200, 0 ]);
+}
+
+/**
+ * Simplest model with lighting.
+ */
+function showTriangleLighted(model) {
+    model.vertices([
+        0, 0, 0,
+        100, 50, 0,
+        200, 200, 0 ]);
+
+    model.normals([
+        0, 0, 1,
+        0, 0, 1,
+        0, 0, 1
+    ]);
 }
 
 /**
@@ -139,6 +156,7 @@ function showCube(model, useLighting) {
     const d = 200;
     const dh = d / 2;
 
+    //8 vertices
     model.vertices([
         //lower
         x, y, -dh,
@@ -153,6 +171,7 @@ function showCube(model, useLighting) {
         x, y + h, dh,
     ]);
 
+    //36 indices
     model.indices([
         //below
         0, 1, 2,
@@ -196,6 +215,7 @@ function showCubeLighted(model) {
     const d = 200;
     const dh = d / 2;
 
+    //24 vertices
     model.vertices([
         //lower (0 .. 3)
         x, y, -dh,
@@ -234,6 +254,7 @@ function showCubeLighted(model) {
         x, y + h, dh
     ]);
 
+    //24 normals
     model.normals([
         //below (0 .. 3)
         0, 0, -1,
@@ -299,7 +320,8 @@ function showCubeLighted(model) {
         20, 22, 23
     ]);
 
-    model.opacity(.2);
+//FIXME cbx use MVP matrix
+//    model.opacity(.2);
 
     model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);
