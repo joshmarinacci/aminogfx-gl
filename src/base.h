@@ -1176,15 +1176,21 @@ public:
     //arrays
     FloatArrayProperty *propVertices;
     FloatArrayProperty *propNormals;
+    FloatArrayProperty *propUVs;
     UShortArrayProperty *propIndices;
+
+    //texture
+    ObjectProperty *propTexture;
 
     //VBO
     GLuint vboVertex = INVALID_BUFFER;
     GLuint vboNormal = INVALID_BUFFER;
+    GLuint vboUV = INVALID_BUFFER;
     GLuint vboIndex = INVALID_BUFFER;
 
     bool vboVertexModified = true;
     bool vboNormalModified = true;
+    bool vboUVModified = true;
     bool vboIndexModified = true;
 
     AminoModel(): AminoNode(getFactory()->name, MODEL) {
@@ -1238,7 +1244,10 @@ public:
 
         propVertices = createFloatArrayProperty("vertices");
         propNormals = createFloatArrayProperty("normals");
+        propUVs = createFloatArrayProperty("uvs");
         propIndices = createUShortArrayProperty("indices");
+
+        propTexture = createObjectProperty("texture");
     }
 
     //creation
@@ -1289,6 +1298,8 @@ public:
             vboVertexModified = true;
         } else if (property == propNormals) {
             vboNormalModified = true;
+        } else if (property == propUVs) {
+            vboUVModified = true;
         } else if (property == propIndices) {
             vboIndexModified = true;
         }

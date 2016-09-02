@@ -842,49 +842,7 @@ ImageView.prototype.init = function () {
     var self = this;
 
     //actually load the image
-    this.src.watch(function (src) {
-        if (!src) {
-            self.image(null);
-            return;
-        }
-
-        //load image from source
-        var img = new AminoImage();
-
-        img.onload = function (err) {
-            if (err) {
-                if (DEBUG || DEBUG_ERRORS) {
-                    console.log('could not load image: ' + err.message);
-                }
-
-                //set texture to null
-                self.image(null);
-                return;
-            }
-
-            //debug
-            //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
-
-            //load texture
-            var amino = self.amino;
-            var texture = amino.createTexture();
-
-            texture.loadTextureFromImage(img, function (err, texture) {
-                if (err) {
-                    if (DEBUG || DEBUG_ERRORS) {
-                        console.log('could not load texture: ' + err.message);
-                    }
-
-                    return;
-                }
-
-                //use texture
-                self.image(texture);
-            });
-        };
-
-        img.src = src;
-    });
+    this.src.watch(setSrc);
 
     //when the image is loaded, update the dimensions
     this.image.watch(function (texture) {
@@ -955,6 +913,58 @@ ImageView.prototype.init = function () {
         }
     }
 };
+
+function setImage(img, obj) {
+    if (obj.image) {
+        obj.image(img);
+    } else {
+        obj.texture(img);
+    }
+}
+
+function setSrc(src, prop, obj) {
+    if (!src) {
+        setImage(null, obj);
+        return;
+    }
+
+    //load image from source
+    var img = new AminoImage();
+
+    img.onload = function (err) {
+        if (err) {
+            if (DEBUG || DEBUG_ERRORS) {
+                console.log('could not load image: ' + err.message);
+            }
+
+            //set texture to null
+            setImage(null, obj);
+            return;
+        }
+
+        //debug
+        //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
+
+        //load texture
+        var amino = obj.amino;
+        var texture = amino.createTexture();
+
+        texture.loadTextureFromImage(img, function (err, texture) {
+            if (err) {
+                if (DEBUG || DEBUG_ERRORS) {
+                    console.log('could not load texture: ' + err.message);
+                }
+
+                return;
+            }
+
+            //use texture
+            setImage(texture, obj);
+        });
+    };
+
+    img.src = src;
+}
 
 /**
  * Check if point inside of image view.
@@ -1217,14 +1227,15 @@ Model.prototype.init = function () {
         //properties
         vertices: null,
         indices: null,
-        normals: null,
-        uv: null,
+        normals: null, //enables lighting
+        uvs: null, //enables texture (color used otherwise)
 
-        //shader: 'color',
+        src: null,
         texture: null
     });
 
     this.fill.watch(setFill);
+    this.src.watch(setSrc);
 };
 
 /**

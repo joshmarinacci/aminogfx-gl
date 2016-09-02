@@ -466,15 +466,27 @@ void AminoRenderer::drawModel(AminoModel *model) {
     std::vector<float> *vecNormals = &model->propNormals->value;
     bool useNormals = !vecNormals->empty();
 
+    // 4) texture coordinates (optional)
+    std::vector<float> *vecUVs = &model->propUVs->value;
+    bool useUVs = !vecUVs->empty();
+
+    if (useUVs && !model->propTexture->value) {
+        //teture not yet loaded
+        return;
+    }
+
     //shader
     AnyAminoShader *shader = NULL;
     ColorShader *colorShader = NULL;
+    TextureShader *textureShader = NULL;
     bool hasAlpha = false;
 
     if (useNormals) {
         if (!useElements) {
             assert(vecNormals->size() == vecVertices->size());
         }
+
+        //cbx texture
 
         //use lighting shader
         if (!colorLightingShader) {
@@ -505,9 +517,17 @@ void AminoRenderer::drawModel(AminoModel *model) {
 
         colorLightingShader->setNormalVectors(NULL);
     } else {
-        //color shader
-        colorShader = this->colorShader;
-        shader = colorShader;
+        //without lighting
+
+        if (useUVs) {
+            //texture shader
+            textureShader = this->textureShader;
+            shader = textureShader;
+        } else {
+            //color shader
+            colorShader = this->colorShader;
+            shader = colorShader;
+        }
 
         ctx->useShader(shader);
     }
@@ -518,7 +538,36 @@ void AminoRenderer::drawModel(AminoModel *model) {
         GLfloat color[4] = { model->propFillR->value, model->propFillG->value, model->propFillB->value, opacity };
 
         colorShader->setColor(color);
-        hasAlpha = color[3] != 1.0;
+        hasAlpha = opacity != 1.0;
+    }
+
+    //texture shader
+    if (textureShader) {
+        //set texture coordinates
+        if (model->vboUV == INVALID_BUFFER) {
+            glGenBuffers(1, &model->vboUV);
+            model->vboUVModified = true;
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, model->vboUV);
+
+        if (model->vboUVModified) {
+            model->vboUVModified = false;
+            glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vecUVs->size(), vecUVs->data(), GL_STATIC_DRAW);
+        }
+
+        textureShader->setTextureCoordinates(NULL);
+
+        //opacity
+        GLfloat opacity = model->propOpacity->value * ctx->opacity;
+
+        textureShader->setOpacity(opacity);
+        hasAlpha = opacity != 1.0;
+
+        //texture
+        AminoTexture *texture = (AminoTexture *)model->propTexture->value;
+
+        ctx->bindTexture(texture->textureId);
     }
 
     //alpha
@@ -558,8 +607,6 @@ void AminoRenderer::drawModel(AminoModel *model) {
         //render vertices (array or VBO)
         shader->drawTriangles(vecVertices->size() / 3, GL_TRIANGLES);
     }
-
-    //cbx more: texture shader
 
     //cleanup
     if (!hasAlpha) {

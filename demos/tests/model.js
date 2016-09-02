@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const amino = require('../../main.js');
 
 const gfx = new amino.AminoGfx();
@@ -18,13 +19,17 @@ gfx.start(function (err) {
     //triangle
     const model1 = gfx.createModel();
 
-    showTriangle(model1);
+    //showTriangle(model1);
     //showTriangles(model1);
     //showRect(model1);
     //showQuad(model1);
     //showCube(model1);
+
     //showTriangleLighted(model1);
-    showCubeLighted(model1);
+    //showCubeLighted(model1, false); //color
+
+    showTriangleTexture(model1);
+    //showCubeLighted(model1, true); //use texture
 
     root.add(model1);
 
@@ -41,7 +46,8 @@ function showTriangle(model) {
     model.vertices([
         0, 0, 0,
         100, 50, 0,
-        200, 200, 0 ]);
+        200, 200, 0
+    ]);
 }
 
 /**
@@ -57,6 +63,25 @@ function showTriangleLighted(model) {
         0, 0, 1,
         0, 0, 1,
         0, 0, 1
+    ]);
+}
+
+/**
+ * Simplest model.
+ */
+function showTriangleTexture(model) {
+    model.vertices([
+        0, 0, 0,
+        100, 50, 0,
+        200, 200, 0
+    ]);
+
+    model.src(path.join(__dirname, '../images/tree.png'));
+
+    model.uvs([
+        0, 0,
+        0, 1,
+        1, 0
     ]);
 }
 
@@ -148,7 +173,7 @@ function showQuad(model) {
     ]);
 }
 
-function showCube(model, useLighting) {
+function showCube(model) {
     const x = 0;
     const y = 0;
     const w = 200;
@@ -207,7 +232,7 @@ function showCube(model, useLighting) {
     //model.rz.anim().from(0).to(360).dur(678).start();
 }
 
-function showCubeLighted(model) {
+function showCubeLighted(model, useTexture) {
     const x = 0;
     const y = 0;
     const w = 200;
@@ -292,6 +317,49 @@ function showCubeLighted(model) {
         0, 1, 0,
         0, 1, 0
     ]);
+
+    if (useTexture) {
+        model.src(path.join(__dirname, '../images/tree.png'));
+
+        //TODO coordinates not verified
+        model.uvs([
+            //below
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1,
+
+            //above
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1,
+
+            //left
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1,
+
+            //right
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1,
+
+            //top
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1,
+
+            //bottom
+            0, 0,
+            0, 1,
+            1, 0,
+            1, 1,
+        ]);
+    }
 
     //used for vertices and normals
     model.indices([
