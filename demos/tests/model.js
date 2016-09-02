@@ -357,7 +357,7 @@ function showCubeLighted(model, useTexture) {
             0, 0,
             0, 1,
             1, 0,
-            1, 1,
+            1, 1
         ]);
     }
 
@@ -388,12 +388,18 @@ function showCubeLighted(model, useTexture) {
         20, 22, 23
     ]);
 
-    //model.opacity(.2); //FIXME not all sides are transparent!
+    model.opacity(.2);
 
     model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);
+
+    //animate
     model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
     model.ry.anim().from(0).to(360).dur(5000).loop(-1).start();
+
+    //slow animation
+    //model.rx.anim().from(0).to(360).dur(50000).timeFunc('linear').loop(-1).start();
+    //model.ry.anim().from(0).to(360).dur(50000).timeFunc('linear').loop(-1).start();
 }
 
 //TODO texture

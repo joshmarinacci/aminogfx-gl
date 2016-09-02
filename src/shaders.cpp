@@ -346,7 +346,8 @@ ColorLightingShader::ColorLightingShader() : ColorShader() {
 
             //simple version
             vec4 normalTrans = trans * vec4(normal, 0.);
-            lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
+
+            lightFac = abs(dot(normalTrans.xyz, -lightDir));
 
             //normalMatrix version
             //vec4 normalTrans = mvp * normalMatrix * vec4(normal, 1.);
@@ -588,7 +589,8 @@ TextureLightingShader::TextureLightingShader() : TextureShader() {
 
             vec4 normalTrans = trans * vec4(normal, 0.);
 
-            lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
+            //translucent layers
+            lightFac = abs(dot(normalTrans.xyz, -lightDir));
         }
     )";
 
