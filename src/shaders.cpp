@@ -1,5 +1,7 @@
 #include "shaders.h"
 
+//#include "mathutils.h"
+
 #define INVALID_SHADER 0
 
 #define DEBUG_SHADER_ERRORS true
@@ -330,6 +332,8 @@ ColorLightingShader::ColorLightingShader() : ColorShader() {
     vertexShader = R"(
         uniform mat4 mvp;
         uniform mat4 trans;
+
+        //uniform mat4 normalMatrix;
         uniform vec3 lightDir;
 
         attribute vec4 pos;
@@ -340,9 +344,13 @@ ColorLightingShader::ColorLightingShader() : ColorShader() {
         void main() {
             gl_Position = mvp * trans * pos;
 
+            //simple version
             vec4 normalTrans = trans * vec4(normal, 0.);
-
             lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
+
+            //normalMatrix version
+            //vec4 normalTrans = mvp * normalMatrix * vec4(normal, 1.);
+            //lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
         }
     )";
 
@@ -367,6 +375,7 @@ void ColorLightingShader::initShader() {
     aNormal = getAttributeLocation("normal");
 
     //uniforms
+    //uNormalMatrix = getUniformLocation("normalMatrix");
     uLightDir = getUniformLocation("lightDir");
 
     //default values
@@ -387,6 +396,24 @@ void ColorLightingShader::setLightDirection(GLfloat dir[3]) {
  */
 void ColorLightingShader::setNormalVectors(GLfloat *normals) {
     glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, 0, normals);
+}
+
+/**
+ * Set matrix.
+ */
+void ColorLightingShader::setTransformation(GLfloat modelView[16], GLfloat transition[16]) {
+    AnyAminoShader::setTransformation(modelView, transition);
+
+    //normal matrix
+    /*
+    GLfloat invMatrix[16];
+    GLfloat normalMatrix[16];
+
+    assert(invert_matrix(transition, invMatrix));
+    transpose_matrix(normalMatrix, invMatrix);
+
+    glUniformMatrix4fv(uNormalMatrix, 1, GL_FALSE, normalMatrix);
+    */
 }
 
 /**

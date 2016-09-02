@@ -320,12 +320,12 @@ function showCubeLighted(model) {
         20, 22, 23
     ]);
 
-//FIXME cbx use MVP matrix
-//    model.opacity(.2);
+    //model.opacity(.2); //FIXME not all sides are transparent!
 
     model.originX(.5).originY(.5).w(w).h(h);
     model.x(100).y(100);
     model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
+    model.ry.anim().from(0).to(360).dur(5000).loop(-1).start();
 }
 
 //TODO texture

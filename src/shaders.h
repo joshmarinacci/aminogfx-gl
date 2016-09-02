@@ -44,7 +44,7 @@ public:
     AnyAminoShader();
 
     //params
-    void setTransformation(GLfloat modelView[16], GLfloat transition[16]);
+    virtual void setTransformation(GLfloat modelView[16], GLfloat transition[16]);
 
     //per vertex data
     void setVertexData(GLsizei dim, GLfloat *vertices);
@@ -86,6 +86,7 @@ public:
     ColorLightingShader();
 
     //params
+    void setTransformation(GLfloat modelView[16], GLfloat transition[16]) override;
     void setLightDirection(GLfloat color[3]);
 
     //per vertex values
@@ -97,6 +98,7 @@ public:
 
 protected:
     GLint aNormal;
+    //GLint uNormalMatrix;
     GLint uLightDir;
 
     void initShader() override;

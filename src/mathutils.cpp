@@ -290,7 +290,7 @@ void transpose_matrix(GLfloat *b, const GLfloat *a) {
     //12,13,14,15
 
     for (int i = 0; i < 4; i++) {
-        for(int j = 0; j < 4; j++) {
+        for (int j = 0; j < 4; j++) {
             b[i * 4 + j] = a[j * 4 + i];
         }
     }
