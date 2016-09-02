@@ -98,8 +98,15 @@ private:
              */
             vc_tv_register_callback(tvservice_cb, NULL);
 
-            //test: force mode cbx TODO add prefRes option
-            force720p60();
+            //handle preferred resolution
+            v8::Local<v8::Value> resValue = Nan::Get(handle(), Nan::New<v8::String>("prefRes").ToLocalChecked()).ToLocalChecked();
+            std::string prefRes = AminoJSObject::toString(resValue);
+
+            if (prefRes == "720p@60") {
+                force720p60();
+            } else if (prefRes == "1080p@60") {
+                force1080p60();
+            }
 
             glESInitialized = true;
         }
