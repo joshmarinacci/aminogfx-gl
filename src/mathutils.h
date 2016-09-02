@@ -37,6 +37,8 @@ void loadPerspectiveMatrix(GLfloat *m, GLfloat fov, GLfloat aspect, GLfloat znea
 
 void loadPixelPerfectMatrix(GLfloat *m, float width, float height, float z_eye, float z_near, float z_far);
 
-void transpose_matrix(GLfloat *b, GLfloat *a);
+void transpose_matrix(GLfloat *b, const GLfloat *a);
+
+bool invert_matrix(const GLfloat m[16], GLfloat invOut[16]);
 
 #endif
