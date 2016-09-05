@@ -16,7 +16,7 @@ gfx.start(function (err) {
 
     gfx.setRoot(root);
 
-    //triangle
+    //model
     const model1 = gfx.createModel();
 
     //showTriangle(model1);
@@ -196,7 +196,7 @@ function showCube(model) {
         x, y + h, dh,
     ]);
 
-    //36 indices
+    //36 indices (12 vertices referenced)
     model.indices([
         //below
         0, 1, 2,
