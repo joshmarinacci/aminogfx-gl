@@ -914,6 +914,9 @@ ImageView.prototype.init = function () {
     }
 };
 
+/**
+ * Set texture.
+ */
 function setImage(img, obj) {
     if (obj.image) {
         obj.image(img);
@@ -922,9 +925,42 @@ function setImage(img, obj) {
     }
 }
 
+/**
+ * Load and set texture.
+ */
+function loadTexture(obj, img) {
+    var amino = obj.amino;
+    var texture = amino.createTexture();
+
+    texture.loadTextureFromImage(img, function (err, texture) {
+        if (err) {
+            if (DEBUG || DEBUG_ERRORS) {
+                console.log('could not load texture: ' + err.message);
+            }
+
+            return;
+        }
+
+        //use texture
+        setImage(texture, obj);
+    });
+}
+
+/**
+ * Src handler.
+ *
+ * Supports: local files, images, image buffers & textures
+ */
 function setSrc(src, prop, obj) {
     if (!src) {
         setImage(null, obj);
+        return;
+    }
+
+    //check image (JPEG, PNG)
+    if (src instanceof AminoImage) {
+        //load texture
+        loadTexture(obj, src);
         return;
     }
 
@@ -946,21 +982,7 @@ function setSrc(src, prop, obj) {
         //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
 
         //load texture
-        var amino = obj.amino;
-        var texture = amino.createTexture();
-
-        texture.loadTextureFromImage(img, function (err, texture) {
-            if (err) {
-                if (DEBUG || DEBUG_ERRORS) {
-                    console.log('could not load texture: ' + err.message);
-                }
-
-                return;
-            }
-
-            //use texture
-            setImage(texture, obj);
-        });
+        loadTexture(obj, img);
     };
 
     img.src = src;
@@ -1337,6 +1359,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
         if (typeof src == 'string') {
             var self = this;
 
+            //read file async
             fs.readFile(src, function (err, data) {
                 //check error
                 if (err) {
@@ -1640,10 +1663,13 @@ Texture.prototype.loadTexture = function (src, callback) {
     }
 
     if (src instanceof AminoImage) {
+        //image (JPEG, PNG)
         this.loadTextureFromImage(src, callback);
     } else if (Buffer.isBuffer(src)) {
+        //pixel buffer
         this.loadTextureFromBuffer(src, callback);
     } else if (src instanceof AminoFontSize) {
+        //font texture
         this.loadTextureFromFont(src, callback);
     } else {
         throw new Error('unknown source');
