@@ -157,7 +157,7 @@ void make_trans_z_matrix(GLfloat z, GLfloat *m) {
 }
 
 /**
- * Matrix multiplication.
+ * Matrix multiplication (4x4).
  *
  * @param prod result
  */
@@ -218,7 +218,7 @@ void loadOrthoMatrix(GLfloat *modelView, GLfloat left, GLfloat right, GLfloat bo
 /**
  * Copy a matrix.
  */
-void copy_matrix(GLfloat *dst, GLfloat *src) {
+void copy_matrix(GLfloat *dst, const GLfloat *src) {
     for (int i = 0; i < 16; i++) {
         dst[i] = src[i];
     }

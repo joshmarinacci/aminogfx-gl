@@ -106,22 +106,22 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
     //set up the viewport (y-inversion, top-left origin)
 
     //scale
-    GLfloat *scaleM = new GLfloat[16];
+    GLfloat scaleM[16];
 
     make_scale_matrix(1, -1, 1, scaleM);
 
     //translate
-    GLfloat *transM = new GLfloat[16];
+    GLfloat transM[16];
 
     make_trans_matrix(- width / 2, height / 2, 0, transM);
 
     //combine
-    GLfloat *m4 = new GLfloat[16];
+    GLfloat m4[16];
 
     mul_matrix(m4, transM, scaleM);
 
     //3D perspective
-    GLfloat *pixelM = new GLfloat[16];
+    GLfloat pixelM[16];
     const float near = 150;
     const float far = -300;
     const float eye = 600;
@@ -129,11 +129,7 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
     loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
     mul_matrix(modelView, pixelM, m4);
 
-    delete[] m4;
-    delete[] pixelM;
-    delete[] scaleM;
-    delete[] transM;
-
+    //set viewport
     glViewport(0, 0, viewportW, viewportH);
 }
 

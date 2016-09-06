@@ -31,7 +31,7 @@ void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b);
 
 void loadOrthoMatrix(GLfloat *modelView, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far);
 
-void copy_matrix(GLfloat *dst, GLfloat *src);
+void copy_matrix(GLfloat *dst, const GLfloat *src);
 
 void loadPerspectiveMatrix(GLfloat *m, GLfloat fov, GLfloat aspect, GLfloat znear, GLfloat zfar);
 
