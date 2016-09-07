@@ -434,14 +434,14 @@ function showSphereLighted(model) {
             var v = latNumber / latitudeBands;
 
             normalData.push(x);
-            normalData.push(y);
+            normalData.push(-y); //y-inversion
             normalData.push(z);
 
             textureCoordData.push(u);
-            textureCoordData.push(v);
+            textureCoordData.push(1. - v); //y-inversion
 
             vertexPositionData.push(radius * x);
-            vertexPositionData.push(radius * y);
+            vertexPositionData.push(- radius * y); //y-inversion
             vertexPositionData.push(radius * z);
         }
     }
