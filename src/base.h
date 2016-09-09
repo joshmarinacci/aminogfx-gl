@@ -320,9 +320,16 @@ public:
     bool updated = false;
 
     //alignment
+    Utf8Property *propAlign;
     Utf8Property *propVAlign;
+    int align = ALIGN_LEFT;
     int vAlign = VALIGN_BASELINE;
     int lineNr = 1;
+    float lineW = 0;
+
+    static const int ALIGN_LEFT   = 0x0;
+    static const int ALIGN_CENTER = 0x1;
+    static const int ALIGN_RIGHT  = 0x2;
 
     static const int VALIGN_BASELINE = 0x0;
     static const int VALIGN_TOP      = 0x1;
@@ -370,6 +377,7 @@ public:
         propOriginY = createFloatProperty("originY");
 
         propWrap = createUtf8Property("wrap");
+        propAlign = createUtf8Property("align");
         propVAlign = createUtf8Property("vAlign");
         propFont = createObjectProperty("font");
     }
@@ -438,6 +446,28 @@ public:
             return;
         }
 
+        if (property == propAlign) {
+            std::string str = propAlign->value;
+            int oldAlign = align;
+
+            if (str == "left") {
+                align = AminoText::ALIGN_LEFT;
+            } else if (str == "center") {
+                align = AminoText::ALIGN_CENTER;
+            } else if (str == "right") {
+                align = AminoText::ALIGN_RIGHT;
+            } else {
+                //error
+                printf("unknown align mode: %s\n", str.c_str());
+            }
+
+            if (align != oldAlign) {
+                updated = true;
+            }
+
+            return;
+        }
+
         if (property == propVAlign) {
             std::string str = propVAlign->value;
             int oldVAlign = vAlign;
@@ -500,7 +530,7 @@ private:
         AminoJSObject::createInstance(info, getFactory());
     }
 
-    static void addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr);
+    static void addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr, float *lineW);
 };
 
 /**

@@ -758,6 +758,22 @@ void AminoRenderer::drawText(AminoText *text) {
     //debug
     //sprintf("font: size=%f height=%f ascender=%f descender=%f\n", tf->size, tf->height, tf->ascender, tf->descender);
 
+    //horizontal alignment
+    switch (text->align) {
+        case AminoText::ALIGN_CENTER:
+            ctx->translate((text->propW->value - text->lineW) / 2, 0);
+            break;
+
+        case AminoText::ALIGN_RIGHT:
+            ctx->translate(text->propW->value - text->lineW, 0);
+            break;
+
+        case AminoText::ALIGN_LEFT:
+        default:
+            break;
+    }
+
+    //vertical alignment
     switch (text->vAlign) {
         case AminoText::VALIGN_TOP:
             ctx->translate(0, -tf->ascender);

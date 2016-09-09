@@ -1056,15 +1056,17 @@ GLuint AminoText::updateTexture() {
 /**
  * Render text to vertices.
  */
-void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr) {
+void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr, float *lineW) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
 
     *lineNr = 1;
+    *lineW = 0;
 
     size_t lineStart = 0; //start of current line
     size_t linePos = 0; //character pos current line
     float penXStart = pen->x;
+    float lastAdvance = 0;
 
     //debug
     //printf("addTextGlyphs: wrap=%i width=%i\n", wrap, width);
@@ -1179,6 +1181,7 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
                             }
 
                             pen->x -= xOffset;
+                            *lineW = std::max(*lineW, xOffset);
                             lineStart = i - linePos;
                             skip = false;
 
@@ -1188,6 +1191,8 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
 
                     //wrap new character
                     if (!wrapped) {
+                        //wrap at current position
+                        *lineW = std::max(*lineW, pen->x - penXStart);
                         pen->x = penXStart;
                         kerning = 0;
                         lineStart = i;
@@ -1240,6 +1245,7 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
 
                 //next
                 pen->x += advance;
+                lastAdvance = advance;
             }
         } else {
             //not enough space for glyph
@@ -1261,6 +1267,8 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
         lastTextPos = textPos;
         textPos += charLen;
     }
+
+    *lineW = std::max(*lineW, pen->x - lastAdvance - penXStart);
 }
 
 /**
@@ -1301,7 +1309,7 @@ bool AminoText::layoutText() {
     pen.y = 0;
 
     //Note: consider using async task to avoid performance issues
-    addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr);
+    addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, &lineW);
 
     if (DEBUG_BASE) {
         printf("-> layoutText() done\n");

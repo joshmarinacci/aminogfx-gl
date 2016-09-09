@@ -1730,6 +1730,7 @@ Text.prototype.init = function () {
         fill: '#ffffff',
 
         //alignment
+        align:  'left',
         vAlign: 'baseline',
         wrap:   'none'
     });
