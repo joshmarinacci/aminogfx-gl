@@ -322,9 +322,22 @@ void loadPixelPerfectOrthographicMatrix(GLfloat *m, float width, float height, f
     float f = - z_far;
 
     m[0] = 1 / r;
+    m[1] = 0;
+    m[2] = 0;
+    m[3] = 0;
+
+    m[4] = 0;
     m[5] = 1 / t;
+    m[6] = 0;
+    m[7] = 0;
+
+    m[8]  = 0;
+    m[9]  = 0;
     m[10] = - 2 / (f - n);
     m[11] = 0;
+
+    m[12] = 0;
+    m[13] = 0;
     m[14] = - (f + n) / (f - n);
     m[15] = 1;
 }
