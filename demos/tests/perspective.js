@@ -21,21 +21,21 @@ gfx.start(function (err) {
 
     //below
     if (showBelow) {
-        root.add(createRect(-400));
-        root.add(createRect(-300));
-        root.add(createRect(-200));
-        root.add(createRect(-100));
+        root.add(createRect(-400, '#00FF00'));
+        root.add(createRect(-300, '#00FF00'));
+        root.add(createRect(-200, '#00FF00'));
+        root.add(createRect(-100, '#00FF00'));
     }
 
     //on screen
-    root.add(createRect(0));
+    root.add(createRect(0, '#FFFFFF'));
 
     //above
     if (showAbove) {
-        root.add(createRect(200));
-        root.add(createRect(400));
-        root.add(createRect(600));
-        root.add(createRect(800));
+        root.add(createRect(200, '#FF0000'));
+        root.add(createRect(400, '#FF0000'));
+        root.add(createRect(600, '#FF0000'));
+        root.add(createRect(800, '#FF0000'));
     }
 
     //some info
@@ -44,7 +44,7 @@ gfx.start(function (err) {
     //console.log('runtime: ' + JSON.stringify(gfx.runtime));
 });
 
-function createRect(z) {
+function createRect(z, textColor) {
     //rect
     let rect = gfx.createRect().fill('#0000FF');
 
@@ -52,7 +52,7 @@ function createRect(z) {
     rect.h.bindto(gfx.h);
 
     //text
-    let text = gfx.createText().text('z: ' + z).fontSize(60).align('center').vAlign('middle').fill('#FFFFFF');
+    let text = gfx.createText().text('z: ' + z).fontSize(60).align('center').vAlign('middle').fill(textColor);
 
     text.w.bindto(gfx.w);
     text.h.bindto(gfx.h);
