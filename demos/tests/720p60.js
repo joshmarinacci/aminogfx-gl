@@ -2,11 +2,10 @@
 
 const amino = require('../../main.js');
 
-//select resolution
-amino.AminoGfx.prototype.prefRes = "720p@60";
-
 //create instance
-const gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx({
+    resolution: '720p@60'
+});
 
 gfx.start(function (err) {
     if (err) {

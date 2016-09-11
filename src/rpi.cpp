@@ -99,13 +99,26 @@ private:
             vc_tv_register_callback(tvservice_cb, NULL);
 
             //handle preferred resolution
-            v8::Local<v8::Value> resValue = Nan::Get(handle(), Nan::New<v8::String>("prefRes").ToLocalChecked()).ToLocalChecked();
-            std::string prefRes = AminoJSObject::toString(resValue);
+            if (!createParams.IsEmpty()) {
+                v8::Local<v8::Object> obj = Nan::New(createParams);
+                Nan::MaybeLocal<v8::Value> resolutionMaybe = Nan::Get(obj, Nan::New<v8::String>("resolution").ToLocalChecked());
 
-            if (prefRes == "720p@60") {
-                force720p60();
-            } else if (prefRes == "1080p@60") {
-                force1080p60();
+                if (!resolutionMaybe.IsEmpty()) {
+                    v8::Local<v8::Value> resolutionValue = resolutionMaybe.ToLocalChecked();
+
+                    if (resolutionValue->IsString()) {
+                        std::string prefRes = AminoJSObject::toString(resolutionValue);
+
+                        //change resolution
+                        if (prefRes == "720p@60") {
+                            force720p60();
+                        } else if (prefRes == "1080p@60") {
+                            force1080p60();
+                        } else {
+                            printf("unknown resolution: %s\n", prefRes.c_str(););
+                        }
+                    }
+                }
             }
 
             glESInitialized = true;
