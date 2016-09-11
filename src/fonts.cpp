@@ -145,6 +145,8 @@ NAN_METHOD(AminoFont::New) {
  * Initialize fonts instance.
  */
 void AminoFont::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
+    assert(info.Length() == 2);
+
     AminoFonts *fonts = Nan::ObjectWrap::Unwrap<AminoFonts>(info[0]->ToObject());
     v8::Local<v8::Object> fontData = info[1]->ToObject();
 
@@ -284,6 +286,8 @@ NAN_METHOD(AminoFontSize::New) {
  * Initialize constructor values.
  */
 void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
+    assert(info.Length() == 2);
+
     AminoFont *font = Nan::ObjectWrap::Unwrap<AminoFont>(info[0]->ToObject());
     int size = (int)round(info[1]->NumberValue());
 
@@ -309,6 +313,8 @@ void AminoFontSize::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
  * Calculate text width.
  */
 NAN_METHOD(AminoFontSize::CalcTextWidth) {
+    assert(info.Length() == 1);
+
     AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
     v8::String::Utf8Value str(info[0]);
 

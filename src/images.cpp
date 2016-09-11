@@ -426,6 +426,8 @@ NAN_METHOD(AminoImage::New) {
  * Load image asynchronously.
  */
 NAN_METHOD(AminoImage::loadImage) {
+    assert(info.Length() == 2);
+
     v8::Local<v8::Value> bufferObj = info[0];
     Nan::Callback *callback = new Nan::Callback(info[1].As<v8::Function>());
     v8::Local<v8::Object> obj = info.This();
@@ -561,6 +563,8 @@ void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
         printf("-> preInit()\n");
     }
 
+    assert(info.Length() == 1);
+
     //set amino instance
     v8::Local<v8::Object> jsObj = info[0]->ToObject();
     AminoJSEventObject *obj = Nan::ObjectWrap::Unwrap<AminoJSEventObject>(jsObj);
@@ -581,6 +585,8 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
     if (DEBUG_IMAGES) {
         printf("-> loadTextureFromImage()\n");
     }
+
+    assert(info.Length() == 2);
 
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
     v8::Local<v8::Function> callback = info[1].As<v8::Function>();
@@ -675,10 +681,15 @@ typedef struct {
     Nan::Callback *callback;
 } amino_texture_t;
 
+/**
+ * Load texture from pixel buffer.
+ */
 NAN_METHOD(AminoTexture::LoadTextureFromBuffer) {
     if (DEBUG_IMAGES) {
         printf("-> loadTextureFromBuffer()\n");
     }
+
+    assert(info.Length() == 2);
 
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
 
@@ -771,10 +782,15 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
     }
 }
 
+/**
+ * Load texture from font.
+ */
 NAN_METHOD(AminoTexture::LoadTextureFromFont) {
     if (DEBUG_IMAGES) {
         printf("-> loadTextureFromBuffer()\n");
     }
+
+    assert(info.Length() == 2);
 
     AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
 

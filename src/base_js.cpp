@@ -76,7 +76,7 @@ std::string AminoJSObject::getName() {
 }
 
 /**
- * Initialize the native object with passed parameters. Called before JS init().
+ * Initialize the native object with parameters passed to the constructor. Called before JS init().
  */
 void AminoJSObject::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     //empty
@@ -160,7 +160,7 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
     //check constructor call
     if (!info.IsConstructCall()) {
         //called as plain function (e.g. in extended class)
-        Nan::ThrowTypeError("please use new() instead of function call");
+        Nan::ThrowTypeError("please use new AminoObj() instead of function call");
         return;
     }
 
@@ -431,6 +431,8 @@ void AminoJSObject::addProperty(AnyProperty *prop) {
  * Callback from property watcher to update native value.
  */
 NAN_METHOD(AminoJSObject::PropertyUpdated) {
+    assert(info.Length() == 3);
+
     //params: value, propId, object
     int id = info[1]->IntegerValue();
 

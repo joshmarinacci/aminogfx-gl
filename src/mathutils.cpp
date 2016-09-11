@@ -184,7 +184,9 @@ void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b) {
 }
 
 /**
- * Create orthogonal projection.
+ * Create orthogonal projection (no z-perspective).
+ *
+ * Note: use transposed matrix for modelView.
  */
 void loadOrthoMatrix(GLfloat *modelView, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near, GLfloat far) {
     GLfloat r_l = right - left;
@@ -266,18 +268,65 @@ void loadPerspectiveMatrix(GLfloat *m, GLfloat fov, GLfloat aspect, GLfloat znea
     m[15]= 0;
 }
 
+/**
+ * Create transposed perspective matrix.
+ */
 void loadPixelPerfectMatrix(GLfloat *m, float width, float height, float z_eye, float z_near, float z_far) {
-    //printf("pixel perfect: %f %f %f %f %f\n",width,height,z_eye,z_near,z_far);
+    //printf("pixel perfect: %f %f %f %f %f\n", width, height, z_eye, z_near, z_far);
 
+    //see https://www.opengl.org/discussion_boards/archive/index.php/t-171445.html
     float kdn = z_eye - z_near;
     float kdf = z_eye - z_far;
     float ksz = - (kdf + kdn) / (kdf - kdn);
     float ktz = - (2.0f * kdn * kdf) / (kdf - kdn);
 
-    m[0]=(2.0f*z_eye)/width; m[1]=0;                    m[2]=0; m[3]=0;
-    m[4]=0;                  m[5]=(2.0f*z_eye)/height;  m[6]=0; m[7]=0;
-    m[8]=0; m[9]=0; m[10]=ktz-ksz*z_eye; m[11]=-1.0f;
-    m[12]=0; m[13]=0; m[14]=ksz; m[15]=z_eye;
+    m[0] = (2.0f * z_eye) / width;
+    m[1] = 0;
+    m[2] = 0;
+    m[3] = 0;
+
+    m[4] = 0;
+    m[5] = (2.0f * z_eye) / height;
+    m[6] = 0;
+    m[7] = 0;
+
+    m[8]  = 0;
+    m[9]  = 0;
+    m[10] = ktz - ksz * z_eye;
+    m[11] = -1.0f;
+
+    m[12] = 0;
+    m[13] = 0;
+    m[14] = ksz;
+    m[15] = z_eye;
+}
+
+/**
+ * Create flat transposed projection matrix.
+ */
+void loadPixelPerfectOrthographicMatrix(GLfloat *m, float width, float height, float z_eye, float z_near, float z_far) {
+    /*
+     * See http://www.songho.ca/opengl/gl_projectionmatrix.html.
+     */
+
+    /*
+      x: [l, r] to [-1, 1]
+      y: [b, t] to [-1, 1]
+      z: [n, f] to [-1, 1]
+    */
+
+    float r = width / 2;
+    float t = height / 2;
+    //float n = - z_near;
+    float n = - z_eye;
+    float f = - z_far;
+
+    m[0] = 1 / r;
+    m[5] = 1 / t;
+    m[10] = - 2 / (f - n);
+    m[11] = 0;
+    m[14] = - (f + n) / (f - n);
+    m[15] = 1;
 }
 
 /**

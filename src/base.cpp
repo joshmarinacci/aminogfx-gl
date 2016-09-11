@@ -80,6 +80,21 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
 }
 
 /**
+ * Initialize constructor parameters.
+ */
+void AminoGfx::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
+    AminoJSObject::preInit(info);
+
+    //check params
+    if (info.Length() >= 1 && info[0]->IsObject()) {
+        v8::Local<v8::Object> obj = info[0]->ToObject();
+
+        //store
+        createParams.Reset(obj);
+    }
+}
+
+/**
  * JS object was initalized.
  */
 void AminoGfx::setup() {
@@ -134,6 +149,8 @@ void AminoGfx::setup() {
  * Initialize the renderer.
  */
 NAN_METHOD(AminoGfx::Start) {
+    assert(info.Length() == 1);
+
     AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
 
     assert(obj);
@@ -189,6 +206,22 @@ void AminoGfx::setupRenderer() {
 
     renderer = new AminoRenderer();
     renderer->setup();
+
+    //perspective
+    if (!createParams.IsEmpty()) {
+        v8::Local<v8::Object> obj = Nan::New(createParams);
+        Nan::MaybeLocal<v8::Value> perspectiveMaybe = Nan::Get(obj, Nan::New<v8::String>("perspective").ToLocalChecked());
+
+        if (!perspectiveMaybe.IsEmpty()) {
+            v8::Local<v8::Value> perspectiveValue = perspectiveMaybe.ToLocalChecked();
+
+            if (perspectiveValue->IsObject()) {
+                v8::Local<v8::Object> perspective = perspectiveValue->ToObject();
+
+                renderer->setupPerspective(perspective);
+            }
+        }
+    }
 }
 
 /**
@@ -569,6 +602,9 @@ void AminoGfx::destroy() {
     clearAsyncQueue();
     handleAsyncDeletes();
 
+    //params
+    createParams.Reset();
+
     //base destroy
     AminoJSEventObject::destroy();
 
@@ -668,7 +704,7 @@ NAN_METHOD(AminoGfx::SetRoot) {
     //new value
     AminoGroup *group;
 
-    if (info[0]->IsNull() || info[0]->IsUndefined()) {
+    if (info.Length() == 0 || info[0]->IsNull() || info[0]->IsUndefined()) {
         group = NULL;
     } else {
         group = Nan::ObjectWrap::Unwrap<AminoGroup>(info[0]->ToObject());

@@ -64,6 +64,9 @@ protected:
     bool rendering = false;
     Nan::Callback *startCallback = NULL;
 
+    //params
+    Nan::Persistent<v8::Object> createParams;
+
     //renderer
     AminoRenderer *renderer = NULL;
     AminoGroup *root = NULL;
@@ -147,6 +150,8 @@ protected:
     void setRoot(AminoGroup *group);
 
 private:
+    void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
+
     //JS methods
     static NAN_METHOD(Start);
     static NAN_METHOD(Destroy);
@@ -213,6 +218,8 @@ public:
     }
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
+        assert(info.Length() >= 1);
+
         //set amino instance
         v8::Local<v8::Object> jsObj = info[0]->ToObject();
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(jsObj);
@@ -586,6 +593,8 @@ public:
     }
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
+        assert(info.Length() == 3);
+
         //params
         AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info[0]->ToObject());
         AminoNode *node = Nan::ObjectWrap::Unwrap<AminoNode>(info[1]->ToObject());
@@ -668,6 +677,8 @@ public:
     }
 
     static NAN_METHOD(Start) {
+        assert(info.Length() == 1);
+
         AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
         v8::Local<v8::Object> data = info[0]->ToObject();
 
@@ -1419,6 +1430,8 @@ private:
     }
 
     static NAN_METHOD(Add) {
+        assert(info.Length() == 1);
+
         AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 
@@ -1454,6 +1467,8 @@ private:
     }
 
     static NAN_METHOD(Remove) {
+        assert(info.Length() == 1);
+
         AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
         AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(info[0]->ToObject());
 

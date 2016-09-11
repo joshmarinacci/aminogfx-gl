@@ -36,6 +36,7 @@ void copy_matrix(GLfloat *dst, const GLfloat *src);
 void loadPerspectiveMatrix(GLfloat *m, GLfloat fov, GLfloat aspect, GLfloat znear, GLfloat zfar);
 
 void loadPixelPerfectMatrix(GLfloat *m, float width, float height, float z_eye, float z_near, float z_far);
+void loadPixelPerfectOrthographicMatrix(GLfloat *m, float width, float height, float z_eye, float z_near, float z_far);
 
 void transpose_matrix(GLfloat *b, const GLfloat *a);
 

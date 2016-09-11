@@ -201,6 +201,7 @@ public:
     virtual ~AminoRenderer();
 
     virtual void setup();
+    virtual void setupPerspective(v8::Local<v8::Object> &perspective);
 
     virtual void updateViewport(GLfloat width, GLfloat height, GLfloat viewportW, GLfloat viewportH);
     virtual void initScene(GLfloat r, GLfloat g, GLfloat b, GLfloat opacity);
@@ -233,6 +234,13 @@ private:
     ColorLightingShader *colorLightingShader = NULL;
     TextureLightingShader *textureLightingShader = NULL;
 
+    //perspective
+    bool orthographic = true;
+    float near = 150;
+    float far = -300;
+    float eye = 600;
+
+    //matrix
     GLfloat modelView[16];
     GLContext *ctx = NULL;
 

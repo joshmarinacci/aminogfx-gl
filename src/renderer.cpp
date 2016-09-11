@@ -100,6 +100,55 @@ void AminoRenderer::setup() {
 }
 
 /**
+ * Setup perspective default values.
+ */
+void AminoRenderer::setupPerspective(v8::Local<v8::Object> &perspective) {
+    //orthographic
+    Nan::MaybeLocal<v8::Value> orthographicMaybe = Nan::Get(perspective, Nan::New<v8::String>("orthographic").ToLocalChecked());
+
+    if (!orthographicMaybe.IsEmpty()) {
+        v8::Local<v8::Value> orthographicValue = orthographicMaybe.ToLocalChecked();
+
+        if (orthographicValue->IsBoolean()) {
+            orthographic = orthographicValue->BooleanValue();
+        }
+    }
+
+    //near
+    Nan::MaybeLocal<v8::Value> nearMaybe = Nan::Get(perspective, Nan::New<v8::String>("near").ToLocalChecked());
+
+    if (!nearMaybe.IsEmpty()) {
+        v8::Local<v8::Value> nearValue = nearMaybe.ToLocalChecked();
+
+        if (nearValue->IsNumber()) {
+            near = nearValue->NumberValue();
+        }
+    }
+
+    //far
+    Nan::MaybeLocal<v8::Value> farMaybe = Nan::Get(perspective, Nan::New<v8::String>("far").ToLocalChecked());
+
+    if (!farMaybe.IsEmpty()) {
+        v8::Local<v8::Value> farValue = farMaybe.ToLocalChecked();
+
+        if (farValue->IsNumber()) {
+            far = farValue->NumberValue();
+        }
+    }
+
+    //eye
+    Nan::MaybeLocal<v8::Value> eyeMaybe = Nan::Get(perspective, Nan::New<v8::String>("eye").ToLocalChecked());
+
+    if (!eyeMaybe.IsEmpty()) {
+        v8::Local<v8::Value> eyeValue = eyeMaybe.ToLocalChecked();
+
+        if (eyeValue->IsNumber()) {
+            eye = eyeValue->NumberValue();
+        }
+    }
+}
+
+/**
  * Update the model view projection matrix.
  */
 void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewportW, GLfloat viewportH) {
@@ -122,11 +171,13 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
 
     //3D perspective
     GLfloat pixelM[16];
-    const float near = 150;
-    const float far = -300;
-    const float eye = 600;
 
-    loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
+    if (orthographic) {
+        loadPixelPerfectOrthographicMatrix(pixelM, width, height, eye, near, far);
+    } else {
+        loadPixelPerfectMatrix(pixelM, width, height, eye, near, far);
+    }
+
     mul_matrix(modelView, pixelM, m4);
 
     //set viewport

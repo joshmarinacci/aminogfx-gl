@@ -196,7 +196,7 @@ NAN_MODULE_INIT(AminoJSWeakReference::Init) {
  */
 void AminoJSWeakReference::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
     //weak reference
-    if (!info[0]->IsObject()) {
+    if (info.Length() == 0 || !info[0]->IsObject()) {
         Nan::ThrowTypeError("expected object");
         return;
     }
