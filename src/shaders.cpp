@@ -348,10 +348,6 @@ ColorLightingShader::ColorLightingShader() : ColorShader() {
             vec4 normalTrans = trans * vec4(normal, 0.);
 
             lightFac = abs(dot(normalTrans.xyz, -lightDir));
-
-            //normalMatrix version
-            //vec4 normalTrans = mvp * normalMatrix * vec4(normal, 1.);
-            //lightFac = max(dot(normalTrans.xyz, -lightDir), 0.);
         }
     )";
 
