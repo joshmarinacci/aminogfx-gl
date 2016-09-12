@@ -115,7 +115,7 @@ private:
                         } else if (prefRes == "1080p@60") {
                             force1080p60();
                         } else {
-                            printf("unknown resolution: %s\n", prefRes.c_str(););
+                            printf("unknown resolution: %s\n", prefRes.c_str());
                         }
                     }
                 }
