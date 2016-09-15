@@ -53,6 +53,7 @@ public:
 
     bool addAnimationAsync(AminoAnim *anim);
     void removeAnimationAsync(AminoAnim *anim);
+    void clearAnimationsAsync();
 
     void deleteTextureAsync(GLuint textureId);
     void deleteBufferAsync(GLuint bufferId);
@@ -157,11 +158,14 @@ private:
     static NAN_METHOD(Destroy);
 
     static NAN_METHOD(SetRoot);
+    static NAN_METHOD(ClearAnimations);
     static NAN_METHOD(GetStats);
 
     //animation
     void addAnimation(AsyncValueUpdate *update, int state);
     void removeAnimation(AsyncValueUpdate *update, int state);
+    void clearAnimations(AsyncValueUpdate *update, int state);
+    void clearAnimationsSync();
 
     //texture & buffer
     void deleteTexture(AsyncValueUpdate *update, int state);

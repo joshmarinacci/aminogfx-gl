@@ -70,7 +70,10 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetTemplate(tpl, "Texture", AminoTexture::GetInitFunction());
     Nan::SetTemplate(tpl, "Anim", AminoAnim::GetInitFunction());
 
-    //stats
+    // animations
+    Nan::SetPrototypeMethod(tpl, "clearAnimations", ClearAnimations);
+
+    // stats
     Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
 
     //global template instance
@@ -534,6 +537,19 @@ void AminoGfx::processAnimations() {
 }
 
 /**
+ * Clear all animations.
+ *
+ * Note: stops gets not called.
+ */
+NAN_METHOD(AminoGfx::ClearAnimations) {
+    AminoGfx *obj = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(obj);
+
+    obj->clearAnimationsAsync();
+}
+
+/**
  * Check if rendering scene right now.
  */
 bool AminoGfx::isRendering() {
@@ -600,6 +616,7 @@ void AminoGfx::destroy() {
 
     //free async
     clearAsyncQueue();
+    clearAnimationsSync();
     handleAsyncDeletes();
 
     //params
@@ -822,6 +839,47 @@ void AminoGfx::removeAnimation(AsyncValueUpdate *update, int state) {
         //free instance
         update->releaseLater = anim;
     }
+}
+
+/**
+ * Clear all animations.
+ *
+ * Note: called on main thread.
+ */
+void AminoGfx::clearAnimationsAsync() {
+    if (destroyed) {
+        return;
+    }
+
+    AminoJSObject::enqueueValueUpdate((AminoJSObject *)NULL, (asyncValueCallback)&AminoGfx::clearAnimations);
+}
+
+/**
+ * Clear all animations.
+ */
+void AminoGfx::clearAnimations(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    clearAnimationsSync();
+}
+
+/**
+ * Clear all animations now.
+ *
+ * Note: internal usage only.
+ */
+void AminoGfx::clearAnimationsSync() {
+    std::size_t count = animations.size();
+
+    for (std::size_t i = 0; i < count; i++) {
+        AminoAnim *item = animations[i];
+
+        delete item;
+    }
+
+    animations.clear();
 }
 
 /**
