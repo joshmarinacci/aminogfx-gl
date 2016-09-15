@@ -2066,6 +2066,13 @@ function makeProp(obj, name, val) {
     };
 
     /**
+     * Remove all listeners.
+     */
+    prop.unwatchAll = function () {
+        this.listeners.removeAll();
+    };
+
+    /**
      * Getter function.
      */
     prop.get = function () {
