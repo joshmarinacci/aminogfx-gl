@@ -81,32 +81,32 @@ function watchFill(value, prop, obj) {
  *  - array: r, g, b (0..1)
  *  - objects: r, g, b (0..1)
  */
-function parseRGBString(Fill) {
-    if (typeof Fill == 'string') {
+function parseRGBString(fill) {
+    if (typeof fill == 'string') {
         //strip off any leading #
-        if (Fill.substring(0, 1) == '#') {
-            Fill = Fill.substring(1);
+        if (fill.substring(0, 1) == '#') {
+            fill = fill.substring(1);
         }
 
         //pull out the components
-        var r = parseInt(Fill.substring(0, 2), 16);
-        var g = parseInt(Fill.substring(2, 4), 16);
-        var b = parseInt(Fill.substring(4, 6), 16);
+        var r = parseInt(fill.substring(0, 2), 16);
+        var g = parseInt(fill.substring(2, 4), 16);
+        var b = parseInt(fill.substring(4, 6), 16);
 
         return {
             r: r / 255,
             g: g / 255,
             b: b / 255
         };
-    } else if (Array.isArray(Fill)) {
+    } else if (Array.isArray(fill)) {
         return {
-            r: Fill[0],
-            g: Fill[1],
-            b: Fill[2]
+            r: fill[0],
+            g: fill[1],
+            b: fill[2]
         };
     }
 
-    return Fill;
+    return fill;
 }
 
 /**
