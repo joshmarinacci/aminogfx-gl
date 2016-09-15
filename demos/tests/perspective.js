@@ -1,5 +1,7 @@
 'use strict';
 
+//TODO check why only 40 fps on RPi
+
 const amino = require('../../main.js');
 
 const gfx = new amino.AminoGfx({
