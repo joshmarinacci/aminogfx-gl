@@ -95,7 +95,7 @@ gfx.start(function (err) {
 
     A.acceptsMouseEvents = true;
 
-    A.x.bindto(adsr.a, minus(10));
+    A.x.bindTo(adsr.a, minus(10));
 
     this.on('press', A, function( e) {
         //adsr.a(e.target.x());
@@ -109,8 +109,8 @@ gfx.start(function (err) {
     var D = this.createRect();
 
     D.acceptsMouseEvents = true;
-    D.x.bindto(adsr.d, minus(10));
-    D.y.bindto(adsr.s, minus(10));
+    D.x.bindTo(adsr.d, minus(10));
+    D.y.bindTo(adsr.s, minus(10));
 
     this.on('press', D, function (e) {
         //adsr.d(e.target.x());
@@ -126,8 +126,8 @@ gfx.start(function (err) {
     var R = this.createRect();
 
     R.acceptsMouseEvents = true;
-    R.y.bindto(adsr.s, minus(10));
-    R.x.bindto(adsr.r, minus(10));
+    R.y.bindTo(adsr.s, minus(10));
+    R.x.bindTo(adsr.r, minus(10));
 
     this.on('press', R, function (e) {
         //adsr.s(e.target.y());
@@ -153,19 +153,19 @@ gfx.start(function (err) {
     //make 4 text labels, each bound to an adsr value
     var label1 = this.createText().y(50 * 1);
 
-    label1.text.bindto(adsr.a, format('A: %'));
+    label1.text.bindTo(adsr.a, format('A: %'));
 
     var label2 = this.createText().y(50 * 2);
 
-    label2.text.bindto(adsr.d, format('D: %'));
+    label2.text.bindTo(adsr.d, format('D: %'));
 
     var label3 = this.createText().y(50 * 3);
 
-    label3.text.bindto(adsr.s, format('S: %'));
+    label3.text.bindTo(adsr.s, format('S: %'));
 
     var label4 = this.createText().y(50 * 4);
 
-    label4.text.bindto(adsr.r, format('R: %'));
+    label4.text.bindTo(adsr.r, format('R: %'));
 
     //add them all and style them
     root.add(label1, label2, label3, label4);

@@ -44,8 +44,8 @@ gfx.start(function (err) {
     //create group
     const g = this.createGroup();
 
-    g.w.bindto(this.w);
-    g.h.bindto(this.h);
+    g.w.bindTo(this.w);
+    g.h.bindTo(this.h);
 
     this.setRoot(g);
 

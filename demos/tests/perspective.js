@@ -54,14 +54,14 @@ function createRect(z, textColor) {
     //rect
     let rect = gfx.createRect().fill('#0000FF');
 
-    rect.w.bindto(gfx.w);
-    rect.h.bindto(gfx.h);
+    rect.w.bindTo(gfx.w);
+    rect.h.bindTo(gfx.h);
 
     //text
     let text = gfx.createText().text('z: ' + z).fontSize(60).align('center').vAlign('middle').fill(textColor);
 
-    text.w.bindto(gfx.w);
-    text.h.bindto(gfx.h);
+    text.w.bindTo(gfx.w);
+    text.h.bindTo(gfx.h);
 
     //group
     let group = gfx.createGroup().opacity(0.2).z(z);

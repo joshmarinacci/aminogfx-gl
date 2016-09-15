@@ -2127,7 +2127,7 @@ function makeProp(obj, name, val) {
      *
      * Optional: callback to modify value.
      */
-    prop.bindto = function (prop, fun) {
+    prop.bindTo = function (prop, fun) {
         var set = this;
 
         function watcher(v) {
