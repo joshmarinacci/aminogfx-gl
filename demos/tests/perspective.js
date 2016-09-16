@@ -1,6 +1,12 @@
 'use strict';
 
-//TODO check why only 40 fps on RPi
+/*
+ * Notes:
+ *
+ *  - only 33 fps on Raspberry Pi:
+ *    - reason: fullscreen alpha rectangles are slow
+ *    - full screen rate at group.opacity(1.) or text only rendering
+ */
 
 const amino = require('../../main.js');
 
@@ -25,7 +31,7 @@ gfx.start(function (err) {
     const showBelow = true;
     const showAbove = true;
 
-    //below
+    //below (4 layers)
     if (showBelow) {
         root.add(createRect(-400, '#00FF00'));
         root.add(createRect(-300, '#00FF00'));
@@ -33,10 +39,10 @@ gfx.start(function (err) {
         root.add(createRect(-100, '#00FF00'));
     }
 
-    //on screen
+    //on screen (1 layer)
     root.add(createRect(0, '#FFFFFF'));
 
-    //above
+    //above (4 layers)
     if (showAbove) {
         root.add(createRect(200, '#FF0000'));
         root.add(createRect(400, '#FF0000'));
@@ -50,6 +56,9 @@ gfx.start(function (err) {
     //console.log('runtime: ' + JSON.stringify(gfx.runtime));
 });
 
+/**
+ * Create a layer.
+ */
 function createRect(z, textColor) {
     //rect
     let rect = gfx.createRect().fill('#0000FF');
