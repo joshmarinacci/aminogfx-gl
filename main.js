@@ -836,7 +836,9 @@ ImageView.prototype.init = function () {
         src: null,
         image: null,
         opacity: 1.0,
-        size: 'resize'
+
+        size: 'resize',
+        repeat: 'no-repeat'
     });
 
     var self = this;

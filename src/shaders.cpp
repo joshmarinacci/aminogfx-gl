@@ -538,6 +538,7 @@ TextureClampToBorderShader::TextureClampToBorderShader() : TextureShader() {
         varying vec2 uv;
 
         uniform float opacity;
+        uniform bvec2 repeat;
         uniform sampler2D tex;
 
         float clamp_to_border_factor(vec2 coords) {
@@ -549,11 +550,39 @@ TextureClampToBorderShader::TextureClampToBorderShader() : TextureShader() {
         }
 
         void main() {
-            vec4 pixel = texture2D(tex, uv);
+            //repeat
+            vec2 uv2 = uv;
 
-            gl_FragColor = vec4(pixel.rgb, pixel.a * opacity * clamp_to_border_factor(uv));
+            if (repeat.x) {
+                uv2.x = fract(uv.x);
+            }
+
+            if (repeat.y) {
+                uv2.y = fract(uv.y);
+            }
+
+            //show pixel
+            vec4 pixel = texture2D(tex, uv2);
+
+            gl_FragColor = vec4(pixel.rgb, pixel.a * opacity * clamp_to_border_factor(uv2));
         }
     )";
+}
+
+/**
+ * Initialize the shader.
+ */
+void TextureClampToBorderShader::initShader() {
+    TextureShader::initShader();
+
+    uRepeat = getUniformLocation("repeat");
+}
+
+/**
+ * Set repeat directions.
+ */
+void TextureClampToBorderShader::setRepeat(bool repeatX, bool repeatY) {
+    glUniform2i(uRepeat, repeatX, repeatY);
 }
 
 //

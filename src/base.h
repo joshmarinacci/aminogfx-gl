@@ -999,6 +999,11 @@ public:
     FloatProperty *propTop;
     FloatProperty *propBottom;
 
+    //repeat
+    Utf8Property *propRepeat;
+    bool repeatX = false;
+    bool repeatY = false;
+
     AminoRect(bool hasImage): AminoNode(hasImage ? getImageViewFactory()->name:getRectFactory()->name, RECT) {
         this->hasImage = hasImage;
     }
@@ -1037,6 +1042,8 @@ public:
             propRight = createFloatProperty("right");
             propTop = createFloatProperty("top");
             propBottom = createFloatProperty("bottom");
+
+            propRepeat = createUtf8Property("repeat");
         } else {
             propR = createFloatProperty("r");
             propG = createFloatProperty("g");
@@ -1112,6 +1119,40 @@ public:
      */
     static NAN_METHOD(NewImageView) {
         AminoJSObject::createInstance(info, getImageViewFactory());
+    }
+
+    /**
+     * Handle async property updates.
+     */
+    void handleAsyncUpdate(AsyncPropertyUpdate *update) override {
+        //default: set value
+        AminoJSObject::handleAsyncUpdate(update);
+
+        //check property updates
+        AnyProperty *property = update->property;
+
+        if (property == propRepeat) {
+            std::string str = propRepeat->value;
+
+            if (str == "no-repeat") {
+                repeatX = false;
+                repeatY = false;
+            } else if (str == "repeat") {
+                repeatX = true;
+                repeatY = true;
+            } else if (str == "repeat-x") {
+                repeatX = true;
+                repeatY = false;
+            } else if (str == "repeat-y") {
+                repeatX = false;
+                repeatY = true;
+            } else {
+                //error
+                printf("unknown repeat mode: %s\n", str.c_str());
+            }
+
+            return;
+        }
     }
 };
 

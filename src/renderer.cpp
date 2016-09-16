@@ -322,7 +322,7 @@ void AminoRenderer::applyColorShader(GLfloat *verts, GLsizei dim, GLsizei count,
 /**
  * Draw texture.
  */
-void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat uv[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder) {
+void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei count, GLfloat uv[][2], GLuint texId, GLfloat opacity, bool needsClampToBorder, bool repeatX, bool repeatY) {
     //printf("doing texture shader apply %d opacity = %f\n", texId, opacity);
 
     //use shader
@@ -354,6 +354,10 @@ void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei coun
     //shader values
     shader->setTransformation(modelView, ctx->globaltx);
     shader->setOpacity(opacity);
+
+    if (needsClampToBorder) {
+        ((TextureClampToBorderShader *)shader)->setRepeat(repeatX, repeatY);
+    }
 
     //draw
     ctx->bindTexture(texId);
@@ -759,9 +763,9 @@ void AminoRenderer::drawRect(AminoRect *rect) {
             texCoords[5][0] = tx;    texCoords[5][1] = ty;
 
             //check clamp to border
-            bool needsClampToBorder = (tx < 0 || tx > 1) || (tx2 < 0 || tx2 > 1) || (ty < 0 || ty > 1) || (ty2 < 0 || ty2 > 1);
+            bool needsClampToBorder = (tx < 0 || tx > 1) || (tx2 < 0 || tx2 > 1) || (ty < 0 || ty > 1) || (ty2 < 0 || ty2 > 1) || rect->repeatX || rect->repeatY;
 
-            applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity, needsClampToBorder);
+            applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity, needsClampToBorder, rect->repeatX, rect->repeatY);
         }
     } else {
         //color only

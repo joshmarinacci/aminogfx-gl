@@ -134,6 +134,13 @@ protected:
 class TextureClampToBorderShader : public TextureShader {
 public:
     TextureClampToBorderShader();
+
+    void setRepeat(bool repeatX, bool repeatY);
+
+protected:
+    GLint uRepeat;
+
+    void initShader() override;
 };
 
 /**
