@@ -2,7 +2,11 @@
 
 const amino = require('../../main.js');
 
-const gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx({
+    perspective: {
+        orthographic: false
+    }
+});
 
 gfx.start(function (err) {
     if (err) {
