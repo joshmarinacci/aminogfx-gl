@@ -18,14 +18,25 @@
 //
 
 AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
-    //empty
+    //recursive mutex needed
+    pthread_mutexattr_t attr;
+
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+
+    // animLock
+    pthread_mutex_init(&animLock, &attr);
 }
 
 AminoGfx::~AminoGfx() {
+    //callback
     if (startCallback) {
         delete startCallback;
         startCallback = NULL;
     }
+
+    //mutex
+    pthread_mutex_destroy(&animLock);
 
     //Note: properties are deleted by base class destructor
 }
@@ -528,12 +539,16 @@ void AminoGfx::processAnimations() {
         assert(!isMainThread());
     }
 
+    pthread_mutex_lock(&animLock);
+
     double currentTime = getTime();
     int count = animations.size();
 
     for (int i = 0; i < count; i++) {
         animations[i]->update(currentTime);
     }
+
+    pthread_mutex_unlock(&animLock);
 }
 
 /**
@@ -546,7 +561,7 @@ NAN_METHOD(AminoGfx::ClearAnimations) {
 
     assert(obj);
 
-    obj->clearAnimationsAsync();
+    obj->clearAnimations();
 }
 
 /**
@@ -616,7 +631,7 @@ void AminoGfx::destroy() {
 
     //free async
     clearAsyncQueue();
-    clearAnimationsSync();
+    clearAnimations();
     handleAsyncDeletes();
 
     //params
@@ -779,33 +794,19 @@ NAN_METHOD(AminoGfx::GetStats) {
  *
  * Note: called on main thread.
  */
-bool AminoGfx::addAnimationAsync(AminoAnim *anim) {
+bool AminoGfx::addAnimation(AminoAnim *anim) {
     if (destroyed) {
         return false;
     }
 
-    //retains anim instance
-    AminoJSObject::enqueueValueUpdate(anim, (asyncValueCallback)&AminoGfx::addAnimation);
+    //retain anim instance
+    anim->retain();
+
+    pthread_mutex_lock(&animLock);
+    animations.push_back(anim);
+    pthread_mutex_unlock(&animLock);
 
     return true;
-}
-
-/**
- * Add an animation.
- *
- * Note: called on OpenGL thread.
- */
-void AminoGfx::addAnimation(AsyncValueUpdate *update, int state) {
-    if (state != AsyncValueUpdate::STATE_APPLY) {
-        return;
-    }
-
-    AminoAnim *anim = (AminoAnim *)update->valueObj;
-
-    //keep retained instance
-    update->valueObj = NULL;
-
-    animations.push_back(anim);
 }
 
 /**
@@ -813,73 +814,50 @@ void AminoGfx::addAnimation(AsyncValueUpdate *update, int state) {
  *
  * Note: called on main thread.
  */
-void AminoGfx::removeAnimationAsync(AminoAnim *anim) {
+void AminoGfx::removeAnimation(AminoAnim *anim) {
     if (destroyed) {
         return;
     }
 
-    //so far retains another instance
-    AminoJSObject::enqueueValueUpdate(anim, (asyncValueCallback)&AminoGfx::removeAnimation);
-}
+    //remove
+    pthread_mutex_lock(&animLock);
 
-/**
- * Remove animation.
- */
-void AminoGfx::removeAnimation(AsyncValueUpdate *update, int state) {
-    if (state != AsyncValueUpdate::STATE_APPLY) {
-        return;
-    }
-
-    AminoAnim *anim = (AminoAnim *)update->valueObj;
     std::vector<AminoAnim *>::iterator pos = std::find(animations.begin(), animations.end(), anim);
 
     if (pos != animations.end()) {
         animations.erase(pos);
 
         //free instance
-        update->releaseLater = anim;
-    }
-}
-
-/**
- * Clear all animations.
- *
- * Note: called on main thread.
- */
-void AminoGfx::clearAnimationsAsync() {
-    if (destroyed) {
-        return;
+        anim->release();
     }
 
-    AminoJSObject::enqueueValueUpdate((AminoJSObject *)NULL, (asyncValueCallback)&AminoGfx::clearAnimations);
-}
-
-/**
- * Clear all animations.
- */
-void AminoGfx::clearAnimations(AsyncValueUpdate *update, int state) {
-    if (state != AsyncValueUpdate::STATE_APPLY) {
-        return;
-    }
-
-    clearAnimationsSync();
+    pthread_mutex_unlock(&animLock);
 }
 
 /**
  * Clear all animations now.
  *
- * Note: internal usage only.
+ * Note: called on main thread.
  */
-void AminoGfx::clearAnimationsSync() {
+void AminoGfx::clearAnimations() {
+    if (destroyed) {
+        return;
+    }
+
+    //release all instances
+    pthread_mutex_lock(&animLock);
+
     std::size_t count = animations.size();
 
     for (std::size_t i = 0; i < count; i++) {
         AminoAnim *item = animations[i];
 
-        delete item;
+        item->release();
     }
 
     animations.clear();
+
+    pthread_mutex_unlock(&animLock);
 }
 
 /**

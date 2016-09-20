@@ -434,7 +434,7 @@ private:
     std::vector<AnyAsyncUpdate *> *jsUpdates = NULL;
 
     uv_thread_t mainThread;
-    pthread_mutex_t asyncLock;
+    pthread_mutex_t asyncLock; //Note: can block for a while
 };
 
 #endif

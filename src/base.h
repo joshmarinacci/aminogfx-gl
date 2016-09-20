@@ -51,9 +51,8 @@ public:
 
     static NAN_MODULE_INIT(InitClasses);
 
-    bool addAnimationAsync(AminoAnim *anim);
-    void removeAnimationAsync(AminoAnim *anim);
-    void clearAnimationsAsync();
+    bool addAnimation(AminoAnim *anim);
+    void removeAnimation(AminoAnim *anim);
 
     void deleteTextureAsync(GLuint textureId);
     void deleteBufferAsync(GLuint bufferId);
@@ -106,6 +105,7 @@ protected:
 
     //animations
     std::vector<AminoAnim *> animations;
+    pthread_mutex_t animLock; //Note: short cycles
 
     //creation
     static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObjectFactory* factory);
@@ -162,10 +162,7 @@ private:
     static NAN_METHOD(GetStats);
 
     //animation
-    void addAnimation(AsyncValueUpdate *update, int state);
-    void removeAnimation(AsyncValueUpdate *update, int state);
-    void clearAnimations(AsyncValueUpdate *update, int state);
-    void clearAnimationsSync();
+    void clearAnimations();
 
     //texture & buffer
     void deleteTexture(AsyncValueUpdate *update, int state);
@@ -627,7 +624,7 @@ public:
         prop->retain();
 
         //enqueue
-        obj->addAnimationAsync(this);
+        obj->addAnimation(this);
     }
 
     void destroy() override {
@@ -837,7 +834,7 @@ public:
         if (!destroyed) {
             //remove animation
             if (eventHandler) {
-                ((AminoGfx *)eventHandler)->removeAnimationAsync(this);
+                ((AminoGfx *)eventHandler)->removeAnimation(this);
             }
 
             //free resources
