@@ -465,6 +465,11 @@ TextureShader::TextureShader() : AnyAminoShader() {
         void main() {
             vec4 pixel = texture2D(tex, uv);
 
+            //discard transparent pixels
+            if (pixel.a == 0.) {
+                discard;
+            }
+
             gl_FragColor = vec4(pixel.rgb, pixel.a * opacity);
         }
     )";
@@ -564,6 +569,11 @@ TextureClampToBorderShader::TextureClampToBorderShader() : TextureShader() {
             //show pixel
             vec4 pixel = texture2D(tex, uv2);
 
+            //discard transparent pixels
+            if (pixel.a == 0.) {
+                discard;
+            }
+
             gl_FragColor = vec4(pixel.rgb, pixel.a * opacity * clamp_to_border_factor(uv2));
         }
     )";
@@ -628,6 +638,11 @@ TextureLightingShader::TextureLightingShader() : TextureShader() {
 
         void main() {
             vec4 pixel = texture2D(tex, uv);
+
+            //discard transparent pixels
+            if (pixel.a == 0.) {
+                discard;
+            }
 
             gl_FragColor = vec4(pixel.rgb * lightFac, pixel.a * opacity);
         }

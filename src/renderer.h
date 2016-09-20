@@ -171,6 +171,13 @@ public:
     }
 
     /**
+     * Check if depth buffer is active.
+     */
+    bool hasDepth() {
+        return depth > 0;
+    }
+
+    /**
      * Enabled 3D rendering using depth buffer.
      */
     void enableDepth() {
@@ -178,6 +185,16 @@ public:
 
         if (depth == 1) {
             glDepthMask(GL_TRUE);
+
+            /*
+             * Transparent texture support:
+             *
+             *   - using GLSL discard, code below not available on OpenGL ES 2.0!
+             */
+            /*
+            glAlphaFunc(GL_GREATER, 0.);
+            glEnable(GL_ALPHA_TEST);
+            */
 
             //debug
             //printf("using depth mask\n");
