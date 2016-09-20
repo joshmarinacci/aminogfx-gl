@@ -384,6 +384,11 @@ void AminoRenderer::drawGroup(AminoGroup *group) {
         ctx->enableDepth();
     }
 
+    /*
+     * Clipping:
+     *
+     *  - quite slow on Raspberry Pi!
+     */
     bool useClipping = group->propCliprect->value;
 
     if (useClipping) {

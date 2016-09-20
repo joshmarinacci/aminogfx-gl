@@ -31,8 +31,12 @@ public:
         delete[] globaltx;
     }
 
+    /**
+     * Reset context.
+     */
     void reset() {
         assert(matrixStack.size() == 0);
+        assert(depth == 0);
     }
 
     void dumpGlobalTransform() {
@@ -187,6 +191,10 @@ public:
         depth--;
 
         if (depth == 0) {
+            //clear depth buffer
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            //disable mask usage
             glDepthMask(GL_FALSE);
         }
     }
