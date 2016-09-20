@@ -133,6 +133,14 @@ void AminoRenderer::setupPerspective(v8::Local<v8::Object> &perspective) {
 
         if (farValue->IsNumber()) {
             far = farValue->NumberValue();
+        } else {
+            //set default value
+            if (orthographic) {
+                //do not limit depth
+                far = -2048;
+            } else {
+                far = -300;
+            }
         }
     }
 

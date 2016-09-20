@@ -262,7 +262,7 @@ private:
     //perspective
     bool orthographic = true;
     float near = 150;
-    float far = -300;
+    float far = -2048;//dynamic: -2048/-300
     float eye = 600;
 
     //matrix
