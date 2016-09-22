@@ -947,7 +947,52 @@ public:
             lastTime = currentTime;
             pauseTime = 0;
 
-            //TODO cbx zeroTime, zeroPos
+            //sync with reference time
+            if (hasRefTime) {
+                double diff = currentTime - refTime;
+
+                if (diff < 0) {
+                    //in future: wait
+                    startTime = 0;
+                    lastTime = 0;
+                    return;
+                }
+
+                //check passed iterations
+                int cycles = diff / duration;
+
+                if (cycles > 0) {
+                    //check end of animation
+                    if (count != FOREVER) {
+                        if (cycles >= count) {
+                            //end reached
+                            endAnimation();
+                            return;
+                        }
+
+                        //reduce
+                        count -= cycles;
+                    }
+
+                    diff -= cycles * duration;
+
+                    //check direction
+                    if (cycles & 0x1) {
+                        toggle();
+                    }
+                }
+
+                //shift start time
+                startTime -= diff;
+            }
+
+            //adjust animation position
+            if (hasZeroPos && zeroPos > start && zeroPos <= end) {
+                float pos = (zeroPos - start) / (end - start);
+
+                //shift start time
+                startTime -= pos * duration;
+            }
         }
 
         //validate time (should never happen if time is monotonic)
