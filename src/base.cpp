@@ -83,6 +83,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
 
     // animations
     Nan::SetPrototypeMethod(tpl, "clearAnimations", ClearAnimations);
+    Nan::SetPrototypeMethod(tpl, "getTime", GetTime);
 
     // stats
     Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
@@ -565,6 +566,13 @@ NAN_METHOD(AminoGfx::ClearAnimations) {
     assert(obj);
 
     obj->clearAnimations();
+}
+
+/**
+ * Get current timer time (monotonic time, not current system time!).
+ */
+NAN_METHOD(AminoGfx::GetTime) {
+    info.GetReturnValue().Set(getTime());
 }
 
 /**

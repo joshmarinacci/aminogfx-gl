@@ -160,6 +160,7 @@ private:
     static NAN_METHOD(SetRoot);
     static NAN_METHOD(ClearAnimations);
     static NAN_METHOD(GetStats);
+    static NAN_METHOD(GetTime);
 
     //animation
     void clearAnimations();

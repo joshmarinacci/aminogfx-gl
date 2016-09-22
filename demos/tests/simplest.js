@@ -16,4 +16,5 @@ gfx.start(function (err) {
     console.log('screen: ' + JSON.stringify(gfx.screen));
     console.log('window size: ' + this.w() + 'x' + this.h());
     console.log('runtime: ' + JSON.stringify(gfx.runtime));
+    console.log('time: ' + this.getTime());
 });
