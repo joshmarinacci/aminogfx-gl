@@ -5,7 +5,9 @@ const path = require('path');
 
 const gfx = new amino.AminoGfx();
 const refTime = gfx.getTime();
+//const refTime = gfx.getTime() + 5000; //delay test
 const items = [];
+
 
 gfx.start(function (err) {
     if (err) {
