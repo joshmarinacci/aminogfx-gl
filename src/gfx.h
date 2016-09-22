@@ -18,34 +18,15 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-//return the current time in msec
+/**
+ * Get monotonic time for timer.
+ */
 static double __attribute__((unused)) getTime(void) {
-    timeval time;
+    struct timespec res;
 
-    gettimeofday(&time, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &res);
 
-    double millis = (time.tv_sec * 1000.0) + (time.tv_usec / 1000.0);
-
-    return millis;
-}
-
-#endif
-
-#ifdef LINUX
-
-#include <GL/glfw.h>
-#include <GL/glext.h>
-#include <sys/time.h>
-
-//return the current time in msec
-static double __attribute__((unused)) getTime(void) {
-    timeval time;
-
-    gettimeofday(&time, NULL);
-
-    double millis = (time.tv_sec * 1000.0) + (time.tv_usec / 1000.0);
-
-    return millis;
+    return 1000.0 * res.tv_sec + ((double) res.tv_nsec / 1e6);
 }
 
 #endif
@@ -60,11 +41,13 @@ static double __attribute__((unused)) getTime(void) {
 
 #include <time.h>
 
-//return the current time in msec
+/**
+ * Get monotonic time for timer.
+ */
 static double __attribute__((unused)) getTime(void) {
     struct timespec res;
 
-    clock_gettime(CLOCK_REALTIME, &res);
+    clock_gettime(CLOCK_MONOTONIC, &res);
 
     return 1000.0 * res.tv_sec + ((double) res.tv_nsec / 1e6);
 }

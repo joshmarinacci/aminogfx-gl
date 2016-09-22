@@ -561,6 +561,7 @@ private:
     bool started = false;
     bool ended = false;
 
+    //properties
     float start;
     float end;
     int count;
@@ -569,6 +570,14 @@ private:
     int direction = FORWARD;
     int timeFunc = TF_CUBIC_IN_OUT;
     Nan::Callback *then = NULL;
+
+    //start pos
+    float zeroPos;
+    bool hasZeroPos = false;
+
+    //sync time
+    double refTime;
+    bool hasRefTime = false;
 
     double startTime = 0;
     double lastTime  = 0;
@@ -723,6 +732,32 @@ public:
 
             if (thenLocal->IsFunction()) {
                 then = new Nan::Callback(thenLocal.As<v8::Function>());
+            }
+        }
+
+        //optional values
+
+        // 1) pos
+        v8::MaybeLocal<v8::Value> maybePos = Nan::Get(data, Nan::New<v8::String>("pos").ToLocalChecked());
+
+        if (!maybePos.IsEmpty()) {
+            v8::Local<v8::Value> posLocal = maybePos.ToLocalChecked();
+
+            if (posLocal->IsNumber()) {
+                hasZeroPos = true;
+                zeroPos = posLocal->NumberValue();
+            }
+        }
+
+        // 2) refTime
+        v8::MaybeLocal<v8::Value> maybeRefTime = Nan::Get(data, Nan::New<v8::String>("refTime").ToLocalChecked());
+
+        if (!maybeRefTime.IsEmpty()) {
+            v8::Local<v8::Value> refTimeLocal = maybeRefTime.ToLocalChecked();
+
+            if (refTimeLocal->IsNumber()) {
+                hasRefTime = true;
+                refTime = refTimeLocal->NumberValue();
             }
         }
 
@@ -890,6 +925,9 @@ public:
         stop();
     }
 
+    /**
+     * Next animation step.
+     */
     void update(double currentTime) {
         //check active
     	if (!started || ended) {
@@ -907,9 +945,11 @@ public:
             startTime = currentTime;
             lastTime = currentTime;
             pauseTime = 0;
+
+            //TODO cbx zeroTime, zeroPos
         }
 
-        //validate time
+        //validate time (should never happen if time is monotonic)
         if (currentTime < startTime) {
             //smooth animation
             startTime = currentTime - (lastTime - startTime);
@@ -917,7 +957,8 @@ public:
         }
 
         //process
-        float t = (currentTime - startTime) / duration;
+        double timePassed = currentTime - startTime;
+        float t = timePassed / duration;
 
         lastTime = currentTime;
 
@@ -942,9 +983,26 @@ public:
 
             if (doToggle) {
                 //next cycle
-                startTime = currentTime;
-                t = 0;
-                toggle();
+
+                //calc exact time offset
+                double overTime = timePassed - duration;
+
+                if (overTime > duration) {
+                    int times = overTime / duration;
+
+                    overTime -= times * duration;
+
+                    if (times & 0x1) {
+                        doToggle = false;
+                    }
+                }
+
+                startTime = currentTime - overTime;
+                t = overTime / duration;
+
+                if (doToggle) {
+                    toggle();
+                }
             } else {
                 //end position
                 t = 1;

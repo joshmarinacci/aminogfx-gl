@@ -544,6 +544,9 @@ void AminoGfx::processAnimations() {
     double currentTime = getTime();
     int count = animations.size();
 
+    //debug timer
+    //printf("timer timestamp: %f\n", currentTime);
+
     for (int i = 0; i < count; i++) {
         animations[i]->update(currentTime);
     }

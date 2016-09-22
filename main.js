@@ -1842,6 +1842,7 @@ var Anim = AminoGfx.Anim;
 Anim.prototype.init = function () {
     this._from = null;
     this._to = null;
+    this._pos = null;
     this._duration = 1000;
     this._loop = 1;
     this._delay = 0;
@@ -1870,6 +1871,17 @@ Anim.prototype.to = function (val) {
     this.checkStarted();
 
     this._to = val;
+
+    return this;
+};
+
+/**
+ * Animation start position value.
+ */
+Anim.prototype.pos = function (val) {
+    this.checkStarted();
+
+    this._pos = val;
 
     return this;
 };
@@ -1959,7 +1971,7 @@ Anim.prototype.checkStarted = function () {
 /*
  * Start the animation.
  */
-Anim.prototype.start = function () {
+Anim.prototype.start = function (refTime) {
     if (this.started) {
         throw new Error('animation already started');
     }
@@ -1990,7 +2002,9 @@ Anim.prototype.start = function () {
         self._start({
             from: self._from,
             to: self._to,
-            duration : self._duration,
+            pos: self._pos,
+            duration: self._duration,
+            refTime: refTime,
             count: self._loop,
             autoreverse: self._autoreverse,
             timeFunc: self._timeFunc,
