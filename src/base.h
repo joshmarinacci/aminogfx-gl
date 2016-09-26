@@ -333,6 +333,9 @@ public:
     Utf8Property *propVAlign;
     int align = ALIGN_LEFT;
     int vAlign = VALIGN_BASELINE;
+
+    //lines
+    Int32Property *propMaxLines;
     int lineNr = 1;
     float lineW = 0;
 
@@ -389,6 +392,8 @@ public:
         propAlign = createUtf8Property("align");
         propVAlign = createUtf8Property("vAlign");
         propFont = createObjectProperty("font");
+
+        propMaxLines = createInt32Property("maxLines");
     }
 
     //creation
@@ -429,7 +434,7 @@ public:
         //check font updates
         AnyProperty *property = update->property;
 
-        if (property == propW || property == propH || property == propText) {
+        if (property == propW || property == propH || property == propText || property == propMaxLines) {
             updated = true;
         }
 
@@ -539,7 +544,7 @@ private:
         AminoJSObject::createInstance(info, getFactory());
     }
 
-    static void addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr, float *lineW);
+    static void addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr, int maxLines, float *lineW);
 };
 
 /**

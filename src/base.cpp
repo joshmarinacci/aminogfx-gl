@@ -1139,7 +1139,7 @@ GLuint AminoText::updateTexture() {
 /**
  * Render text to vertices.
  */
-void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr, float *lineW) {
+void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, const char *text, vec2 *pen, int wrap, int width, int *lineNr, int maxLines, float *lineW) {
     //see https://github.com/rougier/freetype-gl/blob/master/demos/glyph.c
     size_t len = utf8_strlen(text);
 
@@ -1158,6 +1158,7 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
     char *textPos = (char *)text;
     char *lastTextPos = NULL;
     uint32_t textUtf32[len];
+    bool done = false;
 
     for (size_t i = 0; i < len; ++i) {
         texture_glyph_t *glyph = texture_font_get_glyph(font, textPos);
@@ -1205,10 +1206,12 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
 
                 //process
                 if (newLine) {
+                    //line break needed (check which one)
                     linePos = 0;
 
                     //check word wrapping
                     bool wrapped = false;
+                    bool isLastLine = maxLines > 0 && *lineNr == maxLines;
 
                     if (wordWrap && !skip) {
                         //find white space
@@ -1269,6 +1272,13 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
                             skip = false;
 
                             wrapped = true;
+
+                            if (isLastLine) {
+                                //remove characters left
+                                for (size_t j = start; j < count; j++) {
+                                    vertex_buffer_erase(buffer, start);
+                                }
+                            }
                         }
                     }
 
@@ -1284,7 +1294,14 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
                     //debug
                     //printf("pen.x=%f lineStart=%lc\n", pen->x, text[lineStart]);
 
-                    (*lineNr)++;
+                    if (isLastLine) {
+                        //skip any character
+                        skip = true;
+                        done = true;
+                    } else {
+                        (*lineNr)++;
+                    }
+
                     pen->y -= font->height; //inverse coordinates
                 }
 
@@ -1344,6 +1361,11 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
             //continue with glyphs in atlas
         }
 
+        //check end condition
+        if (done) {
+            break;
+        }
+
         //next glyph pos
         size_t charLen = utf8_surrogate_len(textPos);
 
@@ -1392,7 +1414,7 @@ bool AminoText::layoutText() {
     pen.y = 0;
 
     //Note: consider using async task to avoid performance issues
-    addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, &lineW);
+    addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, propMaxLines->value, &lineW);
 
     if (DEBUG_BASE) {
         printf("-> layoutText() done\n");

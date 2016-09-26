@@ -1734,7 +1734,10 @@ Text.prototype.init = function () {
         //alignment
         align:  'left',
         vAlign: 'baseline',
-        wrap:   'none'
+        wrap:   'none',
+
+        //lines
+        maxLines: 0
     });
 
     this.fill.watch(watchFill);

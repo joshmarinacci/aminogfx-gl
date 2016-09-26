@@ -57,6 +57,8 @@ gfx.start(function (err) {
         .h(160)
         //.wrap('end')
         .wrap('word')
+        //.maxLines(1)
+        //.maxLines(2)
         .fill('#ffff00');
 
     root.add(text);
