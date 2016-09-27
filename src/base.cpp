@@ -1149,7 +1149,6 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
     size_t lineStart = 0; //start of current line
     size_t linePos = 0; //character pos current line
     float penXStart = pen->x;
-    float lastAdvance = 0;
 
     //debug
     //printf("addTextGlyphs: wrap=%i width=%i\n", wrap, width);
@@ -1315,10 +1314,10 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
                 pen->x += kerning;
 
                 //glyph position
-                float x0  = ( pen->x + glyph->offset_x );
-                float y0  = ( pen->y + glyph->offset_y );
-                float x1  = ( x0 + glyph->width );
-                float y1  = ( y0 - glyph->height );
+                float x0  = pen->x + glyph->offset_x;
+                float y0  = pen->y + glyph->offset_y;
+                float x1  = x0 + glyph->width;
+                float y1  = y0 - glyph->height;
                 float s0 = glyph->s0;
                 float t0 = glyph->t0;
                 float s1 = glyph->s1;
@@ -1333,7 +1332,7 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
                     advance = 0;
                 }
 
-                GLushort indices[6] = {0,1,2, 0,2,3};
+                GLushort indices[6] = { 0,1,2, 0,2,3 };
                 vertex_t vertices[4] = { { x0, y0, 0,  s0, t0 },
                                          { x0, y1, 0,  s0, t1 },
                                          { x1, y1, 0,  s1, t1 },
@@ -1345,7 +1344,6 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
 
                 //next
                 pen->x += advance;
-                lastAdvance = advance;
             }
         } else {
             //not enough space for glyph
@@ -1373,7 +1371,7 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
         textPos += charLen;
     }
 
-    *lineW = std::max(*lineW, pen->x - lastAdvance - penXStart);
+    *lineW = std::max(*lineW, pen->x - penXStart);
 }
 
 /**
