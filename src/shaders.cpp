@@ -546,12 +546,12 @@ TextureClampToBorderShader::TextureClampToBorderShader() : TextureShader() {
         uniform bvec2 repeat;
         uniform sampler2D tex;
 
-        float clamp_to_border_factor(vec2 coords) {
+        bool clamp_to_border(vec2 coords) {
             bvec2 out1 = greaterThan(coords, vec2(1, 1));
             bvec2 out2 = lessThan(coords, vec2(0, 0));
             bool do_clamp = (any(out1) || any(out2));
 
-            return float(!do_clamp);
+            return do_clamp;
         }
 
         void main() {
@@ -570,11 +570,11 @@ TextureClampToBorderShader::TextureClampToBorderShader() : TextureShader() {
             vec4 pixel = texture2D(tex, uv2);
 
             //discard transparent pixels
-            if (pixel.a == 0.) {
+            if (pixel.a == 0. || clamp_to_border(uv2)) {
                 discard;
             }
 
-            gl_FragColor = vec4(pixel.rgb, pixel.a * opacity * clamp_to_border_factor(uv2));
+            gl_FragColor = vec4(pixel.rgb, pixel.a * opacity);
         }
     )";
 }
