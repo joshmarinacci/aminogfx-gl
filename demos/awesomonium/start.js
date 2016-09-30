@@ -2,7 +2,7 @@
 
 //Attention: increase GPU memory! With 64 MB the rendering suddenly gets very slow while drawing polygons!!!
 
-//Raspberry Pi 3: 13 fps (polygons could be improved)
+//Raspberry Pi 3 1080p@60: 13 fps (polygons could be improved)
 
 var amino = require('../../main.js');
 var data = require('./countries.js');
@@ -28,7 +28,9 @@ amino.fonts.registerFont({
     }
 });
 
-var gfx = new amino.AminoGfx();
+var gfx = new amino.AminoGfx({
+    resolution: '1080p@24'
+});
 
 gfx.w(w);
 gfx.h(h);
