@@ -110,10 +110,27 @@ private:
                         std::string prefRes = AminoJSObject::toString(resolutionValue);
 
                         //change resolution
-                        if (prefRes == "720p@60") {
-                            force720p60();
+
+                        if (prefRes == "720p@24") {
+                            forceHdmiMode(HDMI_CEA_720p24);
+                        } else if (prefRes == "720p@25") {
+                            forceHdmiMode(HDMI_CEA_720p25);
+                        } else if (prefRes == "720p@30") {
+                            forceHdmiMode(HDMI_CEA_720p30);
+                        } else if (prefRes == "720p@50") {
+                            forceHdmiMode(HDMI_CEA_720p50);
+                        } else if (prefRes == "720p@60") {
+                            forceHdmiMode(HDMI_CEA_720p60);
+                        } else if (prefRes == "1080p@24") {
+                            forceHdmiMode(HDMI_CEA_1080p24);
+                        } else if (prefRes == "1080p@25") {
+                            forceHdmiMode(HDMI_CEA_1080p25);
+                        } else if (prefRes == "1080p@30") {
+                            forceHdmiMode(HDMI_CEA_1080p30);
+                        } else if (prefRes == "1080p@50") {
+                            forceHdmiMode(HDMI_CEA_1080p50);
                         } else if (prefRes == "1080p@60") {
-                            force1080p60();
+                            forceHdmiMode(HDMI_CEA_1080p60);
                         } else {
                             printf("unknown resolution: %s\n", prefRes.c_str());
                         }
@@ -352,20 +369,6 @@ private:
         }
 
         return true;
-    }
-
-    /**
-     * Force full HD resolution.
-     */
-    void force1080p60() {
-        forceHdmiMode(HDMI_CEA_1080p60);
-    }
-
-    /**
-     * Force HD resolution.
-     */
-    void force720p60() {
-        forceHdmiMode(HDMI_CEA_720p60);
     }
 
     /**
