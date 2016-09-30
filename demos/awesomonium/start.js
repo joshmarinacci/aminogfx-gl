@@ -29,7 +29,9 @@ amino.fonts.registerFont({
 });
 
 var gfx = new amino.AminoGfx({
-    resolution: '1080p@24'
+    //resolution: '1080p@24'
+    //resolution: '720p@50'
+    //resolution: '720p@60'
 });
 
 gfx.w(w);
