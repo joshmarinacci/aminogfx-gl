@@ -34,6 +34,9 @@ const amino = require('../../main.js');
 const gfx = new amino.AminoGfx({
     //resolution: '1080p@60',
     //resolution: '720p@60',
+
+    //swapInterval: 3,
+
     perspective: {
         orthographic: false
     }

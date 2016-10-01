@@ -207,6 +207,22 @@ void AminoGfx::initRenderer() {
     viewportW = propW->value;
     viewportH = propH->value;
     viewportChanged = true;
+
+    //params
+    if (!createParams.IsEmpty()) {
+        v8::Local<v8::Object> obj = Nan::New(createParams);
+
+        //swap interval
+        Nan::MaybeLocal<v8::Value> swapIntervalMaybe = Nan::Get(obj, Nan::New<v8::String>("swapInterval").ToLocalChecked());
+
+        if (!swapIntervalMaybe.IsEmpty()) {
+            v8::Local<v8::Value> swapIntervalValue = swapIntervalMaybe.ToLocalChecked();
+
+            if (swapIntervalValue->IsInt32()) {
+                swapInterval = swapIntervalValue->Int32Value();
+            }
+        }
+    }
 }
 
 /**
@@ -222,9 +238,10 @@ void AminoGfx::setupRenderer() {
     renderer = new AminoRenderer();
     renderer->setup();
 
-    //perspective
     if (!createParams.IsEmpty()) {
         v8::Local<v8::Object> obj = Nan::New(createParams);
+
+        //perspective
         Nan::MaybeLocal<v8::Value> perspectiveMaybe = Nan::Get(obj, Nan::New<v8::String>("perspective").ToLocalChecked());
 
         if (!perspectiveMaybe.IsEmpty()) {

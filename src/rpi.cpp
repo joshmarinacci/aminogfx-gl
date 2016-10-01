@@ -101,6 +101,8 @@ private:
             //handle preferred resolution
             if (!createParams.IsEmpty()) {
                 v8::Local<v8::Object> obj = Nan::New(createParams);
+
+                //resolution
                 Nan::MaybeLocal<v8::Value> resolutionMaybe = Nan::Get(obj, Nan::New<v8::String>("resolution").ToLocalChecked());
 
                 if (!resolutionMaybe.IsEmpty()) {
@@ -418,6 +420,7 @@ private:
             printf("initRenderer()\n");
         }
 
+        //base
         AminoGfx::initRenderer();
 
         //set display size & viewport
@@ -471,7 +474,7 @@ private:
             0, //src
             &src_rect,
             DISPMANX_PROTECTION_NONE,
-            &dispman_alpha,  //alpha
+            &dispman_alpha, //alpha
             0, //clamp,
             (DISPMANX_TRANSFORM_T)0 //transform
         );
@@ -493,6 +496,13 @@ private:
         EGLBoolean res = eglMakeCurrent(display, surface, surface, context);
 
         assert(EGL_FALSE != res);
+
+        //swap interval
+        if (swapInterval != 0) {
+            res = eglSwapInterval(display, swapInterval);
+
+            assert(res == EGL_TRUE);
+        }
 
         //input
         initInput();

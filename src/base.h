@@ -73,6 +73,7 @@ protected:
     int viewportW;
     int viewportH;
     bool viewportChanged;
+    int32_t swapInterval = 0;
 
     //performance (FPS)
     double fpsStart = 0;

@@ -69,6 +69,9 @@ private:
 
         //init GLFW
         if (!glfwInitialized) {
+            //error handler
+            glfwSetErrorCallback(handleErrors);
+
             if (!glfwInit()) {
                 //exit on error
                 printf("error. quitting\n");
@@ -155,6 +158,7 @@ private:
      * Initialize GLFW window.
      */
     void initRenderer() override {
+        //base
         AminoGfx::initRenderer();
 
         /*
@@ -221,6 +225,15 @@ private:
         //activate context (needed by JS code to create shaders)
         glfwMakeContextCurrent(window);
 
+        //swap interval
+        if (swapInterval != 0) {
+            //debug
+            //printf("swap interval: %i\n", (int)swapInterval);
+
+            //Note: no change seen on macOS!
+            glfwSwapInterval(swapInterval);
+        }
+
         //set bindings
         glfwSetKeyCallback(window, handleKeyEvents);
         glfwSetCursorPosCallback(window, handleMouseMoveEvents);
@@ -234,6 +247,13 @@ private:
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
         glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
         glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+    }
+
+    /**
+     * Error handler.
+     */
+    static void handleErrors(int error, const char *description) {
+        printf("GLFW error: %i %s\n", error, description);
     }
 
     /**
