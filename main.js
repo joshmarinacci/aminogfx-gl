@@ -1459,6 +1459,12 @@ AminoFonts.prototype.init = function () {
  * Register a font.
  */
 AminoFonts.prototype.registerFont = function (font) {
+    //check existing font (immutable)
+    if (this.fonts[font.name]) {
+        return this;
+    }
+
+    //add new font
     this.fonts[font.name] = font;
 
     //collect weights
