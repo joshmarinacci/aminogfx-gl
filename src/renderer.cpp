@@ -397,7 +397,7 @@ void AminoRenderer::drawGroup(AminoGroup *group) {
      *
      *  - quite slow on Raspberry Pi!
      */
-    bool useClipping = group->propCliprect->value;
+    bool useClipping = group->propClipRect->value;
 
     if (useClipping) {
         //turn on stenciling

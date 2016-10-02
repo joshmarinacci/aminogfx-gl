@@ -376,7 +376,7 @@ function findNodeAtXY_helper(root, x, y, tab) {
 
     //console.log(tab + "   xy="+tx+","+ty);
 
-    if (root.cliprect && root.cliprect()) {
+    if (root.cliprect && root.clipRect()) {
         if (tx < 0) {
             return false;
         }
@@ -520,7 +520,7 @@ Group.prototype.init = function () {
         rz: 0,
 
         //clipping
-        cliprect: false,
+        clipRect: false,
 
         //3D rendering (depth test)
         depth: false

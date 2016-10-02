@@ -10,7 +10,7 @@ gfx.start(function (err) {
 
     //clipped group as root
     var root = this.createGroup()
-        .x(100).y(100).w(100).h(100).cliprect(true);
+        .x(100).y(100).w(100).h(100).clipRect(true);
 
     this.setRoot(root);
 

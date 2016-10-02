@@ -1520,7 +1520,7 @@ public:
     std::vector<AminoNode *> children;
 
     //properties
-    BooleanProperty *propCliprect;
+    BooleanProperty *propClipRect;
     BooleanProperty *propDepth;
 
     AminoGroup(): AminoNode(getFactory()->name, GROUP) {
@@ -1540,7 +1540,7 @@ public:
         propOriginX = createFloatProperty("originX");
         propOriginY = createFloatProperty("originY");
 
-        propCliprect = createBooleanProperty("cliprect");
+        propClipRect = createBooleanProperty("clipRect");
         propDepth = createBooleanProperty("depth");
     }
 
