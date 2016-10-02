@@ -21,11 +21,17 @@ public:
     AnyAminoShader *prevShader = NULL;
     GLuint prevTex = INVALID_TEXTURE;
 
+    /**
+     * Constructor.
+     */
     GLContext() {
         //matrix
         make_identity_matrix(globaltx);
     }
 
+    /**
+     * Destructor.
+     */
     virtual ~GLContext() {
         assert(matrixStack.size() == 0);
         delete[] globaltx;
@@ -39,14 +45,23 @@ public:
         assert(depth == 0);
     }
 
+    /**
+     * Display current matrix.
+     */
     void dumpGlobalTransform() {
         print_matrix(globaltx);
     }
 
+    /**
+     * Translate x/y.
+     */
     void translate(GLfloat x, GLfloat y) {
         translate(x, y, 0);
     }
 
+    /**
+     * Translate x/y/z.
+     */
     void translate(GLfloat x, GLfloat y, GLfloat z) {
         GLfloat tr[16];
         GLfloat trans2[16];
@@ -56,21 +71,29 @@ public:
         copy_matrix(globaltx, trans2);
     }
 
+    /**
+     * Rotate x/y/z. Angles in degrees.
+     *
+     * Order: 1) x, 2) y, 3) z
+     */
     void rotate(GLfloat x, GLfloat y, GLfloat z) {
         GLfloat rot[16];
         GLfloat temp[16];
 
+        //x-rotation
         make_x_rot_matrix(x, rot);
         mul_matrix(temp, globaltx, rot);
-        copy_matrix(globaltx,temp);
+        copy_matrix(globaltx, temp);
 
+        //y-rotation
         make_y_rot_matrix(y, rot);
         mul_matrix(temp, globaltx, rot);
-        copy_matrix(globaltx,temp);
+        copy_matrix(globaltx, temp);
 
+        //z-rotation
         make_z_rot_matrix(z, rot);
         mul_matrix(temp, globaltx, rot);
-        copy_matrix(globaltx,temp);
+        copy_matrix(globaltx, temp);
     }
 
     /**
