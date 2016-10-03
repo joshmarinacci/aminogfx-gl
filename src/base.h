@@ -340,6 +340,11 @@ public:
     int lineNr = 1;
     float lineW = 0;
 
+    //mutex
+    static uv_mutex_t freeTypeMutex;
+    static bool freeTypeMutexInitialized;
+
+    //constants
     static const int ALIGN_LEFT   = 0x0;
     static const int ALIGN_CENTER = 0x1;
     static const int ALIGN_RIGHT  = 0x2;
@@ -354,7 +359,14 @@ public:
     static const int WRAP_WORD = 0x2;
 
     AminoText(): AminoNode(getFactory()->name, TEXT) {
-        //empty
+        //mutex
+        if (!freeTypeMutexInitialized) {
+            freeTypeMutexInitialized = true;
+
+            int res = uv_mutex_init(&freeTypeMutex);
+
+            assert(res == 0);
+        }
     }
 
     ~AminoText() {

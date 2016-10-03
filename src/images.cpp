@@ -38,7 +38,7 @@ private:
 
     //mutex
     static uv_mutex_t jpegMutex;
-    static bool jpegMutexInitalized;
+    static bool jpegMutexInitialized;
 
 public:
     AsyncImageWorker(Nan::Callback *callback, v8::Local<v8::Object> &obj, v8::Local<v8::Value> &bufferObj) : AsyncWorker(callback) {
@@ -51,8 +51,8 @@ public:
         bufferLen = node::Buffer::Length(bufferObj);
 
         //mutex
-        if (!jpegMutexInitalized) {
-            jpegMutexInitalized = true;
+        if (!jpegMutexInitialized) {
+            jpegMutexInitialized = true;
 
             int res = uv_mutex_init(&jpegMutex);
 
@@ -261,7 +261,7 @@ public:
 };
 
 uv_mutex_t AsyncImageWorker::jpegMutex;
-bool AsyncImageWorker::jpegMutexInitalized = false;
+bool AsyncImageWorker::jpegMutexInitialized = false;
 
 //
 // AminoImage

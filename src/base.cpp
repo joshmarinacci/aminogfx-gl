@@ -110,7 +110,7 @@ void AminoGfx::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
 }
 
 /**
- * JS object was initalized.
+ * JS object was initialized.
  */
 void AminoGfx::setup() {
     //register native properties
@@ -1428,8 +1428,13 @@ bool AminoText::layoutText() {
     pen.x = 0;
     pen.y = 0;
 
+    //Note: FreeType glyph code is not thread-safe, using lock to prevent crash on macOS if multiple AminoGfx instances are active
+    uv_mutex_lock(&freeTypeMutex);
+
     //Note: consider using async task to avoid performance issues
     addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, propMaxLines->value, &lineW);
+
+    uv_mutex_unlock(&freeTypeMutex);
 
     if (DEBUG_BASE) {
         printf("-> layoutText() done\n");
@@ -1437,3 +1442,6 @@ bool AminoText::layoutText() {
 
     return true;
 }
+
+uv_mutex_t AminoText::freeTypeMutex;
+bool AminoText::freeTypeMutexInitialized = false;
