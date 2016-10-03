@@ -543,6 +543,7 @@ v8::Local<v8::Function> AminoTexture::GetInitFunction() {
     Nan::SetPrototypeMethod(tpl, "loadTextureFromImage", LoadTextureFromImage);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromFont", LoadTextureFromFont);
+    Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
 
     //template function
     return Nan::GetFunction(tpl).ToLocalChecked();
@@ -877,6 +878,20 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
             delete callback;
         }
     }
+}
+
+/**
+ * Free texture.
+ */
+NAN_METHOD(AminoTexture::Destroy) {
+    //debug
+    //printf("-> destroy()\n");
+
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    obj->destroy();
 }
 
 //

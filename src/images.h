@@ -91,6 +91,7 @@ private:
     static NAN_METHOD(LoadTextureFromImage);
     static NAN_METHOD(LoadTextureFromBuffer);
     static NAN_METHOD(LoadTextureFromFont);
+    static NAN_METHOD(Destroy);
 
     void createTexture(AsyncValueUpdate *update, int state);
     void createTextureFromBuffer(AsyncValueUpdate *update, int state);

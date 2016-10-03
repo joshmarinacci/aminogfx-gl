@@ -687,6 +687,19 @@ Group.prototype.raiseToTop = function (node) {
 };
 
 /**
+ * Free OpenGL resources.
+ *
+ * Attention: do not call if shared textures are used by any child.
+ */
+Group.prototype.destroy = function () {
+    this.children.forEach((node) => {
+        if (node.destroy) {
+            node.destroy();
+        }
+    });
+};
+
+/**
  * Find children.
  */
 Group.prototype.find = function (pattern) {
@@ -1070,6 +1083,20 @@ ImageView.prototype.scale = scaleFunc;
  */
 ImageView.prototype.rotate = rotateFunc;
 
+/**
+ * Destroy texture.
+ *
+ * Note: do not call if the texture is used anywhere else.
+ */
+ImageView.prototype.destroy = function () {
+    const img = this.image();
+
+    if (img) {
+        this.image(null);
+        img.destroy();
+    }
+};
+
 //
 // PixelView
 //
@@ -1343,6 +1370,20 @@ Model.prototype.scale = scaleFunc;
  * Rotate.
  */
 Model.prototype.rotate = rotateFunc;
+
+/**
+ * Destroy texture.
+ *
+ * Note: do not call if the texture is used anywhere else.
+ */
+Model.prototype.destroy = function () {
+    const texture = this.texture();
+
+    if (texture) {
+        this.texture(null);
+        texture.destroy();
+    }
+};
 
 //
 // Circle
