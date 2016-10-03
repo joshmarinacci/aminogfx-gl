@@ -1509,6 +1509,13 @@ public:
     AminoJSObject* create() override;
 };
 
+//group insert
+
+typedef struct {
+    AminoNode *child;
+    size_t pos;
+} group_insert_t;
+
 /**
  * Group node.
  *
@@ -1567,6 +1574,7 @@ public:
 
         //prototype methods
         Nan::SetPrototypeMethod(tpl, "_add", Add);
+        Nan::SetPrototypeMethod(tpl, "_insert", Insert);
         Nan::SetPrototypeMethod(tpl, "_remove", Remove);
 
         //template function
@@ -1581,6 +1589,9 @@ private:
         AminoJSObject::createInstance(info, getFactory());
     }
 
+    /**
+     * Add a child node.
+     */
     static NAN_METHOD(Add) {
         assert(info.Length() == 1);
 
@@ -1618,6 +1629,68 @@ private:
         children.push_back(node);
     }
 
+    /**
+     * Insert a child node.
+     */
+    static NAN_METHOD(Insert) {
+        assert(info.Length() == 2);
+
+        AminoGroup *group = Nan::ObjectWrap::Unwrap<AminoGroup>(info.This());
+        v8::Local<v8::Value> childValue = info[0];
+        AminoNode *child = Nan::ObjectWrap::Unwrap<AminoNode>(childValue->ToObject());
+        int pos = info[1]->Int32Value();
+
+        assert(group);
+        assert(child);
+        assert(pos >= 0);
+
+        if (!child->checkRenderer(group)) {
+            return;
+        }
+
+        //retain instance of child
+        child->retain();
+
+        //handle async
+        group_insert_t *data = new group_insert_t();
+
+        data->child = child;
+        data->pos = pos;
+
+        group->enqueueValueUpdate(childValue, data, (asyncValueCallback)&AminoGroup::insertChild);
+    }
+
+    /**
+     * Add a child node.
+     */
+    void insertChild(AsyncValueUpdate *update, int state) {
+        if (state == AsyncValueUpdate::STATE_APPLY) {
+            group_insert_t *data = (group_insert_t *)update->data;
+
+            assert(data);
+
+            //keep retained instance
+
+            if (DEBUG_BASE) {
+                printf("-> insertChild()\n");
+            }
+
+            children.insert(children.begin() + data->pos, data->child);
+        } else if (state == AsyncValueUpdate::STATE_DELETE) {
+            //on main thread
+            group_insert_t *data = (group_insert_t *)update->data;
+
+            assert(data);
+
+            //free
+            delete data;
+            update->data = NULL;
+        }
+    }
+
+    /**
+     * Remove a child node.
+     */
     static NAN_METHOD(Remove) {
         assert(info.Length() == 1);
 
@@ -1631,6 +1704,9 @@ private:
         group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::removeChild);
     }
 
+    /**
+     * Remove a child node.
+     */
     void removeChild(AsyncValueUpdate *update, int state) {
         if (state != AsyncValueUpdate::STATE_APPLY) {
             return;

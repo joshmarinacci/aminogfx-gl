@@ -588,6 +588,61 @@ Group.prototype.add = function () {
 };
 
 /**
+ * Insert a child at a certain position.
+ */
+Group.prototype.insertAt = function (item, pos) {
+    if (!item) {
+        throw new Error('can\'t add a null child to a group');
+    }
+
+    if (this.children.indexOf(item) != -1) {
+        throw new Error('child was added before');
+    }
+
+    if (item == this || item.parent) {
+        throw new Error('already added to different group');
+    }
+
+    this._insert(item, pos);
+    this.children.splice(pos, 0, item);
+    item.parent = this;
+
+    return this;
+};
+
+/**
+ * Insert before a sibling.
+ */
+Group.prototype.insertBefore = function (item, sibling) {
+    var pos = this.children.indexOf(sibling);
+
+    if (pos == -1) {
+        //add at end
+        this.add(item);
+
+        return false;
+    }
+
+    return this.insertAt(item, pos);
+};
+
+/**
+ * Insert after a sibling.
+ */
+Group.prototype.insertAfter = function (item, sibling) {
+    var pos = this.children.indexOf(sibling);
+
+    if (pos == -1) {
+        //add at end
+        this.add(item);
+
+        return false;
+    }
+
+    return this.insertAt(item, pos + 1);
+};
+
+/**
  * Remove one or more children from this group.
  */
 Group.prototype.remove = function (child) {
