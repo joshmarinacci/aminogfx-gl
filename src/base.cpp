@@ -830,9 +830,15 @@ bool AminoGfx::addAnimation(AminoAnim *anim) {
     //retain anim instance
     anim->retain();
 
+    //add
     pthread_mutex_lock(&animLock);
     animations.push_back(anim);
     pthread_mutex_unlock(&animLock);
+
+    //check total
+    if (animations.size() % 100 == 0) {
+        printf("warning: %i animations reached!\n", (int)animations.size());
+    }
 
     return true;
 }
