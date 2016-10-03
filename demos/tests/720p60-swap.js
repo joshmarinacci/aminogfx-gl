@@ -5,7 +5,7 @@ const amino = require('../../main.js');
 //create instance
 const gfx = new amino.AminoGfx({
     resolution: '720p@60',
-    swapInterval: 2 //30 fps
+    swapInterval: 2 //30 fps (works on Raspberry Pi; no effect on macOS)
 });
 
 gfx.start(function (err) {
