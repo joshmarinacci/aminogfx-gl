@@ -5,6 +5,11 @@
 
 /**
  * Mac AminoGfx implementation.
+ *
+ * Notes:
+ *
+ *  - swapInterval is not supported
+ *  - getting high CPU usage while display is off because > 1000 FPS are rendered!
  */
 class AminoGfxMac : public AminoGfx {
 public:
