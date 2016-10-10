@@ -207,13 +207,20 @@ texture_font_t *AminoFont::getFontWithSize(int size) {
         }
 
         if (DEBUG_FONTS) {
-            printf("-> new font size: %i (%s/%s/%i)\n", size, fontName.c_str(), fontStyle.c_str(), fontWeight);
+            printf("-> new font size: %i (%s)\n", size, getFontInfo().c_str());
         }
     } else {
         fontSize = it->second;
     }
 
     return fontSize;
+}
+
+/**
+ * Get Unique font info string.
+ */
+std::string AminoFont::getFontInfo() {
+    return fontName + "/" + fontStyle + "/" + std::to_string(fontWeight);
 }
 
 FT_Library AminoFont::library = NULL;
@@ -443,10 +450,16 @@ void AminoFontShader::setColor(GLfloat color[3]) {
  *
  * Note: has to be called on OpenGL thread.
  */
-amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
+amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
     std::map<texture_atlas_t *, amino_atlas_t>::iterator it = atlasTextures.find(atlas);
 
     if (it == atlasTextures.end()) {
+        if (!createIfMissing) {
+            amino_atlas_t item = { INVALID_TEXTURE };
+
+            return item;
+        }
+
         //create new one
         GLuint id;
 
@@ -469,7 +482,6 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas) {
         amino_atlas_t item;
 
         item.textureId = id;
-        item.lastGlyphUpdate = 0;
 
         atlasTextures[atlas] = item;
 

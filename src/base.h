@@ -35,6 +35,7 @@ const int ANIM  = 4;
 const int POLY  = 5;
 const int MODEL = 6;
 
+class AminoText;
 class AminoGroup;
 class AminoAnim;
 class AminoRenderer;
@@ -57,7 +58,9 @@ public:
     void deleteTextureAsync(GLuint textureId);
     void deleteBufferAsync(GLuint bufferId);
 
-    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
+    //text
+    void textUpdateNeeded(AminoText *text);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
 
 protected:
     bool started = false;
@@ -74,6 +77,11 @@ protected:
     int viewportH;
     bool viewportChanged;
     int32_t swapInterval = 0;
+
+    //text
+    std::vector<AminoText *> textUpdates;
+
+    void updateTextNodes();
 
     //performance (FPS)
     double fpsStart = 0;
@@ -327,7 +335,6 @@ public:
     ObjectProperty *propFont;
     AminoFontSize *fontSize = NULL;
     vertex_buffer_t *buffer = NULL;
-    bool updated = false;
 
     //alignment
     Utf8Property *propAlign;
@@ -373,6 +380,9 @@ public:
         //empty
     }
 
+    /**
+     * Free buffers.
+     */
     void destroy() override {
         AminoNode::destroy();
 
@@ -385,6 +395,9 @@ public:
         propFont->destroy();
     }
 
+    /**
+     * Setup instance.
+     */
     void setup() override {
         AminoNode::setup();
 
@@ -446,12 +459,12 @@ public:
 
         //check font updates
         AnyProperty *property = update->property;
+        bool updated = false;
 
         if (property == propW || property == propH || property == propText || property == propMaxLines) {
             updated = true;
-        }
-
-        if (property == propWrap) {
+        } else if (property == propWrap) {
+            //wrap
             std::string str = propWrap->value;
             int oldWrap = wrap;
 
@@ -469,11 +482,8 @@ public:
             if (wrap != oldWrap) {
                 updated = true;
             }
-
-            return;
-        }
-
-        if (property == propAlign) {
+        } else if (property == propAlign) {
+            //align
             std::string str = propAlign->value;
             int oldAlign = align;
 
@@ -491,11 +501,8 @@ public:
             if (align != oldAlign) {
                 updated = true;
             }
-
-            return;
-        }
-
-        if (property == propVAlign) {
+        } else if (property == propVAlign) {
+            //vAlign
             std::string str = propVAlign->value;
             int oldVAlign = vAlign;
 
@@ -515,11 +522,8 @@ public:
             if (vAlign != oldVAlign) {
                 updated = true;
             }
-
-            return;
-        }
-
-        if (property == propFont) {
+        } else if (property == propFont) {
+            //font
             AminoFontSize *fs = (AminoFontSize *)propFont->value;
 
             if (fontSize == fs) {
@@ -528,12 +532,16 @@ public:
 
             //new font
             fontSize = fs;
+            texture.textureId = INVALID_TEXTURE;
 
             //debug
             //printf("-> use font: %s\n", fs->font->fontName.c_str());
 
             updated = true;
-            return;
+        }
+
+        if (updated) {
+            getAminoGfx()->textUpdateNeeded(this);
         }
     }
 
@@ -545,10 +553,15 @@ public:
     /**
      * Create or update a font texture.
      */
-    GLuint updateTexture();
+    void updateTexture();
+
+    /**
+     * Get font texture.
+     */
+    GLuint getTextureId();
 
 private:
-    amino_atlas_t texture = { INVALID_TEXTURE, 0 };
+    amino_atlas_t texture = { INVALID_TEXTURE };
 
     /**
      * JS object construction.

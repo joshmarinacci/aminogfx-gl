@@ -10,6 +10,7 @@
 //cbx deactivate later on
 #define DEBUG_RENDERER_ERRORS true
 #define DEBUG_FONT_TEXTURE false
+#define DEBUG_FONT_UPDATES false
 //cbx deactivate later on
 #define DEBUG_FPS true
 
@@ -523,6 +524,9 @@ void AminoGfx::render() {
 
     assert(res == 0);
 
+    //update texts
+    updateTextNodes();
+
     //render scene (root node)
     if (DEBUG_RENDERER) {
         printf("-> renderer: renderScene()\n");
@@ -957,14 +961,98 @@ void AminoGfx::deleteBuffer(AsyncValueUpdate *update, int state) {
 }
 
 /**
+ * Collect text updates.
+ */
+void AminoGfx::textUpdateNeeded(AminoText *text) {
+    if (std::find(textUpdates.begin(), textUpdates.end(), text) == textUpdates.end()) {
+        textUpdates.push_back(text);
+    }
+}
+
+/**
+ * Update all modified text nodes.
+ */
+void AminoGfx::updateTextNodes() {
+    std::size_t count = textUpdates.size();
+
+    if (count == 0) {
+        return;
+    }
+
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
+    double startTime = getTime(), diff;
+#endif
+
+    //layout modified texts
+    std::vector<AminoText *> textureUpdates;
+
+    for (std::size_t i = 0; i < count; i++) {
+        AminoText *item = textUpdates[i];
+
+        if (item->layoutText()) {
+            //find texture
+            std::size_t textureCount = textureUpdates.size();
+            GLuint textureId = item->getTextureId();
+            bool found = false;
+
+            for (std::size_t j = 0; j < textureCount; j++) {
+                AminoText *item2 = textureUpdates[j];
+
+                if (item2->getTextureId() == textureId) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                textureUpdates.push_back(item);
+            }
+        }
+    }
+
+    textUpdates.clear();
+
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
+    diff = getTime() - startTime;
+    if (diff > 5) {
+        printf("layoutText: %i ms\n", (int)diff);
+    }
+#endif
+
+    //update textures
+    std::size_t textureCount = textureUpdates.size();
+
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
+    startTime = getTime();
+#endif
+
+    for (std::size_t i = 0; i < textureCount; i++) {
+        AminoText *item = textureUpdates[i];
+
+        item->updateTexture();
+    }
+
+#if (DEBUG_FONT_PERFORMANCE == 1)
+    //debug
+    diff = getTime() - startTime;
+    if (diff > 5) {
+        printf("updateTexture: %i ms\n", (int)diff);
+    }
+#endif
+}
+
+/**
  * Get texture for atlas.
  *
  * Note: has to be called on OpenGL thread.
  */
-amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas) {
+amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
     assert(renderer);
 
-    return renderer->getAtlasTexture(atlas);
+    return renderer->getAtlasTexture(atlas, createIfMissing);
 }
 
 //
@@ -1080,27 +1168,20 @@ AminoJSObject* AminoTextFactory::create() {
 //
 
 /**
- * Update texture (if modified).
+ * Update texture.
  */
-GLuint AminoText::updateTexture() {
+void AminoText::updateTexture() {
+    if (DEBUG_FONT_UPDATES) {
+        printf("-> update font texture: %s\n", fontSize->font->getFontInfo().c_str());
+    }
+
+    assert(texture.textureId != INVALID_TEXTURE);
     assert(fontSize);
     assert(fontSize->fontTexture);
-    assert(fontSize->fontTexture->atlas);
 
     texture_atlas_t *atlas = fontSize->fontTexture->atlas;
 
-    assert(atlas->depth == 1);
-
-    if (texture.textureId == INVALID_TEXTURE) {
-        //create texture (for atlas)
-        texture = getAminoGfx()->getAtlasTexture(atlas);
-
-        assert(texture.textureId != INVALID_TEXTURE);
-    } else {
-        if (texture.lastGlyphUpdate == fontSize->fontTexture->glyphs->size) {
-            return texture.textureId;
-        }
-    }
+    assert(atlas);
 
     //update texture
     if (DEBUG_BASE) {
@@ -1142,8 +1223,6 @@ GLuint AminoText::updateTexture() {
 
     glBindTexture(GL_TEXTURE_2D, texture.textureId);
 
-    //TODO optimize texture performance on RPi
-
     if (atlas->depth == 1) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
     } else if (atlas->depth == 3) {
@@ -1151,11 +1230,14 @@ GLuint AminoText::updateTexture() {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, atlas->width, atlas->height, 0, GL_RGB, GL_UNSIGNED_BYTE, atlas->data);
     }
 
-    texture.lastGlyphUpdate = fontSize->fontTexture->glyphs->size;
-
     //printf("font texture updated\n");
     //printf("updateTexture() done\n");
+}
 
+/**
+ * Get the font texture.
+ */
+GLuint AminoText::getTextureId() {
     return texture.textureId;
 }
 
@@ -1399,6 +1481,8 @@ void AminoText::addTextGlyphs(vertex_buffer_t *buffer, texture_font_t *font, con
 
 /**
  * Update the rendered text.
+ *
+ * Returns true if texture has changed and must be updated.
  */
 bool AminoText::layoutText() {
     //printf("layoutText()\n");
@@ -1409,13 +1493,24 @@ bool AminoText::layoutText() {
         return false;
     }
 
-    if (!updated) {
-        //printf("layoutText() done\n");
-
-        return true;
+    if (DEBUG_FONT_UPDATES) {
+        printf("->layoutText() render text (%s)\n", fontSize->font->fontName.c_str());
     }
 
-    updated = false;
+    //create texture (needed in next calls)
+    assert(fontSize->fontTexture);
+
+    texture_atlas_t *atlas = fontSize->fontTexture->atlas;
+
+    assert(atlas);
+    assert(atlas->depth == 1);
+
+    if (texture.textureId == INVALID_TEXTURE) {
+        //create or use existing texture (for atlas)
+        texture = getAminoGfx()->getAtlasTexture(atlas, true);
+
+        assert(texture.textureId != INVALID_TEXTURE);
+    }
 
     //render text
     if (buffer) {
@@ -1425,9 +1520,10 @@ bool AminoText::layoutText() {
         buffer = vertex_buffer_new("pos:3f,texCoord:2f");
     }
 
-    texture_font_t *f = fontSize->fontTexture;
+    texture_font_t *fontTexture = fontSize->fontTexture;
+    size_t lastGlyphCount = fontTexture->glyphs->size;
 
-    assert(f);
+    assert(fontTexture);
 
     vec2 pen;
 
@@ -1438,7 +1534,7 @@ bool AminoText::layoutText() {
     uv_mutex_lock(&freeTypeMutex);
 
     //Note: consider using async task to avoid performance issues
-    addTextGlyphs(buffer, f, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, propMaxLines->value, &lineW);
+    addTextGlyphs(buffer, fontTexture, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, propMaxLines->value, &lineW);
 
     uv_mutex_unlock(&freeTypeMutex);
 
@@ -1446,7 +1542,12 @@ bool AminoText::layoutText() {
         printf("-> layoutText() done\n");
     }
 
-    return true;
+    bool glyphsChanged = lastGlyphCount != fontTexture->glyphs->size;
+
+    //debug
+    //printf("glyphs changed: %i\n", glyphsChanged);
+
+    return glyphsChanged;
 }
 
 uv_mutex_t AminoText::freeTypeMutex;

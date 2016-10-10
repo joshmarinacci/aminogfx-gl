@@ -831,10 +831,11 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
         AminoFontSize *fontSize = (AminoFontSize *)update->valueObj;
 
         assert(fontSize);
+        assert(eventHandler);
 
         //use current font texture
         texture_atlas_t *atlas = fontSize->fontTexture->atlas;
-        GLuint textureId = ((AminoGfx *)eventHandler)->getAtlasTexture(atlas).textureId;
+        GLuint textureId = ((AminoGfx *)eventHandler)->getAtlasTexture(atlas, true).textureId;
 
         if (textureId != INVALID_TEXTURE) {
             //set values

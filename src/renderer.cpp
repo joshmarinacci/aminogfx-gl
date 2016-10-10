@@ -798,24 +798,14 @@ void AminoRenderer::drawText(AminoText *text) {
         printf("-> drawText()\n");
     }
 
-#if (DEBUG_FONT_PERFORMANCE == 1)
-    //debug
-    double startTime = getTime(), diff;
-#endif
+    //get texture
+    GLuint texture = text->getTextureId();
 
-    if (!text->layoutText()) {
+    if (texture == INVALID_TEXTURE) {
         return;
     }
 
     ctx->save();
-
-#if (DEBUG_FONT_PERFORMANCE == 1)
-    //debug
-    diff = getTime() - startTime;
-    if (diff > 5) {
-        printf("layoutText: %i ms\n", (int)diff);
-    }
-#endif
 
     //flip the y axis
     ctx->scale(1, -1);
@@ -861,22 +851,6 @@ void AminoRenderer::drawText(AminoText *text) {
     }
 
     //use texture
-
-#if (DEBUG_FONT_PERFORMANCE == 1)
-    //debug
-    startTime = getTime();
-#endif
-
-    GLuint texture = text->updateTexture();
-
-#if (DEBUG_FONT_PERFORMANCE == 1)
-    //debug
-    diff = getTime() - startTime;
-    if (diff > 5) {
-        printf("updateTexture: %i ms\n", (int)diff);
-    }
-#endif
-
     if (DEBUG_RENDERER_ERRORS) {
         showGLErrors("updateTexture()");
     }
@@ -920,10 +894,10 @@ void AminoRenderer::drawText(AminoText *text) {
  *
  * Note: has to be called on OpenGL thread.
  */
-amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas) {
+amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
     assert(fontShader);
 
-    return fontShader->getAtlasTexture(atlas);
+    return fontShader->getAtlasTexture(atlas, createIfMissing);
 }
 
 /**

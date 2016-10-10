@@ -56,6 +56,7 @@ public:
     ~AminoFont();
 
     texture_font_t *getFontWithSize(int size);
+    std::string getFontInfo();
 
     //creation
     static AminoFontFactory* getFactory();
@@ -135,9 +136,7 @@ public:
 
 struct amino_atlas_t {
     GLuint textureId;
-    size_t lastGlyphUpdate;
 };
-
 
 /**
  * Font Shader.
@@ -148,7 +147,7 @@ public:
 
     void setColor(GLfloat color[3]);
 
-    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
 
 protected:
     GLint uColor;

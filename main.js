@@ -1646,7 +1646,7 @@ AminoFonts.prototype.getFont = function (descr, callback) {
     }
 
     //check cache
-    var key = name + '-' + weight + '-' + style;
+    var key = name + '/' + weight + '/' + style;
     var cached = this.cache[key];
 
     if (cached) {
