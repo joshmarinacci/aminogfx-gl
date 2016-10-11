@@ -426,7 +426,7 @@ protected:
     void handleAsyncDeletes();
     void handleJSUpdates();
 
-    void getStats(v8::Local<v8::Object> &obj);
+    virtual void getStats(v8::Local<v8::Object> &obj);
 
 private:
     std::vector<AnyAsyncUpdate *> *asyncUpdates = NULL;

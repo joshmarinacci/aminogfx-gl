@@ -16,6 +16,8 @@ const native = require(binding_path);
 const fs = require('fs');
 const util =  require('util');
 
+var packageInfo = require('./package.json');
+
 //
 //  AminoGfx
 //
@@ -49,7 +51,10 @@ AminoGfx.prototype.init = function () {
         b: 0,
 
         //title
-        title: 'AminoGfx OpenGL'
+        title: 'AminoGfx OpenGL',
+
+        //stats
+        showFPS: true //opt-out
     });
 
     this.fill.watch(watchFill);
@@ -121,6 +126,9 @@ AminoGfx.prototype.start = function (done) {
             done.call(self, err);
             return;
         }
+
+        //runtime info
+        self.runtime.aminogfx = packageInfo.version;
 
         //ready (Note: this points to the instance)
         done.call(self, err);

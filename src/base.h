@@ -77,6 +77,7 @@ protected:
     int viewportH;
     bool viewportChanged;
     int32_t swapInterval = 0;
+    int rendererErrors = 0;
 
     //text
     std::vector<AminoText *> textUpdates;
@@ -91,6 +92,12 @@ protected:
     double fpsCycleMax;
     double fpsCycleAvg;
     int fpsCount;
+
+    double lastFPS = 0;
+    double lastCycleStart = 0;
+    double lastCycleMax = 0;
+    double lastCycleMin = 0;
+    double lastCycleAvg = 0;
 
     //thread
     uv_thread_t thread;
@@ -111,6 +118,8 @@ protected:
     FloatProperty *propOpacity;
 
     Utf8Property *propTitle;
+
+    BooleanProperty *propShowFPS;
 
     //animations
     std::vector<AminoAnim *> animations;
@@ -178,7 +187,8 @@ private:
     void deleteTexture(AsyncValueUpdate *update, int state);
     void deleteBuffer(AsyncValueUpdate *update, int state);
 
-    //debug
+    //stats
+    void getStats(v8::Local<v8::Object> &obj) override;
     void measureRenderingStart();
     void measureRenderingEnd();
 };

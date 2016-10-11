@@ -7,12 +7,11 @@
 #include "fonts/utf8-utils.h"
 
 #define DEBUG_RENDERER false
-//cbx deactivate later on
-#define DEBUG_RENDERER_ERRORS true
 #define DEBUG_FONT_TEXTURE false
 #define DEBUG_FONT_UPDATES false
-//cbx deactivate later on
-#define DEBUG_FPS true
+
+#define MEASURE_FPS true
+#define SHOW_RENDERER_ERRORS true
 
 //
 //  AminoGfx
@@ -128,6 +127,8 @@ void AminoGfx::setup() {
     propOpacity = createFloatProperty("opacity");
 
     propTitle = createUtf8Property("title");
+
+    propShowFPS = createBooleanProperty("showFPS");
 
     //screen size
     int w, h, refreshRate;
@@ -284,7 +285,7 @@ void AminoGfx::addRuntimeProperty() {
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureImageUnits);
     Nan::Set(obj, Nan::New("maxTextureImageUnits").ToLocalChecked(), Nan::New(maxTextureImageUnits));
 
-    // 3) platform specific
+    // 4) platform specific
     populateRuntimeProperties(obj);
 }
 
@@ -346,19 +347,21 @@ void AminoGfx::renderingThread(void *arg) {
     AminoGfx *gfx = (AminoGfx *)arg;
 
     while (gfx->isRenderingThreadRunning()) {
-        if (DEBUG_FPS) {
+        if (MEASURE_FPS) {
             gfx->measureRenderingStart();
         }
 
         gfx->render();
 
-        if (DEBUG_FPS) {
+        if (MEASURE_FPS) {
             gfx->measureRenderingEnd();
         }
 
         //check errors
-        if (DEBUG_RENDERER || DEBUG_RENDERER_ERRORS) {
-            AminoRenderer::showGLErrors();
+        if (DEBUG_RENDERER || SHOW_RENDERER_ERRORS) {
+            int errors = AminoRenderer::showGLErrors();
+
+            gfx->rendererErrors += errors;
         }
     }
 }
@@ -404,9 +407,20 @@ void AminoGfx::measureRenderingEnd() {
 
     //output every second
     if (diff >= 1000) {
+        //values
+        lastFPS = fpsCount * 1000 / diff;
+        lastCycleStart = fpsStart;
+        lastCycleMax = fpsCycleMax;
+        lastCycleMin = fpsCycleMin;
+        lastCycleAvg = fpsCycleAvg / fpsCount;
+
+        //reset
         fpsStart = 0;
 
-        printf("%i FPS (max: %i ms, min: %i ms, avg: %i ms)\n", (int)(fpsCount * 1000 / diff), (int)fpsCycleMax, (int)fpsCycleMin, (int)(fpsCycleAvg / fpsCount));
+        //optional output on screen
+        if (propShowFPS->value) {
+            printf("%i FPS (max: %i ms, min: %i ms, avg: %i ms)\n", (int)lastFPS, (int)fpsCycleMax, (int)fpsCycleMin, (int)lastCycleAvg);
+        }
     }
 }
 
@@ -535,9 +549,7 @@ void AminoGfx::render() {
     renderScene();
 
     //done
-    if (DEBUG_FPS) {
-        fpsCycleEnd = getTime();
-    }
+    fpsCycleEnd = getTime();
 
     if (DEBUG_RENDERER) {
         printf("-> renderer: renderingDone()\n");
@@ -810,15 +822,47 @@ void AminoGfx::setRoot(AminoGroup *group) {
  */
 NAN_METHOD(AminoGfx::GetStats) {
     AminoGfx *gfx = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
-    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
 
-    Nan::Set(obj, Nan::New("activeInstances").ToLocalChecked(), Nan::New(activeInstances));
-    Nan::Set(obj, Nan::New("totalInstances").ToLocalChecked(), Nan::New(totalInstances));
-    Nan::Set(obj, Nan::New("animations").ToLocalChecked(), Nan::New((uint32_t)gfx->animations.size()));
+    assert(gfx);
+
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
 
     gfx->getStats(obj);
 
     info.GetReturnValue().Set(obj);
+}
+
+/**
+ * Get runtime statistics.
+ */
+void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
+    //JS objects
+    Nan::Set(obj, Nan::New("activeInstances").ToLocalChecked(), Nan::New(activeInstances));
+    Nan::Set(obj, Nan::New("totalInstances").ToLocalChecked(), Nan::New(totalInstances));
+
+    //animations
+    Nan::Set(obj, Nan::New("animations").ToLocalChecked(), Nan::New((uint32_t)animations.size()));
+
+    //rendering performance (FPS)
+    if (MEASURE_FPS && lastFPS) {
+        v8::Local<v8::Object> fpsObj = Nan::New<v8::Object>();
+
+        Nan::Set(fpsObj, Nan::New("fps").ToLocalChecked(), Nan::New(lastFPS));
+        Nan::Set(fpsObj, Nan::New("start").ToLocalChecked(), Nan::New(lastCycleStart));
+        Nan::Set(fpsObj, Nan::New("max").ToLocalChecked(), Nan::New(lastCycleMax));
+        Nan::Set(fpsObj, Nan::New("min").ToLocalChecked(), Nan::New(lastCycleMin));
+        Nan::Set(fpsObj, Nan::New("avg").ToLocalChecked(), Nan::New(lastCycleAvg));
+        Nan::Set(obj, Nan::New("fps").ToLocalChecked(), fpsObj);
+    }
+
+    //renderer
+
+    if (SHOW_RENDERER_ERRORS) {
+        Nan::Set(obj, Nan::New("errors").ToLocalChecked(), Nan::New(rendererErrors));
+    }
+
+    //base class
+    AminoJSEventObject::getStats(obj);
 }
 
 /**
