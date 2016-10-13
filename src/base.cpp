@@ -953,7 +953,7 @@ void AminoGfx::deleteTextureAsync(GLuint textureId) {
     }
 
     //enqueue
-    AminoJSObject::enqueueValueUpdate(textureId, (asyncValueCallback)&AminoGfx::deleteTexture);
+    AminoJSObject::enqueueValueUpdate(textureId, NULL, (asyncValueCallback)&AminoGfx::deleteTexture);
 }
 
 /**
@@ -984,7 +984,7 @@ void AminoGfx::deleteBufferAsync(GLuint bufferId) {
     }
 
     //enqueue
-    AminoJSObject::enqueueValueUpdate(bufferId, (asyncValueCallback)&AminoGfx::deleteBuffer);
+    AminoJSObject::enqueueValueUpdate(bufferId, NULL, (asyncValueCallback)&AminoGfx::deleteBuffer);
 }
 
 /**
@@ -1077,6 +1077,11 @@ void AminoGfx::updateTextNodes() {
         AminoText *item = textureUpdates[i];
 
         item->updateTexture();
+
+        //inform other amino instances to update shared texture
+        texture_atlas_t *atlas = item->fontSize->fontTexture->atlas;
+
+        atlasTextureHasChanged(atlas);
     }
 
 #if (DEBUG_FONT_PERFORMANCE == 1)
@@ -1086,6 +1091,46 @@ void AminoGfx::updateTextNodes() {
         printf("updateTexture: %i ms\n", (int)diff);
     }
 #endif
+}
+
+/**
+ * Shared atlas texture has changed.
+ *
+ * Note: called on rendering thread.
+ */
+void AminoGfx::atlasTextureHasChanged(texture_atlas_t *atlas) {
+    //overwrite
+}
+
+/**
+ * Shared atlas texture has to be updated.
+ *
+ * Note: called on main thread
+ */
+void AminoGfx::updateAtlasTexture(texture_atlas_t *atlas) {
+    //check if texture exists
+    amino_atlas_t texture = getAtlasTexture(atlas, false);
+
+    if (texture.textureId != INVALID_TEXTURE) {
+        //switch to rendering thread
+        AminoJSObject::enqueueValueUpdate(texture.textureId, atlas, (asyncValueCallback)&AminoGfx::updateAtlasTextureHandler);
+    }
+}
+
+/**
+ * Update atlas texture.
+ */
+void AminoGfx::updateAtlasTextureHandler(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    //debug
+    //printf("%p: texture update %i\n", this, (int)update->valueUint32);
+
+    texture_atlas_t *atlas = (texture_atlas_t *)update->data;
+
+    AminoText::updateTextureFromAtlas(update->valueUint32, atlas);
 }
 
 /**
@@ -1227,6 +1272,13 @@ void AminoText::updateTexture() {
 
     assert(atlas);
 
+    updateTextureFromAtlas(texture.textureId, atlas);
+}
+
+/**
+ * Update texture from atlas.
+ */
+void AminoText::updateTextureFromAtlas(GLuint textureId, texture_atlas_t *atlas) {
     //update texture
     if (DEBUG_BASE) {
         printf("-> updateTexture()\n");
@@ -1265,7 +1317,7 @@ void AminoText::updateTexture() {
         printf("\n");
     }
 
-    glBindTexture(GL_TEXTURE_2D, texture.textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
 
     if (atlas->depth == 1) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);
@@ -1564,6 +1616,9 @@ bool AminoText::layoutText() {
         buffer = vertex_buffer_new("pos:3f,texCoord:2f");
     }
 
+    //Note: FreeType glyph code is not thread-safe, using lock to prevent crash on macOS if multiple AminoGfx instances are active
+    uv_mutex_lock(&freeTypeMutex);
+
     texture_font_t *fontTexture = fontSize->fontTexture;
     size_t lastGlyphCount = fontTexture->glyphs->size;
 
@@ -1574,19 +1629,16 @@ bool AminoText::layoutText() {
     pen.x = 0;
     pen.y = 0;
 
-    //Note: FreeType glyph code is not thread-safe, using lock to prevent crash on macOS if multiple AminoGfx instances are active
-    uv_mutex_lock(&freeTypeMutex);
-
     //Note: consider using async task to avoid performance issues
     addTextGlyphs(buffer, fontTexture, propText->value.c_str(), &pen, wrap, propW->value, &lineNr, propMaxLines->value, &lineW);
-
-    uv_mutex_unlock(&freeTypeMutex);
 
     if (DEBUG_BASE) {
         printf("-> layoutText() done\n");
     }
 
     bool glyphsChanged = lastGlyphCount != fontTexture->glyphs->size;
+
+    uv_mutex_unlock(&freeTypeMutex);
 
     //debug
     //printf("glyphs changed: %i\n", glyphsChanged);

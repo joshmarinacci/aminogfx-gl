@@ -328,7 +328,7 @@ protected:
         static const int STATE_DELETE = 2;
 
         AsyncValueUpdate(AminoJSObject *obj, AminoJSObject *value, asyncValueCallback callback);
-        AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback);
+        AsyncValueUpdate(AminoJSObject *obj, unsigned int value, void *data, asyncValueCallback callback);
         AsyncValueUpdate(AminoJSObject *obj, v8::Local<v8::Value> &value, void *data, asyncValueCallback callback);
         ~AsyncValueUpdate();
 
@@ -336,7 +336,7 @@ protected:
     };
 
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
-    bool enqueueValueUpdate(unsigned int value, asyncValueCallback callback);
+    bool enqueueValueUpdate(unsigned int value, void *data, asyncValueCallback callback);
     bool enqueueValueUpdate(v8::Local<v8::Value> &value, void *data, asyncValueCallback callback);
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
@@ -398,6 +398,8 @@ public:
     AnyProperty* getPropertyWithId(int id);
     AnyProperty* getPropertyWithName(std::string name);
 
+    virtual AminoJSEventObject* getEventHandler();
+
     virtual bool handleSyncUpdate(AnyProperty *property, void *data);
     virtual void handleAsyncUpdate(AsyncPropertyUpdate *update);
     virtual bool handleAsyncUpdate(AsyncValueUpdate *update);
@@ -410,6 +412,8 @@ class AminoJSEventObject : public AminoJSObject {
 public:
     AminoJSEventObject(std::string name);
     ~AminoJSEventObject();
+
+    AminoJSEventObject* getEventHandler() override;
 
     bool enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::Value> &value);
     bool enqueueValueUpdate(AsyncValueUpdate *update) override;

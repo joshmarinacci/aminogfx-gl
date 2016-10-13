@@ -134,6 +134,9 @@ public:
     AminoJSObject* create() override;
 };
 
+/**
+ * Atlas texture (per AminoGfx instance).
+ */
 struct amino_atlas_t {
     GLuint textureId;
 };

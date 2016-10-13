@@ -496,8 +496,8 @@ bool AminoJSObject::enqueueValueUpdate(AminoJSObject *value, asyncValueCallback 
  *
  * Note: has to be called on main thread.
  */
-bool AminoJSObject::enqueueValueUpdate(unsigned int value, asyncValueCallback callback) {
-    return enqueueValueUpdate(new AsyncValueUpdate(this, value, callback));
+bool AminoJSObject::enqueueValueUpdate(unsigned int value, void *data, asyncValueCallback callback) {
+    return enqueueValueUpdate(new AsyncValueUpdate(this, value, data, callback));
 }
 
 /**
@@ -515,6 +515,8 @@ bool AminoJSObject::enqueueValueUpdate(v8::Local<v8::Value> &value, void *data, 
  * Note: called on main thread.
  */
 bool AminoJSObject::enqueueValueUpdate(AsyncValueUpdate *update) {
+    AminoJSEventObject *eventHandler = getEventHandler();
+
     if (eventHandler) {
         return eventHandler->enqueueValueUpdate(update);
     }
@@ -571,19 +573,22 @@ bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
 }
 
 /**
+ * Get the event handler.
+ */
+AminoJSEventObject* AminoJSObject::getEventHandler() {
+    return eventHandler;
+}
+
+/**
  * Enqueue a property update.
  *
  * Note: called on main thread.
  */
 bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
     //check queue exists
-    AminoJSEventObject *eventHandler = this->eventHandler;
+    AminoJSEventObject *eventHandler = getEventHandler();
 
-    if (!eventHandler) {
-        assert(isEventHandler());
-
-        eventHandler = (AminoJSEventObject *)this;
-    }
+    assert(eventHandler);
 
     //find property
     AnyProperty *prop = getPropertyWithId(id);
@@ -605,6 +610,8 @@ bool AminoJSObject::enqueuePropertyUpdate(int id, v8::Local<v8::Value> &value) {
  */
 bool AminoJSObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
     //check queue exists
+    AminoJSEventObject *eventHandler = getEventHandler();
+
     if (eventHandler) {
         return eventHandler->enqueueJSPropertyUpdate(prop);
     }
@@ -623,6 +630,8 @@ bool AminoJSObject::enqueueJSPropertyUpdate(AnyProperty *prop) {
  */
 bool AminoJSObject::enqueueJSCallbackUpdate(jsUpdateCallback callbackApply, jsUpdateCallback callbackDone, void *data) {
     //check queue exists
+    AminoJSEventObject *eventHandler = getEventHandler();
+
     if (eventHandler) {
         return eventHandler->enqueueJSUpdate(new JSCallbackUpdate(this, callbackApply, callbackDone, data));
     }
@@ -719,11 +728,7 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
 
     assert(property);
 
-    AminoJSEventObject *eventHandler = this->eventHandler;
-
-    if (!eventHandler && isEventHandler()) {
-        eventHandler = (AminoJSEventObject *)this;
-    }
+    AminoJSEventObject *eventHandler = getEventHandler();
 
     assert(eventHandler);
 
@@ -1690,7 +1695,7 @@ AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, AminoJSObj
     }
 }
 
-AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned int value, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), valueUint32(value), callback(callback) {
+AminoJSObject::AsyncValueUpdate::AsyncValueUpdate(AminoJSObject *obj, unsigned int value, void *data, asyncValueCallback callback): AnyAsyncUpdate(ASYNC_UPDATE_VALUE), obj(obj), data(data), valueUint32(value), callback(callback) {
     assert(obj);
 
     //retain objects on main thread
@@ -1831,6 +1836,10 @@ AminoJSEventObject::~AminoJSEventObject() {
 
     //mutex
     pthread_mutex_destroy(&asyncLock);
+}
+
+AminoJSEventObject* AminoJSEventObject::getEventHandler() {
+    return this;
 }
 
 /**

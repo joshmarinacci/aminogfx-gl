@@ -596,6 +596,35 @@ private:
 
         glfwSetWindowTitle(window, propTitle->value.c_str());
     }
+
+    /**
+     * Shared atlas texture has changed.
+     */
+    void atlasTextureHasChanged(texture_atlas_t *atlas) override {
+        //check single instance case
+        if (instanceCount == 1) {
+            return;
+        }
+
+        //run on main thread
+        enqueueJSCallbackUpdate((jsUpdateCallback)&AminoGfxMac::atlasTextureHasChangedHandler, NULL, atlas);
+    }
+
+    /**
+     * Handle on main thread.
+     */
+    void atlasTextureHasChangedHandler(JSCallbackUpdate *update) {
+        AminoGfx *gfx = (AminoGfx *)update->obj;
+        texture_atlas_t *atlas = (texture_atlas_t *)update->data;
+
+        for (auto const &item : *windowMap) {
+            if (gfx == item.second) {
+                continue;
+            }
+
+            item.second->updateAtlasTexture(atlas);
+        }
+    }
 };
 
 //static initializers

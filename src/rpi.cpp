@@ -49,6 +49,7 @@ public:
 
 private:
     static int instanceCount;
+    static std::vector<AminoGfxRPi *> instances;
     static bool glESInitialized;
 
     //OpenGL ES
@@ -144,6 +145,7 @@ private:
         }
 
         instanceCount++;
+        instances.push_back(this);
 
         //basic EGL to get screen size
         initEGL();
@@ -329,6 +331,13 @@ private:
         }
 
         instanceCount--;
+
+        //remove instance
+        std::vector<AminoGfxRPi *>::iterator pos = std::find(instances.begin(), instances.end(), this);
+
+        if (pos != instances.end()) {
+            instances.erase(pos);
+        }
 
         if (DEBUG_GLES) {
             printf("Destroyed OpenGL ES/EGL instance. Left=%i\n", instanceCount);
@@ -868,9 +877,39 @@ private:
     void updateWindowTitle() override {
         //not supported
     }
+
+    /**
+     * Shared atlas texture has changed.
+     */
+    void atlasTextureHasChanged(texture_atlas_t *atlas) override {
+        //check single instance case
+        if (instanceCount == 1) {
+            return;
+        }
+
+        //run on main thread
+        enqueueJSCallbackUpdate((jsUpdateCallback)&AminoGfxRPi::atlasTextureHasChangedHandler, NULL, atlas);
+    }
+
+    /**
+     * Handle on main thread.
+     */
+    void atlasTextureHasChangedHandler(JSCallbackUpdate *update) {
+        AminoGfx *gfx = (AminoGfx *)update->obj;
+        texture_atlas_t *atlas = (texture_atlas_t *)update->data;
+
+        for (auto const &item : instances) {
+            if (gfx == item) {
+                continue;
+            }
+
+            item->updateAtlasTexture(atlas);
+        }
+    }
 };
 
 int AminoGfxRPi::instanceCount = 0;
+std::vector<AminoGfxRPi *> AminoGfxRPi::instances;
 bool AminoGfxRPi::glESInitialized = false;
 sem_t AminoGfxRPi::resSem;
 bool AminoGfxRPi::resSemValid = false;

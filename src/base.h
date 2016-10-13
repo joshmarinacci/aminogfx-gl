@@ -83,6 +83,9 @@ protected:
     std::vector<AminoText *> textUpdates;
 
     void updateTextNodes();
+    virtual void atlasTextureHasChanged(texture_atlas_t *atlas);
+    void updateAtlasTexture(texture_atlas_t *atlas);
+    void updateAtlasTextureHandler(AsyncValueUpdate *update, int state);
 
     //performance (FPS)
     double fpsStart = 0;
@@ -564,6 +567,7 @@ public:
      * Create or update a font texture.
      */
     void updateTexture();
+    static void updateTextureFromAtlas(GLuint textureId, texture_atlas_t *atlas);
 
     /**
      * Get font texture.
