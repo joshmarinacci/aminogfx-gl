@@ -32,6 +32,9 @@ function makePoint(x, y) {
         },
         divide: function (x, y) {
             return makePoint(this.x / x, this.y / y);
+        },
+        multiply: function (x, y) {
+            return makePoint(this.x * x, this.y * y);
         }
     };
 }
@@ -105,15 +108,16 @@ var handlers = {
             obj.sendDragEvent(evt);
         }
     },
-
     'mouse.button': function (obj, evt) {
         if (evt.button == 0) {
+            //left mouse button
             if (DEBUG) {
                 console.log('left mousebutton event');
             }
 
             obj.statusObjects.pointer.state = evt.state;
 
+            //pressed
             if (evt.state == 1) {
                 var pts = obj.statusObjects.pointer;
 
@@ -126,6 +130,7 @@ var handlers = {
                 return;
             }
 
+            //released
             if (evt.state == 0) {
                 if (DEBUG) {
                     console.log('-> released');
@@ -137,14 +142,12 @@ var handlers = {
             }
         }
     },
-
     'mousewheel.v': function (obj, evt) {
         var pts = obj.statusObjects.pointer;
 
         obj.setupScrollFocus(pts.pt);
         obj.sendScrollEvent(evt);
     },
-
     'key.press': function (obj, evt) {
         obj.statusObjects.keyboard.state[evt.keycode] = true;
 
@@ -152,16 +155,13 @@ var handlers = {
 
         obj.sendKeyboardPressEvent(evt2);
     },
-
     'key.release': function (obj, evt) {
         obj.statusObjects.keyboard.state[evt.keycode] = false;
         obj.sendKeyboardReleaseEvent(IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state));
     },
-
     'window.size': function (obj, evt) {
         obj.fireEventAtTarget(null, evt);
     },
-
     'window.close': function (obj, evt) {
         obj.fireEventAtTarget(null, evt);
     }
@@ -221,7 +221,9 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
         console.log('setupPointerFocus()');
     }
 
+    //get all nodes
     var nodes = this.gfx.findNodesAtXY(pt, function (node) {
+        //filter opt-out
         if (node.children && node.acceptsMouseEvents === false) {
             return false;
         }
@@ -229,6 +231,7 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
         return true;
     });
 
+    //get nodes accepting mouse events
     var pressNodes = nodes.filter(function (n) {
         return n.acceptsMouseEvents === true;
     });
@@ -297,6 +300,7 @@ AminoEvents.prototype.sendReleaseEvent = function (e) {
         return;
     }
 
+    //release
     var pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
 
     this.fireEventAtTarget(node, {
@@ -306,6 +310,7 @@ AminoEvents.prototype.sendReleaseEvent = function (e) {
         target: node,
     });
 
+    //click
     if (node.contains(pt)) {
         this.fireEventAtTarget(node, {
             type: 'click',

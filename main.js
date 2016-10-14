@@ -319,25 +319,23 @@ AminoGfx.prototype.find = function (id) {
  * Find a node at a certain position with an optional filter callback.
  */
 AminoGfx.prototype.findNodesAtXY = function (pt, filter) {
-    return findNodesAtXY_helper(this.root, pt, filter, '');
+    return findNodesAtXY(this.root, pt, filter, '');
 };
 
-function findNodesAtXY_helper(root, pt, filter, tab) {
+function findNodesAtXY(root, pt, filter, tab) {
     //verify
-    if (!root) {
+    if (!root || !root.visible()) {
         return [];
     }
 
-    if (!root.visible()) {
-        return [];
-    }
+    //debug
+    //console.log(tab + '   xy', pt.x, pt.y, root.id());
 
-    //console.log(tab + "   xy",pt.x,pt.y, root.id());
-
-    var tpt = pt.minus(root.x(), root.y()).divide(root.sx(), root.sy());
+    //convert to root coordinates
+    const tpt = pt.minus(root.x(), root.y()).divide(root.sx(), root.sy());
 
     //handle children first, then the parent/root
-    var res = [];
+    let res = [];
 
     if (filter) {
         if (!filter(root)) {
@@ -345,17 +343,19 @@ function findNodesAtXY_helper(root, pt, filter, tab) {
         }
     }
 
-    if (root.children && root.children.length && root.children.length > 0) {
-        for (var i = root.children.length - 1; i >= 0; i--) {
-            var node = root.children[i];
-            var found = findNodesAtXY_helper(node, tpt, filter, tab + '  ');
+    //check children
+    if (root.children && root.children.length) {
+        for (let i = root.children.length - 1; i >= 0; i--) {
+            const node = root.children[i];
+            const found = findNodesAtXY(node, tpt, filter, tab + '  ');
 
             res = res.concat(found);
         }
     }
 
+    //check root
     if (root.contains && root.contains(tpt)) {
-        res = res.concat([root]);
+        res.push(root);
     }
 
     return res;
@@ -365,10 +365,10 @@ function findNodesAtXY_helper(root, pt, filter, tab) {
  * Find a node at a certain position.
  */
 AminoGfx.prototype.findNodeAtXY = function (x, y) {
-    return findNodeAtXY_helper(this.root, x, y, '');
+    return findNodeAtXY(this.root, x, y, '');
 };
 
-function findNodeAtXY_helper(root, x, y, tab) {
+function findNodeAtXY(root, x, y, tab) {
     if (!root) {
         return null;
     }
@@ -408,7 +408,7 @@ function findNodeAtXY_helper(root, x, y, tab) {
 
         for (var i = root.children.length - 1; i >= 0; i--) {
             var node = root.children[i];
-            var found = this.findNodeAtXY_helper(node, tx, ty, tab+ '  ');
+            var found = this.findNodeAtXY(node, tx, ty, tab+ '  ');
 
             if (found) {
                 return found;
@@ -427,13 +427,19 @@ function findNodeAtXY_helper(root, x, y, tab) {
     return null;
 };
 
+/**
+ * Convert screen coordinate to local node coordinate.
+ *
+ * Note: only supports translations & scaling (rotation & 3D are not support)
+ */
 AminoGfx.prototype.globalToLocal = function (pt, node) {
-    return globalToLocal_helper(pt,node);
+    return convertGlobalToLocal(pt, node);
 };
 
-function globalToLocal_helper(pt, node) {
+function convertGlobalToLocal(pt, node) {
+    //check parent
     if (node.parent) {
-    	pt = globalToLocal_helper(pt,node.parent);
+    	pt = convertGlobalToLocal(pt, node.parent);
     }
 
     return input.makePoint(
@@ -538,6 +544,11 @@ Group.prototype.init = function () {
     this.isGroup = true;
     this.children = [];
 };
+
+/**
+ * Check if point is inside of rect.
+ */
+Group.prototype.contains = contains;
 
 /**
  * Set position.
