@@ -21,7 +21,8 @@
     "moment": "^2.13.0",
     "nan": "^2.0.9",
     "node-pre-gyp": "0.6.x",
-    "onecolor": "^3.0.4"
+    "onecolor": "^3.0.4",
+    "request": "^2.75.0"
   },
   "author": {
     "name": "Josh Marinacci",

@@ -13,15 +13,16 @@ const path = require('path');
 const binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
 const native = require(binding_path);
 
+const request = require('request');
 const fs = require('fs');
 const util =  require('util');
 
-var packageInfo = require('./package.json');
+const packageInfo = require('./package.json');
 
 //
 //  AminoGfx
 //
-var AminoGfx = native.AminoGfx;
+const AminoGfx = native.AminoGfx;
 
 /**
  * Initialize AminoGfx instance.
@@ -1045,7 +1046,11 @@ function setSrc(src, prop, obj) {
     //load image from source
     var img = new AminoImage();
 
-    img.onload = function (err) {
+    obj.tmpImage = img;
+
+    img.onload = err => {
+        obj.tmpImage = null;
+
         if (err) {
             if (DEBUG || DEBUG_ERRORS) {
                 console.log('could not load image: ' + err.message);
@@ -1064,6 +1069,16 @@ function setSrc(src, prop, obj) {
     };
 
     img.src = src;
+}
+
+/**
+ * Abort image loading (network).
+ */
+function abortTempImage(obj) {
+    if (obj.tmpImage) {
+        obj.tmpImage.abort();
+        obj.tmpImage = null;
+    }
 }
 
 /**
@@ -1101,6 +1116,7 @@ ImageView.prototype.destroy = function () {
 
     if (img) {
         this.image(null);
+        abortTempImage(this);
         img.destroy();
     }
 };
@@ -1388,7 +1404,7 @@ Model.prototype.destroy = function () {
     const texture = this.texture();
 
     if (texture) {
-        this.texture(null);
+        abortTempImage(this);
         texture.destroy();
     }
 };
@@ -1459,28 +1475,65 @@ Circle.prototype.contains = function (pt) {
 
 var AminoImage = native.AminoImage;
 
+/**
+ * src property.
+ */
 Object.defineProperty(AminoImage.prototype, 'src', {
     set: function (src) {
+        this.abort();
+
+        if (!src) {
+            //special case
+            return;
+        }
+
         //check file
         if (typeof src == 'string') {
             var self = this;
 
+            //check URLs
+            if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) {
+                this.request = request({
+                    method: 'GET',
+                    uri: src,
+                    encoding: null
+                }, (err, response, buffer) => {
+                    this.request = null;
+
+                    if (err) {
+                        if (this.onload) {
+                            this.onload(err);
+                        }
+
+                        return;
+                    }
+
+                    //debug
+                    //console.log('image: buffer=' + Buffer.isBuffer(buffer) + ' len=' + buffer.length);
+
+                    //native call
+                    this.loadImage(buffer, this.onload);
+                });
+
+                return;
+            }
+
             //read file async
-            fs.readFile(src, function (err, data) {
+            fs.readFile(src, (err, data) => {
                 //check error
                 if (err) {
-                    if (self.onload) {
-                        self.onload(err);
+                    if (this.onload) {
+                        this.onload(err);
                     }
 
                     return;
                 }
 
                 //get image
-                self.loadImage(data, function (err, img) {
+                this.loadImage(data, (err, img) => {
                     //call onload
-                    if (self.onload) {
-                        self.onload(err, img);
+                    if (this.onload) {
+                        this.onload(err, img);
                     }
                 });
             });
@@ -1501,6 +1554,16 @@ Object.defineProperty(AminoImage.prototype, 'src', {
         this.loadImage(src, this.onload);
     }
 });
+
+/**
+ * Abort loading (from network).
+ */
+AminoImage.prototype.abort = function () {
+    if (this.request) {
+        this.request.abort();
+        this.request = null;
+    }
+};
 
 exports.AminoImage = AminoImage;
 
