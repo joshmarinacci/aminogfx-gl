@@ -35,7 +35,11 @@
             ],
             "cflags": [
                 "-Wall",
-                "-std=c++11"
+                "-std=c++11",
+                # tried to get stack traces on RPi but does not work
+                #"-O0",
+                #"-funwind-tables",
+                #"-g"
             ],
 
             'conditions': [
@@ -80,7 +84,7 @@
 		                    "sources": [
 		                        "src/rpi.cpp"
 		                    ],
-		                    "libraries":[
+		                    "libraries": [
 		                        "-L/opt/vc/lib/ -lbcm_host",
 		                        "-lGLESv2",
 		                        "-lEGL",
