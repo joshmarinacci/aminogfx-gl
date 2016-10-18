@@ -84,6 +84,7 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     // animations
     Nan::SetPrototypeMethod(tpl, "clearAnimations", ClearAnimations);
     Nan::SetPrototypeMethod(tpl, "getTime", GetTime);
+    Nan::SetMethod(tpl, "getTime", GetTime);
 
     // stats
     Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
