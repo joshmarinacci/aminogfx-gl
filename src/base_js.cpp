@@ -542,6 +542,12 @@ bool AminoJSObject::handleSyncUpdate(AnyProperty *property, void *data) {
 void AminoJSObject::handleAsyncUpdate(AsyncPropertyUpdate *update) {
     //overwrite for extended handling
 
+    if (DEBUG_BASE) {
+        AnyProperty *property = update->property;
+
+        printf("-> updating %s in %s\n", property->name.c_str(), property->obj->name.c_str());
+    }
+
     assert(update);
 
     //default: update value
@@ -559,12 +565,23 @@ void AminoJSObject::handleAsyncUpdate(AsyncPropertyUpdate *update) {
  * Custom handler for implementation specific async update.
  */
 bool AminoJSObject::handleAsyncUpdate(AsyncValueUpdate *update) {
+    if (DEBUG_BASE) {
+        printf("handleAsyncUpdate(AsyncValueUpdate)\n");
+    }
     //overwrite
 
     assert(update);
 
     if (update->callback) {
+        if (DEBUG_BASE) {
+            printf(" -> calling callback\n");
+        }
+
         update->apply();
+
+        if (DEBUG_BASE) {
+            printf(" -> done\n");
+        }
 
         return true;
     }
@@ -1971,6 +1988,8 @@ void AminoJSEventObject::processAsyncQueue() {
 
     if (DEBUG_BASE) {
         assert(!isMainThread());
+
+        printf("--- processAsyncQueue() --- \n");
     }
 
     //iterate
@@ -1983,6 +2002,9 @@ void AminoJSEventObject::processAsyncQueue() {
 
         assert(item);
 
+        //debug
+        //printf("%i of %i\n", (int)i, (int)asyncUpdates->size());
+
         switch (item->type) {
             case ASYNC_UPDATE_PROPERTY:
                 //property update
@@ -1990,6 +2012,9 @@ void AminoJSEventObject::processAsyncQueue() {
                     AsyncPropertyUpdate *propItem = static_cast<AsyncPropertyUpdate *>(item);
 
                     //call local handler
+                    assert(propItem->property);
+                    assert(propItem->property->obj);
+
                     propItem->property->obj->handleAsyncUpdate(propItem);
                 }
                 break;
@@ -2000,6 +2025,8 @@ void AminoJSEventObject::processAsyncQueue() {
                     AsyncValueUpdate *valueItem = static_cast<AsyncValueUpdate *>(item);
 
                     //call local handler
+                    assert(valueItem->obj);
+
                     if (!valueItem->obj->handleAsyncUpdate(valueItem)) {
                         printf("unhandled async update by %s\n", valueItem->obj->getName().c_str());
                     }
@@ -2008,6 +2035,7 @@ void AminoJSEventObject::processAsyncQueue() {
 
             default:
                 printf("unknown async type: %i\n", item->type);
+                assert(false);
                 break;
         }
 
@@ -2019,6 +2047,10 @@ void AminoJSEventObject::processAsyncQueue() {
     asyncUpdates->clear();
 
     pthread_mutex_unlock(&asyncLock);
+
+    if (DEBUG_BASE) {
+        printf("--- processAsyncQueue() done --- \n");
+    }
 }
 
 /**
@@ -2069,6 +2101,8 @@ bool AminoJSEventObject::enqueuePropertyUpdate(AnyProperty *prop, v8::Local<v8::
     }
 
     //call sync handler
+    assert(prop->obj);
+
     if (prop->obj->handleSyncUpdate(prop, data)) {
         if (DEBUG_BASE) {
             printf("-> sync update (value=%s)\n", toString(value).c_str());

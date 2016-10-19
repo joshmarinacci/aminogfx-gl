@@ -617,6 +617,10 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
         return;
     }
 
+    if (DEBUG_BASE) {
+        printf("enqueue: create texture\n");
+    }
+
     //async loading
     obj->callback = new Nan::Callback(callback);
     obj->enqueueValueUpdate(img, (asyncValueCallback)&AminoTexture::createTexture);
@@ -715,6 +719,10 @@ NAN_METHOD(AminoTexture::LoadTextureFromBuffer) {
 
     textureData->callback = new Nan::Callback(callback);
 
+    if (DEBUG_BASE) {
+        printf("enqueue: create texture from buffer\n");
+    }
+
     //async loading
     obj->enqueueValueUpdate(data, textureData, (asyncValueCallback)&AminoTexture::createTextureFromBuffer);
 }
@@ -811,6 +819,10 @@ NAN_METHOD(AminoTexture::LoadTextureFromFont) {
 
     //font
     AminoFontSize *fontSize = Nan::ObjectWrap::Unwrap<AminoFontSize>(info[0]->ToObject());
+
+    if (DEBUG_BASE) {
+        printf("enqueue: create texture from font\n");
+    }
 
     //async loading
     obj->callback = new Nan::Callback(callback);

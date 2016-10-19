@@ -743,8 +743,8 @@ bool AminoGfx::handleSyncUpdate(AnyProperty *property, void *data) {
     //debug
     //printf("handleSyncUpdate() %s\n", property->name.c_str());
 
-    //default: set value
-    AminoJSObject::handleSyncUpdate(property, data);
+    //default: does nothing
+    bool res = AminoJSObject::handleSyncUpdate(property, data);
 
     //size changes
     if (property == propW || property == propH) {
@@ -774,7 +774,7 @@ bool AminoGfx::handleSyncUpdate(AnyProperty *property, void *data) {
         return true;
     }
 
-    return false;
+    return res;
 }
 
 NAN_METHOD(AminoGfx::SetRoot) {
@@ -953,6 +953,10 @@ void AminoGfx::deleteTextureAsync(GLuint textureId) {
         return;
     }
 
+    if (DEBUG_BASE) {
+        printf("enqueue: delete texture\n");
+    }
+
     //enqueue
     AminoJSObject::enqueueValueUpdate(textureId, NULL, (asyncValueCallback)&AminoGfx::deleteTexture);
 }
@@ -982,6 +986,10 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
 void AminoGfx::deleteBufferAsync(GLuint bufferId) {
     if (destroyed) {
         return;
+    }
+
+    if (DEBUG_BASE) {
+        printf("enqueue: delete buffer\n");
     }
 
     //enqueue
@@ -1113,6 +1121,10 @@ void AminoGfx::updateAtlasTexture(texture_atlas_t *atlas) {
     amino_atlas_t texture = getAtlasTexture(atlas, false);
 
     if (texture.textureId != INVALID_TEXTURE) {
+        if (DEBUG_BASE) {
+            printf("enqueue: atlas texture update\n");
+        }
+
         //switch to rendering thread
         AminoJSObject::enqueueValueUpdate(texture.textureId, atlas, (asyncValueCallback)&AminoGfx::updateAtlasTextureHandler);
     }
