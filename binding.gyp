@@ -36,10 +36,9 @@
             "cflags": [
                 "-Wall",
                 "-std=c++11",
-                # tried to get stack traces on RPi but does not work
-                #"-O0",
-                #"-g",
-                "-funwind-tables"
+                # get stack trace on ARM
+                "-funwind-tables",
+                "-rdynamic"
             ],
 
             'conditions': [
