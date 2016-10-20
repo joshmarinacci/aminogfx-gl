@@ -28,6 +28,8 @@ extern "C" {
     #include "upng.h"
 }
 
+#define DEBUG_CRASH false
+
 const int GROUP = 1;
 const int RECT  = 2;
 const int TEXT  = 3;
@@ -1666,6 +1668,14 @@ private:
         }
 
         children.push_back(node);
+
+        //debug (provoke crash to get stack trace)
+        if (DEBUG_CRASH) {
+            int *foo = (int*)1;
+
+            *foo = 78; // trigger a SIGSEGV
+            assert(false);
+        }
     }
 
     /**
