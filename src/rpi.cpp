@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <semaphore.h>
 
+#include <execinfo.h>
+#include <unistd.h>
+
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
 #define DEBUG_INPUT false
@@ -932,9 +935,25 @@ AminoJSObject* AminoGfxRPiFactory::create() {
     return new AminoGfxRPi();
 }
 
+void crashHandler(int sig) {
+  void *array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+
 // ========== Event Callbacks ===========
 
 NAN_MODULE_INIT(InitAll) {
+    //crash handler
+    signal(SIGSEGV, crashHandler);
+
     //main class
     AminoGfxRPi::Init(target);
 

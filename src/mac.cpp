@@ -1,5 +1,8 @@
 #include "mac.h"
 
+#include <execinfo.h>
+#include <unistd.h>
+
 #define DEBUG_GLFW false
 #define DEBUG_RENDER false
 
@@ -657,9 +660,25 @@ void exitHandler(void *arg) {
     }
 }
 
+void crashHandler(int sig) {
+  void *array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+
 // ========== Event Callbacks ===========
 
 NAN_MODULE_INIT(InitAll) {
+    //crash handler (comment to get macOS crash dialog)
+    signal(SIGSEGV, crashHandler);
+
     //main class
     AminoGfxMac::Init(target);
 
