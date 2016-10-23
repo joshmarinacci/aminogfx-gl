@@ -2,6 +2,7 @@
 
 #include <execinfo.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define DEBUG_GLFW false
 #define DEBUG_RENDER false
@@ -660,17 +661,26 @@ void exitHandler(void *arg) {
     }
 }
 
+/**
+ * Show crash details.
+ */
 void crashHandler(int sig) {
-  void *array[10];
-  size_t size;
+    void *array[10];
+    size_t size;
 
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 10);
+    //process & thread
+    pid_t pid = getpid();
+    uint64_t tid;
 
-  // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, STDERR_FILENO);
-  exit(1);
+    pthread_threadid_np(NULL, &tid);
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d (process=%d, thread=%i):\n", sig, pid, (int)tid);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
 }
 
 // ========== Event Callbacks ===========
