@@ -671,6 +671,7 @@ void crashHandler(int sig) {
     //process & thread
     pid_t pid = getpid();
     uint64_t tid;
+    bool mainThread = pthread_main_np() != 0;
 
     pthread_threadid_np(NULL, &tid);
 
@@ -678,7 +679,7 @@ void crashHandler(int sig) {
     size = backtrace(array, 10);
 
     // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d (process=%d, thread=%i):\n", sig, pid, (int)tid);
+    fprintf(stderr, "Error: signal %d (process=%d, thread=%i, main=%s):\n", sig, pid, (int)tid, mainThread ? "yes":"no");
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }
