@@ -11,6 +11,7 @@
 #include <execinfo.h>
 #include <unistd.h>
 #include <sys/types.h>
+#define gettid() syscall(SYS_gettid)
 
 #define DEBUG_GLES false
 #define DEBUG_RENDER false
