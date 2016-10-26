@@ -10,6 +10,7 @@
 
 #include <execinfo.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #define gettid() syscall(SYS_gettid)
 
