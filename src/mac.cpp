@@ -611,7 +611,7 @@ private:
         }
 
         //run on main thread
-        enqueueJSCallbackUpdate((jsUpdateCallback)&AminoGfxMac::atlasTextureHasChangedHandler, NULL, atlas);
+        enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoGfxMac::atlasTextureHasChangedHandler), NULL, atlas);
     }
 
     /**

@@ -986,7 +986,7 @@ void AminoGfx::deleteTextureAsync(GLuint textureId) {
     }
 
     //enqueue
-    AminoJSObject::enqueueValueUpdate(textureId, NULL, (asyncValueCallback)&AminoGfx::deleteTexture);
+    AminoJSObject::enqueueValueUpdate(textureId, NULL, static_cast<asyncValueCallback>(&AminoGfx::deleteTexture));
 }
 
 /**
@@ -1022,7 +1022,7 @@ void AminoGfx::deleteBufferAsync(GLuint bufferId) {
     }
 
     //enqueue
-    AminoJSObject::enqueueValueUpdate(bufferId, NULL, (asyncValueCallback)&AminoGfx::deleteBuffer);
+    AminoJSObject::enqueueValueUpdate(bufferId, NULL, static_cast<asyncValueCallback>(&AminoGfx::deleteBuffer));
 }
 
 /**
@@ -1155,7 +1155,7 @@ void AminoGfx::updateAtlasTexture(texture_atlas_t *atlas) {
         }
 
         //switch to rendering thread
-        AminoJSObject::enqueueValueUpdate(texture.textureId, atlas, (asyncValueCallback)&AminoGfx::updateAtlasTextureHandler);
+        AminoJSObject::enqueueValueUpdate(texture.textureId, atlas, static_cast<asyncValueCallback>(&AminoGfx::updateAtlasTextureHandler));
     }
 }
 

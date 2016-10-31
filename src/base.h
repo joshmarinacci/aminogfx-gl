@@ -952,11 +952,11 @@ public:
                 printf("-> callback used\n");
             }
 
-            enqueueJSCallbackUpdate((jsUpdateCallback)&AminoAnim::callThen, NULL, NULL);
+            enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoAnim::callThen), NULL, NULL);
         }
 
         //stop
-        enqueueJSCallbackUpdate((jsUpdateCallback)&AminoAnim::callStop, NULL, NULL);
+        enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoAnim::callStop), NULL, NULL);
     }
 
     /**
@@ -1651,7 +1651,7 @@ private:
         }
 
         //handle async
-        group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::addChild);
+        group->enqueueValueUpdate(child, static_cast<asyncValueCallback>(&AminoGroup::addChild));
     }
 
     /**
@@ -1710,7 +1710,7 @@ private:
         data->child = child;
         data->pos = pos;
 
-        group->enqueueValueUpdate(childValue, data, (asyncValueCallback)&AminoGroup::insertChild);
+        group->enqueueValueUpdate(childValue, data, static_cast<asyncValueCallback>(&AminoGroup::insertChild));
     }
 
     /**
@@ -1754,7 +1754,7 @@ private:
         assert(child);
 
         //handle async
-        group->enqueueValueUpdate(child, (asyncValueCallback)&AminoGroup::removeChild);
+        group->enqueueValueUpdate(child, static_cast<asyncValueCallback>(&AminoGroup::removeChild));
     }
 
     /**
