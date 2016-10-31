@@ -63,6 +63,7 @@ public:
     //text
     void textUpdateNeeded(AminoText *text);
     amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
+    void notifyTextureCreated();
 
 protected:
     bool started = false;
@@ -80,6 +81,7 @@ protected:
     bool viewportChanged;
     int32_t swapInterval = 0;
     int rendererErrors = 0;
+    int textureCount = 0;
 
     //text
     std::vector<AminoText *> textUpdates;
@@ -291,7 +293,9 @@ public:
     AminoGfx* getAminoGfx() {
         assert(eventHandler);
 
-        return (AminoGfx *)eventHandler;
+        AminoGfx *res = static_cast<AminoGfx *>(eventHandler);
+
+        return res;
     }
 
     /**
@@ -539,7 +543,7 @@ public:
             }
         } else if (property == propFont) {
             //font
-            AminoFontSize *fs = (AminoFontSize *)propFont->value;
+            AminoFontSize *fs = static_cast<AminoFontSize *>(propFont->value);
 
             if (fontSize == fs) {
                 return;
@@ -891,7 +895,7 @@ public:
             return;
         }
 
-        FloatProperty *floatProp = (FloatProperty *)prop;
+        FloatProperty *floatProp = static_cast<FloatProperty *>(prop);
 
         floatProp->setValue(value);
     }
@@ -917,7 +921,7 @@ public:
         if (!destroyed) {
             //remove animation
             if (eventHandler) {
-                ((AminoGfx *)eventHandler)->removeAnimation(this);
+                (static_cast<AminoGfx *>(eventHandler))->removeAnimation(this);
             }
 
             //free resources
@@ -1443,17 +1447,17 @@ public:
         //free buffers
         if (eventHandler) {
             if (vboVertex != INVALID_BUFFER) {
-                ((AminoGfx *)eventHandler)->deleteBufferAsync(vboVertex);
+                (static_cast<AminoGfx *>(eventHandler))->deleteBufferAsync(vboVertex);
                 vboVertex = INVALID_BUFFER;
             }
 
             if (vboNormal != INVALID_BUFFER) {
-                ((AminoGfx *)eventHandler)->deleteBufferAsync(vboNormal);
+                (static_cast<AminoGfx *>(eventHandler))->deleteBufferAsync(vboNormal);
                 vboNormal = INVALID_BUFFER;
             }
 
             if (vboIndex != INVALID_BUFFER) {
-                ((AminoGfx *)eventHandler)->deleteBufferAsync(vboIndex);
+                (static_cast<AminoGfx *>(eventHandler))->deleteBufferAsync(vboIndex);
                 vboIndex = INVALID_BUFFER;
             }
         }
@@ -1658,7 +1662,7 @@ private:
             return;
         }
 
-        AminoNode *node = (AminoNode *)update->valueObj;
+        AminoNode *node = static_cast<AminoNode *>(update->valueObj);
 
         //keep retained instance
         update->valueObj = NULL;
@@ -1671,7 +1675,7 @@ private:
 
         //debug (provoke crash to get stack trace)
         if (DEBUG_CRASH) {
-            int *foo = (int*)1;
+            int *foo = (int *)1;
 
             *foo = 78; // trigger a SIGSEGV
             assert(false);
@@ -1765,7 +1769,7 @@ private:
             printf("-> removeChild()\n");
         }
 
-        AminoNode *node = (AminoNode *)update->valueObj;
+        AminoNode *node = static_cast<AminoNode *>(update->valueObj);
 
         //remove pointer
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);

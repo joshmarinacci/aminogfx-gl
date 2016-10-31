@@ -450,8 +450,10 @@ void AminoFontShader::setColor(GLfloat color[3]) {
  *
  * Note: has to be called on OpenGL thread.
  */
-amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
+amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture) {
     std::map<texture_atlas_t *, amino_atlas_t>::iterator it = atlasTextures.find(atlas);
+
+    newTexture = false;
 
     if (it == atlasTextures.end()) {
         if (!createIfMissing) {
@@ -465,6 +467,8 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool crea
 
         //see https://webcache.googleusercontent.com/search?q=cache:EZ3HLutV3zwJ:https://github.com/rougier/freetype-gl/blob/master/texture-atlas.c+&cd=1&hl=de&ct=clnk&gl=ch
         glGenTextures(1, &id);
+        newTexture = true;
+
         glBindTexture(GL_TEXTURE_2D, id);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

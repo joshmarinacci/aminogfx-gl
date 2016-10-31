@@ -150,7 +150,7 @@ public:
 
     void setColor(GLfloat color[3]);
 
-    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture);
 
 protected:
     GLint uColor;

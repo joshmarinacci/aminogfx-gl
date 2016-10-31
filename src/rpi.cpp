@@ -901,7 +901,7 @@ private:
      * Handle on main thread.
      */
     void atlasTextureHasChangedHandler(JSCallbackUpdate *update) {
-        AminoGfx *gfx = (AminoGfx *)update->obj;
+        AminoGfx *gfx = static_cast<AminoGfx *>(update->obj);
         texture_atlas_t *atlas = (texture_atlas_t *)update->data;
 
         for (auto const &item : instances) {

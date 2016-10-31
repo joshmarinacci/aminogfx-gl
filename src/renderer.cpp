@@ -7,10 +7,12 @@
 /**
  * OpenGL ES 2.0 renderer.
  */
-AminoRenderer::AminoRenderer() {
+AminoRenderer::AminoRenderer(AminoGfx *gfx) {
     if (DEBUG_RENDERER) {
         printf("created AminoRenderer\n");
     }
+
+    this->gfx = gfx;
 }
 
 AminoRenderer::~AminoRenderer () {
@@ -259,23 +261,23 @@ void AminoRenderer::render(AminoNode *root) {
     //draw
     switch (root->type) {
         case GROUP:
-            this->drawGroup((AminoGroup *)root);
+            this->drawGroup(static_cast<AminoGroup *>(root));
             break;
 
         case RECT:
-            this->drawRect((AminoRect *)root);
+            this->drawRect(static_cast<AminoRect *>(root));
             break;
 
         case POLY:
-            this->drawPoly((AminoPolygon *)root);
+            this->drawPoly(static_cast<AminoPolygon *>(root));
             break;
 
         case MODEL:
-            this->drawModel((AminoModel *)root);
+            this->drawModel(static_cast<AminoModel *>(root));
             break;
 
         case TEXT:
-            this->drawText((AminoText *)root);
+            this->drawText(static_cast<AminoText *>(root));
             break;
 
         default:
@@ -364,7 +366,7 @@ void AminoRenderer::applyTextureShader(GLfloat *verts, GLsizei dim, GLsizei coun
     shader->setOpacity(opacity);
 
     if (needsClampToBorder) {
-        ((TextureClampToBorderShader *)shader)->setRepeat(repeatX, repeatY);
+        (static_cast<TextureClampToBorderShader *>(shader))->setRepeat(repeatX, repeatY);
     }
 
     //draw
@@ -657,7 +659,7 @@ void AminoRenderer::drawModel(AminoModel *model) {
         hasAlpha = opacity != 1.0;
 
         //texture
-        AminoTexture *texture = (AminoTexture *)model->propTexture->value;
+        AminoTexture *texture = static_cast<AminoTexture *>(model->propTexture->value);
 
         ctx->bindTexture(texture->textureId);
     }
@@ -752,7 +754,7 @@ void AminoRenderer::drawRect(AminoRect *rect) {
 
     if (rect->hasImage) {
         //has optional texture
-        AminoTexture *texture = (AminoTexture *)rect->propTexture->value;
+        AminoTexture *texture = static_cast<AminoTexture *>(rect->propTexture->value);
 
         if (texture && texture->textureId != INVALID_TEXTURE) {
             //texture
@@ -897,7 +899,15 @@ void AminoRenderer::drawText(AminoText *text) {
 amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
     assert(fontShader);
 
-    return fontShader->getAtlasTexture(atlas, createIfMissing);
+    bool newTexture;
+
+    amino_atlas_t res = fontShader->getAtlasTexture(atlas, createIfMissing, newTexture);
+
+    if (newTexture) {
+        gfx->notifyTextureCreated();
+    }
+
+    return res;
 }
 
 /**

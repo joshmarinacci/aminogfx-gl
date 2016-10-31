@@ -245,7 +245,7 @@ void AminoGfx::setupRenderer() {
 
     assert(!renderer);
 
-    renderer = new AminoRenderer();
+    renderer = new AminoRenderer(this);
     renderer->setup();
 
     if (!createParams.IsEmpty()) {
@@ -352,7 +352,9 @@ void AminoGfx::ready() {
  * Render thread.
  */
 void AminoGfx::renderingThread(void *arg) {
-    AminoGfx *gfx = (AminoGfx *)arg;
+    AminoGfx *gfx = static_cast<AminoGfx *>(arg);
+
+    assert(gfx);
 
     while (gfx->isRenderingThreadRunning()) {
         if (MEASURE_FPS) {
@@ -463,7 +465,9 @@ void AminoGfx::handleRenderEvents(uv_async_t *handle) {
         printf("-> renderer: handleRenderEvents()\n");
     }
 
-    AminoGfx *gfx = (AminoGfx *)handle->data;
+    AminoGfx *gfx = static_cast<AminoGfx *>(handle->data);
+
+    assert(gfx);
 
     if (DEBUG_BASE) {
         assert(gfx->isMainThread());
@@ -854,6 +858,9 @@ void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
     //animations
     Nan::Set(obj, Nan::New("animations").ToLocalChecked(), Nan::New((uint32_t)animations.size()));
 
+    //textures
+    Nan::Set(obj, Nan::New("textures").ToLocalChecked(), Nan::New(textureCount));
+
     //rendering performance (FPS)
     if (MEASURE_FPS && lastFPS) {
         v8::Local<v8::Object> fpsObj = Nan::New<v8::Object>();
@@ -997,6 +1004,7 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
     }
 
     glDeleteTextures(1, &textureId);
+    textureCount--;
 }
 
 /**
@@ -1176,6 +1184,13 @@ amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMis
     assert(renderer);
 
     return renderer->getAtlasTexture(atlas, createIfMissing);
+}
+
+/**
+ * A new texture was created.
+ */
+void AminoGfx::notifyTextureCreated() {
+    textureCount++;
 }
 
 //

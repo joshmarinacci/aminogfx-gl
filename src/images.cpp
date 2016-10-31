@@ -503,7 +503,7 @@ void AminoTexture::destroy() {
     if (textureId != INVALID_TEXTURE) {
         //Note: we are on the main thread
         if (eventHandler && ownTexture) {
-            ((AminoGfx *)eventHandler)->deleteTextureAsync(textureId);
+            (static_cast<AminoGfx *>(eventHandler))->deleteTextureAsync(textureId);
         }
 
         textureId = INVALID_TEXTURE;
@@ -637,7 +637,8 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
             printf("-> createTexture()\n");
         }
 
-        AminoImage *img = (AminoImage *)update->valueObj;
+        AminoImage *img = static_cast<AminoImage *>(update->valueObj);
+        bool newTexture = this->textureId == INVALID_TEXTURE;
         GLuint textureId = img->createTexture(this->textureId);
 
         if (textureId != INVALID_TEXTURE) {
@@ -647,6 +648,10 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
 
             w = img->w;
             h = img->h;
+
+            if (newTexture) {
+               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+            }
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
@@ -742,6 +747,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
 
         assert(textureData);
 
+        bool newTexture = this->textureId == INVALID_TEXTURE;
         GLuint textureId = AminoImage::createTexture(this->textureId, textureData->bufferData, textureData->bufferLen, textureData->w, textureData->h, textureData->bpp);
 
         if (textureId != INVALID_TEXTURE) {
@@ -750,6 +756,10 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
 
             w = textureData->w;
             h = textureData->h;
+
+            if (newTexture) {
+                (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+            }
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
@@ -840,14 +850,14 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
             printf("-> createTextureFromFont()\n");
         }
 
-        AminoFontSize *fontSize = (AminoFontSize *)update->valueObj;
+        AminoFontSize *fontSize = static_cast<AminoFontSize *>(update->valueObj);
 
         assert(fontSize);
         assert(eventHandler);
 
         //use current font texture
         texture_atlas_t *atlas = fontSize->fontTexture->atlas;
-        GLuint textureId = ((AminoGfx *)eventHandler)->getAtlasTexture(atlas, true).textureId;
+        GLuint textureId = (static_cast<AminoGfx *>(eventHandler))->getAtlasTexture(atlas, true).textureId;
 
         if (textureId != INVALID_TEXTURE) {
             //set values
@@ -859,7 +869,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
-        AminoFontSize *fontSize = (AminoFontSize *)update->valueObj;
+        AminoFontSize *fontSize = static_cast<AminoFontSize *>(update->valueObj);
 
         assert(fontSize);
 

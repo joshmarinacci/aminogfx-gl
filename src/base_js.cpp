@@ -1641,7 +1641,7 @@ void* AminoJSObject::ObjectProperty::getAsyncData(v8::Local<v8::Value> &value, b
  * Apply async data.
  */
 void AminoJSObject::ObjectProperty::setAsyncData(AsyncPropertyUpdate *update, void *data) {
-    AminoJSObject *obj = (AminoJSObject *)data;
+    AminoJSObject *obj = static_cast<AminoJSObject *>(data);
 
     if (obj != value) {
         //release old instance
@@ -1672,7 +1672,7 @@ void AminoJSObject::ObjectProperty::setAsyncData(AsyncPropertyUpdate *update, vo
  * Free async data.
  */
 void AminoJSObject::ObjectProperty::freeAsyncData(void *data) {
-    AminoJSObject *obj = (AminoJSObject *)data;
+    AminoJSObject *obj = static_cast<AminoJSObject *>(data);
 
     //release reference on main thread
     if (obj) {
@@ -1969,6 +1969,7 @@ void AminoJSEventObject::handleJSUpdates() {
  */
 void AminoJSEventObject::getStats(v8::Local<v8::Object> &obj) {
     //internal
+
     /*
     Nan::Set(obj, Nan::New("jsUpdates").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)jsUpdates->size()));
     Nan::Set(obj, Nan::New("asyncUpdates").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)asyncUpdates->size()));

@@ -245,7 +245,7 @@ public:
  */
 class AminoRenderer {
 public:
-    AminoRenderer();
+    AminoRenderer(AminoGfx *gfx);
     virtual ~AminoRenderer();
 
     virtual void setup();
@@ -272,6 +272,8 @@ protected:
     virtual void drawText(AminoText *text);
 
 private:
+    AminoGfx *gfx;
+
     //basic shaders
     AminoFontShader *fontShader = NULL;
     ColorShader *colorShader = NULL;
