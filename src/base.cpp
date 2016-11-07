@@ -924,13 +924,13 @@ bool AminoGfx::addAnimation(AminoAnim *anim) {
 
     animations.push_back(anim);
 
-    res = pthread_mutex_unlock(&animLock);
-    assert(res == 0);
-
     //check total
     if (animations.size() % 100 == 0) {
         printf("warning: %i animations reached!\n", (int)animations.size());
     }
+
+    res = pthread_mutex_unlock(&animLock);
+    assert(res == 0);
 
     return true;
 }
