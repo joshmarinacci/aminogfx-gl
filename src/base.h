@@ -64,8 +64,12 @@ public:
     void textUpdateNeeded(AminoText *text);
     amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
     void notifyTextureCreated();
+    static void updateAtlasTextures(texture_atlas_t *atlas);
 
 protected:
+    static int instanceCount;
+    static std::vector<AminoGfx *> instances;
+
     bool started = false;
     bool rendering = false;
     Nan::Callback *startCallback = NULL;
@@ -82,6 +86,10 @@ protected:
     int32_t swapInterval = 0;
     int rendererErrors = 0;
     int textureCount = 0;
+
+    //instance
+    void addInstance();
+    void removeInstance();
 
     //text
     std::vector<AminoText *> textUpdates;
@@ -386,6 +394,17 @@ public:
 
     AminoText(): AminoNode(getFactory()->name, TEXT) {
         //mutex
+        initFreeTypeMutex();
+    }
+
+    ~AminoText() {
+        //empty
+    }
+
+    /**
+     * Initialize the mutex.
+     */
+    static void initFreeTypeMutex() {
         if (!freeTypeMutexInitialized) {
             freeTypeMutexInitialized = true;
 
@@ -393,10 +412,6 @@ public:
 
             assert(res == 0);
         }
-    }
-
-    ~AminoText() {
-        //empty
     }
 
     /**
@@ -581,7 +596,7 @@ public:
     GLuint getTextureId();
 
 private:
-    amino_atlas_t texture = { INVALID_TEXTURE };
+    amino_atlas_t texture = { INVALID_TEXTURE, false };
 
     /**
      * JS object construction.

@@ -54,8 +54,6 @@ public:
     }
 
 private:
-    static int instanceCount;
-    static std::vector<AminoGfxRPi *> instances;
     static bool glESInitialized;
 
     //OpenGL ES
@@ -150,8 +148,8 @@ private:
             glESInitialized = true;
         }
 
-        instanceCount++;
-        instances.push_back(this);
+        //instance
+        addInstance();
 
         //basic EGL to get screen size
         initEGL();
@@ -336,14 +334,7 @@ private:
             display = EGL_NO_DISPLAY;
         }
 
-        instanceCount--;
-
-        //remove instance
-        std::vector<AminoGfxRPi *>::iterator pos = std::find(instances.begin(), instances.end(), this);
-
-        if (pos != instances.end()) {
-            instances.erase(pos);
-        }
+        removeInstance();
 
         if (DEBUG_GLES) {
             printf("Destroyed OpenGL ES/EGL instance. Left=%i\n", instanceCount);
@@ -914,8 +905,7 @@ private:
     }
 };
 
-int AminoGfxRPi::instanceCount = 0;
-std::vector<AminoGfxRPi *> AminoGfxRPi::instances;
+//static initializers
 bool AminoGfxRPi::glESInitialized = false;
 sem_t AminoGfxRPi::resSem;
 bool AminoGfxRPi::resSemValid = false;

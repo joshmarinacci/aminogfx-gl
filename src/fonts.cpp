@@ -2,6 +2,7 @@
 
 #include "fonts/utf8-utils.h"
 #include "fonts/shader.h"
+#include "base.h"
 
 #include <cmath>
 
@@ -339,6 +340,11 @@ float AminoFontSize::getTextWidth(const char *text) {
     char *lastTextPos = NULL;
     float w = 0;
 
+    AminoText::initFreeTypeMutex();
+    uv_mutex_lock(&AminoText::freeTypeMutex);
+
+    size_t lastGlyphCount = fontTexture->glyphs->size;
+
     for (std::size_t i = 0; i < len; i++) {
         texture_glyph_t *glyph = texture_font_get_glyph(fontTexture, textPos);
 
@@ -360,6 +366,17 @@ float AminoFontSize::getTextWidth(const char *text) {
 
         lastTextPos = textPos;
         textPos += charLen;
+    }
+
+    bool glyphsChanged = lastGlyphCount != fontTexture->glyphs->size;
+
+    uv_mutex_unlock(&AminoText::freeTypeMutex);
+
+    if (glyphsChanged) {
+        texture_atlas_t *atlas = fontTexture->atlas;
+
+        //update all instances
+        AminoGfx::updateAtlasTextures(atlas);
     }
 
     return w;
@@ -457,7 +474,7 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool crea
 
     if (it == atlasTextures.end()) {
         if (!createIfMissing) {
-            amino_atlas_t item = { INVALID_TEXTURE };
+            amino_atlas_t item = { INVALID_TEXTURE, false };
 
             return item;
         }
@@ -486,6 +503,7 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool crea
         amino_atlas_t item;
 
         item.textureId = id;
+        item.initialized = false;
 
         atlasTextures[atlas] = item;
 

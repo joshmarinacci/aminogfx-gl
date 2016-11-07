@@ -45,7 +45,6 @@ public:
 
 private:
     static bool glfwInitialized;
-    static int instanceCount;
     static std::map<GLFWwindow *, AminoGfxMac *> *windowMap;
 
     //GLFW window
@@ -92,7 +91,8 @@ private:
             glfwInitialized = true;
         }
 
-        instanceCount++;
+        //instance
+        addInstance();
 
         //base class
         AminoGfx::setup();
@@ -116,7 +116,7 @@ private:
             window = NULL;
         }
 
-        instanceCount--;
+        removeInstance();
 
         if (DEBUG_GLFW) {
             printf("Destroyed GLFW instance. Left=%i\n", instanceCount);
@@ -632,7 +632,6 @@ private:
 };
 
 //static initializers
-int AminoGfxMac::instanceCount = 0;
 bool AminoGfxMac::glfwInitialized = false;
 std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLFWwindow *, AminoGfxMac *>();
 

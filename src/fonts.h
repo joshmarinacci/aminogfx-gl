@@ -139,6 +139,7 @@ public:
  */
 struct amino_atlas_t {
     GLuint textureId;
+    bool initialized;
 };
 
 /**

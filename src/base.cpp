@@ -49,6 +49,27 @@ AminoGfx::~AminoGfx() {
 }
 
 /**
+ * Add new instance.
+ */
+void AminoGfx::addInstance() {
+    instanceCount++;
+    instances.push_back(this);
+}
+
+/**
+ * Remove instance.
+ */
+void AminoGfx::removeInstance() {
+    //remove instance
+    std::vector<AminoGfx *>::iterator pos = std::find(instances.begin(), instances.end(), this);
+
+    if (pos != instances.end()) {
+        instances.erase(pos);
+        instanceCount--;
+    }
+}
+
+/**
  * Initialize basic amino classes.
  */
 NAN_MODULE_INIT(AminoGfx::InitClasses) {
@@ -1178,7 +1199,7 @@ void AminoGfx::updateAtlasTextureHandler(AsyncValueUpdate *update, int state) {
 /**
  * Get texture for atlas.
  *
- * Note: has to be called on OpenGL thread.
+ * Note: has to be called on OpenGL thread (if createIfMissing is true).
  */
 amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
     assert(renderer);
@@ -1192,6 +1213,21 @@ amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMis
 void AminoGfx::notifyTextureCreated() {
     textureCount++;
 }
+
+/**
+ * Update atlas textures in all instances.
+ *
+ * Note: called on main thread.
+ */
+void AminoGfx::updateAtlasTextures(texture_atlas_t *atlas) {
+    for (auto const &item : instances) {
+        item->updateAtlasTexture(atlas);
+    }
+}
+
+//static initializers
+int AminoGfx::instanceCount = 0;
+std::vector<AminoGfx *> AminoGfx::instances;
 
 //
 // AminoGroupFactory
@@ -1642,6 +1678,9 @@ bool AminoText::layoutText() {
         printf("->layoutText() render text (%s)\n", fontSize->font->fontName.c_str());
     }
 
+    //Note: FreeType glyph code is not thread-safe, using lock to prevent crash on macOS if multiple AminoGfx instances are active
+    uv_mutex_lock(&freeTypeMutex);
+
     //create texture (needed in next calls)
     assert(fontSize->fontTexture);
 
@@ -1665,9 +1704,6 @@ bool AminoText::layoutText() {
         buffer = vertex_buffer_new("pos:3f,texCoord:2f");
     }
 
-    //Note: FreeType glyph code is not thread-safe, using lock to prevent crash on macOS if multiple AminoGfx instances are active
-    uv_mutex_lock(&freeTypeMutex);
-
     texture_font_t *fontTexture = fontSize->fontTexture;
     size_t lastGlyphCount = fontTexture->glyphs->size;
 
@@ -1686,6 +1722,12 @@ bool AminoText::layoutText() {
     }
 
     bool glyphsChanged = lastGlyphCount != fontTexture->glyphs->size;
+
+    if (!texture.initialized) {
+        //needs glyph texture first
+        texture.initialized = true;
+        glyphsChanged = true;
+    }
 
     uv_mutex_unlock(&freeTypeMutex);
 
