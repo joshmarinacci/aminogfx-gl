@@ -1870,7 +1870,7 @@ var Text = AminoGfx.Text;
 
 Text.prototype.init = function () {
     if (DEBUG) {
-        console.log('Rect.init()');
+        console.log('Text.init()');
     }
 
     //properties
