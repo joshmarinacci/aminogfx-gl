@@ -1168,7 +1168,8 @@ void AminoGfx::atlasTextureHasChanged(texture_atlas_t *atlas) {
  */
 void AminoGfx::updateAtlasTexture(texture_atlas_t *atlas) {
     //check if texture exists
-    amino_atlas_t texture = getAtlasTexture(atlas, false);
+    bool newTexture;
+    amino_atlas_t texture = getAtlasTexture(atlas, false, newTexture);
 
     if (texture.textureId != INVALID_TEXTURE) {
         if (DEBUG_BASE) {
@@ -1201,10 +1202,10 @@ void AminoGfx::updateAtlasTextureHandler(AsyncValueUpdate *update, int state) {
  *
  * Note: has to be called on OpenGL thread (if createIfMissing is true).
  */
-amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
+amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture) {
     assert(renderer);
 
-    return renderer->getAtlasTexture(atlas, createIfMissing);
+    return renderer->getAtlasTexture(atlas, createIfMissing, newTexture);
 }
 
 /**
@@ -1685,13 +1686,14 @@ bool AminoText::layoutText() {
     assert(fontSize->fontTexture);
 
     texture_atlas_t *atlas = fontSize->fontTexture->atlas;
+    bool newTexture;
 
     assert(atlas);
     assert(atlas->depth == 1);
 
     if (texture.textureId == INVALID_TEXTURE) {
         //create or use existing texture (for atlas)
-        texture = getAminoGfx()->getAtlasTexture(atlas, true);
+        texture = getAminoGfx()->getAtlasTexture(atlas, true, newTexture);
 
         assert(texture.textureId != INVALID_TEXTURE);
     }
@@ -1721,13 +1723,8 @@ bool AminoText::layoutText() {
         printf("-> layoutText() done\n");
     }
 
-    bool glyphsChanged = lastGlyphCount != fontTexture->glyphs->size;
-
-    if (!texture.initialized) {
-        //needs glyph texture first
-        texture.initialized = true;
-        glyphsChanged = true;
-    }
+    size_t newGlyphCount = fontTexture->glyphs->size;
+    bool glyphsChanged = lastGlyphCount != newGlyphCount || (newTexture && newGlyphCount > 0);
 
     uv_mutex_unlock(&freeTypeMutex);
 

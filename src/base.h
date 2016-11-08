@@ -62,7 +62,7 @@ public:
 
     //text
     void textUpdateNeeded(AminoText *text);
-    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture);
     void notifyTextureCreated();
     static void updateAtlasTextures(texture_atlas_t *atlas);
 
@@ -596,7 +596,7 @@ public:
     GLuint getTextureId();
 
 private:
-    amino_atlas_t texture = { INVALID_TEXTURE, false };
+    amino_atlas_t texture = { INVALID_TEXTURE };
 
     /**
      * JS object construction.

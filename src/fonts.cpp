@@ -474,7 +474,7 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool crea
 
     if (it == atlasTextures.end()) {
         if (!createIfMissing) {
-            amino_atlas_t item = { INVALID_TEXTURE, false };
+            amino_atlas_t item = { INVALID_TEXTURE };
 
             return item;
         }
@@ -503,7 +503,6 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool crea
         amino_atlas_t item;
 
         item.textureId = id;
-        item.initialized = false;
 
         atlasTextures[atlas] = item;
 

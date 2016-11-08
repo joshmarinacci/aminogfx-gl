@@ -896,10 +896,8 @@ void AminoRenderer::drawText(AminoText *text) {
  *
  * Note: has to be called on OpenGL thread (if createIfMissing is true).
  */
-amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing) {
+amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture) {
     assert(fontShader);
-
-    bool newTexture;
 
     amino_atlas_t res = fontShader->getAtlasTexture(atlas, createIfMissing, newTexture);
 

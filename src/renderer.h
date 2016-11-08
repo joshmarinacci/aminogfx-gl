@@ -255,7 +255,7 @@ public:
     virtual void initScene(GLfloat r, GLfloat g, GLfloat b, GLfloat opacity);
     virtual void renderScene(AminoNode *node);
 
-    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing);
+    amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture);
 
     static int showGLErrors();
     static int showGLErrors(std::string msg);
