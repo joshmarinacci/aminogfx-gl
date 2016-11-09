@@ -900,7 +900,7 @@ private:
                 continue;
             }
 
-            item->updateAtlasTexture(atlas);
+            static_cast<AminoGfxRPi *>(item)->updateAtlasTexture(atlas);
         }
     }
 };
