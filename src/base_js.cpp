@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#define DEBUG_ASYNC false
+
 //
 //  AminoJSObjectFactory
 //
@@ -2022,7 +2024,7 @@ void AminoJSEventObject::processAsyncQueue() {
         assert(item);
 
         //debug
-        //printf("%i of %i\n", (int)i, (int)asyncUpdates->size());
+        //printf("%i of %i (type: %i)\n", (int)i, (int)asyncUpdates->size(), (int)item->type);
 
         switch (item->type) {
             case ASYNC_UPDATE_PROPERTY:
@@ -2033,6 +2035,10 @@ void AminoJSEventObject::processAsyncQueue() {
                     //call local handler
                     assert(propItem->property);
                     assert(propItem->property->obj);
+
+                    if (DEBUG_ASYNC) {
+                        printf("%i of %i (property: %s)\n", (int)i, (int)asyncUpdates->size(), propItem->property->name.c_str());
+                    }
 
                     propItem->property->obj->handleAsyncUpdate(propItem);
                 }
@@ -2045,6 +2051,10 @@ void AminoJSEventObject::processAsyncQueue() {
 
                     //call local handler
                     assert(valueItem->obj);
+
+                    if (DEBUG_ASYNC) {
+                        printf("%i of %i (type: value update)\n", (int)i, (int)asyncUpdates->size());
+                    }
 
                     if (!valueItem->obj->handleAsyncUpdate(valueItem)) {
                         printf("unhandled async update by %s\n", valueItem->obj->getName().c_str());

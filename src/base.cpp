@@ -378,6 +378,12 @@ void AminoGfx::renderingThread(void *arg) {
     assert(gfx);
 
     while (gfx->isRenderingThreadRunning()) {
+        if (DEBUG_THREADS) {
+            uv_thread_t threadId = uv_thread_self();
+
+            printf("rendering: cycle start (thread=%lu)\n", (unsigned long)threadId);
+        }
+
         if (MEASURE_FPS) {
             gfx->measureRenderingStart();
         }
@@ -393,6 +399,10 @@ void AminoGfx::renderingThread(void *arg) {
             int errors = AminoRenderer::showGLErrors();
 
             gfx->rendererErrors += errors;
+        }
+
+        if (DEBUG_THREADS) {
+            printf("rendering: cycle done\n");
         }
     }
 }
@@ -482,7 +492,7 @@ void AminoGfx::startRenderingThread() {
  * Signal from rendering thread to check for async updates.
  */
 void AminoGfx::handleRenderEvents(uv_async_t *handle) {
-    if (DEBUG_RENDERER) {
+    if (DEBUG_RENDERER || DEBUG_THREADS) {
         printf("-> renderer: handleRenderEvents()\n");
     }
 
@@ -503,7 +513,7 @@ void AminoGfx::handleRenderEvents(uv_async_t *handle) {
     //handle events
     gfx->handleSystemEvents();
 
-    if (DEBUG_RENDERER) {
+    if (DEBUG_RENDERER || DEBUG_THREADS) {
         printf(" -> done\n");
     }
 }

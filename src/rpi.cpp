@@ -935,12 +935,13 @@ void crashHandler(int sig) {
     //process & thread
     pid_t pid = getpid();
     pid_t tid = gettid();
+    uv_thread_t threadId = uv_thread_self();
 
     //get void*'s for all entries on the stack
     size = backtrace(array, 10);
 
     //print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d (process=%d, thread=%d):\n", sig, pid, tid);
+    fprintf(stderr, "Error: signal %d (process=%d, thread=%d, uvThread=%lu):\n", sig, pid, tid, (unsigned long)threadId);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }

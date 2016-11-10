@@ -16,6 +16,8 @@
 #define ASYNC_UPDATE_CUSTOM      100
 
 #define DEBUG_BASE false
+
+#define DEBUG_THREADS false
 #define DEBUG_RESOURCES false
 #define DEBUG_REFERENCES false
 

@@ -64,6 +64,12 @@ public:
      * Async running code.
      */
     void Execute() {
+        if (DEBUG_THREADS) {
+            uv_thread_t threadId = uv_thread_self();
+
+            printf("async image loading: start (thread=%lu)\n", (unsigned long)threadId);
+        }
+
         if (DEBUG_IMAGES) {
             printf("-> async image loading started\n");
         }
@@ -89,6 +95,10 @@ public:
             uv_mutex_lock(&jpegMutex);
             decodeJpeg();
             uv_mutex_unlock(&jpegMutex);
+        }
+
+        if (DEBUG_THREADS) {
+            printf("async image loading: done\n");
         }
     }
 
