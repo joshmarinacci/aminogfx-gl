@@ -840,7 +840,7 @@ void AminoRenderer::drawText(AminoText *text) {
             break;
 
         case AminoText::VALIGN_BOTTOM:
-            ctx->translate(0,  - text->propH->value - tf->descender + (text->lineNr - 1) * tf->height);
+            ctx->translate(0, - text->propH->value - tf->descender + (text->lineNr - 1) * tf->height);
             break;
 
         case AminoText::VALIGN_MIDDLE:

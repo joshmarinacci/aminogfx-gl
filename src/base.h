@@ -427,6 +427,9 @@ public:
 
         //release object values
         propFont->destroy();
+
+        fontSize = NULL;
+        texture.textureId = INVALID_TEXTURE;
     }
 
     /**
@@ -561,12 +564,13 @@ public:
             AminoFontSize *fs = static_cast<AminoFontSize *>(propFont->value);
 
             if (fontSize == fs) {
+                //same font
                 return;
             }
 
             //new font
             fontSize = fs;
-            texture.textureId = INVALID_TEXTURE;
+            texture.textureId = INVALID_TEXTURE; //reset texture
 
             //debug
             //printf("-> use font: %s\n", fs->font->fontName.c_str());
