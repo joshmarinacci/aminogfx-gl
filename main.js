@@ -13,11 +13,22 @@ const path = require('path');
 const binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
 const native = require(binding_path);
 
-const request = require('request');
+let request = require('request');
 const fs = require('fs');
 const util =  require('util');
 
 const packageInfo = require('./package.json');
+
+/**
+ * Use custom request handler.
+ *
+ * Has to implement handler(opts, callback) and to support abort().
+ */
+function setRequestHandler(handler) {
+    request = handler;
+}
+
+exports.setRequestHandler = setRequestHandler;
 
 //
 //  AminoGfx
