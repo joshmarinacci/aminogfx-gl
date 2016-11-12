@@ -45,14 +45,15 @@
                 ['OS=="mac"', {
                     "include_dirs": [
                         " <!@(freetype-config --cflags)",
-                        " <!@(pkg-config --cflags glfw3)",
+                        " <!@(pkg-config --cflags glfw3)"
                     ],
                     "libraries": [
                         " <!@(pkg-config --libs glfw3)",
                         '-framework OpenGL',
                         '-framework OpenCL',
                         '-framework IOKit',
-                        '<!@(freetype-config --libs)'
+                        '<!@(freetype-config --libs)',
+                        '-ljpeg'
                     ],
                     "sources": [
                         "src/mac.cpp",
@@ -88,6 +89,7 @@
 		                        "-lGLESv2",
 		                        "-lEGL",
 		                        '<!@(freetype-config --libs)',
+                                "-ljpeg"
 		                    ],
 		                    "defines": [
 		                        "RPI"
@@ -108,6 +110,7 @@
 		                    "libraries":[
 		                        '<!@(freetype-config --libs)',
 		                        "-lglfw",
+                                "-ljpeg"
 		                    ],
 		                    "defines": [
 		                        "GL_GLEXT_PROTOTYPES",

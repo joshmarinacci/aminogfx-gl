@@ -4,12 +4,39 @@
 #include <uv.h>
 
 extern "C" {
-    #include "nanojpeg.h"
+    //#include "nanojpeg.h"
     #include "upng.h"
+    #include <jpeglib.h>
 }
 
 #define DEBUG_IMAGES false
 #define DEBUG_IMAGES_CONSOLE true
+
+//
+// libjpeg error handler
+//
+// See https://github.com/ellzey/libjpeg/blob/master/example.c
+//
+
+struct myjpeg_error_mgr {
+  struct jpeg_error_mgr pub;	/* "public" fields */
+
+  jmp_buf setjmp_buffer;	/* for return to caller */
+};
+
+typedef struct myjpeg_error_mgr *myjpeg_error_ptr;
+
+METHODDEF(void) myjpeg_error_exit(j_common_ptr cinfo) {
+  /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
+  myjpeg_error_ptr myerr = (myjpeg_error_ptr) cinfo->err;
+
+  /* Always display the message. */
+  /* We could postpone this until after returning, if we chose. */
+  (*cinfo->err->output_message)(cinfo);
+
+  /* Return control to the setjmp point */
+  longjmp(myerr->setjmp_buffer, 1);
+}
 
 //
 // AsyncImageWorker
@@ -91,10 +118,14 @@ public:
         if (isPng) {
             decodePng();
         } else {
+            decodeJpeg();
+
+            /*
             //Note: libuv uses thread-pool, therefore use mutex to prevent parallel execution of JPEG decoder (parallel execution would be better in future using thread-safe code)
             uv_mutex_lock(&jpegMutex);
-            decodeJpeg();
+            decodeJpeg2();
             uv_mutex_unlock(&jpegMutex);
+            */
         }
 
         if (DEBUG_THREADS) {
@@ -153,7 +184,7 @@ public:
     }
 
     /**
-     * Decode JPEG image.
+     * Decode JPEG image (using libjpeg).
      *
      * Note: NOT thread-safe! Has to be called in single queue.
      */
@@ -168,6 +199,93 @@ public:
 
         printf("JPEG thread: %lu\n", threadId);
         */
+
+        struct jpeg_decompress_struct cinfo;
+
+        //error handler
+        struct myjpeg_error_mgr jerr;
+
+        cinfo.err = jpeg_std_error(&jerr.pub);
+        jerr.pub.error_exit = myjpeg_error_exit;
+
+        if (setjmp(jerr.setjmp_buffer)) {
+            SetErrorMessage("error decoding JPEG file");
+
+            jpeg_destroy_decompress(&cinfo);
+            return;
+        }
+
+        //init
+        jpeg_create_decompress(&cinfo);
+
+        //input data
+        jpeg_mem_src(&cinfo, (unsigned char *)buffer, bufferLen);
+
+        //decompress
+        int rc = jpeg_read_header(&cinfo, TRUE);
+
+        if (rc != 1) {
+            SetErrorMessage("error not a JPEG file");
+
+            jpeg_destroy_decompress(&cinfo);
+            return;
+        }
+
+        jpeg_start_decompress(&cinfo);
+
+        //get JPEG data
+        imgW = cinfo.output_width;
+	    imgH = cinfo.output_height;
+        imgAlpha = false;
+        imgBPP = cinfo.output_components;
+
+        //read pixels
+        imgDataLen = imgW * imgH * imgBPP;
+	    imgData = (char *)malloc(imgDataLen); //gets transferred to buffer
+
+        if (DEBUG_IMAGES) {
+            printf("-> got an image %d %d\n", imgW, imgH);
+            printf("-> data size = %d\n", imgDataLen);
+        }
+
+        int rowStride = cinfo.output_width * imgBPP;
+
+         while (cinfo.output_scanline < cinfo.output_height) {
+            unsigned char *bufferArray[1];
+
+		    bufferArray[0] = (unsigned char *)imgData + cinfo.output_scanline * rowStride;
+
+    		jpeg_read_scanlines(&cinfo, bufferArray, 1);
+         }
+
+         //done
+         jpeg_finish_decompress(&cinfo);
+         jpeg_destroy_decompress(&cinfo);
+
+         if (DEBUG_IMAGES) {
+            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
+        }
+
+        isJpeg = true;
+    }
+
+    /**
+     * Decode JPEG image (unsing nanojpeg).
+     *
+     * Note: NOT thread-safe! Has to be called in single queue.
+     */
+     /*
+    void decodeJpegOld() {
+        if (DEBUG_IMAGES) {
+            printf("decodeJpeg()\n");
+        }
+
+        //check thread
+        / *
+        uv_thread_t threadId = uv_thread_self();
+
+        printf("JPEG thread: %lu\n", threadId);
+        * /
 
         njInit();
 
@@ -213,6 +331,7 @@ public:
 
         isJpeg = true;
     }
+    */
 
     /**
      * Free all allocated buffers.
