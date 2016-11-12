@@ -5,8 +5,9 @@
 
 extern "C" {
     //#include "nanojpeg.h"
-    #include "upng.h"
+    //#include "upng.h"
     #include <jpeglib.h>
+    #include <png.h>
 }
 
 #define DEBUG_IMAGES false
@@ -39,6 +40,28 @@ METHODDEF(void) myjpeg_error_exit(j_common_ptr cinfo) {
 }
 
 //
+// libpng handlers
+//
+
+typedef struct {
+    const png_byte *data;
+    const png_size_t size;
+} DataHandle;
+
+typedef struct {
+    const DataHandle data;
+    png_size_t offset;
+} ReadDataHandle;
+
+static void read_png_data_callback(png_structp png_ptr, png_byte *raw_data, png_size_t read_length) {
+    ReadDataHandle *handle = (ReadDataHandle *)png_get_io_ptr(png_ptr);
+    const png_byte *png_src = handle->data.data + handle->offset;
+
+    memcpy(raw_data, png_src, read_length);
+    handle->offset += read_length;
+}
+
+//
 // AsyncImageWorker
 //
 
@@ -60,7 +83,7 @@ private:
     int imgBPP;
 
     //temp buffers
-    upng_t *upng = NULL;
+    //upng_t *upng = NULL;
     bool isJpeg = false;
 
     //mutex
@@ -134,11 +157,127 @@ public:
     }
 
     /**
-     * Decode PNG image.
+     * Decode PNG image (using libpng).
+     *
+     * See http://www.learnopengles.com/loading-a-png-into-memory-and-displaying-it-as-a-texture-with-opengl-es-2-using-almost-the-same-code-on-ios-android-and-emscripten/.
+     */
+    void decodePng() {
+        //Note: header already checked
+
+        //init
+        png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+        if (!png_ptr) {
+            SetErrorMessage("could not init PNG decoder");
+            return;
+        }
+
+        png_infop info_ptr = png_create_info_struct(png_ptr);
+
+        if (!info_ptr) {
+            SetErrorMessage("could not init PNG decoder");
+
+            png_destroy_read_struct(&png_ptr, NULL, NULL);
+
+            return;
+        }
+
+        //data handler
+        ReadDataHandle png_data_handle = (ReadDataHandle){{ (unsigned char *)buffer, bufferLen }, 0};
+
+        png_set_read_fn(png_ptr, &png_data_handle, read_png_data_callback);
+
+        //error handler
+        if (setjmp(png_jmpbuf(png_ptr))) {
+            SetErrorMessage("could not decode PNG");
+
+            png_read_end(png_ptr, info_ptr);
+            png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+            return;
+        }
+
+        //PNG header
+        png_uint_32 width, height;
+        int bit_depth, color_type;
+
+        png_read_info(png_ptr, info_ptr);
+        png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
+
+        //convert transparency to full alpha
+        if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
+            png_set_tRNS_to_alpha(png_ptr);
+        }
+
+        //convert grayscale, if needed.
+        if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
+            png_set_expand_gray_1_2_4_to_8(png_ptr);
+        }
+
+        //convert paletted images, if needed.
+        if (color_type == PNG_COLOR_TYPE_PALETTE) {
+            png_set_palette_to_rgb(png_ptr);
+        }
+
+        //add alpha channel, if there is none.
+        //rationale: GL_RGBA is faster than GL_RGB on many GPUs)
+        /*
+        if (color_type == PNG_COLOR_TYPE_PALETTE || color_type == PNG_COLOR_TYPE_RGB) {
+            png_set_add_alpha(png_ptr, 0xFF, PNG_FILLER_AFTER);
+        }
+        */
+
+        //ensure 8-bit packing
+        if (bit_depth < 8) {
+            png_set_packing(png_ptr);
+        } else if (bit_depth == 16) {
+            png_set_scale_16(png_ptr);
+        }
+
+        //get final info
+        png_read_update_info(png_ptr, info_ptr);
+
+        imgW = width;
+        imgH = height;
+        imgAlpha = png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_RGBA;
+        imgBPP = png_get_bit_depth(png_ptr, info_ptr) / 8;
+
+        //decode
+        const png_size_t row_size = png_get_rowbytes(png_ptr, info_ptr);
+
+        //printf("-> row=%i calc=%i\n", (int)row_size, width * imgBPP);
+
+        assert(row_size > 0);
+        imgBPP = row_size / width;
+
+        //printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
+
+        imgDataLen = row_size * height;
+        imgData = (char *)malloc(imgDataLen);
+
+        assert(imgData != NULL);
+
+        png_byte *row_ptrs[height];
+        png_uint_32 i;
+
+        for (i = 0; i < height; i++) {
+            row_ptrs[i] = (unsigned char *)imgData + i * row_size;
+        }
+
+        png_read_image(png_ptr, &row_ptrs[0]);
+
+        //done
+        png_read_end(png_ptr, info_ptr);
+        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    }
+
+    /**
+     * Decode PNG image (using upng).
      *
      * Note: this code is thread-safe.
      */
-    void decodePng() {
+     /*
+    void decodePng2() {
         if (DEBUG_IMAGES) {
             printf("decodePng()\n");
         }
@@ -182,6 +321,7 @@ public:
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
     }
+    */
 
     /**
      * Decode JPEG image (using libjpeg).
@@ -243,6 +383,8 @@ public:
         imgDataLen = imgW * imgH * imgBPP;
 	    imgData = (char *)malloc(imgDataLen); //gets transferred to buffer
 
+        assert(imgData != NULL);
+
         if (DEBUG_IMAGES) {
             printf("-> got an image %d %d\n", imgW, imgH);
             printf("-> data size = %d\n", imgDataLen);
@@ -250,19 +392,19 @@ public:
 
         int rowStride = cinfo.output_width * imgBPP;
 
-         while (cinfo.output_scanline < cinfo.output_height) {
+        while (cinfo.output_scanline < cinfo.output_height) {
             unsigned char *bufferArray[1];
 
 		    bufferArray[0] = (unsigned char *)imgData + cinfo.output_scanline * rowStride;
 
     		jpeg_read_scanlines(&cinfo, bufferArray, 1);
-         }
+        }
 
-         //done
-         jpeg_finish_decompress(&cinfo);
-         jpeg_destroy_decompress(&cinfo);
+        //done
+        jpeg_finish_decompress(&cinfo);
+        jpeg_destroy_decompress(&cinfo);
 
-         if (DEBUG_IMAGES) {
+        if (DEBUG_IMAGES) {
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
 
@@ -338,9 +480,11 @@ public:
      */
     void freeImageBuffers() {
         //free image and buffers
+        /*
         if (upng) {
             upng_free(upng);
         }
+        */
     }
 
     /**
@@ -361,8 +505,11 @@ public:
             //transfer ownership
             buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
         } else {
-            //create copy
-            buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
+            //transfer ownership (libpng)
+            buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
+
+            //create copy (upng)
+            //buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
         }
 
         //create object

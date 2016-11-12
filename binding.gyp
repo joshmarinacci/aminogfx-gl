@@ -19,8 +19,8 @@
                 "src/fonts/mat4.c",
                 "src/fonts.cpp",
 
-                "src/images/nanojpeg.c",
-                "src/images/upng.c",
+                #"src/images/nanojpeg.c",
+                #"src/images/upng.c",
                 "src/images.cpp",
 
                 "src/shaders.cpp",
@@ -53,7 +53,8 @@
                         '-framework OpenCL',
                         '-framework IOKit',
                         '<!@(freetype-config --libs)',
-                        '-ljpeg'
+                        '-ljpeg',
+                        '-lpng'
                     ],
                     "sources": [
                         "src/mac.cpp",
@@ -89,7 +90,8 @@
 		                        "-lGLESv2",
 		                        "-lEGL",
 		                        '<!@(freetype-config --libs)',
-                                "-ljpeg"
+                                "-ljpeg",
+                                "-lpng"
 		                    ],
 		                    "defines": [
 		                        "RPI"
@@ -110,7 +112,8 @@
 		                    "libraries":[
 		                        '<!@(freetype-config --libs)',
 		                        "-lglfw",
-                                "-ljpeg"
+                                "-ljpeg",
+                                "-lpng"
 		                    ],
 		                    "defines": [
 		                        "GL_GLEXT_PROTOTYPES",
