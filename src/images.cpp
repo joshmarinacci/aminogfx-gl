@@ -244,7 +244,10 @@ public:
         if (bit_depth < 8) {
             png_set_packing(png_ptr);
         } else if (bit_depth == 16) {
+            //Note: not part of libjpeg-turbo
+#ifdef MAC
             png_set_scale_16(png_ptr);
+#endif
         }
 
         //get final info
