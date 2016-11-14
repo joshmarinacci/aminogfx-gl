@@ -75,8 +75,8 @@ private:
     size_t bufferLen;
 
     //image
-    char *imgData;
-    int imgDataLen;
+    char *imgData = NULL;
+    int imgDataLen = 0;
     int imgW;
     int imgH;
     bool imgAlpha;
@@ -194,6 +194,11 @@ public:
             png_read_end(png_ptr, info_ptr);
             png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
+            if (imgData) {
+                free(imgData);
+                imgData = NULL;
+            }
+
             return;
         }
 
@@ -203,6 +208,11 @@ public:
 
         png_read_info(png_ptr, info_ptr);
         png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, NULL, NULL, NULL);
+
+        if (DEBUG_IMAGES) {
+            printf("-> got an image %dx%d (depth=%i, type=%i)\n", (int)width, (int)height, (int)bit_depth, (int)color_type);
+            printf("-> data size = %d\n", imgDataLen);
+        }
 
         //convert transparency to full alpha
         if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
@@ -237,31 +247,63 @@ public:
         //get final info
         png_read_update_info(png_ptr, info_ptr);
 
+        const png_byte colorType = png_get_color_type(png_ptr, info_ptr);
+        const png_size_t rowSize = png_get_rowbytes(png_ptr, info_ptr);
+        const png_byte bitDepth = png_get_bit_depth(png_ptr, info_ptr);
+
+        assert(rowSize > 0);
+
         imgW = width;
         imgH = height;
-        imgAlpha = png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_RGBA;
-        imgBPP = png_get_bit_depth(png_ptr, info_ptr) / 8;
+        imgAlpha = (colorType == PNG_COLOR_TYPE_RGB_ALPHA) || (colorType == PNG_COLOR_TYPE_GRAY_ALPHA);
+
+        switch (colorType) {
+            case PNG_COLOR_TYPE_GRAY:
+                assert(bitDepth == 8);
+                imgBPP = 1;
+                break;
+
+            case PNG_COLOR_TYPE_RGB:
+                assert(bitDepth == 8);
+                imgBPP = 3;
+                break;
+
+            case PNG_COLOR_TYPE_RGB_ALPHA:
+                assert(bitDepth == 8);
+                imgBPP = 4;
+                break;
+
+            case PNG_COLOR_TYPE_GRAY_ALPHA:
+                assert(bitDepth == 8);
+                imgBPP = 2;
+                break;
+
+            default:
+                //fallback
+                printf("unknown color type: %i\n", (int)colorType);
+
+                imgBPP = rowSize / width;
+                break;
+        }
+
+        if (DEBUG_IMAGES) {
+            printf("-> output image %dx%d (bpp=%i, alpha=%i, type=%i)\n", (int)width, (int)height, (int)imgBPP, (int)imgAlpha, (int)colorType);
+        }
 
         //decode
-        const png_size_t row_size = png_get_rowbytes(png_ptr, info_ptr);
 
-        //printf("-> row=%i calc=%i\n", (int)row_size, width * imgBPP);
-
-        assert(row_size > 0);
-        imgBPP = row_size / width;
-
+        //printf("-> row=%i calc=%i\n", (int)rowSize, width * imgBPP);
         //printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
 
-        imgDataLen = row_size * height;
+        imgDataLen = rowSize * height;
         imgData = (char *)malloc(imgDataLen);
 
         assert(imgData != NULL);
 
         png_byte *row_ptrs[height];
-        png_uint_32 i;
 
-        for (i = 0; i < height; i++) {
-            row_ptrs[i] = (unsigned char *)imgData + i * row_size;
+        for (png_uint_32 i = 0; i < height; i++) {
+            row_ptrs[i] = (unsigned char *)imgData + i * rowSize;
         }
 
         png_read_image(png_ptr, &row_ptrs[0]);
@@ -269,6 +311,10 @@ public:
         //done
         png_read_end(png_ptr, info_ptr);
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+        if (DEBUG_IMAGES) {
+            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
+        }
     }
 
     /**
@@ -352,6 +398,12 @@ public:
             SetErrorMessage("error decoding JPEG file");
 
             jpeg_destroy_decompress(&cinfo);
+
+            if (imgData) {
+                free(imgData);
+                imgData = NULL;
+            }
+
             return;
         }
 
@@ -386,7 +438,7 @@ public:
         assert(imgData != NULL);
 
         if (DEBUG_IMAGES) {
-            printf("-> got an image %d %d\n", imgW, imgH);
+            printf("-> got an image %dx%d\n", imgW, imgH);
             printf("-> data size = %d\n", imgDataLen);
         }
 
@@ -449,7 +501,7 @@ public:
         }
 
         if (DEBUG_IMAGES) {
-            printf("-> got an image %d %d\n", njGetWidth(), njGetHeight());
+            printf("-> got an image %dx%d\n", njGetWidth(), njGetHeight());
             printf("-> data size = %d\n", njGetImageSize());
         }
 
@@ -571,6 +623,8 @@ void AminoImage::destroy() {
     AminoJSObject::destroy();
 
     buffer.Reset();
+    bufferData = NULL;
+    bufferLength = 0;
 }
 
 /**
