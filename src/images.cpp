@@ -6,7 +6,10 @@
 extern "C" {
     //#include "nanojpeg.h"
     //#include "upng.h"
+
     #include <jpeglib.h>
+
+    #define PNG_SKIP_SETJMP_CHECK
     #include <png.h>
 }
 
