@@ -661,6 +661,7 @@ void AminoRenderer::drawModel(AminoModel *model) {
         //texture
         AminoTexture *texture = static_cast<AminoTexture *>(model->propTexture->value);
 
+        //FIXME check texture id
         ctx->bindTexture(texture->textureId);
     }
 
