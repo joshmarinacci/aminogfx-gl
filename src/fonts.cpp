@@ -480,11 +480,13 @@ amino_atlas_t AminoFontShader::getAtlasTexture(texture_atlas_t *atlas, bool crea
         }
 
         //create new one
-        GLuint id;
+        GLuint id = INVALID_TEXTURE;
 
         //see https://webcache.googleusercontent.com/search?q=cache:EZ3HLutV3zwJ:https://github.com/rougier/freetype-gl/blob/master/texture-atlas.c+&cd=1&hl=de&ct=clnk&gl=ch
         glGenTextures(1, &id);
         newTexture = true;
+
+        assert(id != INVALID_TEXTURE);
 
         glBindTexture(GL_TEXTURE_2D, id);
 

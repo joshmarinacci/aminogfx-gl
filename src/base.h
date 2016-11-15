@@ -57,8 +57,9 @@ public:
     bool addAnimation(AminoAnim *anim);
     void removeAnimation(AminoAnim *anim);
 
-    void deleteTextureAsync(GLuint textureId);
-    void deleteBufferAsync(GLuint bufferId);
+    bool deleteTextureAsync(GLuint textureId);
+    bool deleteBufferAsync(GLuint bufferId);
+    bool deleteVertexBufferAsync(vertex_buffer_t *buffer);
 
     //text
     void textUpdateNeeded(AminoText *text);
@@ -201,6 +202,7 @@ private:
     //texture & buffer
     void deleteTexture(AsyncValueUpdate *update, int state);
     void deleteBuffer(AsyncValueUpdate *update, int state);
+    void deleteVertexBuffer(AsyncValueUpdate *update, int state);
 
     //stats
     void getStats(v8::Local<v8::Object> &obj) override;
@@ -293,6 +295,9 @@ public:
         AminoJSObject::destroy();
 
         //to be overwritten
+
+        //debug
+        //printf("Destroyed node: %i\n", type);
     }
 
     /**
@@ -418,11 +423,22 @@ public:
      * Free buffers.
      */
     void destroy() override {
-        AminoNode::destroy();
-
         if (buffer) {
-            vertex_buffer_delete(buffer);
-            buffer = NULL;
+            if (eventHandler) {
+                if (getAminoGfx()->deleteVertexBufferAsync(buffer)) {
+                    buffer = NULL;
+                }
+            }
+
+            if (buffer) {
+                //prevent OpenGL calls(on wrong thread)
+                buffer->vertices_id = 0;
+                buffer->indices_id = 0;
+
+                vertex_buffer_delete(buffer);
+
+                buffer = NULL;
+            }
         }
 
         //release object values
@@ -430,6 +446,9 @@ public:
 
         fontSize = NULL;
         texture.textureId = INVALID_TEXTURE;
+
+        //base
+        AminoNode::destroy();
     }
 
     /**
@@ -491,6 +510,9 @@ public:
      * Handle async property updates.
      */
     void handleAsyncUpdate(AsyncPropertyUpdate *update) override {
+        //debug
+        //printf("AminoText::handleAsyncUpdate()\n");
+
         //default: set value
         AminoJSObject::handleAsyncUpdate(update);
 

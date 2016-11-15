@@ -1007,21 +1007,25 @@ void AminoGfx::clearAnimations() {
  *
  * Note: has to be called on main thread.
  */
-void AminoGfx::deleteTextureAsync(GLuint textureId) {
+bool AminoGfx::deleteTextureAsync(GLuint textureId) {
     if (destroyed) {
-        return;
+        return false;
     }
 
     if (DEBUG_BASE) {
         printf("enqueue: delete texture\n");
     }
 
+    assert(textureId != INVALID_TEXTURE);
+
     //enqueue
     AminoJSObject::enqueueValueUpdate(textureId, NULL, static_cast<asyncValueCallback>(&AminoGfx::deleteTexture));
+
+    return true;
 }
 
 /**
- * Delete texture.
+ * Delete texture (async).
  */
 void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
     if (state != AsyncValueUpdate::STATE_APPLY) {
@@ -1034,6 +1038,8 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
         printf("-> deleting texture %i\n", textureId);
     }
 
+    assert(textureId != INVALID_TEXTURE);
+
     glDeleteTextures(1, &textureId);
     textureCount--;
 }
@@ -1043,9 +1049,9 @@ void AminoGfx::deleteTexture(AsyncValueUpdate *update, int state) {
  *
  * Note: has to be called on main thread.
  */
-void AminoGfx::deleteBufferAsync(GLuint bufferId) {
+bool AminoGfx::deleteBufferAsync(GLuint bufferId) {
     if (destroyed) {
-        return;
+        return false;
     }
 
     if (DEBUG_BASE) {
@@ -1054,6 +1060,8 @@ void AminoGfx::deleteBufferAsync(GLuint bufferId) {
 
     //enqueue
     AminoJSObject::enqueueValueUpdate(bufferId, NULL, static_cast<asyncValueCallback>(&AminoGfx::deleteBuffer));
+
+    return true;
 }
 
 /**
@@ -1071,6 +1079,45 @@ void AminoGfx::deleteBuffer(AsyncValueUpdate *update, int state) {
     }
 
     glDeleteBuffers(1, &bufferId);
+}
+
+/**
+ * Delete vertex buffer.
+ *
+ * Note: has to be called on main thread.
+ */
+bool AminoGfx::deleteVertexBufferAsync(vertex_buffer_t *buffer) {
+    if (destroyed) {
+        return false;
+    }
+
+    if (DEBUG_BASE) {
+        printf("enqueue: delete vertex buffer\n");
+    }
+
+    //enqueue
+    AminoJSObject::enqueueValueUpdate(0, buffer, static_cast<asyncValueCallback>(&AminoGfx::deleteVertexBuffer));
+
+    return true;
+}
+
+/**
+ * Delete vertex buffer (on OpenGL thread).
+ */
+void AminoGfx::deleteVertexBuffer(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    vertex_buffer_t *buffer = (vertex_buffer_t *)update->data;
+
+    assert(buffer);
+
+    if (DEBUG_RESOURCES) {
+        printf("-> deleting vertex buffer\n");
+    }
+
+    vertex_buffer_delete(buffer);
 }
 
 /**

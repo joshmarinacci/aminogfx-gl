@@ -654,7 +654,7 @@ GLuint AminoImage::createTexture(GLuint textureId) {
 /**
  * Create texture.
  *
- * Note: only call from async handler!
+ * Note: only call from async handler (rendering thread)!
  */
 GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t bufferLength, int w, int h, int bpp) {
     assert(w * h * bpp == (int)bufferLength);
@@ -666,7 +666,10 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
 	    texture = textureId;
     } else {
         //create new texture
+        texture = INVALID_TEXTURE;
 	    glGenTextures(1, &texture);
+
+        assert(texture != INVALID_TEXTURE);
     }
 
     glBindTexture(GL_TEXTURE_2D, texture);

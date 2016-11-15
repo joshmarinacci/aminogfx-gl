@@ -1888,6 +1888,7 @@ void AminoJSEventObject::clearAsyncQueue() {
         delete item;
     }
 
+    //Note: not applied, can safely clear vector
     asyncUpdates->clear();
 
     res = pthread_mutex_unlock(&asyncLock);
@@ -1922,6 +1923,8 @@ void AminoJSEventObject::handleAsyncDeletes() {
             //free instance
             delete item;
         }
+
+        assert(count == asyncDeletes->size());
 
         asyncDeletes->clear();
     }
@@ -2037,7 +2040,7 @@ void AminoJSEventObject::processAsyncQueue() {
                     assert(propItem->property->obj);
 
                     if (DEBUG_ASYNC) {
-                        printf("%i of %i (property: %s)\n", (int)i, (int)asyncUpdates->size(), propItem->property->name.c_str());
+                        printf("%i of %i (property: %s of %s)\n", (int)i, (int)asyncUpdates->size(), propItem->property->name.c_str(), propItem->property->obj->getName().c_str());
                     }
 
                     propItem->property->obj->handleAsyncUpdate(propItem);
@@ -2223,6 +2226,7 @@ AminoJSEventObject::AsyncPropertyUpdate::~AsyncPropertyUpdate() {
 
     //free data
     property->freeAsyncData(data);
+    data = NULL;
 
     //release instance to target object
     property->release();
