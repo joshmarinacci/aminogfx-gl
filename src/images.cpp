@@ -977,13 +977,22 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
         }
 
         AminoImage *img = static_cast<AminoImage *>(update->valueObj);
+
+        assert(img);
+
         bool newTexture = this->textureId == INVALID_TEXTURE;
         GLuint textureId = img->createTexture(this->textureId);
+
+        //debug
+        //printf("-> createTexture() new=%i id=%i\n", (int)newTexture, (int)textureId);
 
         if (textureId != INVALID_TEXTURE) {
             //set values
             this->textureId = textureId;
-            ownTexture = true;
+
+            if (newTexture) {
+                ownTexture = true;
+            }
 
             w = img->w;
             h = img->h;

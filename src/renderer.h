@@ -38,11 +38,15 @@ public:
     }
 
     /**
-     * Reset context.
+     * Reset context (prepare for next cycle).
      */
     void reset() {
         assert(matrixStack.size() == 0);
         assert(depth == 0);
+
+        //reset
+        prevShader = NULL;
+        prevTex = INVALID_TEXTURE;
     }
 
     /**
@@ -191,6 +195,13 @@ public:
 
             prevTex = tex;
         }
+    }
+
+    /**
+     * Reset texture (use with care).
+     */
+    void unbindTexture() {
+        bindTexture(0);
     }
 
     /**

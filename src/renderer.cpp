@@ -544,7 +544,7 @@ void AminoRenderer::drawModel(AminoModel *model) {
     bool useUVs = !vecUVs->empty();
 
     if (useUVs && !model->propTexture->value) {
-        //teture not yet loaded
+        //texture not yet loaded
         return;
     }
 
@@ -661,7 +661,6 @@ void AminoRenderer::drawModel(AminoModel *model) {
         //texture
         AminoTexture *texture = static_cast<AminoTexture *>(model->propTexture->value);
 
-        //FIXME check texture id
         ctx->bindTexture(texture->textureId);
     }
 
