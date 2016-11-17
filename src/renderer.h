@@ -45,8 +45,15 @@ public:
         assert(depth == 0);
 
         //reset
-        prevShader = NULL;
-        prevTex = INVALID_TEXTURE;
+        if (prevShader) {
+            prevShader = NULL;
+            glUseProgram(0);
+        }
+
+        if (prevTex != INVALID_TEXTURE) {
+            prevTex = INVALID_TEXTURE;
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
     }
 
     /**
