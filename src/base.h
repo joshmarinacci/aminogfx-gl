@@ -162,7 +162,9 @@ protected:
     static void handleRenderEvents(uv_async_t *handle);
     virtual void handleSystemEvents() = 0;
 
+    virtual void initRendering();
     virtual void render();
+    virtual void endRendering();
     void processAnimations();
     virtual bool bindContext() = 0;
     virtual void renderScene();
@@ -519,6 +521,8 @@ public:
         //check font updates
         AnyProperty *property = update->property;
         bool updated = false;
+
+        assert(property);
 
         if (property == propW || property == propH || property == propText || property == propMaxLines) {
             updated = true;
@@ -1179,21 +1183,21 @@ public:
     bool hasImage;
 
     //color (no texture)
-    FloatProperty *propR;
-    FloatProperty *propG;
-    FloatProperty *propB;
+    FloatProperty *propR = NULL;
+    FloatProperty *propG = NULL;
+    FloatProperty *propB = NULL;
 
     //texture (image only)
-    ObjectProperty *propTexture;
+    ObjectProperty *propTexture = NULL;
 
     //texture offset (image only)
-    FloatProperty *propLeft;
-    FloatProperty *propRight;
-    FloatProperty *propTop;
-    FloatProperty *propBottom;
+    FloatProperty *propLeft = NULL;
+    FloatProperty *propRight = NULL;
+    FloatProperty *propTop = NULL;
+    FloatProperty *propBottom = NULL;
 
     //repeat
-    Utf8Property *propRepeat;
+    Utf8Property *propRepeat = NULL;
     bool repeatX = false;
     bool repeatY = false;
 
@@ -1323,6 +1327,8 @@ public:
 
         //check property updates
         AnyProperty *property = update->property;
+
+        assert(property);
 
         if (property == propRepeat) {
             std::string str = propRepeat->value;
@@ -1572,6 +1578,8 @@ public:
 
         //check array updates
         AnyProperty *property = update->property;
+
+        assert(property);
 
         if (property == propVertices) {
             vboVertexModified = true;

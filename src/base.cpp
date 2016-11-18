@@ -377,6 +377,10 @@ void AminoGfx::renderingThread(void *arg) {
 
     assert(gfx);
 
+    //init
+    gfx->initRendering();
+
+    //rendering loop
     while (gfx->isRenderingThreadRunning()) {
         if (DEBUG_THREADS) {
             uv_thread_t threadId = uv_thread_self();
@@ -405,6 +409,9 @@ void AminoGfx::renderingThread(void *arg) {
             printf("rendering: cycle done\n");
         }
     }
+
+    //renderer done
+    gfx->endRendering();
 }
 
 /**
@@ -554,6 +561,13 @@ bool AminoGfx::isRenderingThreadRunning() {
 }
 
 /**
+ * Initialize rendering thread before loop starts.
+ */
+void AminoGfx::initRendering() {
+    //overwrite
+}
+
+/**
  * Render a scene (synchronous call).
  */
 void AminoGfx::render() {
@@ -604,6 +618,13 @@ void AminoGfx::render() {
     if (DEBUG_RENDERER) {
         printf("-> renderer: done\n");
     }
+}
+
+/**
+ * Rendering thread aborted.
+ */
+void AminoGfx::endRendering() {
+    //overwrite
 }
 
 /**

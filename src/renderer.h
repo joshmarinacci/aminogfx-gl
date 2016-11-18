@@ -47,12 +47,16 @@ public:
         //reset
         if (prevShader) {
             prevShader = NULL;
-            glUseProgram(0);
+
+            //Note: not needed -> reset on unbind
+            //glUseProgram(0);
         }
 
         if (prevTex != INVALID_TEXTURE) {
             prevTex = INVALID_TEXTURE;
-            glBindTexture(GL_TEXTURE_2D, 0);
+
+            //Note: not needed -> reset on unbind
+            //glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
 
