@@ -1518,7 +1518,10 @@ Object.defineProperty(AminoImage.prototype, 'src', {
                 this.request = request({
                     method: 'GET',
                     uri: src,
-                    encoding: null
+                    encoding: null,
+                    headers: {
+                        'User-Agent': 'AminoGfx/' + packageInfo.version
+                    }
                 }, (err, response, buffer) => {
                     this.request = null;
 
