@@ -1,364 +1,2396 @@
-console.log("inside of the aminogfx main.js");
+'use strict';
 
-var binary = require('node-pre-gyp');
-var path = require('path');
-var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
-var sgtest = require(binding_path);
-//console.log('sgtest = ', sgtest);
+const DEBUG = false;
+const DEBUG_ERRORS = true;
 
-var OS = "KLAATU";
-if(process.arch == 'arm') {
-    OS = "RPI";
-}
-if(process.platform == "darwin") {
-    OS = "MAC";
+if (DEBUG) {
+    console.log('inside of the aminogfx main.js');
 }
 
+//load native module
+const binary = require('node-pre-gyp');
+const path = require('path');
+const binding_path = binary.find(path.resolve(path.join(__dirname, 'package.json')));
+const native = require(binding_path);
 
-//var amino = require('aminogfx');
-var amino_core = require('aminogfx');
-var Core = amino_core.Core;
-var Shaders = require('./src/shaders.js');
-var fs = require('fs');
+let request = require('request');
+const fs = require('fs');
+const util =  require('util');
 
-//amino_core.OS = OS;
+const packageInfo = require('./package.json');
 
-var fontmap = {};
-var defaultFonts = {
-    'source': {
-        name:'source',
+/**
+ * Use custom request handler.
+ *
+ * Has to implement handler(opts, callback) and to support abort().
+ */
+function setRequestHandler(handler) {
+    request = handler;
+}
+
+exports.setRequestHandler = setRequestHandler;
+
+//
+//  AminoGfx
+//
+const AminoGfx = native.AminoGfx;
+
+/**
+ * Initialize AminoGfx instance.
+ */
+AminoGfx.prototype.init = function () {
+    if (DEBUG) {
+        console.log('AminoGfx.init()');
+    }
+
+    //initialize bindings
+    this.amino = this;
+
+    makeProps(this, {
+        //position (auto set)
+        x: -1,
+        y: -1,
+
+        //QHD size
+        w: 640,
+        h: 360,
+
+        //color
+        opacity: 1,
+        fill: '#000000',
+        r: 0,
+        g: 0,
+        b: 0,
+
+        //title
+        title: 'AminoGfx OpenGL',
+
+        //stats
+        showFPS: true //opt-out
+    });
+
+    this.fill.watch(watchFill);
+
+    //root wrapper
+    this.setRoot(this.createGroup());
+
+    //input handler
+    this.inputHandler = input.createEventHandler(this);
+};
+
+/**
+ * Fill value has changed.
+ */
+function watchFill(value, prop, obj) {
+    var color = parseRGBString(value);
+
+    obj.r(color.r);
+    obj.g(color.g);
+    obj.b(color.b);
+}
+
+/**
+ * Convert RGB expression to object.
+ *
+ * Supports:
+ *
+ *  - hex strings
+ *  - array: r, g, b (0..1)
+ *  - objects: r, g, b (0..1)
+ */
+function parseRGBString(fill) {
+    if (typeof fill == 'string') {
+        //strip off any leading #
+        if (fill.substring(0, 1) == '#') {
+            fill = fill.substring(1);
+        }
+
+        //pull out the components
+        var r = parseInt(fill.substring(0, 2), 16);
+        var g = parseInt(fill.substring(2, 4), 16);
+        var b = parseInt(fill.substring(4, 6), 16);
+
+        return {
+            r: r / 255,
+            g: g / 255,
+            b: b / 255
+        };
+    } else if (Array.isArray(fill)) {
+        return {
+            r: fill[0],
+            g: fill[1],
+            b: fill[2]
+        };
+    }
+
+    return fill;
+}
+
+/**
+ * Start renderer.
+ */
+AminoGfx.prototype.start = function (done) {
+    var self = this;
+
+    //pass to native code
+    this._start(function (err) {
+        if (err) {
+            done.call(self, err);
+            return;
+        }
+
+        //runtime info
+        self.runtime.aminogfx = packageInfo.version;
+
+        //ready (Note: this points to the instance)
+        done.call(self, err);
+
+        //check root
+        if (!self.root) {
+            throw new Error('Missing root!');
+        }
+    });
+};
+
+/**
+ * Set the root node.
+ */
+AminoGfx.prototype.setRoot = function (root) {
+    this.root = root;
+
+    this._setRoot(root);
+};
+
+/**
+ * Get the root node.
+ */
+AminoGfx.prototype.getRoot = function () {
+    return this.root;
+};
+
+/**
+ * Create group element.
+ */
+AminoGfx.prototype.createGroup = function () {
+    return new AminoGfx.Group(this);
+};
+
+/**
+ * Create rect element.
+ */
+AminoGfx.prototype.createRect = function () {
+    return new AminoGfx.Rect(this);
+};
+
+/**
+ * Create image view element.
+ */
+AminoGfx.prototype.createImageView = function () {
+    return new AminoGfx.ImageView(this);
+};
+
+/**
+ * Create pixel view element.
+ */
+AminoGfx.prototype.createPixelView = function () {
+    return new AminoGfx.PixelView(this);
+};
+
+/**
+ * Create image view element.
+ */
+AminoGfx.prototype.createTexture = function () {
+    return new AminoGfx.Texture(this);
+};
+
+/**
+ * Create polygon element.
+ */
+AminoGfx.prototype.createPolygon = function () {
+    return new AminoGfx.Polygon(this);
+};
+
+/**
+ * Create model element.
+ */
+AminoGfx.prototype.createModel = function () {
+    return new AminoGfx.Model(this);
+};
+
+/**
+ * Create circle element.
+ */
+AminoGfx.prototype.createCircle = function () {
+    return new AminoGfx.Circle(this);
+};
+
+/**
+ * Create text element.
+ */
+AminoGfx.prototype.createText = function () {
+    return new AminoGfx.Text(this);
+};
+
+/**
+ * Handle an event.
+ */
+AminoGfx.prototype.handleEvent = function (evt) {
+    //debug
+    //console.log('Event: ' + JSON.stringify(evt));
+
+    //add timestamp
+    evt.time = new Date().getTime();
+
+    //pass to event processor
+    this.inputHandler.processEvent(evt);
+};
+
+/**
+ * Destroy renderer.
+ */
+AminoGfx.prototype.destroy = function () {
+    //clear root copy
+    this.root = null;
+
+    this._destroy();
+
+/*
+    //call async (outside event handler callbacks)
+    var self = this;
+
+    setImmediate(function () {
+        self._destroy();
+    });
+*/
+};
+
+/**
+ * Set position.
+ */
+AminoGfx.prototype.setPosition = setPosition;
+
+function setPosition(x, y, z) {
+    this.x(x).y(y);
+
+    if (z !== undefined) {
+        this.z(z);
+    }
+}
+
+/**
+ * Set size.
+ */
+AminoGfx.prototype.setSize = setSize;
+
+function setSize(w, h) {
+    this.w(w).h(h);
+};
+
+/**
+ * Get runtime system info.
+ */
+AminoGfx.prototype.getStats = function () {
+    var stats = this._getStats();
+    var mem = process.memoryUsage();
+
+    stats.heapUsed = mem.heapUsed;
+    stats.heapTotal = mem.heapTotal;
+
+    return stats;
+};
+
+/**
+ * Find node with id.
+ */
+AminoGfx.prototype.find = function (id) {
+    function findNodeById(id, node) {
+        if (node.id && node.id == id) {
+            return node;
+        }
+
+        if (node.isGroup) {
+            var count = node.getChildCount();
+
+            for (var i = 0; i < count; i++) {
+                var ret = findNodeById(id, node.getChild(i));
+
+                if (ret != null) {
+                    return ret;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    return findNodeById(id, this.getRoot());
+};
+
+/**
+ * Find a node at a certain position with an optional filter callback.
+ */
+AminoGfx.prototype.findNodesAtXY = function (pt, filter) {
+    return findNodesAtXY(this.root, pt, filter, '');
+};
+
+function findNodesAtXY(root, pt, filter, tab) {
+    //verify
+    if (!root || !root.visible()) {
+        return [];
+    }
+
+    //debug
+    //console.log(tab + '   xy', pt.x, pt.y, root.id());
+
+    //convert to root coordinates
+    const tpt = pt.minus(root.x(), root.y()).divide(root.sx(), root.sy());
+
+    //handle children first, then the parent/root
+    let res = [];
+
+    if (filter) {
+        if (!filter(root)) {
+            return res;
+        }
+    }
+
+    //check children
+    if (root.children && root.children.length) {
+        for (let i = root.children.length - 1; i >= 0; i--) {
+            const node = root.children[i];
+            const found = findNodesAtXY(node, tpt, filter, tab + '  ');
+
+            res = res.concat(found);
+        }
+    }
+
+    //check root
+    if (root.contains && root.contains(tpt)) {
+        res.push(root);
+    }
+
+    return res;
+}
+
+/**
+ * Find a node at a certain position.
+ */
+AminoGfx.prototype.findNodeAtXY = function (x, y) {
+    return findNodeAtXY(this.root, x, y, '');
+};
+
+function findNodeAtXY(root, x, y, tab) {
+    if (!root) {
+        return null;
+    }
+
+    if (!root.visible()) {
+        return null;
+    }
+
+    var tx = x - root.x();
+    var ty = y - root.y();
+
+    tx /= root.sx();
+    ty /= root.sy();
+
+    //console.log(tab + "   xy="+tx+","+ty);
+
+    if (root.cliprect && root.clipRect()) {
+        if (tx < 0) {
+            return false;
+        }
+
+        if (tx > root.w()) {
+            return false;
+        }
+
+        if (ty < 0) {
+            return false;
+        }
+
+        if (ty > root.h()) {
+            return false;
+        }
+    }
+
+    if (root.children) {
+        //console.log(tab+"children = ",root.children.length);
+
+        for (var i = root.children.length - 1; i >= 0; i--) {
+            var node = root.children[i];
+            var found = this.findNodeAtXY(node, tx, ty, tab+ '  ');
+
+            if (found) {
+                return found;
+            }
+        }
+    }
+
+    //console.log(tab+"contains " + tx+' '+ty);
+
+    if (root.contains && root.contains(tx, ty)) {
+        //console.log(tab,"inside!",root.getId());
+
+        return root;
+    }
+
+    return null;
+};
+
+/**
+ * Convert screen coordinate to local node coordinate.
+ *
+ * Note: only supports translations & scaling (rotation & 3D are not support)
+ */
+AminoGfx.prototype.globalToLocal = function (pt, node) {
+    return convertGlobalToLocal(pt, node);
+};
+
+function convertGlobalToLocal(pt, node) {
+    //check parent
+    if (node.parent) {
+    	pt = convertGlobalToLocal(pt, node.parent);
+    }
+
+    return input.makePoint(
+        (pt.x - node.x()) / node.sx(),
+        (pt.y - node.y()) / node.sy()
+    );
+};
+
+/*
+function calcGlobalToLocalTransform(node) {
+    if (node.parent) {
+        var trans = calcGlobalToLocalTransform(node.parent);
+
+        if (node.getScalex() != 1) {
+            trans.x /= node.sx();
+            trans.y /= node.sy();
+        }
+
+        trans.x -= node.x();
+        trans.y -= node.y();
+
+        return trans;
+    }
+
+    return {
+        x: -node.x(),
+        y: -node.y()
+    };
+}
+*/
+
+AminoGfx.prototype.localToGlobal = function (pt, node) {
+    pt = {
+        x: pt.x + node.x() * node.sx(),
+        y: pt.y + node.y() * node.sx()
+    };
+
+    if (node.parent) {
+        return this.localToGlobal(pt, node.parent);
+    } else {
+        return pt;
+    }
+};
+
+AminoGfx.prototype.on = function (name, target, listener) {
+    this.inputHandler.on(name, target, listener);
+};
+
+exports.AminoGfx = AminoGfx;
+
+//
+// AminoGfx.Group
+//
+
+var Group = AminoGfx.Group;
+
+/**
+ * Initializer.
+ */
+Group.prototype.init = function () {
+    if (DEBUG) {
+        console.log('Group.init()');
+    }
+
+    //bindings
+    makeProps(this, {
+        id: '',
+
+        //visibility
+        visible: true,
+        opacity: 1,
+
+        //position
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //clipping
+        clipRect: false,
+
+        //3D rendering (depth test)
+        depth: false
+    });
+
+    this.isGroup = true;
+    this.children = [];
+};
+
+/**
+ * Check if point is inside of rect.
+ */
+Group.prototype.contains = contains;
+
+/**
+ * Set position.
+ */
+Group.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Group.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Group.prototype.scale = scaleFunc;
+
+function scaleFunc(sx, sy) {
+    this.sx(sx).sy(sy);
+}
+
+/**
+ * Rotate.
+ */
+Group.prototype.rotate = rotateFunc;
+
+function rotateFunc(rx, ry, rz) {
+    this.rx(rx).ry(ry).rz(rz);
+}
+
+/**
+ * Add one or more children to this group.
+ */
+Group.prototype.add = function () {
+    var count = arguments.length;
+
+    for (var i = 0; i < count; i++) {
+        var node = arguments[i];
+
+        if (!node) {
+            throw new Error('can\'t add a null child to a group');
+        }
+
+        if (this.children.indexOf(node) != -1) {
+            throw new Error('child was added before');
+        }
+
+        if (node == this || node.parent) {
+            throw new Error('already added to different group');
+        }
+
+        this._add(node);
+        this.children.push(node);
+        node.parent = this;
+    }
+
+    return this;
+};
+
+/**
+ * Insert a child at a certain position.
+ */
+Group.prototype.insertAt = function (item, pos) {
+    if (!item) {
+        throw new Error('can\'t add a null child to a group');
+    }
+
+    if (this.children.indexOf(item) != -1) {
+        throw new Error('child was added before');
+    }
+
+    if (item == this || item.parent) {
+        throw new Error('already added to different group');
+    }
+
+    this._insert(item, pos);
+    this.children.splice(pos, 0, item);
+    item.parent = this;
+
+    return this;
+};
+
+/**
+ * Insert before a sibling.
+ */
+Group.prototype.insertBefore = function (item, sibling) {
+    var pos = this.children.indexOf(sibling);
+
+    if (pos == -1) {
+        //add at end
+        this.add(item);
+
+        return false;
+    }
+
+    return this.insertAt(item, pos);
+};
+
+/**
+ * Insert after a sibling.
+ */
+Group.prototype.insertAfter = function (item, sibling) {
+    var pos = this.children.indexOf(sibling);
+
+    if (pos == -1) {
+        //add at end
+        this.add(item);
+
+        return false;
+    }
+
+    return this.insertAt(item, pos + 1);
+};
+
+/**
+ * Remove one or more children from this group.
+ */
+Group.prototype.remove = function (child) {
+    var n = this.children.indexOf(child);
+
+    if (n >=  0) {
+        this._remove(child);
+        this.children.splice(n, 1);
+        child.parent = null;
+    }
+
+    return this;
+};
+
+/**
+ * Remove all children.
+ */
+Group.prototype.clear = function () {
+    var count = this.children.length;
+
+    for (var i = 0; i < count; i++) {
+        this._remove(this.children[i]);
+    }
+
+    this.children = [];
+
+    return this;
+};
+
+/**
+ * Bring child to top.
+ */
+Group.prototype.raiseToTop = function (node) {
+    if (!node) {
+        throw new Error('can\'t move a null child');
+    }
+
+    this.remove(node);
+    this.add(node);
+
+    return this;
+};
+
+/**
+ * Free OpenGL resources.
+ *
+ * Attention: do not call if shared textures are used by any child.
+ */
+Group.prototype.destroy = function () {
+    this.children.forEach((node) => {
+        if (node.destroy) {
+            node.destroy();
+        }
+    });
+};
+
+/**
+ * Find children.
+ */
+Group.prototype.find = function (pattern) {
+    var results = new FindResults();
+
+    if (pattern.indexOf('#') == 0) {
+        //id
+        var id = pattern.substring(1);
+
+        results.children = treeSearch(this, false, function (child) {
+            return (child.id().toLowerCase() == id);
+        });
+    } else {
+        //look for class name (e.g. AminoRect)
+        pattern = 'amino' + pattern.toLowerCase();
+
+        results.children = treeSearch(this, false, function (child) {
+            return child.constructor.name.toLowerCase() == pattern;
+        });
+    }
+
+    return results;
+};
+
+function treeSearch (root, considerRoot, filter) {
+    var res = [];
+
+    if (root.isGroup) {
+        var count = root.children.length;
+
+        for (var i = 0; i < count; i++) {
+            res = res.concat(treeSearch(root.children[i], true, filter));
+        }
+    }
+
+    if (considerRoot && filter(root)) {
+        return res.concat([root]);
+    }
+
+    return res;
+}
+
+function FindResults() {
+    this.children = [];
+
+    function makefindprop(obj, name) {
+        obj[name] = function (val) {
+            this.children.forEach(function (child) {
+                if (child[name]) {
+                    child[name](val);
+                }
+            });
+
+            return this;
+        };
+    }
+
+    //TODO review
+    makefindprop(this, 'visible');
+    makefindprop(this, 'fill');
+    makefindprop(this, 'filled');
+    makefindprop(this, 'x');
+    makefindprop(this, 'y');
+    makefindprop(this, 'w');
+    makefindprop(this, 'h');
+
+    this.length = function () {
+        return this.children.length;
+    };
+}
+
+//
+// Rect
+//
+
+var Rect = AminoGfx.Rect;
+
+Rect.prototype.init = function () {
+    if (DEBUG) {
+        console.log('Rect.init()');
+    }
+
+    //properties
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //white
+        fill: '#ffffff',
+        r: 1,
+        g: 1,
+        b: 1,
+        opacity: 1.0
+    });
+
+    //special
+    this.fill.watch(watchFill);
+};
+
+/**
+ * Check if point is inside of rect.
+ */
+Rect.prototype.contains = contains;
+
+/**
+ * Set position.
+ */
+Rect.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Rect.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Rect.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Rect.prototype.rotate = rotateFunc;
+
+/**
+ * Check if a given point is inside this node.
+ *
+ * Note: has to be used in object.
+ *
+ * @param pt coordinate relative to origin of node
+ */
+function contains(pt) {
+    var x = this.x();
+    var y = this.y();
+
+    return pt.x >= 0 && pt.x < this.w() &&
+           pt.y >= 0 && pt.y < this.h();
+}
+
+//
+// ImageView
+//
+
+var ImageView = AminoGfx.ImageView;
+
+ImageView.prototype.init = function () {
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //positon
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //size
+        w: 100,
+        h: 100,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //texture coordinates
+        left:   0,
+        right:  1,
+        top:    0,
+        bottom: 1,
+
+        //image
+        src: null,
+        image: null,
+        opacity: 1.0,
+
+        size: 'resize',
+        repeat: 'no-repeat'
+    });
+
+    var self = this;
+
+    //actually load the image
+    this.src.watch(setSrc);
+
+    //when the image is loaded, update the dimensions
+    this.image.watch(function (texture) {
+        //set size
+        applySize(texture, self.size());
+    });
+
+    this.size.watch(function (mode) {
+        applySize(self.image(), mode);
+    });
+
+    function applySize(texture, mode) {
+        switch (mode) {
+            case 'resize':
+                if (texture) {
+                    self.w(texture.w);
+                    self.h(texture.h);
+                }
+                break;
+
+            case 'stretch':
+                //keep size
+                break;
+
+            case 'cover':
+            case 'contain':
+                //cover
+                if (texture) {
+                    var w = self.w();
+                    var h = self.h();
+                    var imgW = texture.w;
+                    var imgH = texture.h;
+
+                    //fit width
+                    imgH *= w / imgW;
+                    imgW = w;
+
+                    if (mode == 'cover') {
+                        if (imgH < h) {
+                            //stretch height
+                            imgW *= h / imgH;
+                            imgH = h;
+                        }
+                    } else {
+                        if (imgH > h) {
+                            var fac = h / imgH;
+
+                            imgW *= fac;
+                            imgH *= fac;
+                        }
+                    }
+
+                    //debug
+                    //console.log('fit ' + imgW + 'x' + imgH + ' to ' + w + 'x' + h);
+
+                    //center texture
+                    var horz = (imgW - w) / 2 / imgW;
+
+                    self.left(horz);
+                    self.right(1 - horz);
+
+                    var vert = (imgH - h) / 2 / imgH;
+
+                    self.top(vert);
+                    self.bottom(1 - vert);
+                }
+                break;
+        }
+    }
+};
+
+/**
+ * Set texture.
+ */
+function setImage(img, obj) {
+    if (obj.image) {
+        obj.image(img);
+    } else {
+        obj.texture(img);
+    }
+}
+
+/**
+ * Load and set texture.
+ */
+function loadTexture(obj, img) {
+    var amino = obj.amino;
+    var texture = amino.createTexture();
+
+    texture.loadTextureFromImage(img, function (err, texture) {
+        if (err) {
+            if (DEBUG || DEBUG_ERRORS) {
+                console.log('could not load texture: ' + err.message);
+            }
+
+            return;
+        }
+
+        //use texture
+        setImage(texture, obj);
+    });
+}
+
+/**
+ * Src handler.
+ *
+ * Supports: local files, images, image buffers & textures
+ */
+function setSrc(src, prop, obj) {
+    if (!src) {
+        setImage(null, obj);
+        return;
+    }
+
+    //check image (JPEG, PNG)
+    if (src instanceof AminoImage) {
+        //load texture
+        loadTexture(obj, src);
+        return;
+    }
+
+    //load image from source
+    var img = new AminoImage();
+
+    obj.tmpImage = img;
+
+    img.onload = err => {
+        obj.tmpImage = null;
+
+        if (err) {
+            if (DEBUG || DEBUG_ERRORS) {
+                console.log('could not load image: ' + err.message);
+            }
+
+            //set texture to null
+            setImage(null, obj);
+            return;
+        }
+
+        //debug
+        //console.log('image buffer: w=' + ibuf.w + ' h=' + ibuf.h + ' bpp=' + ibuf.bpp + ' len=' + ibuf.buffer.length);
+
+        //load texture
+        loadTexture(obj, img);
+    };
+
+    img.src = src;
+}
+
+/**
+ * Abort image loading (network).
+ */
+function abortTempImage(obj) {
+    if (obj.tmpImage) {
+        obj.tmpImage.abort();
+        obj.tmpImage = null;
+    }
+}
+
+/**
+ * Check if point inside of image view.
+ */
+ImageView.prototype.contains = contains;
+
+/**
+ * Set position.
+ */
+ImageView.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+ImageView.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+ImageView.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+ImageView.prototype.rotate = rotateFunc;
+
+/**
+ * Destroy texture.
+ *
+ * Note: do not call if the texture is used anywhere else.
+ */
+ImageView.prototype.destroy = function () {
+    const img = this.image();
+
+    if (img) {
+        this.image(null);
+        abortTempImage(this);
+        img.destroy();
+    }
+};
+
+//
+// PixelView
+//
+
+class PixelView extends ImageView {
+    /**
+     * Constructor.
+     */
+    constructor(amino) {
+        super(amino);
+    }
+}
+
+AminoGfx.PixelView = PixelView;
+
+PixelView.prototype.init = function () {
+    //get Rect properties
+    ImageView.prototype.init.call(this);
+
+    //bindings
+    makeProps(this, {
+        pw: 100,
+        ph: 100,
+        bpp: 4
+    });
+};
+
+PixelView.prototype.initDone = function () {
+    this.pw.watch(rebuildBuffer);
+    this.ph.watch(rebuildBuffer);
+
+    var self = this;
+
+    function rebuildBuffer() {
+        var w = self.pw();
+        var h = self.ph();
+        var len = w * h * 4;
+
+        if (!self.buf || self.buf.length != len) {
+            self.buf = new Buffer(len);
+        }
+
+        var c1 = [0, 0, 0];
+        var c2 = [255, 255, 255];
+        var buf = self.buf;
+
+        for (var x = 0; x < w; x++) {
+            for (var y = 0; y < h; y++) {
+                var i = (x + y * w) * 4;
+                var c;
+
+                if (x % 3 == 0) {
+                    c = c1;
+                } else {
+                    c = c2;
+                }
+
+                buf[i + 0] = c[0];
+                buf[i + 1] = c[1];
+                buf[i + 2] = c[2];
+                buf[i + 3] = 255;
+            }
+        }
+
+        self.updateTexture();
+    };
+
+    //texture
+    this.texture = this.amino.createTexture();
+    this.image(this.texture);
+
+    rebuildBuffer();
+};
+
+PixelView.prototype.updateTexture = function () {
+    this.texture.loadTextureFromBuffer({
+        buffer: this.buf,
+        w: this.pw(),
+        h: this.ph(),
+        bpp: this.bpp()
+    }, function (err) {
+        if (err) {
+            if (DEBUG_ERRORS) {
+                console.log('Could not create texture!');
+            }
+
+            return;
+        }
+    });
+};
+
+PixelView.prototype.setPixel = function (x, y, r, g, b, a) {
+    var w = this.pw();
+    var i = (x + y * w) * 4;
+
+    var buf = this.buf;
+
+    buf[i + 0] = r;
+    buf[i + 1] = g;
+    buf[i + 2] = b;
+    buf[i + 3] = a;
+};
+
+PixelView.prototype.setPixeli32 = function (x, y, int) {
+    var w = this.pw();
+    var i = (x + y * w) * 4;
+
+    this.buf.writeUInt32BE(int, i);
+};
+
+//
+// Polygon
+//
+
+var Polygon = AminoGfx.Polygon;
+
+Polygon.prototype.init = function () {
+    //bindings
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //fill
+        fill: '#ff0000',
+        fillR: 1,
+        fillG: 0,
+        fillB: 0,
+        opacity: 1.,
+
+        //properties
+        filled: true,
+
+        dimension: 2, //2D
+        geometry: null
+    });
+
+    this.fill.watch(setFill);
+};
+
+/**
+ * Fill value has changed.
+ */
+function setFill(val, prop, obj) {
+    var color = parseRGBString(val);
+
+    obj.fillR(color.r);
+    obj.fillG(color.g);
+    obj.fillB(color.b);
+}
+
+/**
+ * Check if point inside of polygon.
+ */
+Polygon.prototype.contains = function () {
+    //TODO check polygon coords
+    return false;
+};
+
+/**
+ * Set position.
+ */
+Polygon.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Polygon.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Polygon.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Polygon.prototype.rotate = rotateFunc;
+
+//
+// Model
+//
+
+var Model = AminoGfx.Model;
+
+Model.prototype.init = function () {
+    //bindings
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //size
+        w: 0,
+        h: 0,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //fill (color mode)
+        fill: '#ff0000',
+        fillR: 1,
+        fillG: 0,
+        fillB: 0,
+        opacity: 1.,
+
+        //properties
+        vertices: null,
+        indices: null,
+        normals: null, //enables lighting
+        uvs: null, //enables texture (color used otherwise)
+
+        src: null,
+        texture: null
+    });
+
+    this.fill.watch(setFill);
+    this.src.watch(setSrc);
+};
+
+/**
+ * Check if point inside of model.
+ */
+Model.prototype.contains = function () {
+    return false;
+};
+
+/**
+ * Set position.
+ */
+Model.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Model.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Model.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Model.prototype.rotate = rotateFunc;
+
+/**
+ * Destroy texture.
+ *
+ * Note: do not call if the texture is used anywhere else.
+ */
+Model.prototype.destroy = function () {
+    const texture = this.texture();
+
+    if (texture) {
+        abortTempImage(this);
+        texture.destroy();
+    }
+};
+
+//
+// Circle
+//
+
+class Circle extends Polygon {
+    /**
+     * Constructor.
+     */
+    constructor(amino) {
+        super(amino);
+    }
+}
+
+AminoGfx.Circle = Circle;
+
+Circle.prototype.init = function () {
+    //get Polygon properties
+    Polygon.prototype.init.call(this);
+
+    //bindings
+    makeProps(this, {
+        radius: 0,
+        steps: 30
+    });
+
+    this.dimension(2);
+
+    //monitor radius updates
+    var self = this;
+
+    this.radius.watch(function (r) {
+        var steps = self.steps();
+        var points = new Float32Array(steps * 2);
+        var pos = 0;
+
+        for (var i = 0; i < steps; i++) {
+            var theta = Math.PI * 2 / steps * i;
+
+            points[pos++] = Math.sin(theta) * r;
+            points[pos++] = Math.cos(theta) * r;
+        }
+
+        self.geometry(points);
+    });
+};
+
+Circle.prototype.initDone = function () {
+    this.radius(50);
+};
+
+/**
+ * Special case for circle.
+ */
+Circle.prototype.contains = function (pt) {
+    var radius = this.radius();
+    var dist = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
+
+    return dist < radius;
+};
+
+//
+// AminoImage
+//
+
+var AminoImage = native.AminoImage;
+
+/**
+ * src property.
+ */
+Object.defineProperty(AminoImage.prototype, 'src', {
+    set: function (src) {
+        this.abort();
+
+        if (!src) {
+            //special case
+            return;
+        }
+
+        //check file
+        if (typeof src == 'string') {
+            var self = this;
+
+            //check URLs
+            if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) {
+                this.request = request({
+                    method: 'GET',
+                    uri: src,
+                    encoding: null,
+                    headers: {
+                        'User-Agent': 'AminoGfx/' + packageInfo.version
+                    }
+                }, (err, response, buffer) => {
+                    this.request = null;
+
+                    if (err) {
+                        if (this.onload) {
+                            this.onload(err);
+                        }
+
+                        return;
+                    }
+
+                    //debug
+                    //console.log('image: buffer=' + Buffer.isBuffer(buffer) + ' len=' + buffer.length);
+
+                    //native call
+                    this.loadImage(buffer, this.onload);
+                });
+
+                return;
+            }
+
+            //read file async
+            fs.readFile(src, (err, data) => {
+                //check error
+                if (err) {
+                    if (this.onload) {
+                        this.onload(err);
+                    }
+
+                    return;
+                }
+
+                //get image
+                this.loadImage(data, (err, img) => {
+                    //call onload
+                    if (this.onload) {
+                        this.onload(err, img);
+                    }
+                });
+            });
+
+            return;
+        }
+
+        //convert buffer
+        if (!Buffer.isBuffer(src)) {
+            if (this.onload) {
+                this.onload(new Error('buffer expected!'));
+            }
+
+            return;
+        }
+
+        //native call
+        this.loadImage(src, this.onload);
+    }
+});
+
+/**
+ * Abort loading (from network).
+ */
+AminoImage.prototype.abort = function () {
+    if (this.request) {
+        this.request.abort();
+        this.request = null;
+    }
+};
+
+exports.AminoImage = AminoImage;
+
+//
+// AminoFonts
+//
+
+var AminoFonts = native.AminoFonts;
+
+AminoFonts.prototype.init = function () {
+    this.fonts = {};
+    this.cache = {};
+
+    //default fonts
+    this.registerFont({
+        name: 'source',
         weights: {
             200: {
-                normal: "SourceSansPro-ExtraLight.ttf",
-                italic: "SourceSansPro-ExtraLightItalic.ttf"
+                normal: 'SourceSansPro-ExtraLight.ttf',
+                italic: 'SourceSansPro-ExtraLightItalic.ttf'
             },
             300: {
-                normal: "SourceSansPro-Light.ttf",
-                italic: "SourceSansPro-LightItalic.ttf"
+                normal: 'SourceSansPro-Light.ttf',
+                italic: 'SourceSansPro-LightItalic.ttf'
             },
             400: {
-                normal: "SourceSansPro-Regular.ttf",
-                italic: "SourceSansPro-Italic.ttf"
+                normal: 'SourceSansPro-Regular.ttf',
+                italic: 'SourceSansPro-Italic.ttf'
             },
 
             600: {
-                normal: "SourceSansPro-Semibold.ttf",
-                italic: "SourceSansPro-SemiboldItalic.ttf"
+                normal: 'SourceSansPro-Semibold.ttf',
+                italic: 'SourceSansPro-SemiboldItalic.ttf'
             },
             700: {
-                normal: "SourceSansPro-Bold.ttf",
-                italic: "SourceSansPro-BoldItalic.ttf"
+                normal: 'SourceSansPro-Bold.ttf',
+                italic: 'SourceSansPro-BoldItalic.ttf'
             },
             900: {
-                normal: "SourceSansPro-Black.ttf",
-                italic: "SourceSansPro-BlackItalic.ttf"
+                normal: 'SourceSansPro-Black.ttf',
+                italic: 'SourceSansPro-BlackItalic.ttf'
             }
         }
-    },
-    'awesome': {
-        name:'awesome',
+    });
+
+    this.registerFont({
+        name: 'awesome',
         weights: {
             400: {
-                normal: "fontawesome-webfont.ttf"
+                normal: 'fontawesome-webfont.ttf'
             }
         }
-    }
-}
+    });
 
-var propsHash = {
-
-    //general
-    "visible":18,
-    "opacity":27,
-    "r":5,
-    "g":6,
-    "b":7,
-    "texid":8,
-    "w":10,
-    "h":11,
-    "x":21,
-    "y":22,
-
-    //transforms  (use x and y for translate in X and Y)
-    "sx":2,
-    "sy":3,
-    "rz":4,
-    "rx":19,
-    "ry":20,
-
-    //text
-    "text":9,
-    "fontSize":12,
-    "fontId":28,
-
-    //animation
-    "count":29,
-    "lerplinear":13,
-    "lerpcubicin":14,
-    "lerpcubicout":15,
-    "lerpprop":16,
-    "lerpcubicinout":17,
-    "autoreverse":35,
-
-
-    //geometry
-    "geometry":24,
-    "filled":25,
-    "closed":26,
-    "dimension": 36,
-
-    //rectangle texture
-    "textureLeft":  30,
-    "textureRight": 31,
-    "textureTop":   32,
-    "textureBottom":33,
-
-    //clipping
-    "cliprect": 34
-
-
+    //default
+    this.defaultFont = this.fonts.source;
 };
 
-function JSFont(desc) {
-    this.name = desc.name;
-    var reg = desc.weights[400];
-    this.desc = desc;
-    this.weights = {};
-    this.filepaths = {};
-
-    var dir = process.cwd();
-    process.chdir(__dirname+'/..'); // chdir such that fonts (and internal shaders) may be found
-    var aminodir = __dirname+'/resources/';
-    if(desc.path) {
-        aminodir = desc.path;
-    }
-    for(var weight in desc.weights) {
-        var filepath = aminodir+desc.weights[weight].normal;
-        if(!fs.existsSync(filepath)) {
-            console.log("WARNING. File not found",filepath);
-            throw new Error();
-        }
-        this.weights[weight] = Core.getCore().getNative().createNativeFont(filepath);
-        this.filepaths[weight] = filepath;
-    }
-    process.chdir(dir);
-
-
-    this.getNative = function(size, weight, style) {
-        if(this.weights[weight] != undefined) {
-            return this.weights[weight];
-        }
-        console.log("ERROR. COULDN'T find the native for " + size + " " + weight + " " + style);
-        return this.weights[400];
-    }
-
-    /** @func calcStringWidth(string, size)  returns the width of the specified string rendered at the specified size */
-    this.calcStringWidth = function(str, size, weight, style) {
-        amino.GETCHARWIDTHCOUNT++;
-        return amino.sgtest.getCharWidth(str,size,this.getNative(size,weight,style));
-    }
-    this.getHeight = function(size, weight, style) {
-        amino.GETCHARHEIGHTCOUNT++;
-        if(size == undefined) {
-            throw new Error("SIZE IS UNDEFINED");
-        }
-        return amino.sgtest.getFontHeight(size, this.getNative(size, weight, style));
-    }
-    this.getHeightMetrics = function(size, weight, style) {
-        if(size == undefined) {
-            throw new Error("SIZE IS UNDEFINED");
-        }
-        return {
-            ascender: amino.sgtest.getFontAscender(size, this.getNative(size, weight, style)),
-            descender: amino.sgtest.getFontDescender(size, this.getNative(size, weight, style))
-        };
-    }
-}
-
-function JSPropAnim(target,name) {
-    this._from = null;
-    this._to = null;
-    this._duration = 1000;
-    this._loop = 1;
-    this._delay = 0;
-    this._autoreverse = 0;
-    this._then_fun = null;
-
-    this.from = function(val) {  this._from = val;        return this;  }
-    this.to   = function(val) {  this._to = val;          return this;  }
-    this.dur  = function(val) {  this._duration = val;    return this;  }
-    this.delay= function(val) {  this._delay = val;       return this;  }
-    this.loop = function(val) {  this._loop = val;        return this;  }
-    this.then = function(fun) {  this._then_fun = fun;    return this;  }
-    this.autoreverse = function(val) { this._autoreverse = val?1:0; return this;  }
-
-    this.start = function() {
-        console.log("startin anim");
-        var self = this;
-        setTimeout(function(){
-            console.log("after delay. making it.");
-            var nat = Core.getCore().getNative();
-            self.handle = nat.createAnim(target.handle, name, self._from,self._to,self._duration);
-            console.log("handle is",self.handle);
-            nat.updateAnimProperty(self.handle, 'count', self._loop);
-            nat.updateAnimProperty(self.handle, 'autoreverse', self._autoreverse);
-            nat.updateAnimProperty(self.handle, 'lerpprop', 17); //17 is cubic in out
-            Core.getCore().anims.push(self);
-        },this._delay);
+/**
+ * Register a font.
+ */
+AminoFonts.prototype.registerFont = function (font) {
+    //check existing font (immutable)
+    if (this.fonts[font.name]) {
         return this;
     }
 
-    this.finish = function() {
-        if(this._then_fun != null) {
-            this._then_fun();
-        }
+    //add new font
+    this.fonts[font.name] = font;
+
+    //collect weights
+    var weightList = [];
+
+    for (var weight in font.weights) {
+        weightList.push(weight);
     }
 
+    weightList.sort();
+    font.weightList = weightList;
 
-}
-
-
-
-var gl_native = {
-    createNativeFont: function(path) {  return sgtest.createNativeFont(path, __dirname+'/resources/shaders');  },
-    registerFont:function(args) { fontmap[args.name] = new JSFont(args); },
-    init: function(core) { return sgtest.init(); },
-    startEventLoop : function() {
-        console.log("starting the event loop");
-        var self = this;
-        function immediateLoop() {
-            try {
-                self.tick(Core.getCore());
-            } catch (ex) {
-                console.log(ex);
-                console.log(ex.stack);
-                console.log("EXCEPTION. QUITTING!");
-                return;
-            }
-            self.setImmediate(immediateLoop);
-        }
-        setTimeout(immediateLoop,1);
-    },
-    createWindow: function(core,w,h) {
-        sgtest.createWindow(w* core.DPIScale,h*core.DPIScale);
-        Shaders.init(sgtest,OS);
-        fontmap['source']  = new JSFont(defaultFonts['source']);
-        fontmap['awesome'] = new JSFont(defaultFonts['awesome']);
-        core.defaultFont = fontmap['source'];
-        this.rootWrapper = this.createGroup();
-        this.updateProperty(this.rootWrapper, "scalex", core.DPIScale);
-        this.updateProperty(this.rootWrapper, "scaley", core.DPIScale);
-        sgtest.setRoot(this.rootWrapper);
-    },
-    getFont: function(name) { return fontmap[name]; },
-    updateProperty: function(handle, name, value) {
-        if(handle == undefined) throw new Error("Can't set a property on an undefined handle!!");
-        //console.log('setting', handle, name, propsHash[name], value, typeof value);
-        sgtest.updateProperty(handle, propsHash[name], value);
-    },
-    setRoot: function(handle) { return  sgtest.addNodeToGroup(handle,this.rootWrapper);  },
-    tick: function() {
-        sgtest.tick();
-    },
-    setImmediate: function(loop) {
-        setImmediate(loop);
-    },
-//    setEventCallback: function(cb) {   return sgtest.setEventCallback(cb);   },
-    setEventCallback: function(cb) {   return sgtest.setEventCallback(function(){
-        //console.log("got some stuff",arguments);
-        cb(arguments[1]);
-    });   },
-    createRect: function()  {          return sgtest.createRect();           },
-    createGroup: function() {          return sgtest.createGroup();          },
-    createPoly: function()  {          return sgtest.createPoly();           },
-    createText: function() {           return sgtest.createText();           },
-    createGLNode: function(cb)  {      return sgtest.createGLNode(cb);       },
-    addNodeToGroup: function(h1,h2) {  return sgtest.addNodeToGroup(h1,h2);  },
-    removeNodeFromGroup: function(h1, h2) { return sgtest.removeNodeFromGroup(h1, h2);  },
-    loadImage: function(src, cb) {
-        var fbuf = fs.readFileSync(src);
-        function bufferToTexture(ibuf) {
-            Core.getCore().getNative().loadBufferToTexture(-1, ibuf.w, ibuf.h, ibuf.bpp, ibuf.buffer, function (texture) {
-                cb(texture);
-            });
-        }
-
-        if (src.toLowerCase().endsWith(".png")) {
-            Core.getCore().getNative().decodePngBuffer(fbuf, bufferToTexture);
-            return;
-        }
-        if (src.toLowerCase().endsWith(".jpg")) {
-            Core.getCore().getNative().decodeJpegBuffer(fbuf, bufferToTexture);
-            return;
-        }
-        console.log("ERROR! Invalid image",src);
-    },
-    decodePngBuffer: function(fbuf, cb) {  return cb(sgtest.decodePngBuffer(fbuf));  },
-    decodeJpegBuffer: function(fbuf, cb) { return cb(sgtest.decodeJpegBuffer(fbuf)); },
-    loadBufferToTexture: function(texid, w, h, bpp, buf, cb) { return cb(sgtest.loadBufferToTexture(texid, w,h, bpp, buf)); },
-    setWindowSize: function(w,h) { sgtest.setWindowSize(w*Core.getCore().DPIScale,h*Core.getCore().DPIScale); },
-    getWindowSize: function(w,h) {
-        var dpi = Core.getCore().DPIScale;
-        var size = sgtest.getWindowSize(w,h);
-        return {
-            w: size.w/dpi,
-            h: size.h/dpi
-        };
-    },
-    createAnim: function(handle,prop,start,end,dur) {
-        if(!propsHash[prop]) throw new Error("invalid native property name",prop);
-        return sgtest.createAnim(handle,propsHash[prop],start,end,dur);
-    },
-    createPropAnim: function(obj,name) { return new JSPropAnim(obj,name); },
-    updateAnimProperty: function(handle, prop, type) { return  sgtest.updateAnimProperty(handle, propsHash[prop], type); },
-    updateWindowProperty:function(stage,prop,value){
-        if(!propsHash[prop]) throw new Error("invalid native property name",prop);
-        return sgtest.updateWindowProperty(-1,propsHash[prop],value);
-    }
-}
-
-exports.input = amino_core.input;
-exports.start = function(cb) {
-    if(!cb) throw new Error("CB parameter missing to start app");
-    Core.setCore(new Core());
-    var core = Core.getCore();
-    core.native = gl_native;
-    amino_core.native = gl_native;
-    core.init();
-    var stage = Core._core.createStage(600,600);
-    stage.fill.watch(function(){
-        var color = amino_core.ParseRGBString(stage.fill());
-        gl_native.updateWindowProperty(stage,'r',color.r);
-        gl_native.updateWindowProperty(stage,'g',color.g);
-        gl_native.updateWindowProperty(stage,'b',color.b);
-    });
-    stage.opacity.watch(function() {
-        gl_native.updateWindowProperty(stage,'opacity',stage.opacity());
-    });
-    //mirror fonts to PureImage
-    /*
-    var source_font = exports.getRegisteredFonts().source;
-    var fnt = PImage.registerFont(source_font.filepaths[400],source_font.name);
-    fnt.load(function() {
-        cb(Core._core,stage);
-        Core._core.start();
-    });
-    */
-    cb(core,stage);
-    core.start();
+    return this;
 };
 
+/**
+ * Get a font.
+ */
+AminoFonts.prototype.getFont = function (descr, callback) {
+    if (!descr) {
+        descr = {};
+    }
 
-exports.makeProps = amino_core.makeProps;
+    var name = descr.name || this.defaultFont.name;
+    var size = Math.round(descr.size || 20);
+    var weight = descr.weight || 400;
+    var style = descr.style || 'normal';
 
-exports.Rect      = amino_core.Rect;
-exports.Group     = amino_core.Group;
-exports.Circle    = amino_core.Circle;
-exports.Polygon   = amino_core.Polygon;
-exports.Text      = amino_core.Text;
-exports.ImageView = amino_core.ImageView;
+    //console.log('getFont() ' + name + ' ' + size + ' ' + weight + ' ' + style);
 
-exports.input.init(OS);
+    //get font descriptor
+    var font = this.fonts[name];
+
+    if (!font) {
+        callback(new Error('font ' + name + ' not found'));
+        return this;
+    }
+
+    if (!size) {
+        callback(new Error('invalid font size'));
+        return this;
+    }
+
+    //find weight
+    var weightDesc = font.weights[weight];
+
+    if (!weightDesc) {
+        //find closest
+        var closest = null;
+        var diff = 0;
+
+        for (var item in font.weights) {
+            var diff2 = Math.abs(weight - item);
+
+            if (!closest || diff2 < diff) {
+                closest = item;
+                diff = diff2;
+            }
+        }
+
+        if (!closest) {
+            callback(new Error('no font weights found for ' + name));
+            return this;
+        }
+
+        weightDesc = font.weights[closest];
+        weight = closest;
+    }
+
+    //find style
+    var styleDesc = weightDesc[style];
+
+    if (!styleDesc) {
+        //fallback to normal
+        styleDesc = weightDesc.normal;
+
+        if (!styleDesc) {
+            callback(new Error('no normal style found: ' + name + ' weight=' + weight + ' style=' + style));
+            return this;
+        }
+
+        style = 'normal';
+    }
+
+    //check cache
+    var key = name + '/' + weight + '/' + style;
+    var cached = this.cache[key];
+
+    if (cached) {
+        if (cached instanceof Promise) {
+            cached.then(function (font) {
+                font.getSize(size, callback);
+            }, function (err) {
+                callback(err);
+            });
+        } else {
+            cached.getSize(size, callback);
+        }
+
+        return this;
+    }
+
+    //path
+    var dir = font.path;
+
+    if (!dir) {
+        //internal default path
+        dir = path.join(__dirname, 'resources/');
+    }
+
+    //load file
+    var file = path.join(dir, styleDesc);
+    var self = this;
+
+    var promise = new Promise(function (resolve, reject) {
+        fs.readFile(file, function (err, data) {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            //throws exception on error
+            var font = new AminoFonts.Font(self, {
+                data: data,
+                file: file,
+
+                name: name,
+                weight: weight,
+                style: style
+            });
+
+            resolve(font);
+        });
+    });
+
+    this.cache[key] = promise;
+
+    promise.then(function (font) {
+        self.cache[key] = font;
+
+        font.getSize(size, callback);
+    }, function (err) {
+        callback(err);
+    });
+
+    return this;
+};
+
+var fonts = new AminoFonts();
+
+exports.fonts = fonts;
+
+//
+// AminoFonts.Font
+//
+
+var AminoFont = AminoFonts.Font;
+
+AminoFont.prototype.init = function () {
+    this.fontSizes = {};
+};
+
+/**
+ * Load font size.
+ */
+AminoFont.prototype.getSize = function (size, callback) {
+    //check cache
+    var fontSize = this.fontSizes[size];
+
+    if (!fontSize) {
+        fontSize = new AminoFonts.FontSize(this, size);
+        this.fontSizes[size] = fontSize;
+    }
+
+    callback(null, fontSize);
+};
+
+//
+// AminoFonts.FontSize
+//
+
+var AminoFontSize = AminoFonts.FontSize;
+
+/**
+ * Calculate text width.
+ */
+AminoFontSize.prototype.calcTextWidth = function (text, callback) {
+    callback(null, this._calcTextWidth(text));
+};
+
+//
+// AminoGfxTexture
+//
+
+var Texture = AminoGfx.Texture;
+
+/**
+ * Load texture.
+ */
+Texture.prototype.loadTexture = function (src, callback) {
+    if (!src) {
+        this.loadTextureFromBuffer(null, callback);
+        return;
+    }
+
+    if (src instanceof AminoImage) {
+        //image (JPEG, PNG)
+        this.loadTextureFromImage(src, callback);
+    } else if (Buffer.isBuffer(src)) {
+        //pixel buffer
+        this.loadTextureFromBuffer(src, callback);
+    } else if (src instanceof AminoFontSize) {
+        //font texture
+        this.loadTextureFromFont(src, callback);
+    } else {
+        throw new Error('unknown source');
+    }
+};
+
+//
+// AminoGfx.Text
+//
+
+var Text = AminoGfx.Text;
+
+Text.prototype.init = function () {
+    if (DEBUG) {
+        console.log('Text.init()');
+    }
+
+    //properties
+    makeProps(this, {
+        id: '',
+        visible: true,
+
+        //position
+        x: 0,
+        y: 0,
+        z: 0,
+
+        //size
+        w: 0,
+        h: 0,
+
+        //origin
+        originX: 0,
+        originY: 0,
+
+        //scaling
+        sx: 1,
+        sy: 1,
+
+        //rotation
+        rx: 0,
+        ry: 0,
+        rz: 0,
+
+        //font
+        text:       '',
+        fontSize:   20,
+        fontName:   'source',
+        fontWeight: 400,
+        fontStyle:  'normal',
+        font:       null,
+
+        //color
+        r: 1,
+        g: 1,
+        b: 1,
+        opacity: 1.0,
+        fill: '#ffffff',
+
+        //alignment
+        align:  'left',
+        vAlign: 'baseline',
+        wrap:   'none',
+
+        //lines
+        maxLines: 0
+    });
+
+    this.fill.watch(watchFill);
+
+    //TODO lines
+    //TODO textHeight
+};
+
+Text.prototype.initDone = function () {
+    //update font
+    this.updateFont(null, null, this);
+
+    //watchers
+    this.fontName.watch(this.updateFont);
+    this.fontWeight.watch(this.updateFont);
+    this.fontSize.watch(this.updateFont);
+};
+
+/**
+ * Set position.
+ */
+Text.prototype.setPosition = setPosition;
+
+/**
+ * Set size.
+ */
+Text.prototype.setSize = setSize;
+
+/**
+ * Scale.
+ */
+Text.prototype.scale = scaleFunc;
+
+/**
+ * Rotate.
+ */
+Text.prototype.rotate = rotateFunc;
+
+var fontId = 0;
+
+/**
+ * Load the font.
+ */
+Text.prototype.updateFont = function (val, prop, obj) {
+    //prevent race condition (earlier font is loaded later)
+    var id = fontId++;
+
+    obj.latestFontId = id;
+
+    //get font
+    fonts.getFont({
+        name: obj.fontName(),
+        size: obj.fontSize(),
+        weight: obj.fontWeight(),
+        style: obj.fontStyle(),
+    }, function (err, font) {
+        //handle errors
+        if (err) {
+            console.log('could not load font: ' + err.message);
+
+            //try default font
+            fonts.getFont({
+                size: obj.fontSize()
+            }, function (err, font) {
+                if (err) {
+                    if (DEBUG_ERRORS) {
+                        console.log('could not load default font!');
+                    }
+
+                    return;
+                }
+
+                if (font && obj.latestFontId === id) {
+                    obj.latestFontId = undefined;
+
+                    obj.font(font);
+                }
+            });
+            return;
+        }
+
+        //attach font
+
+        //console.log('got font: ' + JSON.stringify(font));
+
+        if (obj.latestFontId === id) {
+            obj.latestFontId = undefined;
+
+            obj.font(font);
+        }
+    });
+
+    fontId++;
+};
+
+//
+// Anim
+//
+
+var Anim = AminoGfx.Anim;
+
+/**
+ * Initialize instance.
+ */
+Anim.prototype.init = function () {
+    this._from = null;
+    this._to = null;
+    this._pos = null;
+    this._duration = 1000;
+    this._loop = 1;
+    this._delay = 0;
+    this._autoreverse = false;
+    this._timeFunc = 'cubicInOut';
+    this._then_fun = null;
+
+    this.started = false;
+};
+
+/**
+ * From animation value.
+ */
+Anim.prototype.from = function (val) {
+    this.checkStarted();
+
+    this._from = val;
+
+    return this;
+};
+
+/**
+ * To animation value.
+ */
+Anim.prototype.to = function (val) {
+    this.checkStarted();
+
+    this._to = val;
+
+    return this;
+};
+
+/**
+ * Animation start position value.
+ */
+Anim.prototype.pos = function (val) {
+    this.checkStarted();
+
+    this._pos = val;
+
+    return this;
+};
+
+/**
+ * Animation duration.
+ */
+Anim.prototype.dur = function (val) {
+    this.checkStarted();
+
+    this._duration = val;
+
+    return this;
+};
+
+/**
+ * Animation delay.
+ */
+Anim.prototype.delay = function (val) {
+    this.checkStarted();
+
+    this._delay = val;
+
+    return this;
+};
+
+/**
+ * Animation loop count. Use -1 for forever.
+ */
+Anim.prototype.loop = function (val) {
+    this.checkStarted();
+
+    this._loop = val;
+
+    return this;
+};
+
+/**
+ * End callback.
+ */
+Anim.prototype.then = function (fun) {
+    this.checkStarted();
+
+    this._then_fun = fun;
+
+    return this;
+};
+
+/**
+ * Auto reverse animation.
+ */
+Anim.prototype.autoreverse = function(val) {
+    this.checkStarted();
+
+    this._autoreverse = val;
+
+    return this;
+};
+
+//Time function values.
+var timeFuncs = ['linear', 'cubicIn', 'cubicOut', 'cubicInOut'];
+
+/**
+ * Time function.
+ */
+Anim.prototype.timeFunc = function (value) {
+    this.checkStarted();
+
+    if (timeFuncs.indexOf(value) === -1) {
+        throw new Error('unknown time function: ' + val);
+    }
+
+    this._timeFunc = value;
+
+    return this;
+};
+
+/**
+ * Internal: check started state.
+ */
+Anim.prototype.checkStarted = function () {
+    if (this.started) {
+        throw new Error('immutable after start() was called');
+    }
+};
+
+/*
+ * Start the animation.
+ */
+Anim.prototype.start = function (refTime) {
+    if (this.started) {
+        throw new Error('animation already started');
+    }
+
+    if (DEBUG) {
+        console.log('starting anim');
+    }
+
+    var self = this;
+
+    this.started = true;
+
+    setTimeout (function () {
+        if (DEBUG) {
+            console.log('after delay. making it.');
+        }
+
+        //validate
+        if (self._from == null) {
+            throw new Error('missing from value');
+        }
+
+        if (self._to == null) {
+            throw new Error('missing to value');
+        }
+
+        //native start
+        self._start({
+            from: self._from,
+            to: self._to,
+            pos: self._pos,
+            duration: self._duration,
+            refTime: refTime,
+            count: self._loop,
+            autoreverse: self._autoreverse,
+            timeFunc: self._timeFunc,
+            then: self._then_fun
+        });
+    }, this._delay);
+
+    return this;
+};
+
+/**
+ * Create properties.
+ */
+function makeProps(obj, props) {
+    for (var name in props) {
+        makeProp(obj, name, props[name]);
+    }
+
+    return obj;
+};
+
+/**
+ * Create property handlers.
+ *
+ * @param obj object reference.
+ * @param name property name.
+ * @param val default value.
+ */
+function makeProp(obj, name, val) {
+    /**
+     * Property function.
+     *
+     * Getter and setter.
+     */
+    var prop = function (v, nativeCall) {
+        if (v != undefined) {
+            return prop.set(v, obj, nativeCall);
+        } else {
+            return prop.get();
+        }
+    };
+
+    prop.value = val;
+    prop.propName = name;
+    prop.readonly = false;
+    prop.nativeListener = null;
+    prop.listeners = [];
+
+    /**
+     * Add watch callback.
+     *
+     * Callback: (value, property, object)
+     */
+    prop.watch = function (fun) {
+        if (!fun) {
+            throw new Error('function undefined for property ' + name + ' on object with value ' + val);
+        }
+
+        this.listeners.push(fun);
+
+        return this;
+    };
+
+    /**
+     * Unwatch a registered function.
+     */
+    prop.unwatch = function (fun) {
+        var n = this.listeners.indexOf(fun);
+
+        if (n == -1) {
+            throw new Error('function was not registered');
+        }
+
+        this.listeners.splice(n, 1);
+    };
+
+    /**
+     * Remove all listeners.
+     */
+    prop.unwatchAll = function () {
+        this.listeners = [];
+    };
+
+    /**
+     * Getter function.
+     */
+    prop.get = function () {
+        return this.value;
+    };
+
+    /**
+     * Setter function.
+     */
+    prop.set = function (v, obj, nativeCall) {
+        //check readonly
+        if (this.readonly) {
+            //ignore any changes
+            return obj;
+        }
+
+        //check if modified
+        if (v === this.value) {
+            //debug
+            //console.log('not changed: ' + name);
+
+            return obj;
+        }
+
+        //update
+        this.value = v;
+
+        //native listener
+        if (this.nativeListener && !nativeCall) {
+            //prevent recursion in case of updates from native side
+            this.nativeListener(this.value, this.propId, obj);
+        }
+
+        //fire listeners
+        for (var i = 0; i < this.listeners.length; i++) {
+            this.listeners[i](this.value, this, obj);
+        }
+
+        return obj;
+    };
+
+    /**
+     * Create animation.
+     */
+    prop.anim = function () {
+        if (!obj.amino) {
+            throw new Error('not an amino object');
+        }
+
+        if (!this.propId) {
+            throw new Error('property cannot be animated');
+        }
+
+        return new AminoGfx.Anim(obj.amino, obj, this.propId);
+    };
+
+    /**
+     * Bind to other property.
+     *
+     * Optional: callback to modify value.
+     */
+    prop.bindTo = function (prop, fun) {
+        var set = this;
+
+        function watcher(v) {
+            if (fun) {
+                set(fun(v));
+            } else {
+                set(v);
+            }
+        }
+
+        prop.listeners.push(watcher);
+
+        //apply current value
+        watcher(prop());
+
+        return this;
+    };
+
+    //attach
+    obj[name] = prop;
+};
+
+exports.makeProps = makeProps;
+
+//
+// AminoWeakReference
+//
+exports.AminoWeakReference = native.AminoWeakReference;
+
+//input
+var input = require('./src/core/aminoinput');
+
+// initialize input handler
+input.init();
+
+exports.input = input;
+
+//extended
+//exports.RichTextView = amino_core.RichTextView;
 
 //exports.PureImageView = amino.primitives.PureImageView;
 //exports.ConstraintSolver = require('./src/ConstraintSolver');

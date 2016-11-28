@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -30,6 +30,11 @@
  * those of the authors and should not be interpreted as representing official
  * policies, either expressed or implied, of Nicolas P. Rougier.
  * ============================================================================
+ *
+ * Changes (c) appamics LLC 2016:
+ *
+ *  - Changed vertex indices buffer from GL_UNSIGNED_INT/GLuint to GL_UNSIGNED_SHORT/GLushort.
+ *    Now it is compatible again with OpenGL ES 2.0.
  */
 #include <assert.h>
 #include <string.h>
@@ -39,7 +44,6 @@
 #include "platform.h"
 #include "vertex-buffer.h"
 
-
 /**
  * Buffer status
  */
@@ -47,6 +51,7 @@
 #define DIRTY  (1)
 #define FROZEN (2)
 
+#define DEBUG_GL_ERRORS 0
 
 // ----------------------------------------------------------------------------
 vertex_buffer_t *
@@ -113,6 +118,10 @@ vertex_buffer_new( const char *format )
         self->attributes[i]->stride = stride;
     }
 
+#ifdef FREETYPE_GL_USE_VAO
+    self->VAO_id = 0;
+#endif
+
     self->vertices = vector_new( stride );
     self->vertices_id  = 0;
     self->GPU_vsize = 0;
@@ -137,7 +146,6 @@ vertex_buffer_delete( vertex_buffer_t *self )
 
     assert( self );
 
-
     for( i=0; i<MAX_VERTEX_ATTRIBUTE; ++i )
     {
         if( self->attributes[i] )
@@ -146,6 +154,14 @@ vertex_buffer_delete( vertex_buffer_t *self )
         }
     }
 
+#ifdef FREETYPE_GL_USE_VAO
+    if( self->VAO_id )
+    {
+        //needs OpenGL ES 3.0
+        glDeleteVertexArrays( 1, &self->VAO_id );
+    }
+    self->VAO_id = 0;
+#endif
 
     vector_delete( self->vertices );
     self->vertices = 0;
@@ -214,8 +230,8 @@ vertex_buffer_print( vertex_buffer_t * self )
 
     assert(self);
 
-    fprintf( stderr, "%ld vertices, %ld indices\n",
-             vector_size( self->vertices ), vector_size( self->indices ) );
+    fprintf( stderr, "%d vertices, %d indices\n",
+             (int)vector_size( self->vertices ), (int)vector_size( self->indices ) );
     while( self->attributes[i] )
     {
         int j = 8;
@@ -232,8 +248,8 @@ vertex_buffer_print( vertex_buffer_t * self )
         default:                j=8; break;
         }
         fprintf(stderr, "%s : %dx%s (+%p)\n",
-                self->attributes[i]->name, 
-                self->attributes[i]->size, 
+                self->attributes[i]->name,
+                self->attributes[i]->size,
                 gltypes[j],
                 self->attributes[i]->pointer);
 
@@ -316,14 +332,6 @@ vertex_buffer_clear( vertex_buffer_t *self )
 }
 
 
-void gles_show_error()
-{
-	GLenum error = GL_NO_ERROR;
-    error = glGetError();
-    if (GL_NO_ERROR != error)
-        printf("GL Error %x encountered!\n", error);
-}
-
 
 // ----------------------------------------------------------------------------
 void
@@ -331,12 +339,57 @@ vertex_buffer_render_setup ( vertex_buffer_t *self, GLenum mode )
 {
     size_t i;
 
+#ifdef FREETYPE_GL_USE_VAO
+    // Unbind so no existing VAO-state is overwritten,
+    // (e.g. the GL_ELEMENT_ARRAY_BUFFER-binding).
+    glBindVertexArray( 0 );
+#endif
+
     if( self->state != CLEAN )
     {
         vertex_buffer_upload( self );
         self->state = CLEAN;
     }
-    
+
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_upload");
+    }
+
+#ifdef FREETYPE_GL_USE_VAO
+    if( self->VAO_id == 0 )
+    {
+        // Generate and set up VAO
+
+        glGenVertexArrays( 1, &self->VAO_id );
+        glBindVertexArray( self->VAO_id );
+
+        glBindBuffer( GL_ARRAY_BUFFER, self->vertices_id );
+
+        for( i=0; i<MAX_VERTEX_ATTRIBUTE; ++i )
+        {
+            vertex_attribute_t *attribute = self->attributes[i];
+            if( attribute == 0 )
+            {
+                continue;
+            }
+            else
+            {
+                vertex_attribute_enable( attribute );
+            }
+        }
+
+        glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+        if( self->indices->size )
+        {
+            glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, self->indices_id );
+        }
+    }
+
+    // Bind VAO for drawing
+    glBindVertexArray( self->VAO_id );
+#else
+
     glBindBuffer( GL_ARRAY_BUFFER, self->vertices_id );
 
     for( i=0; i<MAX_VERTEX_ATTRIBUTE; ++i )
@@ -356,6 +409,12 @@ vertex_buffer_render_setup ( vertex_buffer_t *self, GLenum mode )
     {
         glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, self->indices_id );
     }
+#endif
+
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_render_setup() done");
+    }
+
     self->mode = mode;
 }
 
@@ -363,8 +422,31 @@ vertex_buffer_render_setup ( vertex_buffer_t *self, GLenum mode )
 void
 vertex_buffer_render_finish ( vertex_buffer_t *self )
 {
+#ifdef FREETYPE_GL_USE_VAO
+    glBindVertexArray( 0 );
+#else
+    int i;
+
+    for( i=0; i<MAX_VERTEX_ATTRIBUTE; ++i )
+    {
+        vertex_attribute_t *attribute = self->attributes[i];
+        if( attribute == 0 )
+        {
+            continue;
+        }
+        else
+        {
+            glDisableVertexAttribArray( attribute->index );
+        }
+    }
+
     glBindBuffer( GL_ARRAY_BUFFER, 0 );
     glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+#endif
+
+    if (DEBUG_GL_ERRORS) {
+        vertex_buffer_show_gl_errors("vertex_buffer_render_finish()");
+    }
 }
 
 
@@ -372,22 +454,24 @@ vertex_buffer_render_finish ( vertex_buffer_t *self )
 void
 vertex_buffer_render_item ( vertex_buffer_t *self,
                             size_t index )
-{ 
+{
     ivec4 * item = (ivec4 *) vector_get( self->items, index );
     assert( self );
     assert( index < vector_size( self->items ) );
 
- 
+
     if( self->indices->size )
     {
         size_t start = item->istart;
         size_t count = item->icount;
-        glDrawElements( self->mode, count, GL_UNSIGNED_BYTE, (void *)(start*sizeof(GLushort)) );
+
+        glDrawElements( self->mode, count, GL_UNSIGNED_SHORT, (void *)(start*sizeof(GLushort)) );
     }
     else if( self->vertices->size )
     {
         size_t start = item->vstart;
         size_t count = item->vcount;
+
         glDrawArrays( self->mode, start*self->vertices->item_size, count);
     }
 }
@@ -401,18 +485,28 @@ vertex_buffer_render ( vertex_buffer_t *self, GLenum mode )
     size_t icount = self->indices->size;
 
     vertex_buffer_render_setup( self, mode );
+
     if( icount )
     {
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, self->indices_id );
         glDrawElements( mode, icount, GL_UNSIGNED_SHORT, 0 );
+
+        if (DEBUG_GL_ERRORS) {
+            vertex_buffer_show_gl_errors("vertex_buffer_render() glDrawElements");
+        }
     }
     else
     {
         glDrawArrays( mode, 0, vcount );
+
+        if (DEBUG_GL_ERRORS) {
+            vertex_buffer_show_gl_errors("vertex_buffer_render() glDrawArrays");
+        }
     }
+
+
     vertex_buffer_render_finish( self );
 }
-    
+
 
 
 // ----------------------------------------------------------------------------
@@ -514,7 +608,7 @@ vertex_buffer_erase_vertices( vertex_buffer_t *self,
     assert( self );
     assert( self->vertices );
     assert( first < self->vertices->size );
-    assert( (first+last) <= self->vertices->size );
+    assert( last <= self->vertices->size );
     assert( last > first );
 
     self->state |= DIRTY;
@@ -525,7 +619,7 @@ vertex_buffer_erase_vertices( vertex_buffer_t *self,
             *(GLushort *)(vector_get( self->indices, i )) -= (last-first);
         }
     }
-    vector_erase_range( self->vertices, first, last );    
+    vector_erase_range( self->vertices, first, last );
 }
 
 
@@ -533,7 +627,7 @@ vertex_buffer_erase_vertices( vertex_buffer_t *self,
 // ----------------------------------------------------------------------------
 size_t
 vertex_buffer_push_back( vertex_buffer_t * self,
-                         const void * vertices, const size_t vcount,  
+                         const void * vertices, const size_t vcount,
                          const GLushort * indices, const size_t icount )
 {
     return vertex_buffer_insert( self, vector_size( self->items ),
@@ -543,7 +637,7 @@ vertex_buffer_push_back( vertex_buffer_t * self,
 // ----------------------------------------------------------------------------
 size_t
 vertex_buffer_insert( vertex_buffer_t * self, const size_t index,
-                      const void * vertices, const size_t vcount,  
+                      const void * vertices, const size_t vcount,
                       const GLushort * indices, const size_t icount )
 {
     size_t vstart, istart, i;
@@ -567,7 +661,7 @@ vertex_buffer_insert( vertex_buffer_t * self, const size_t index,
     {
         *(GLushort *)(vector_get( self->indices, istart+i )) += vstart;
     }
-    
+
     // Insert item
     item.x = vstart;
     item.y = vcount;
@@ -585,8 +679,9 @@ vertex_buffer_erase( vertex_buffer_t * self,
                      const size_t index )
 {
     ivec4 * item;
-    size_t vstart, vcount, istart, icount, i;
-    
+    int vstart;
+    size_t vcount, istart, icount, i;
+
     assert( self );
     assert( index < vector_size( self->items ) );
 
@@ -612,4 +707,21 @@ vertex_buffer_erase( vertex_buffer_t * self,
     vertex_buffer_erase_vertices( self, vstart, vstart+vcount );
     vector_erase( self->items, index );
     self->state = DIRTY;
+}
+
+/**
+ * Output all occured OpenGL errors.
+ */
+void vertex_buffer_show_gl_errors(char* msg) {
+    GLenum err = GL_NO_ERROR;
+    int count = 0;
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        count++;
+        printf("OpenGL error: %08x\n", err);
+    }
+
+    if (count) {
+        printf("%i OpenGL errors at '%s'\n'", count, msg);
+    }
 }

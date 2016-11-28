@@ -29,3 +29,8 @@ build
 
 # Users Environment Variables
 .lock-wscript
+
+#Visual Studio Code (C++ extensions)
+.vscode/.browse.VC.db
+.vscode/.browse.VC.db-wal
+.vscode/.browse.VC.db-shm

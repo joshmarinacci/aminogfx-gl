@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -38,22 +38,12 @@
 extern "C" {
 #endif
 
-#ifdef MAC
-#include <GLFW/glfw3.h>
-#endif
-
-#ifdef LINUX
-#include <GL/glfw.h>
-#include <GL/glext.h>
-#endif
-
-#ifdef RPI
-#include <EGL/egl.h>
-#include <GLES2/gl2.h>
-#endif
-
+#include "opengl.h"
 #include "vector.h"
 
+#ifdef __cplusplus
+namespace ftgl {
+#endif
 
 /**
  * @file   vertex-attribute.h
@@ -209,7 +199,7 @@ extern "C" {
 /**
  *  Generic vertex attribute.
  */
-typedef struct
+typedef struct vertex_attribute_t
 {
     /**
      *  atribute name
@@ -219,7 +209,7 @@ typedef struct
     /**
      * index of the generic vertex attribute to be modified.
      */
-    GLuint index;
+    GLint index;
 
     /**
      * Number of components per generic vertex attribute.
@@ -327,6 +317,7 @@ vertex_attribute_delete( vertex_attribute_t * self );
 /** @} */
 
 #ifdef __cplusplus
+}
 }
 #endif
 

@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -90,10 +90,6 @@ texture_atlas_delete( texture_atlas_t *self )
     {
         free( self->data );
     }
-    if( self->id )
-    {
-        glDeleteTextures( 1, &self->id );
-    }
     free( self );
 }
 
@@ -124,7 +120,7 @@ texture_atlas_set_region( texture_atlas_t * self,
     charsize = sizeof(char);
     for( i=0; i<height; ++i )
     {
-        memcpy( self->data+((y+i)*self->width + x ) * charsize * depth, 
+        memcpy( self->data+((y+i)*self->width + x ) * charsize * depth,
                 data + (i*stride) * charsize, width * charsize * depth  );
     }
 }
@@ -201,17 +197,17 @@ texture_atlas_get_region( texture_atlas_t * self,
                           const size_t width,
                           const size_t height )
 {
-
-	int y, best_height, best_width, best_index;
+	int y, best_index;
+    size_t best_height, best_width;
     ivec3 *node, *prev;
     ivec4 region = {{0,0,width,height}};
     size_t i;
 
     assert( self );
 
-    best_height = INT_MAX;
+    best_height = UINT_MAX;
     best_index  = -1;
-    best_width = INT_MAX;
+    best_width = UINT_MAX;
 	for( i=0; i<self->nodes->size; ++i )
 	{
         y = texture_atlas_fit( self, i, width, height );
@@ -219,7 +215,7 @@ texture_atlas_get_region( texture_atlas_t * self,
 		{
             node = (ivec3 *) vector_get( self->nodes, i );
 			if( ( (y + height) < best_height ) ||
-                ( ((y + height) == best_height) && (node->z < best_width)) )
+                ( ((y + height) == best_height) && (node->z > 0 && (size_t)node->z < best_width)) )
 			{
 				best_height = y + height;
 				best_index = i;
@@ -229,7 +225,7 @@ texture_atlas_get_region( texture_atlas_t * self,
 			}
         }
     }
-   
+
 	if( best_index == -1 )
     {
         region.x = -1;
@@ -301,60 +297,3 @@ texture_atlas_clear( texture_atlas_t * self )
     vector_push_back( self->nodes, &node );
     memset( self->data, 0, self->width*self->height*self->depth );
 }
-
-
-// --------------------------------------------------- texture_atlas_upload ---
-void
-texture_atlas_upload( texture_atlas_t * self )
-{
-    assert( self );
-    assert( self->data );
-
-    if( !self->id )
-    {
-        glGenTextures( 1, &self->id );
-    }
-
-    glBindTexture( GL_TEXTURE_2D, self->id );
-    //JOSH: try this one
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    if( self->depth == 4 )
-    {
-#ifdef GL_UNSIGNED_INT_8_8_8_8_REV
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, self->width, self->height,
-                      0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, self->data );
-#else
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, self->width, self->height,
-                      0, GL_RGBA, GL_UNSIGNED_BYTE, self->data );
-#endif
-    }
-    else if( self->depth == 3 )
-    {
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, self->width, self->height,
-                      0, GL_RGB, GL_UNSIGNED_BYTE, self->data );
-    }
-    else
-    {
-        /*
-        int i = 0;
-        int j = 0;
-        for(j=0; j<200; j++) {
-            for(i=0; i<300; i++) {
-                int d = self->data[i+j*self->width];
-                if(d == 0 ) {
-                    printf(" ");
-                } else {
-                    printf("X");
-                }
-            }
-            printf("\n");
-        }*/
-        //JOSH: try switching to RGB or RGBA instead of ALPHA
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_ALPHA, self->width, self->height,
-                      0, GL_ALPHA, GL_UNSIGNED_BYTE, self->data );
-    }
-}
-

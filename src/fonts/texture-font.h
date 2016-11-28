@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -34,7 +34,15 @@
 #ifndef __TEXTURE_FONT_H__
 #define __TEXTURE_FONT_H__
 
+//@appamics.CB: needed
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_STROKER_H
+// #include FT_ADVANCES_H
+#include FT_LCD_FILTER_H
+
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +50,10 @@ extern "C" {
 
 #include "vector.h"
 #include "texture-atlas.h"
+
+#ifdef __cplusplus
+namespace ftgl {
+#endif
 
 /**
  * @file   texture-font.h
@@ -65,20 +77,33 @@ extern "C" {
  */
 
 
+/**
+ * A list of possible ways to render a glyph.
+ */
+typedef enum rendermode_t
+{
+    RENDER_NORMAL,
+    RENDER_OUTLINE_EDGE,
+    RENDER_OUTLINE_POSITIVE,
+    RENDER_OUTLINE_NEGATIVE,
+    RENDER_SIGNED_DISTANCE_FIELD
+} rendermode_t;
+
 
 /**
- * A structure that hold a kerning value relatively to a charcode.
+ * A structure that hold a kerning value relatively to a Unicode
+ * codepoint.
  *
- * This structure cannot be used alone since the (necessary) right charcode is
- * implicitely held by the owner of this structure.
+ * This structure cannot be used alone since the (necessary) right
+ * Unicode codepoint is implicitely held by the owner of this structure.
  */
-typedef struct
+typedef struct kerning_t
 {
     /**
-     * Left character code in the kern pair.
+     * Left Unicode codepoint in the kern pair in UTF-32 LE encoding.
      */
-    wchar_t charcode;
-    
+    uint32_t codepoint;
+
     /**
      * Kerning value (in fractional pixels).
      */
@@ -96,26 +121,26 @@ typedef struct
  *                       xmin                     xmax
  *                        |                         |
  *                        |<-------- width -------->|
- *                        |                         |    
+ *                        |                         |
  *              |         +-------------------------+----------------- ymax
  *              |         |    ggggggggg   ggggg    |     ^        ^
- *              |         |   g:::::::::ggg::::g    |     |        | 
- *              |         |  g:::::::::::::::::g    |     |        | 
- *              |         | g::::::ggggg::::::gg    |     |        | 
- *              |         | g:::::g     g:::::g     |     |        | 
- *    offset_x -|-------->| g:::::g     g:::::g     |  offset_y    | 
- *              |         | g:::::g     g:::::g     |     |        | 
- *              |         | g::::::g    g:::::g     |     |        | 
- *              |         | g:::::::ggggg:::::g     |     |        |  
+ *              |         |   g:::::::::ggg::::g    |     |        |
+ *              |         |  g:::::::::::::::::g    |     |        |
+ *              |         | g::::::ggggg::::::gg    |     |        |
+ *              |         | g:::::g     g:::::g     |     |        |
+ *    offset_x -|-------->| g:::::g     g:::::g     |  offset_y    |
+ *              |         | g:::::g     g:::::g     |     |        |
+ *              |         | g::::::g    g:::::g     |     |        |
+ *              |         | g:::::::ggggg:::::g     |     |        |
  *              |         |  g::::::::::::::::g     |     |      height
- *              |         |   gg::::::::::::::g     |     |        | 
+ *              |         |   gg::::::::::::::g     |     |        |
  *  baseline ---*---------|---- gggggggg::::::g-----*--------      |
- *            / |         |             g:::::g     |              | 
- *     origin   |         | gggggg      g:::::g     |              | 
- *              |         | g:::::gg   gg:::::g     |              | 
- *              |         |  g::::::ggg:::::::g     |              | 
- *              |         |   gg:::::::::::::g      |              | 
- *              |         |     ggg::::::ggg        |              | 
+ *            / |         |             g:::::g     |              |
+ *     origin   |         | gggggg      g:::::g     |              |
+ *              |         | g:::::gg   gg:::::g     |              |
+ *              |         |  g::::::ggg:::::::g     |              |
+ *              |         |   gg:::::::::::::g      |              |
+ *              |         |     ggg::::::ggg        |              |
  *              |         |         gggggg          |              v
  *              |         +-------------------------+----------------- ymin
  *              |                                   |
@@ -125,17 +150,12 @@ typedef struct
 /**
  * A structure that describe a glyph.
  */
-typedef struct
+typedef struct texture_glyph_t
 {
     /**
-     * Wide character this glyph represents
+     * Unicode codepoint this glyph represents in UTF-32 LE encoding.
      */
-    wchar_t charcode;
-
-    /**
-     * Glyph id (used for display lists)
-     */
-    unsigned int id;
+    uint32_t codepoint;
 
     /**
      * Glyph's width in pixels.
@@ -200,9 +220,9 @@ typedef struct
     vector_t * kerning;
 
     /**
-     * Glyph outline type (0 = None, 1 = line, 2 = inner, 3 = outer)
+     * Mode this glyph was rendered
      */
-    int outline_type;
+    rendermode_t rendermode;
 
     /**
      * Glyph outline thickness
@@ -216,7 +236,7 @@ typedef struct
 /**
  *  Texture font structure.
  */
-typedef struct
+typedef struct texture_font_t
 {
     /**
      * Vector of glyphs contained in this font.
@@ -227,46 +247,65 @@ typedef struct
      * Atlas structure to store glyphs data.
      */
     texture_atlas_t * atlas;
-    
+
     /**
-     * Font filename
+     * font location
      */
-    char * filename;
+    enum {
+        TEXTURE_FONT_FILE = 0,
+        TEXTURE_FONT_MEMORY,
+    } location;
+
+    union {
+        /**
+         * Font filename, for when location == TEXTURE_FONT_FILE
+         */
+        char *filename;
+
+        /**
+         * Font memory address, for when location == TEXTURE_FONT_MEMORY
+         */
+        struct {
+            const void *base;
+            size_t size;
+        } memory;
+    };
 
     /**
      * Font size
      */
     float size;
-    
+
     /**
      * Whether to use autohint when rendering font
      */
     int hinting;
 
     /**
-     * Outline type (0 = None, 1 = line, 2 = inner, 3 = outer)
+     * Mode the font is rendering its next glyph
      */
-    int outline_type;
+    rendermode_t rendermode;
 
     /**
      * Outline thickness
      */
     float outline_thickness;
 
-    /** 
+    /**
      * Whether to use our own lcd filter.
      */
     int filtering;
+
+    /**
+     * LCD filter weights
+     */
+    unsigned char lcd_weights[5];
 
     /**
      * Whether to use kerning if available
      */
     int kerning;
 
-    /**
-     * LCD filter weights
-     */
-    unsigned char lcd_weights[5];
 
     /**
      * This field is simply used to compute a default line spacing (i.e., the
@@ -317,6 +356,12 @@ typedef struct
      */
     float underline_thickness;
 
+
+    //FreeType instance
+    FT_Library library;
+    int libraryShared;
+    FT_Face face;
+
 } texture_font_t;
 
 
@@ -329,17 +374,40 @@ typedef struct
  * freetype implementation).
  *
  * @param atlas     A texture atlas
+ * @param pt_size   Size of font to be created (in points)
  * @param filename  A font filename
- * @param size      Size of font to be created (in points)
  *
  * @return A new empty font (no glyph inside yet)
  *
  */
   texture_font_t *
-  texture_font_new( texture_atlas_t * atlas,
-                    const char * filename,
-                    const float size );
+  texture_font_new_from_file( texture_atlas_t * atlas,
+                              const float pt_size,
+                              const char * filename,
+                              FT_Library library );
 
+
+/**
+ * This function creates a new texture font from a memory location and size.
+ * The texture atlas is used to store glyph on demand. Note the depth of the
+ * atlas will determine if the font is rendered as alpha channel only
+ * (depth = 1) or RGB (depth = 3) that correspond to subpixel rendering (if
+ * available on your freetype implementation).
+ *
+ * @param atlas       A texture atlas
+ * @param pt_size     Size of font to be created (in points)
+ * @param memory_base Start of the font file in memory
+ * @param memory_size Size of the font file memory region, in bytes
+ *
+ * @return A new empty font (no glyph inside yet)
+ *
+ */
+  texture_font_t *
+  texture_font_new_from_memory( texture_atlas_t *atlas,
+                                float pt_size,
+                                const void *memory_base,
+                                size_t memory_size,
+                                FT_Library library );
 
 /**
  * Delete a texture font. Note that this does not delete the glyph from the
@@ -353,10 +421,10 @@ typedef struct
 
 /**
  * Request a new glyph from the font. If it has not been created yet, it will
- * be. 
+ * be.
  *
- * @param self     A valid texture font
- * @param charcode Character codepoint to be loaded.
+ * @param self      A valid texture font
+ * @param codepoint Character codepoint to be loaded in UTF-8 encoding.
  *
  * @return A pointer on the new glyph or 0 if the texture atlas is not big
  *         enough
@@ -364,33 +432,46 @@ typedef struct
  */
   texture_glyph_t *
   texture_font_get_glyph( texture_font_t * self,
-                          wchar_t charcode );
+                          const char * codepoint );
 
+
+/**
+ * Request the loading of a given glyph.
+ *
+ * @param self       A valid texture font
+ * @param codepoints Character codepoint to be loaded in UTF-8 encoding.
+ *
+ * @return One if the glyph could be loaded, zero if not.
+ */
+  int
+  texture_font_load_glyph( texture_font_t * self,
+                           const char * codepoint );
 
 /**
  * Request the loading of several glyphs at once.
  *
- * @param self      a valid texture font
- * @param charcodes character codepoints to be loaded.
+ * @param self       A valid texture font
+ * @param codepoints Character codepoints to be loaded in UTF-8 encoding. May
+ *                   contain duplicates.
  *
  * @return Number of missed glyph if the texture is not big enough to hold
  *         every glyphs.
  */
   size_t
   texture_font_load_glyphs( texture_font_t * self,
-                            const wchar_t * charcodes );
+                            const char * codepoints );
 
 /**
  * Get the kerning between two horizontal glyphs.
  *
- * @param self      a valid texture glyph
- * @param charcode  codepoint of the peceding glyph
- * 
+ * @param self      A valid texture glyph
+ * @param codepoint Character codepoint of the peceding character in UTF-8 encoding.
+ *
  * @return x kerning value
  */
-float 
+float
 texture_glyph_get_kerning( const texture_glyph_t * self,
-                           const wchar_t charcode );
+                           const char * codepoint );
 
 
 /**
@@ -406,7 +487,7 @@ texture_glyph_new( void );
 
 #ifdef __cplusplus
 }
+}
 #endif
 
 #endif /* __TEXTURE_FONT_H__ */
-

@@ -1,7 +1,7 @@
 /* ============================================================================
  * Freetype GL - A C OpenGL Freetype engine
  * Platform:    Any
- * WWW:         http://code.google.com/p/freetype-gl/
+ * WWW:         https://github.com/rougier/freetype-gl
  * ----------------------------------------------------------------------------
  * Copyright 2011,2012 Nicolas P. Rougier. All rights reserved.
  *
@@ -35,22 +35,17 @@
 #define __FREETYPE_GL_H__
 
 /* Mandatory */
-#ifdef MAC
-#include <GLFW/glfw3.h>
-#endif
-
-#ifdef LINUX
-#include <GL/glfw.h>
-#include <GL/glext.h>
-#endif
-
-#ifdef RPI
-#include <GLES2/gl2.h>
-#endif
+#include "opengl.h"
 
 #include "vec234.h"
 #include "vector.h"
 #include "texture-atlas.h"
 #include "texture-font.h"
+
+#ifdef __cplusplus
+#ifndef NOT_USING_FT_GL_NAMESPACE
+using namespace ftgl;
+#endif /* NOT_USING_FT_GL_NAMESPACE */
+#endif /* __cplusplus */
 
 #endif /* FREETYPE_GL_H */
