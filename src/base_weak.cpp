@@ -298,7 +298,7 @@ AminoWeakReferenceFactory::AminoWeakReferenceFactory(Nan::FunctionCallback callb
 }
 
 /**
- * Create AminoImage instance.
+ * Create AminoJSWeakReference instance.
  */
 AminoJSObject* AminoWeakReferenceFactory::create() {
     return new AminoJSWeakReference();

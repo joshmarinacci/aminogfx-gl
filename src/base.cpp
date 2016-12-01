@@ -76,6 +76,9 @@ NAN_MODULE_INIT(AminoGfx::InitClasses) {
     //image class
     AminoImage::Init(target);
 
+    //video class
+    AminoVideo::Init(target);
+
     //fonts class
     AminoFonts::Init(target);
 

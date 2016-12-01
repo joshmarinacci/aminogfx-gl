@@ -67,6 +67,9 @@ public:
     void notifyTextureCreated();
     static void updateAtlasTextures(texture_atlas_t *atlas);
 
+    //video
+    virtual AminoVideoPlayer *createVideoPlayer(AminoTexture *texture, AminoVideo *video) = 0;
+
 protected:
     static int instanceCount;
     static std::vector<AminoGfx *> instances;

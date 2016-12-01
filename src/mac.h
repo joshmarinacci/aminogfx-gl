@@ -11,4 +11,11 @@ public:
     AminoJSObject* create() override;
 };
 
+class AminoMacVideoPlayer : public AminoVideoPlayer {
+public:
+    AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video);
+
+    void init();
+};
+
 #endif

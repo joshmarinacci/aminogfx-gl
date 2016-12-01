@@ -629,6 +629,13 @@ private:
             item.second->updateAtlasTexture(atlas);
         }
     }
+
+    /**
+     * Create video player.
+     */
+    AminoVideoPlayer *createVideoPlayer(AminoTexture *texture, AminoVideo *video) override {
+        return new AminoMacVideoPlayer(texture, video);
+    }
 };
 
 //static initializers
@@ -638,6 +645,10 @@ std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLF
 //
 // AminoGfxMacFactory
 //
+
+AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
+    //empty
+}
 
 /**
  * Create AminoGfx factory.
@@ -651,6 +662,22 @@ AminoGfxMacFactory::AminoGfxMacFactory(Nan::FunctionCallback callback): AminoJSO
  */
 AminoJSObject* AminoGfxMacFactory::create() {
     return new AminoGfxMac();
+}
+
+//
+// AminoMacVideoPlayer
+//
+
+/**
+ * Initialize the video player.
+ */
+void AminoMacVideoPlayer::init() {
+    lastError = "videos not supported";
+
+    //debug
+    printf("file: %s\n", fileName.c_str());
+
+    texture->videoPlayerInitDone();
 }
 
 void exitHandler(void *arg) {

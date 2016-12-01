@@ -11,4 +11,11 @@ public:
     AminoJSObject* create() override;
 };
 
+class AminoOmxVideoPlayer : public AminoVideoPlayer {
+public:
+    AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *video);
+
+    void init();
+};
+
 #endif

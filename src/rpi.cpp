@@ -903,6 +903,13 @@ private:
             static_cast<AminoGfxRPi *>(item)->updateAtlasTexture(atlas);
         }
     }
+
+    /**
+     * Create video player.
+     */
+    AminoVideoPlayer *createVideoPlayer(AminoTexture *texture, AminoVideo *video) override {
+        return new AminoOmxVideoPlayer(texture, video);
+    }
 };
 
 //static initializers
@@ -926,6 +933,22 @@ AminoGfxRPiFactory::AminoGfxRPiFactory(Nan::FunctionCallback callback): AminoJSO
  */
 AminoJSObject* AminoGfxRPiFactory::create() {
     return new AminoGfxRPi();
+}
+
+//
+// AminoMacVideoPlayer
+//
+
+/**
+ * Initialize the video player.
+ */
+void AminoOmxVideoPlayer::init() {
+    lastError = "videos not yet supported";
+
+    //debug
+    printf("file: %s\n", fileName.c_str());
+
+    texture->videoPlayerInitDone();
 }
 
 void crashHandler(int sig) {

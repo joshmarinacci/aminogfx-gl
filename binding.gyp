@@ -23,6 +23,8 @@
                 #"src/images/upng.c",
                 "src/images.cpp",
 
+                "src/videos.cpp",
+
                 "src/shaders.cpp",
                 "src/renderer.cpp",
                 "src/mathutils.cpp"
