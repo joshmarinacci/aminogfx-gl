@@ -1281,6 +1281,8 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     //done
     destroyOmx();
+
+    return status == 0;
 }
 
 /**

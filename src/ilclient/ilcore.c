@@ -171,7 +171,7 @@ OMX_ERRORTYPE OMX_APIENTRY OMX_GetHandle(
       if (eError == OMX_ErrorNone) {
          // Check that all function pointers have been filled in.
          // All fields should be non-zero.
-         int i;
+         unsigned int i;
          uint32_t *p = (uint32_t *) pComp;
          for(i=0; i<sizeof(OMX_COMPONENTTYPE)>>2; i++)
             if(*p++ == 0)
