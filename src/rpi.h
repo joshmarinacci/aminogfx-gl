@@ -4,8 +4,10 @@
 #include "base.h"
 #include "renderer.h"
 
-#include "ilclient/ilclient.h"
-#include "EGL/eglext.h"
+extern "C" {
+    #include "ilclient/ilclient.h"
+    #include "EGL/eglext.h"
+}
 
 class AminoGfxRPiFactory : public AminoJSObjectFactory {
 public:

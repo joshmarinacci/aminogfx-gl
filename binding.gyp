@@ -37,13 +37,11 @@
             ],
             "cflags": [
                 "-Wall",
-                "-std=c++11",
-                # get stack trace on ARM
-                "-funwind-tables",
-                "-rdynamic"
+                "-std=c++11"
             ],
 
             'conditions': [
+                # macOS
                 ['OS=="mac"', {
                     "include_dirs": [
                         " <!@(freetype-config --cflags)",
@@ -81,6 +79,7 @@
                     }
                 }],
 
+                # Raspberry Pi
                 ['OS=="linux"', {
 					"conditions" : [
 	                    ["target_arch=='arm'", {
@@ -117,6 +116,9 @@
                                 "-DHAVE_LIBBCM_HOST",
                                 "-DUSE_EXTERNAL_LIBBCM_HOST",
                                 "-DUSE_VCHIQ_ARM",
+                                # get stack trace on ARM
+                                "-funwind-tables",
+                                "-rdynamic"
                             ]
 		                }],
 
