@@ -804,7 +804,7 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
    OMX_PARAM_PORTDEFINITIONTYPE portdef;
    OMX_BUFFERHEADERTYPE *list = NULL, **end = &list;
    OMX_STATETYPE state;
-   int i;
+   unsigned int i;
 
    memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
    portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
@@ -933,6 +933,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, int portIndex,
 
          while(clist)
          {
+             //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
             if((portdef.eDir == OMX_DirInput ? clist->nInputPortIndex : clist->nOutputPortIndex) == portIndex)
             {
                OMX_BUFFERHEADERTYPE *pBuffer = clist;
@@ -1215,6 +1216,7 @@ int ilclient_wait_for_command_complete_dual(COMPONENT_T *comp, OMX_COMMANDTYPE c
             prev->next = cur->next;
 
          // work out whether this was a success or a fail event
+         //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
          ret = cur->eEvent == OMX_EventCmdComplete || cur->nData1 == OMX_ErrorSameState ? 0 : -1;
 
          if(cur->eEvent == OMX_EventError)
@@ -1288,6 +1290,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp, int portInde
    do {
       vcos_semaphore_wait(&comp->sema);
       ret = comp->out_list;
+      //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
       while(ret != NULL && ret->nOutputPortIndex != portIndex)
       {
          prev = ret;
@@ -1331,6 +1334,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, int portIndex
 
       vcos_semaphore_wait(&comp->sema);
       ret = comp->in_list;
+      //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
       while(ret != NULL && ret->nInputPortIndex != portIndex)
       {
          prev = ret;
