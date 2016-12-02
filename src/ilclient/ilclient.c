@@ -891,7 +891,7 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
  *
  * Returns: void
  ***********************************************************/
-void ilclient_disable_port_buffers(COMPONENT_T *comp, int portIndex,
+void ilclient_disable_port_buffers(COMPONENT_T *comp, unsigned int portIndex,
                                    OMX_BUFFERHEADERTYPE *bufferList,
                                    ILCLIENT_FREE_T ilclient_free,
                                    void *private)
@@ -933,7 +933,6 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, int portIndex,
 
          while(clist)
          {
-             //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
             if((portdef.eDir == OMX_DirInput ? clist->nInputPortIndex : clist->nOutputPortIndex) == portIndex)
             {
                OMX_BUFFERHEADERTYPE *pBuffer = clist;
@@ -1216,8 +1215,7 @@ int ilclient_wait_for_command_complete_dual(COMPONENT_T *comp, OMX_COMMANDTYPE c
             prev->next = cur->next;
 
          // work out whether this was a success or a fail event
-         //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-         ret = cur->eEvent == OMX_EventCmdComplete || cur->nData1 == OMX_ErrorSameState ? 0 : -1;
+         ret = cur->eEvent == OMX_EventCmdComplete || cur->nData1 == (unsigned int)OMX_ErrorSameState ? 0 : -1;
 
          if(cur->eEvent == OMX_EventError)
             vcos_event_flags_get(&comp->event, ILCLIENT_EVENT_ERROR, VCOS_OR_CONSUME, 0, &set);
@@ -1282,7 +1280,7 @@ int ilclient_wait_for_command_complete(COMPONENT_T *comp, OMX_COMMANDTYPE comman
  *
  * Returns: pointer to buffer if available, otherwise NULL
  ***********************************************************/
-OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp, int portIndex, int block)
+OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp, unsigned int portIndex, int block)
 {
    OMX_BUFFERHEADERTYPE *ret = NULL, *prev = NULL;
    VCOS_UNSIGNED set;
@@ -1290,7 +1288,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp, int portInde
    do {
       vcos_semaphore_wait(&comp->sema);
       ret = comp->out_list;
-      //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+
       while(ret != NULL && ret->nOutputPortIndex != portIndex)
       {
          prev = ret;
@@ -1325,7 +1323,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_output_buffer(COMPONENT_T *comp, int portInde
  *
  * Returns: pointer to buffer if available, otherwise NULL
  ***********************************************************/
-OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, int portIndex, int block)
+OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, unsigned int portIndex, int block)
 {
    OMX_BUFFERHEADERTYPE *ret = NULL, *prev = NULL;
 
@@ -1334,7 +1332,7 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, int portIndex
 
       vcos_semaphore_wait(&comp->sema);
       ret = comp->in_list;
-      //cbx warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+
       while(ret != NULL && ret->nInputPortIndex != portIndex)
       {
          prev = ret;

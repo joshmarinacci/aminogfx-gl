@@ -595,7 +595,7 @@ VCHPRE_ int VCHPOST_ ilclient_enable_port_buffers(COMPONENT_T *comp,
  * @return void
  */
 VCHPRE_ void VCHPOST_ ilclient_disable_port_buffers(COMPONENT_T *comp,
-                                                    int portIndex,
+                                                    unsigned int portIndex,
                                                     OMX_BUFFERHEADERTYPE *bufferList,
                                                     ILCLIENT_FREE_T ilclient_free,
                                                     void *userdata);
@@ -739,7 +739,7 @@ VCHPRE_ void VCHPOST_ ilclient_teardown_tunnels(TUNNEL_T *tunnels);
  * @return Pointer to buffer if available, otherwise <DFN>NULL</DFN>.
  ***********************************************************/
 VCHPRE_ OMX_BUFFERHEADERTYPE* VCHPOST_ ilclient_get_output_buffer(COMPONENT_T *comp,
-                                                                  int portIndex,
+                                                                  unsigned int portIndex,
                                                                   int block);
 
 
@@ -758,7 +758,7 @@ VCHPRE_ OMX_BUFFERHEADERTYPE* VCHPOST_ ilclient_get_output_buffer(COMPONENT_T *c
  * @return pointer to buffer if available, otherwise <DFN>NULL</DFN>
  ***********************************************************/
 VCHPRE_ OMX_BUFFERHEADERTYPE* VCHPOST_ ilclient_get_input_buffer(COMPONENT_T *comp,
-                                                                 int portIndex,
+                                                                 unsigned int portIndex,
                                                                  int block);
 
 
