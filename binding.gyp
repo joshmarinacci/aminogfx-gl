@@ -89,9 +89,13 @@
 		                        "src/rpi.cpp"
 		                    ],
 		                    "libraries": [
-		                        "-L/opt/vc/lib/ -lbcm_host",
+		                        "-L/opt/vc/lib/",
+                                "-lbcm_host",
 		                        "-lGLESv2",
 		                        "-lEGL",
+                                "-lopenmaxil",
+                                "-lvcos",
+                                "-lvchiq_arm",
 		                        '<!@(freetype-config --libs)',
                                 "-ljpeg",
                                 "-lpng"
