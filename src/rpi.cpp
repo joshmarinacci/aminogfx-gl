@@ -1286,7 +1286,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 /**
  * Destroy OMX.
  */
-bool AminoOmxVideoPlayer::destroyOmx() {
+void AminoOmxVideoPlayer::destroyOmx() {
     if (file) {
         fclose(file);
         file = NULL;

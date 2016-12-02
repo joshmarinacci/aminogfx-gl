@@ -24,6 +24,7 @@ public:
     static void omxThread(void *arg);
     static void handleFillBufferDone(void *data, COMPONENT_T *comp);
     bool initOmx();
+    void destroyOmx();
 
 private:
     void *eglImage;
