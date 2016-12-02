@@ -18,6 +18,8 @@
 #define DEBUG_RENDER false
 #define DEBUG_INPUT false
 #define DEBUG_HDMI false
+//cbx
+#define DEBUG_OMX true
 
 #define AMINO_EGL_SAMPLES 4
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -916,7 +918,6 @@ public:
      * Create EGL Image.
      */
     EGLImageKHR createEGLImage(GLuint textureId) {
-        //cbx FIXME eglCreateImageKHR:  failed to create image for buffer 0x1 target 12465 error 0x300c
         return eglCreateImageKHR(display, context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)textureId, 0);
     }
 };
@@ -986,8 +987,11 @@ bool AminoOmxVideoPlayer::initTexture() {
     glBindTexture(GL_TEXTURE_2D, texture->textureId);
 
     //size (not set here)
-    //cbx check
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1920, 1080, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    //cbx Note: needs texture size or EGL image cannot be created!
+    GLsizei textureW = 480;
+    GLsizei textureH = 270;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1030,6 +1034,10 @@ void AminoOmxVideoPlayer::omxThread(void *arg) {
  */
 void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(data);
+
+    if (DEBUG_OMX) {
+        printf("OMX: handleFillBufferDone()\n");
+    }
 
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), player->eglBuffer) != OMX_ErrorNone) {
         player->bufferError = true;
@@ -1167,7 +1175,9 @@ bool AminoOmxVideoPlayer::initOmx() {
     omxInitialized = true;
 
     //debug
-    printf("OMX init status: %i\n", status); //cbx
+    if (DEBUG_OMX) {
+        printf("OMX init status: %i\n", status);
+    }
 
     //TODO cbx get video size & call callback
     //texture->videoPlayerInitDone();
@@ -1190,16 +1200,24 @@ bool AminoOmxVideoPlayer::initOmx() {
 
             //loop if at end
             if (feof(file)) {
+                if (DEBUG_OMX) {
+                    printf("OMX: rewind file\n");
+                }
+
                 //cbx TODO play mode
                 rewind(file);
             }
 
             data_len += fread(dest, 1, buf->nAllocLen-data_len, file);
 
+            if (DEBUG_OMX) {
+                printf("OMX: data pos %i\n", (int)data_len);
+            }
+
             if (port_settings_changed == 0 &&
                 ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
                 (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
-                //process
+                //process once
                 port_settings_changed = 1;
 
                 if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
@@ -1253,6 +1271,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             data_len = 0;
 
             buf->nOffset = 0;
+
             if (first_packet) {
                 buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
                 first_packet = 0;
@@ -1285,7 +1304,9 @@ bool AminoOmxVideoPlayer::initOmx() {
     }
 
     //debug
-    printf("OMX done status: %i\n", status); //cbx
+    if (DEBUG_OMX) {
+        printf("OMX done status: %i\n", status);
+    }
 
     //done
     destroyOmx();
