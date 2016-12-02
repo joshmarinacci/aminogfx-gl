@@ -916,6 +916,7 @@ public:
      * Create EGL Image.
      */
     EGLImageKHR createEGLImage(GLuint textureId) {
+        //cbx FIXME eglCreateImageKHR:  failed to create image for buffer 0x1 target 12465 error 0x300c
         return eglCreateImageKHR(display, context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)textureId, 0);
     }
 };
@@ -985,7 +986,8 @@ bool AminoOmxVideoPlayer::initTexture() {
     glBindTexture(GL_TEXTURE_2D, texture->textureId);
 
     //size (not set here)
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, IMAGE_SIZE_WIDTH, IMAGE_SIZE_HEIGHT, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    //cbx check
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1920, 1080, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -994,6 +996,8 @@ bool AminoOmxVideoPlayer::initTexture() {
 
     //create EGL Image
     AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
+
+    assert(texture->textureId != INVALID_TEXTURE);
 
     eglImage = gfx->createEGLImage(texture->textureId);
 
