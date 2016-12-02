@@ -943,7 +943,7 @@ AminoJSObject* AminoGfxRPiFactory::create() {
 }
 
 //
-// AminoMacVideoPlayer
+// AminoOmxVideoPlayer
 //
 
 /**
@@ -956,7 +956,7 @@ void AminoOmxVideoPlayer::init() {
     //printf("file: %s\n", fileName.c_str());
 
     //check video file
-    file = fopen(fileName, "rb");
+    file = fopen(fileName.c_str(), "rb");
 
     if (!file) {
         lastError = "file not found";
@@ -988,7 +988,7 @@ bool AminoOmxVideoPlayer::initTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     //create EGL Image
-    AminoGfxMac *gfx = static_cast<AminoGfxMac *>(texture->getEventHandler());
+    AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
 
     eglImage = gfx->createEGLImage(texture->textureId);
 
@@ -1013,7 +1013,7 @@ void AminoOmxVideoPlayer::omxThread(void *arg) {
     player->initOmx();
 
     //done
-    threadRunning = false;
+    player->threadRunning = false;
 }
 
 /**
@@ -1059,7 +1059,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     ilclient_set_fill_buffer_done_callback(client, handleFillBufferDone, this);
 
     //create video_decode
-    COMPONENT_T *video_decode = NULL
+    COMPONENT_T *video_decode = NULL;
 
     if (ilclient_create_component(client, &video_decode, "video_decode", ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS) != 0) {
         lastError = "video_decode error";
