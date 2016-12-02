@@ -947,6 +947,10 @@ AminoJSObject* AminoGfxRPiFactory::create() {
 // AminoOmxVideoPlayer
 //
 
+AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
+    //empty
+}
+
 /**
  * Initialize the video player.
  */
