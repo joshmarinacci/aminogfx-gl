@@ -1179,9 +1179,6 @@ bool AminoOmxVideoPlayer::initOmx() {
         printf("OMX init status: %i\n", status);
     }
 
-    //TODO cbx get video size & call callback
-    //texture->videoPlayerInitDone();
-
     //loop
     if (status == 0) {
         OMX_BUFFERHEADERTYPE *buf;
@@ -1190,6 +1187,11 @@ bool AminoOmxVideoPlayer::initOmx() {
 
         //executing
         ilclient_change_component_state(video_decode, OMX_StateExecuting);
+
+        //TODO cbx get video size & call callback
+        videoW = 480;
+        videoH = 270;
+        texture->videoPlayerInitDone();
 
         //data loop
         unsigned int data_len = 0;
@@ -1208,7 +1210,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                 rewind(file);
             }
 
-            data_len += fread(dest, 1, buf->nAllocLen-data_len, file);
+            data_len += fread(dest, 1, buf->nAllocLen - data_len, file);
 
             if (DEBUG_OMX) {
                 printf("OMX: data pos %i\n", (int)data_len);
