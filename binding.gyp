@@ -85,6 +85,8 @@
 					"conditions" : [
 	                    ["target_arch=='arm'", {
 		                    "sources": [
+                                "src/ilclient/ilclient.c",
+                                "src/ilclient/ilcore.c",
 		                        "src/rpi.cpp"
 		                    ],
 		                    "libraries": [
@@ -100,9 +102,11 @@
 		                    ],
 		                    "include_dirs": [
 		                        "/opt/vc/include/",
+                                "/opt/vc/include/IL/",
 		                        "/usr/include/freetype2",
 		                        "/opt/vc/include/interface/vcos/pthreads",
 		                        "/opt/vc/include/interface/vmcs_host/linux",
+                                "/opt/vc/include/interface/vchiq/",
 		                        '<!@(freetype-config --cflags)'
 		                    ]
 		                }],
