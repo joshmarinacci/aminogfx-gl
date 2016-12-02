@@ -911,6 +911,7 @@ private:
         return new AminoOmxVideoPlayer(texture, video);
     }
 
+public:
     /**
      * Create EGL Image.
      */
@@ -1061,7 +1062,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     //create video_decode
     COMPONENT_T *video_decode = NULL;
 
-    if (ilclient_create_component(client, &video_decode, "video_decode", ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS) != 0) {
+    if (ilclient_create_component(client, &video_decode, "video_decode", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
         lastError = "video_decode error";
         status = -14;
     }
@@ -1070,7 +1071,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     list[0] = video_decode;
 
     //create egl_render
-    if (status == 0 && ilclient_create_component(client, &egl_render, "egl_render", ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_OUTPUT_BUFFERS) != 0) {
+    if (status == 0 && ilclient_create_component(client, &egl_render, "egl_render", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_OUTPUT_BUFFERS)) != 0) {
         lastError = "egl_render error";
         status = -14;
     }
@@ -1080,7 +1081,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     //create clock
     COMPONENT_T *clock = NULL;
 
-    if (status == 0 && ilclient_create_component(client, &clock, "clock", ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+    if (status == 0 && ilclient_create_component(client, &clock, "clock", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "clock error";
         status = -14;
     }
@@ -1105,7 +1106,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     //create video_scheduler
     COMPONENT_T *video_scheduler = NULL;
 
-    if (status == 0 && ilclient_create_component(client, &video_scheduler, "video_scheduler", ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+    if (status == 0 && ilclient_create_component(client, &video_scheduler, "video_scheduler", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "video_scheduler error";
         status = -14;
     }
@@ -1261,7 +1262,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         buf->nFilledLen = 0;
         buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
 
-        if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone)
+        if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
             lastError = "could not empty buffer (2)";
             status = -20;
 
