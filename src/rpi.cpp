@@ -1209,8 +1209,6 @@ bool AminoOmxVideoPlayer::initOmx() {
         texture->videoPlayerInitDone();
 
         //data loop
-        unsigned int data_len = 0;
-
         while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
             //feed data and wait until we get port settings changed
             unsigned char *dest = buf->pBuffer;
@@ -1225,7 +1223,8 @@ bool AminoOmxVideoPlayer::initOmx() {
                 rewind(file);
             }
 
-            data_len += fread(dest, 1, buf->nAllocLen - data_len, file);
+            //read from file
+            unsigned int data_len = fread(dest, 1, buf->nAllocLen - data_len, file);
 
             if (DEBUG_OMX) {
                 printf("OMX: data pos %i\n", (int)data_len);
@@ -1278,15 +1277,25 @@ bool AminoOmxVideoPlayer::initOmx() {
                     status = -22;
                     break;
                 }
+
+                //cbx get video size
+                OMX_PARAM_PORTDEFINITIONTYPE portdef;
+
+                portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
+                portdef.nVersion.nVersion = OMX_VERSION;
+                portdef.nPortIndex = 131;
+
+                OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinitionType, portdef);
+
+                printf("video: %dx%d\n", portdef.format.video.nFrameWidth, portdef.format.nFrameHeight);
             }
 
             if (!data_len) {
+                //read error occured
                 break;
             }
 
             buf->nFilledLen = data_len;
-            data_len = 0;
-
             buf->nOffset = 0;
 
             if (first_packet) {
