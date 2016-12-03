@@ -1202,6 +1202,10 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
  * Video player init failed
  */
 void AminoTexture::videoPlayerInitDone() {
+    if (DEBUG_VIDEOS) {
+        printf("videoPlayerInitDone()\n");
+    }
+
     //switch to main thread
     enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoTexture::handleVideoPlayerInitDone), NULL, NULL);
 }
@@ -1210,6 +1214,10 @@ void AminoTexture::videoPlayerInitDone() {
  * Inform JS callback about video state.
  */
 void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
+    if (DEBUG_VIDEOS) {
+        printf("handleVideoPlayerInitDone()\n");
+    }
+
     assert(videoPlayer);
 
     //create scope
@@ -1218,6 +1226,10 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
     //check state
     if (videoPlayer->isReady()) {
         videoPlayer->getVideoDimension(w, h);
+
+        if (DEBUG_VIDEOS) {
+            printf("-> ready: %ix%i\n", w, h);
+        }
 
         v8::Local<v8::Object> obj = handle();
 
@@ -1235,9 +1247,15 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
         }
     } else {
         //failed
+        const char *error = videoPlayer->getLastError().c_str();
+
+        if (DEBUG_VIDEOS) {
+            printf("-> error: %s\n", error);
+        }
+
         if (callback) {
             int argc = 1;
-            v8::Local<v8::Value> argv[1] = { Nan::Error(videoPlayer->getLastError().c_str()) };
+            v8::Local<v8::Value> argv[1] = { Nan::Error(error) };
 
             callback->Call(handle(), argc, argv);
             delete callback;

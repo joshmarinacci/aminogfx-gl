@@ -1205,6 +1205,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         //TODO cbx get video size & call callback
         videoW = 480;
         videoH = 270;
+        ready = true;
         texture->videoPlayerInitDone();
 
         //data loop
