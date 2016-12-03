@@ -1281,11 +1281,12 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //cbx get video size
                 OMX_PARAM_PORTDEFINITIONTYPE portdef;
 
+                memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
                 portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
                 portdef.nVersion.nVersion = OMX_VERSION;
                 portdef.nPortIndex = 131;
 
-                OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinitionType, portdef);
+                OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinitionType, &portdef);
 
                 printf("video: %dx%d\n", portdef.format.video.nFrameWidth, portdef.format.nFrameHeight);
             }
