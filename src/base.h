@@ -175,6 +175,7 @@ protected:
     bool isRendering();
 
     void destroy() override;
+    void destroyAminoGfx();
 
     virtual bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) { return false; };
     void updateSize(int w, int h); //call after size event
@@ -408,7 +409,9 @@ public:
     }
 
     ~AminoText() {
-        //empty
+        if (!destroyed) {
+            destroyAminoText();
+        }
     }
 
     /**
@@ -425,9 +428,24 @@ public:
     }
 
     /**
-     * Free buffers.
+     * Free all resources.
      */
     void destroy() override {
+        if (destroyed) {
+            return;
+        }
+
+        //instance
+        destroyAminoText();
+
+        //base
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free buffers.
+     */
+    void destroyAminoText() {
         if (buffer) {
             if (eventHandler) {
                 if (getAminoGfx()->deleteVertexBufferAsync(buffer)) {
@@ -451,9 +469,6 @@ public:
 
         fontSize = NULL;
         texture.textureId = INVALID_TEXTURE;
-
-        //base
-        AminoNode::destroy();
     }
 
     /**
@@ -699,7 +714,9 @@ public:
     }
 
     ~AminoAnim() {
-        //see destroy
+        if (!destroyed) {
+            destroyAminoAnim();
+        }
     }
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
@@ -736,9 +753,25 @@ public:
         obj->addAnimation(this);
     }
 
+    /**
+     * Free all resources.
+     */
     void destroy() override {
-        AminoJSObject::destroy();
+        if (destroyed) {
+            return;
+        }
 
+        //instance
+        destroyAminoAnim();
+
+        //base class
+        AminoJSObject::destroy();
+    }
+
+    /**
+     * Free instance data.
+     */
+    void destroyAminoAnim() {
         if (prop) {
             prop->release();
             prop = NULL;
@@ -1209,17 +1242,34 @@ public:
     }
 
     ~AminoRect() {
-        //empty
+        if (!destroyed) {
+            destroyAminoRect();
+        }
     }
 
     /**
      * Free resources.
      */
     void destroy() override {
-        AminoNode::destroy();
+        if (destroyed) {
+            return;
+        }
 
+        //instance
+        destroyAminoRect();
+
+        //base class
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free instance resources.
+     */
+    void destroyAminoRect() {
         //release object values
-        propTexture->destroy();
+        if (propTexture) {
+            propTexture->destroy();
+        }
     }
 
     /**
@@ -1486,14 +1536,30 @@ public:
     }
 
     ~AminoModel() {
+        if (!destroyed) {
+            destroyAminoModel();
+        }
     }
 
     /**
      * Free all resources.
      */
     void destroy() override {
-        AminoNode::destroy();
+        if (destroyed) {
+            return;
+        }
 
+        //instance
+        destroyAminoModel();
+
+        //base class
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free instance resources.
+     */
+    void destroyAminoModel() {
         //free buffers
         if (eventHandler) {
             if (vboVertex != INVALID_BUFFER) {

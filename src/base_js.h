@@ -59,6 +59,7 @@ protected:
     virtual void preInit(Nan::NAN_METHOD_ARGS_TYPE info);
     virtual void setup();
     virtual void destroy();
+    void destroyAminoJSObject();
 
     //properties
     void updateProperty(std::string name, v8::Local<v8::Value> &value);

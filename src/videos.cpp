@@ -129,14 +129,23 @@ AminoVideoPlayer::AminoVideoPlayer(AminoTexture *texture, AminoVideo *video): te
 }
 
 AminoVideoPlayer::~AminoVideoPlayer() {
-    destroy();
+    destroyAminoVideoPlayer();
 }
 
 /**
  * Destroy the video player.
  */
 void AminoVideoPlayer::destroy() {
+    destroyAminoVideoPlayer();
+
     //overwrite
+}
+
+/**
+ * Destroy the video player.
+ */
+void destroyAminoVideoPlayer() {
+    //empty
 }
 
 /**

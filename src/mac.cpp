@@ -21,6 +21,12 @@ public:
         //empty
     }
 
+    ~AminoGfxMac() {
+        if (!destroyed) {
+            destroyAminoGfxMac();
+        }
+    }
+
     /**
      * Get factory instance.
      */
@@ -106,9 +112,17 @@ private:
             return;
         }
 
+        //instance
+        destroyAminoGfxMac();
+
         //destroy basic instance
         AminoGfx::destroy();
+    }
 
+    /**
+     * Destroy GLFW instance.
+     */
+    void destroyAminoGfxMac() {
         //GLFW
         if (window) {
             glfwDestroyWindow(window);

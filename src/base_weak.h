@@ -53,6 +53,7 @@ public:
 
 protected:
     void destroy() override;
+    void destroyAminoJSWeakReference();
 
 private:
     AminoWeakReference *weak = NULL;

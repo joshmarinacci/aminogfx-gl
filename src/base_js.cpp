@@ -51,7 +51,7 @@ AminoJSObject::~AminoJSObject() {
     }
 
     if (!destroyed) {
-        destroy();
+        destroyAminoJSObject();
     }
 
     //free properties
@@ -101,6 +101,13 @@ void AminoJSObject::setup() {
 void AminoJSObject::destroy() {
     destroyed = true;
 
+    destroyAminoJSObject();
+}
+
+/**
+ * Free all resources used by this instance.
+ */
+void AminoJSObject::destroyAminoJSObject() {
     //event handler
     clearEventHandler();
 }
@@ -1567,7 +1574,7 @@ AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string na
  * Utf8Property destructor.
  */
 AminoJSObject::ObjectProperty::~ObjectProperty() {
-    //release instance
+    //release instance (Note: non-virtual function)
     destroy();
 }
 
@@ -1846,6 +1853,8 @@ AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
 }
 
 AminoJSEventObject::~AminoJSEventObject() {
+    //Note: all called methods are not virtual
+
     //JS updates
     handleJSUpdates();
     delete jsUpdates;

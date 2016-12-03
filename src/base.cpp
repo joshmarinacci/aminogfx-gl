@@ -34,6 +34,11 @@ AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
 }
 
 AminoGfx::~AminoGfx() {
+    //instance values
+    if (!destroyed) {
+        destroyAminoGfx();
+    }
+
     //callback
     if (startCallback) {
         delete startCallback;
@@ -722,6 +727,23 @@ NAN_METHOD(AminoGfx::Destroy) {
  * Note: has to run on main thread.
  */
 void AminoGfx::destroy() {
+    if (destroyed) {
+        return;
+    }
+
+    //instance
+    destroyAminoGfx();
+
+    //base destroy
+    AminoJSEventObject::destroy();
+}
+
+/**
+ * Stop rendering and free resources.
+ *
+ * Note: has to run on main thread.
+ */
+void AminoGfx::destroyAminoGfx() {
     //stop thread
     stopRenderingThread();
 
@@ -750,9 +772,6 @@ void AminoGfx::destroy() {
 
     //params
     createParams.Reset();
-
-    //base destroy
-    AminoJSEventObject::destroy();
 
     //debug
     if (DEBUG_BASE) {

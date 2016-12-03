@@ -24,6 +24,7 @@ public:
 
     bool hasImage();
     void destroy() override;
+    void destroyAminoImage();
     GLuint createTexture(GLuint textureId);
     static GLuint createTexture(GLuint textureId, char *bufferData, size_t bufferLength, int w, int h, int bpp);
 
@@ -73,6 +74,7 @@ public:
     ~AminoTexture();
 
     void destroy() override;
+    void destroyAminoTexture();
 
     //creation
     static AminoTextureFactory* getFactory();

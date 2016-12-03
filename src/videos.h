@@ -54,6 +54,7 @@ public:
 
     virtual void init() = 0;
     virtual void destroy();
+    void destroyAminoVideoPlayer();
 
     bool isReady();
     std::string getLastError();

@@ -33,6 +33,12 @@ public:
         //empty
     }
 
+    ~AminoGfxRPi() {
+        if (!destroyed) {
+            destroyAminoGfxRPi();
+        }
+    }
+
     /**
      * Get factory instance.
      */
@@ -317,9 +323,17 @@ private:
             return;
         }
 
+        //instance
+        destroyAminoGfxRPi();
+
         //destroy basic instance (activates context)
         AminoGfx::destroy();
+    }
 
+    /**
+     * Destroy GLFW instance.
+     */
+    void destroyAminoGfxRPi() {
         //OpenGL ES
         if (display != EGL_NO_DISPLAY) {
             if (context != EGL_NO_CONTEXT) {

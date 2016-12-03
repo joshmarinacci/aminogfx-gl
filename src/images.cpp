@@ -612,7 +612,9 @@ AminoImage::AminoImage(): AminoJSObject(getFactory()->name) {
  * Destructor.
  */
 AminoImage::~AminoImage()  {
-    //empty
+    if (!destroyed) {
+        destroyAminoImage();
+    }
 }
 
 /**
@@ -626,8 +628,21 @@ bool AminoImage::hasImage() {
  * Free all resources.
  */
 void AminoImage::destroy() {
-    AminoJSObject::destroy();
+    if (destroyed) {
+        return;
+    }
 
+    //instance
+    destroyAminoImage();
+
+    //base class
+    AminoJSObject::destroy();
+}
+
+/**
+ * Free all resources.
+ */
+void AminoImage::destroyAminoImage() {
     buffer.Reset();
     bufferData = NULL;
     bufferLength = 0;
@@ -823,7 +838,9 @@ AminoTexture::AminoTexture(): AminoJSObject(getFactory()->name) {
  * Destructor.
  */
 AminoTexture::~AminoTexture()  {
-    //empty
+    if (!destroyed) {
+        destroyAminoTexture();
+    }
 }
 
 /**
@@ -834,6 +851,16 @@ void AminoTexture::destroy() {
         return;
     }
 
+    destroyAminoTexture();
+
+    //Note: frees eventHandler
+    AminoJSObject::destroy();
+}
+
+/**
+ * Free resources.
+ */
+void AminoTexture::destroyAminoTexture() {
     if (callback) {
         delete callback;
         callback = NULL;
@@ -859,9 +886,6 @@ void AminoTexture::destroy() {
         video->release();
         video = NULL;
     }
-
-    //Note: frees eventHandler
-    AminoJSObject::destroy();
 }
 
 /**
