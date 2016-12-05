@@ -1286,9 +1286,10 @@ bool AminoOmxVideoPlayer::initOmx() {
                 portdef.nVersion.nVersion = OMX_VERSION;
                 portdef.nPortIndex = 131;
 
-                OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinitionType, &portdef);
+                OMX_ERRORTYPE error = OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef);
 
-                printf("video: %dx%d\n", portdef.format.video.nFrameWidth, portdef.format.nFrameHeight);
+                //cbx TODO OMX_ErrorNone
+                printf("video: %dx%d\n", portdef.format.video.nFrameWidth, portdef.format.video.nFrameHeight);
             }
 
             if (!data_len) {
