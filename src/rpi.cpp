@@ -20,6 +20,7 @@
 #define DEBUG_HDMI false
 //cbx
 #define DEBUG_OMX true
+#define DEBUG_OMX_READ false
 
 #define AMINO_EGL_SAMPLES 4
 #define test_bit(bit, array) (array[bit / 8] & (1 << (bit % 8)))
@@ -1216,6 +1217,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             //loop if at end
             if (feof(file)) {
                 if (DEBUG_OMX) {
+                    //cbx FIXME seeing many rewinds!
                     printf("OMX: rewind file\n");
                 }
 
@@ -1226,8 +1228,8 @@ bool AminoOmxVideoPlayer::initOmx() {
             //read from file
             unsigned int data_len = fread(dest, 1, buf->nAllocLen, file);
 
-            if (DEBUG_OMX) {
-                printf("OMX: data pos %i\n", (int)data_len);
+            if (DEBUG_OMX_READ) {
+                printf("OMX: data read %i\n", (int)data_len);
             }
 
             if (port_settings_changed == 0 &&
@@ -1235,6 +1237,10 @@ bool AminoOmxVideoPlayer::initOmx() {
                 (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
                 //process once
                 port_settings_changed = 1;
+
+                if (DEBUG_OMX) {
+                    printf("OMX: egl_render setup\n");
+                }
 
                 if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
                     lastError = "video tunnel setup error";
@@ -1268,8 +1274,16 @@ bool AminoOmxVideoPlayer::initOmx() {
                     break;
                 }
 
+                if (DEBUG_OMX) {
+                    printf("OMX: egl_render setup done\n");
+                }
+
                 //Set egl_render to executing
                 ilclient_change_component_state(egl_render, OMX_StateExecuting);
+
+                if (DEBUG_OMX) {
+                    printf("OMX: executing\n");
+                }
 
                 //Request egl_render to write data to the texture buffer
                 if (OMX_FillThisBuffer(ILC_GET_HANDLE(egl_render), eglBuffer) != OMX_ErrorNone) {
@@ -1278,7 +1292,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                     break;
                 }
 
-                //cbx get video size
+                //cbx get video size-> FIXME no output
                 OMX_PARAM_PORTDEFINITIONTYPE portdef;
 
                 memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
