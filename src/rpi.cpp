@@ -1224,7 +1224,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             }
 
             //read from file
-            unsigned int data_len = fread(dest, 1, buf->nAllocLen - data_len, file);
+            unsigned int data_len = fread(dest, 1, buf->nAllocLen, file);
 
             if (DEBUG_OMX) {
                 printf("OMX: data pos %i\n", (int)data_len);
