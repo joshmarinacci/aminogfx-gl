@@ -14,7 +14,8 @@ gfx.start(function (err) {
     //video
     const video = new amino.AminoVideo();
 
-    video.src = path.join(__dirname, 'trailer_iphone.m4v');
+    //video.src = path.join(__dirname, 'trailer_iphone.m4v');
+    video.src = path.join(__dirname, 'test.h264');
 
     //rect
     const rect = this.createImageView().w(400).h(400).src(video);
