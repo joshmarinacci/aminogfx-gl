@@ -1004,8 +1004,8 @@ bool AminoOmxVideoPlayer::initTexture() {
 
     //size (not set here)
     //cbx Note: needs texture size or EGL image cannot be created!
-    GLsizei textureW = 480;
-    GLsizei textureH = 270;
+    GLsizei textureW = 1920;
+    GLsizei textureH = 1080;
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -1209,8 +1209,8 @@ bool AminoOmxVideoPlayer::initOmx() {
         ilclient_change_component_state(video_decode, OMX_StateExecuting);
 
         //TODO cbx get video size & call callback
-        videoW = 480;
-        videoH = 270;
+        videoW = 1920;
+        videoH = 1080;
         ready = true;
         texture->videoPlayerInitDone();
 
@@ -1243,8 +1243,6 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //process once
                 port_settings_changed = true;
 
-                //cbx FIXME never called!!!
-
                 if (DEBUG_OMX) {
                     printf("OMX: egl_render setup\n");
                 }
@@ -1267,17 +1265,34 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //Set egl_render to idle
                 ilclient_change_component_state(egl_render, OMX_StateIdle);
 
+                //get video size
+                OMX_PARAM_PORTDEFINITIONTYPE portdef;
+
+                memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
+                portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
+                portdef.nVersion.nVersion = OMX_VERSION;
+                portdef.nPortIndex = 131;
+
+                if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+                    lastError = "could not get video size";
+                    status = -20;
+                    break;
+                }
+
+                //cbx TODO get correct egl image buffer
+                printf("video: %dx%d\n", portdef.format.video.nFrameWidth, portdef.format.video.nFrameHeight);
+
                 //Enable the output port and tell egl_render to use the texture as a buffer
                 //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
                 if (OMX_SendCommand(ILC_GET_HANDLE(egl_render), OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
                     lastError = "OMX_CommandPortEnable failed.";
-                    status = -20;
+                    status = -21;
                     break;
                 }
 
                 if (OMX_UseEGLImage(ILC_GET_HANDLE(egl_render), &eglBuffer, 221, NULL, eglImage) != OMX_ErrorNone) {
                     lastError = "OMX_UseEGLImage failed.";
-                    status = -21;
+                    status = -22;
                     break;
                 }
 
@@ -1295,22 +1310,9 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //Request egl_render to write data to the texture buffer
                 if (OMX_FillThisBuffer(ILC_GET_HANDLE(egl_render), eglBuffer) != OMX_ErrorNone) {
                     lastError = "OMX_FillThisBuffer failed.";
-                    status = -22;
+                    status = -23;
                     break;
                 }
-
-                //cbx get video size-> FIXME no output
-                OMX_PARAM_PORTDEFINITIONTYPE portdef;
-
-                memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
-                portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
-                portdef.nVersion.nVersion = OMX_VERSION;
-                portdef.nPortIndex = 131;
-
-                OMX_ERRORTYPE error = OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef);
-
-                //cbx TODO OMX_ErrorNone
-                printf("video: %dx%d\n", portdef.format.video.nFrameWidth, portdef.format.video.nFrameHeight);
             }
 
             if (!data_len) {
