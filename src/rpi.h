@@ -29,9 +29,9 @@ public:
     void destroyOmx();
 
 private:
-    void *eglImage;
-    ILCLIENT_T *client;
-    FILE *file;
+    void *eglImage = NULL;
+    ILCLIENT_T *client = NULL;
+    FILE *file = NULL;
 
     uv_thread_t thread;
     bool threadRunning = false;

@@ -933,6 +933,7 @@ public:
      * Create EGL Image.
      */
     EGLImageKHR createEGLImage(GLuint textureId) {
+        //TODO eglDestroyImageKHR(state->display, (EGLImageKHR) eglImage)
         return eglCreateImageKHR(display, context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)textureId, 0);
     }
 };
@@ -1050,6 +1051,8 @@ void AminoOmxVideoPlayer::omxThread(void *arg) {
 void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(data);
 
+    assert(player);
+
     if (DEBUG_OMX) {
         printf("OMX: handleFillBufferDone()\n");
     }
@@ -1117,9 +1120,9 @@ bool AminoOmxVideoPlayer::initOmx() {
         status = -14;
     }
 
-    if (clock) {
-        list[2] = clock;
+    list[2] = clock;
 
+    if (clock) {
         OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
         memset(&cstate, 0, sizeof(cstate));
@@ -1143,6 +1146,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     }
 
     list[3] = video_scheduler;
+
+    memset(tunnel, 0, sizeof(tunnel));
 
     set_tunnel(tunnel, video_decode, 131, video_scheduler, 10);
     set_tunnel(tunnel + 1, video_scheduler, 11, egl_render, 220);
@@ -1197,8 +1202,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     //loop
     if (status == 0) {
         OMX_BUFFERHEADERTYPE *buf;
-        int port_settings_changed = 0;
-        int first_packet = 1;
+        bool port_settings_changed = false;
+        bool first_packet = true;
 
         //executing
         ilclient_change_component_state(video_decode, OMX_StateExecuting);
@@ -1232,11 +1237,13 @@ bool AminoOmxVideoPlayer::initOmx() {
                 printf("OMX: data read %i\n", (int)data_len);
             }
 
-            if (port_settings_changed == 0 &&
+            if (!port_settings_changed &&
                 ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
                 (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
                 //process once
-                port_settings_changed = 1;
+                port_settings_changed = true;
+
+                //cbx FIXME never called!!!
 
                 if (DEBUG_OMX) {
                     printf("OMX: egl_render setup\n");
@@ -1316,7 +1323,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
             if (first_packet) {
                 buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
-                first_packet = 0;
+                first_packet = false;
             } else {
                 buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
             }
