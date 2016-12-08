@@ -933,6 +933,7 @@ ImageView.prototype.init = function () {
         image: null,
         opacity: 1.0,
 
+        position: 'center center',
         size: 'resize',
         repeat: 'no-repeat'
     });
@@ -943,16 +944,20 @@ ImageView.prototype.init = function () {
     //when the image is loaded, update the dimensions
     this.image.watch(texture => {
         //set size
-        applySize(texture, this.size());
+        applySize(texture, this.size(), this.position());
+    });
+
+    this.position.watch(pos => {
+        applySize(this.image(), this.size(), pos);
     });
 
     this.size.watch(mode => {
-        applySize(this.image(), mode);
+        applySize(this.image(), mode, this.position());
     });
 
     const self = this;
 
-    function applySize(texture, mode) {
+    function applySize(texture, mode, position) {
         switch (mode) {
             case 'resize':
                 if (texture) {
@@ -996,16 +1001,67 @@ ImageView.prototype.init = function () {
                     //debug
                     //console.log('fit ' + imgW + 'x' + imgH + ' to ' + w + 'x' + h);
 
+                    //position
+                    const pos = position.split(' ');
+                    let posHorz = 'center';
+                    let posVert = 'center';
+
+                    if (pos.length > 0) {
+                        const value = pos[0];
+
+                        if (value === 'left' || value === 'right') {
+                            posHorz = value;
+                        } else if (value === 'top' || value === 'bottom') {
+                            posVert = value;
+                        }
+                    }
+
+                    if (pos.length > 1) {
+                        const value = pos[1];
+
+                        if (value === 'top' || value === 'bottom') {
+                            posVert = value;
+                        }
+                    }
+
                     //center texture
-                    const horz = (imgW - w) / 2 / imgW;
 
-                    self.left(horz);
-                    self.right(1 - horz);
+                    // 1) horz
+                    if (posHorz === 'center') {
+                        const horz = (imgW - w) / 2 / imgW;
 
-                    const vert = (imgH - h) / 2 / imgH;
+                        self.left(horz);
+                        self.right(1 - horz);
+                    } else if (posHorz === 'left') {
+                        const horz = (imgW - w) / imgW;
 
-                    self.top(vert);
-                    self.bottom(1 - vert);
+                        self.left(0);
+                        self.right(1 - horz);
+                    } else if (posHorz === 'right') {
+                        const horz = (imgW - w) / imgW;
+
+                        self.left(horz);
+                        self.right(1);
+                    }
+
+
+                    // 2) vert
+                    if (posVert === 'center') {
+                        const vert = (imgH - h) / 2 / imgH;
+
+                        self.top(vert);
+                        self.bottom(1 - vert);
+                    } else if (posVert === 'top') {
+                        const vert = (imgH - h) / imgH;
+
+                        self.top(0);
+                        self.bottom(1 - vert);
+                    } else if (posVert === 'bottom') {
+                        const vert = (imgH - h) / imgH;
+
+                        self.top(vert);
+                        self.bottom(1);
+                    }
                 }
                 break;
         }

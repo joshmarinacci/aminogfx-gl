@@ -18,7 +18,11 @@ gfx.start(function (err) {
     video.src = path.join(__dirname, 'test.h264');
 
     //rect
-    const rect = this.createImageView().w(400).h(400).src(video);
+    const dispW = this.w();
+    const dispH = this.h();
+    const rect = this.createImageView().w(dispW).h(dispH).position('center top').size('contain').src(video);
+
+    console.log('display size: ' + dispW + 'x' + dispH);
 
     //cbx more
 
