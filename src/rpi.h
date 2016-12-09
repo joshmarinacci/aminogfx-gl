@@ -56,6 +56,7 @@ private:
     void setup() override;
     void initEGL();
 
+    TV_DISPLAY_STATE_T* getDisplayState();
     static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2);
 
     void destroy() override;
