@@ -452,8 +452,8 @@ bool AminoOmxVideoPlayer::initOmx() {
 /**
  * Initialize texture on OpenGL thread.
  */
-void AminoOmxVideoPlayer::initVideoTexture(AsyncValueUpdate *update, int state) {
-    if (state != AsyncValueUpdate::STATE_APPLY) {
+void AminoOmxVideoPlayer::initVideoTexture(AminoJSObject::AsyncValueUpdate *update, int state) {
+    if (state != AminoJSObject::AsyncValueUpdate::STATE_APPLY) {
         return;
     }
 

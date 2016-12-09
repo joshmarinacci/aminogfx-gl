@@ -1,7 +1,6 @@
 #ifndef _AMINO_RPI_VIDEO_H
 #define _AMINO_RPI_VIDEO_H
 
-#include "base_js.h"
 #include "base.h"
 
 extern "C" {
@@ -64,7 +63,7 @@ public:
     bool initOmx();
     void destroyOmx();
 
-    static void initVideoTexture(AsyncValueUpdate *update, int state);
+    static void initVideoTexture(AminoJSObject::AsyncValueUpdate *update, int state);
     static void textureThread(void *arg);
     bool useTexture();
 
