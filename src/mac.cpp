@@ -687,11 +687,7 @@ AminoJSObject* AminoGfxMacFactory::create() {
  */
 void AminoMacVideoPlayer::init() {
     lastError = "videos not supported";
-
-    //debug
-    printf("file: %s\n", fileName.c_str());
-
-    texture->videoPlayerInitDone();
+    handleInitDone(false);
 }
 
 void exitHandler(void *arg) {

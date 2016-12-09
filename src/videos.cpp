@@ -119,16 +119,21 @@ AminoJSObject* AminoVideoFactory::create() {
 //  AminoVideoPlayer
 //
 
+/**
+ * Constructor.
+ */
 AminoVideoPlayer::AminoVideoPlayer(AminoTexture *texture, AminoVideo *video): texture(texture), video(video) {
     //check source
-    if (video->isLocalFile()) {
-        fileName = video->getLocalFile();
-    } else {
+    if (!video->isLocalFile()) {
         lastError = "unknown source";
     }
 }
 
+/**
+ * Destructor.
+ */
 AminoVideoPlayer::~AminoVideoPlayer() {
+    //destroy player instance
     destroyAminoVideoPlayer();
 }
 
@@ -168,4 +173,46 @@ std::string AminoVideoPlayer::getLastError() {
 void AminoVideoPlayer::getVideoDimension(int &w, int &h) {
     w = videoW;
     h = videoH;
+}
+
+/**
+ * Playback ended.
+ */
+void AminoVideoPlayer::handlePlaybackDone() {
+    if (playing) {
+        playing = false;
+
+        if (DEBUG_VIDEOS) {
+            printf("video: playback done\n");
+        }
+
+        //TODO send event
+    }
+}
+
+/**
+ * Playback failed.
+ */
+void AminoVideoPlayer::handlePlaybackError() {
+    //stop
+    handlePlaybackDone();
+
+    //TODO send event
+}
+
+/**
+ * Video is ready for playback.
+ */
+void AminoVideoPlayer::handleInitDone(bool ready) {
+    if (initDone) {
+        return;
+    }
+
+    initDone = true;
+
+    if (DEBUG_VIDEOS) {
+        printf("video: init done\n");
+    }
+
+    texture->videoPlayerInitDone();
 }

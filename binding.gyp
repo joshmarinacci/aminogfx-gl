@@ -86,7 +86,8 @@
 		                    "sources": [
                                 "src/ilclient/ilclient.c",
                                 "src/ilclient/ilcore.c",
-		                        "src/rpi.cpp"
+		                        "src/rpi.cpp",
+                                "src/rpi_video.cpp"
 		                    ],
 		                    "libraries": [
 		                        "-L/opt/vc/lib/",

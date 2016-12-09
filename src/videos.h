@@ -65,15 +65,23 @@ protected:
     AminoVideo *video;
 
     //state
+    bool initDone = false;
     bool ready = false;
+    bool playing = false;
+    bool destroyed = false;
     std::string lastError;
 
-    //local file
-    std::string fileName;
+    //settings
+    bool loop = true;
 
     //video
     int videoW = 0;
     int videoH = 0;
+
+    void handlePlaybackDone();
+    void handlePlaybackError();
+
+    void handleInitDone(bool ready);
 };
 
 #endif
