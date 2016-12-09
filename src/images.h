@@ -83,6 +83,7 @@ public:
     static v8::Local<v8::Function> GetInitFunction();
 
     //video
+    void initVideoTexture();
     void videoPlayerInitDone();
 
 private:
@@ -109,6 +110,7 @@ private:
     void createTextureFromBuffer(AsyncValueUpdate *update, int state);
     void createTextureFromFont(AsyncValueUpdate *update, int state);
 
+    void initVideoTextureHandler(AsyncValueUpdate *update, int state);
     void handleVideoPlayerInitDone(JSCallbackUpdate *update);
 };
 

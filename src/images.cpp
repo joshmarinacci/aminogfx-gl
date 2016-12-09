@@ -1199,6 +1199,27 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
 }
 
 /**
+ * Prepare OpenGL callback.
+ */
+void AminoTexture::initVideoTexture() {
+    //enqueue
+    enqueueValueUpdate(0, this, static_cast<asyncValueCallback>(&AminoTexture::initVideoTextureHandler));
+}
+
+/**
+ * Initialize texture on OpenGL thread.
+ */
+void AminoOmxVideoPlayer::initVideoTextureHandler(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    assert(videoPlayer);
+
+    videoPlayer->initVideoTexture();
+}
+
+/**
  * Video player init failed
  */
 void AminoTexture::videoPlayerInitDone() {

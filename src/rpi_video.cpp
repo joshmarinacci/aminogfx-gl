@@ -385,7 +385,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                 }
 
                 //switch to renderer thread
-                texture->enqueueValueUpdate(0, this, static_cast<asyncValueCallback>(&AminoOmxVideoPlayer::initVideoTexture));
+                texture->initVideoTexture();
             }
 
             if (!data_len) {
@@ -450,11 +450,11 @@ bool AminoOmxVideoPlayer::initOmx() {
 }
 
 /**
- * Initialize texture on OpenGL thread.
+ * Init video texture on OpenGL thread.
  */
-void AminoOmxVideoPlayer::initVideoTexture(AminoJSObject::AsyncValueUpdate *update, int state) {
-    if (state != AminoJSObject::AsyncValueUpdate::STATE_APPLY) {
-        return;
+void AminoOmxVideoPlayer::initVideoTexture() {
+    if (DEBUG_VIDEOS) {
+        printf("video: init video texture\n");
     }
 
     if (!initTexture()) {

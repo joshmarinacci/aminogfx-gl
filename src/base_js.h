@@ -341,6 +341,7 @@ protected:
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
     bool enqueueValueUpdate(unsigned int value, void *data, asyncValueCallback callback);
     bool enqueueValueUpdate(v8::Local<v8::Value> &value, void *data, asyncValueCallback callback);
+
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     class JSPropertyUpdate: public AnyAsyncUpdate {

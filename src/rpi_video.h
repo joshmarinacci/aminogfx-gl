@@ -63,7 +63,7 @@ public:
     bool initOmx();
     void destroyOmx();
 
-    static void initVideoTexture(AminoJSObject::AsyncValueUpdate *update, int state);
+    void initVideoTexture();
     static void textureThread(void *arg);
     bool useTexture();
 
