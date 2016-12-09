@@ -20,7 +20,7 @@ AnyVideoStream::~AnyVideoStream() {
     //empty
 }
 
-std:string AnyVideoStream::getLastError() {
+std::string AnyVideoStream::getLastError() {
     return lastError;
 }
 

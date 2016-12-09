@@ -1,6 +1,7 @@
 #ifndef _AMINO_RPI_VIDEO_H
 #define _AMINO_RPI_VIDEO_H
 
+#include "base_js.h"
 #include "base.h"
 
 extern "C" {
@@ -21,10 +22,10 @@ public:
     virtual bool endOfStream() = 0;
     virtual bool rewind() = 0;
 
-    std:string getLastError();
+    std::string getLastError();
 protected:
     std::string lastError;
-}
+};
 
 /**
  * Video file stream.
@@ -42,7 +43,7 @@ private:
 
     bool endOfStream() override;
     bool rewind() override;
-}
+};
 
 /**
  * OMX Video Player.
@@ -63,7 +64,7 @@ public:
     bool initOmx();
     void destroyOmx();
 
-    static void initVideoTexture(AsyncValueUpdate *update, int state) {
+    static void initVideoTexture(AsyncValueUpdate *update, int state);
     static void textureThread(void *arg);
     bool useTexture();
 
