@@ -37,7 +37,7 @@ std::string AnyVideoStream::getLastError() {
 // VideoFileStream
 //
 
-VideoFileStream::VideoFileStream(std::string filename): filename(filename) {
+VideoFileStream::VideoFileStream(std::string filename): AnyVideoStream(), filename(filename) {
     if (DEBUG_OMX) {
         printf("create video file stream\n");
     }
@@ -139,15 +139,16 @@ bool AminoOmxVideoPlayer::initStream() {
 
     assert(video);
     assert(!stream);
-
+printf("cbx1\n");
     if (video->isLocalFile()) {
         //local file
+printf("cbx2\n");
         stream = new VideoFileStream(video->getLocalFile());
     } else {
         //error
         lastError = "unknown source";
     }
-
+printf("cbx3\n");
     if (stream) {
         if (!stream->init()) {
             lastError = stream->getLastError();
