@@ -16,6 +16,7 @@ public:
     AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video);
 
     void init() override;
+    void initVideoTexture() override;
 };
 
 #endif

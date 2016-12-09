@@ -1209,7 +1209,7 @@ void AminoTexture::initVideoTexture() {
 /**
  * Initialize texture on OpenGL thread.
  */
-void AminoOmxVideoPlayer::initVideoTextureHandler(AsyncValueUpdate *update, int state) {
+void AminoTexture::initVideoTextureHandler(AsyncValueUpdate *update, int state) {
     if (state != AsyncValueUpdate::STATE_APPLY) {
         return;
     }

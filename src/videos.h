@@ -53,6 +53,7 @@ public:
     virtual ~AminoVideoPlayer();
 
     virtual void init() = 0;
+    virtual void initVideoTexture() = 0;
     virtual void destroy();
     void destroyAminoVideoPlayer();
 

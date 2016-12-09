@@ -63,7 +63,7 @@ public:
     bool initOmx();
     void destroyOmx();
 
-    void initVideoTexture();
+    void initVideoTexture() override;
     static void textureThread(void *arg);
     bool useTexture();
 
