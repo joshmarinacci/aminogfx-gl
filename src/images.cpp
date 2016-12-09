@@ -1122,6 +1122,10 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
     obj->video = video;
 
     //create player
+    if (DEBUG_VIDEOS) {
+        printf("creating video player\n");
+    }
+
     obj->videoPlayer = (static_cast<AminoGfx *>(obj->eventHandler))->createVideoPlayer(obj, video);
 
     if (DEBUG_BASE) {
@@ -1172,6 +1176,10 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
 
             //initialize
             if (videoPlayer) {
+                if (DEBUG_VIDEOS) {
+                    printf("-> init video player\n");
+                }
+
                 videoPlayer->init();
             }
 

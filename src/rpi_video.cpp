@@ -35,6 +35,10 @@ std::string AnyVideoStream::getLastError() {
 //
 
 VideoFileStream::VideoFileStream(std::string filename): filename(filename) {
+    if (DEBUG_OMX) {
+        printf("create video file stream\n");
+    }
+
     //empty
 }
 
@@ -49,6 +53,10 @@ VideoFileStream::~VideoFileStream() {
  * Open the file.
  */
 bool VideoFileStream::init() {
+    if (DEBUG_OMX) {
+        printf("-> init video file stream\n");
+    }
+
     file = fopen(filename.c_str(), "rb");
 
     if (!file) {
@@ -63,6 +71,10 @@ bool VideoFileStream::init() {
  * Rewind the file stream.
  */
 bool VideoFileStream::rewind() {
+    if (DEBUG_OMX) {
+        printf("-> rewind video file stream\n");
+    }
+
     std::rewind(file);
 
     return true;
@@ -184,6 +196,10 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
  */
 bool AminoOmxVideoPlayer::initOmx() {
     int status = 0;
+
+    if (DEBUG_OMX) {
+        printf("-> init OMX\n");
+    }
 
     //init il client
     client = ilclient_init();
