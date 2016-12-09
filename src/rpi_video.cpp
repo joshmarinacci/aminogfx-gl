@@ -1,4 +1,5 @@
 #include "rpi_video.h"
+#include "rpi.h"
 
 #include "bcm_host.h"
 #include "interface/vchiq_arm/vchiq_if.h"
@@ -133,6 +134,16 @@ bool AminoOmxVideoPlayer::initStream() {
 }
 
 /**
+ * Close the stream.
+ */
+void AminoOmxVideoPlayer::closeStream() {
+    if (stream) {
+        delete stream;
+        stream = NULL;
+    }
+}
+
+/**
  * OMX thread.
  */
 void AminoOmxVideoPlayer::omxThread(void *arg) {
@@ -144,10 +155,7 @@ void AminoOmxVideoPlayer::omxThread(void *arg) {
     player->initOmx();
 
     //close stream
-    if (stream) {
-        delete stream;
-        stream = NULL;
-    }
+    player->closeStream();
 
     //done
     player->threadRunning = false;
@@ -344,7 +352,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             }
 
             //read from file
-            unsigned int data_len = streamd->read(dest, buf->nAllocLen);
+            unsigned int data_len = stream->read(dest, buf->nAllocLen);
 
             if (DEBUG_OMX_READ) {
                 printf("OMX: data read %i\n", (int)data_len);
@@ -507,13 +515,11 @@ bool AminoOmxVideoPlayer::useTexture() {
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
     if (OMX_SendCommand(ILC_GET_HANDLE(egl_render), OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
         lastError = "OMX_CommandPortEnable failed.";
-        status = -21;
         return false;
     }
 
     if (OMX_UseEGLImage(ILC_GET_HANDLE(egl_render), &eglBuffer, 221, NULL, eglImage) != OMX_ErrorNone) {
         lastError = "OMX_UseEGLImage failed.";
-        status = -22;
         return false;
     }
 
@@ -531,7 +537,6 @@ bool AminoOmxVideoPlayer::useTexture() {
     //request egl_render to write data to the texture buffer
     if (OMX_FillThisBuffer(ILC_GET_HANDLE(egl_render), eglBuffer) != OMX_ErrorNone) {
         lastError = "OMX_FillThisBuffer failed.";
-        status = -23;
         return false;
     }
 

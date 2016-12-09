@@ -35,15 +35,15 @@ public:
     VideoFileStream(std::string filename);
     ~VideoFileStream();
 
-private:
-    std::string filename;
-    FILE *file = NULL;
-
     bool init() override;
 
     bool endOfStream() override;
     bool rewind() override;
     unsigned int read(unsigned char *dest, unsigned int length) override;
+
+private:
+    std::string filename;
+    FILE *file = NULL;
 };
 
 /**
@@ -58,6 +58,7 @@ public:
 
     //stream
     bool initStream();
+    void closeStream();
 
     //OMX
     static void omxThread(void *arg);
