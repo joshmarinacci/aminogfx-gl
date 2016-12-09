@@ -35,7 +35,7 @@ AminoGfxRPi::~AminoGfxRPi() {
 /**
  * Get factory instance.
  */
-static AminoGfxRPi::AminoGfxRPiFactory* getFactory() {
+AminoGfxRPiFactory* AminoGfxRPi::getFactory() {
     static AminoGfxRPiFactory *instance = NULL;
 
     if (!instance) {
@@ -48,7 +48,7 @@ static AminoGfxRPi::AminoGfxRPiFactory* getFactory() {
 /**
  * Add class template to module exports.
  */
-static NAN_MODULE_INIT(AminoGfxRPi::Init) {
+NAN_MODULE_INIT(AminoGfxRPi::Init) {
     AminoGfxRPiFactory *factory = getFactory();
 
     AminoGfx::Init(target, factory);
@@ -57,14 +57,14 @@ static NAN_MODULE_INIT(AminoGfxRPi::Init) {
 /**
  * JS object construction.
  */
-static NAN_METHOD(AminoGfxRPi::New) {
+NAN_METHOD(AminoGfxRPi::New) {
     AminoJSObject::createInstance(info, getFactory());
 }
 
 /**
  * Setup JS instance.
  */
-void AminoGfxRPi::setup() override {
+void AminoGfxRPi::setup() {
     if (DEBUG_GLES) {
         printf("AminoGfxRPi.setup()\n");
     }
@@ -212,7 +212,7 @@ void AminoGfxRPi::initEGL() {
     }
 }
 
-static TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
+TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
     /*
      * Get TV state.
      *
@@ -266,7 +266,7 @@ static TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
 /**
  * HDMI tvservice callback.
  */
-static void AminoGfxRPi::tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2) {
+void AminoGfxRPi::tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2) {
     //http://www.m2x.nl/videolan/vlc/blob/1d2b56c68bbc3287e17f6140bdf8c8c3efe08fdc/modules/hw/mmal/vout.c
 
     if (DEBUG_HDMI) {
@@ -291,7 +291,7 @@ static void AminoGfxRPi::tvservice_cb(void *callback_data, uint32_t reason, uint
 /**
  * Destroy GLFW instance.
  */
-void AminoGfxRPi::destroy() override {
+void AminoGfxRPi::destroy() {
     if (destroyed) {
         return;
     }
@@ -342,7 +342,7 @@ void AminoGfxRPi::destroyAminoGfxRPi() {
 /**
  * Get default monitor resolution.
  */
-bool AminoGfxRPi::getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) override {
+bool AminoGfxRPi::getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) {
     if (DEBUG_GLES) {
         printf("getScreenInfo\n");
     }
@@ -395,7 +395,7 @@ void AminoGfxRPi::forceHdmiMode(uint32_t code) {
 /**
  * Add VideoCore IV properties.
  */
-void AminoGfxRPi::populateRuntimeProperties(v8::Local<v8::Object> &obj) override {
+void AminoGfxRPi::populateRuntimeProperties(v8::Local<v8::Object> &obj) {
     if (DEBUG_GLES) {
         printf("populateRuntimeProperties\n");
     }
@@ -410,7 +410,7 @@ void AminoGfxRPi::populateRuntimeProperties(v8::Local<v8::Object> &obj) override
 /**
  * Initialize OpenGL ES.
  */
-void AminoGfxRPi::initRenderer() override {
+void AminoGfxRPi::initRenderer() {
     if (DEBUG_GLES) {
         printf("initRenderer()\n");
     }
@@ -623,7 +623,7 @@ void AminoGfxRPi::initInput() {
     }
 }
 
-void AminoGfxRPi::start() override {
+void AminoGfxRPi::start() {
     //ready to get control back to JS code
     ready();
 
@@ -631,7 +631,7 @@ void AminoGfxRPi::start() override {
     eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 }
 
-bool AminoGfxRPi::bindContext() override {
+bool AminoGfxRPi::bindContext() {
     //bind OpenGL context
     if (surface == EGL_NO_SURFACE) {
         return false;
@@ -644,7 +644,7 @@ bool AminoGfxRPi::bindContext() override {
     return true;
 }
 
-void AminoGfxRPi::renderingDone() override {
+void AminoGfxRPi::renderingDone() {
     if (DEBUG_GLES) {
         printf("renderingDone()\n");
     }
@@ -655,7 +655,7 @@ void AminoGfxRPi::renderingDone() override {
     assert(res == EGL_TRUE);
 }
 
-void AminoGfxRPi::handleSystemEvents() override {
+void AminoGfxRPi::handleSystemEvents() {
     //handle events
     processInputs();
 }
@@ -836,7 +836,7 @@ void AminoGfxRPi::dump_event(struct input_event *event) {
  *
  * Note: has to be called on main thread
  */
-void AminoGfxRPi::updateWindowSize() override {
+void AminoGfxRPi::updateWindowSize() {
     //not supported
 
     //reset to screen values
@@ -849,7 +849,7 @@ void AminoGfxRPi::updateWindowSize() override {
  *
  * Note: has to be called on main thread
  */
-void AminoGfxRPi::updateWindowPosition() override {
+void AminoGfxRPi::updateWindowPosition() {
     //not supported
     propX->setValue(0);
     propY->setValue(0);
@@ -860,14 +860,14 @@ void AminoGfxRPi::updateWindowPosition() override {
  *
  * Note: has to be called on main thread
  */
-void AminoGfxRPi::updateWindowTitle() override {
+void AminoGfxRPi::updateWindowTitle() {
     //not supported
 }
 
 /**
  * Shared atlas texture has changed.
  */
-void AminoGfxRPi::atlasTextureHasChanged(texture_atlas_t *atlas) override {
+void AminoGfxRPi::atlasTextureHasChanged(texture_atlas_t *atlas) {
     //check single instance case
     if (instanceCount == 1) {
         return;
@@ -896,7 +896,7 @@ void AminoGfxRPi::atlasTextureHasChangedHandler(JSCallbackUpdate *update) {
 /**
  * Create video player.
  */
-AminoVideoPlayer* AminoGfxRPi::createVideoPlayer(AminoTexture *texture, AminoVideo *video) override {
+AminoVideoPlayer* AminoGfxRPi::createVideoPlayer(AminoTexture *texture, AminoVideo *video) {
     return new AminoOmxVideoPlayer(texture, video);
 }
 

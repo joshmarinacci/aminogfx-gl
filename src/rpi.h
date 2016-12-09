@@ -57,7 +57,6 @@ private:
     void initEGL();
 
     static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2);
-    static void tvservice_cb(void *callback_data, uint32_t reason, uint32_t param1, uint32_t param2);
 
     void destroy() override;
     void destroyAminoGfxRPi();
