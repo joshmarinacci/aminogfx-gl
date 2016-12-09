@@ -20,6 +20,7 @@ public:
 
     virtual bool endOfStream() = 0;
     virtual bool rewind() = 0;
+    virtual unsigned int read(unsigned char *dest, unsigned int length) = 0;
 
     std::string getLastError();
 protected:
@@ -42,6 +43,7 @@ private:
 
     bool endOfStream() override;
     bool rewind() override;
+    unsigned int read(unsigned char *dest, unsigned int length) override;
 };
 
 /**

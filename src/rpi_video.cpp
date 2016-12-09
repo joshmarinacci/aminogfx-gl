@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <semaphore.h>
 
+//cbx
+#define DEBUG_OMX true
+#define DEBUG_OMX_READ false
+#define DEBUG_OMX_BUFFER false
+
 //
 // AnyVideoStream
 //
@@ -57,9 +62,16 @@ bool VideoFileStream::init() {
  * Rewind the file stream.
  */
 bool VideoFileStream::rewind() {
-    rewind(file);
+    std::rewind(file);
 
     return true;
+}
+
+/**
+ * Read from the stream.
+ */
+unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
+    return fread(dest, 1, length, file);
 }
 
 /**
@@ -110,8 +122,8 @@ bool AminoOmxVideoPlayer::initStream() {
     }
 
     if (stream) {
-        if (!stream.init()) {
-            lastError = stream.getLastError();
+        if (!stream->init()) {
+            lastError = stream->getLastError();
             delete stream;
             stream = NULL;
         }
@@ -130,6 +142,12 @@ void AminoOmxVideoPlayer::omxThread(void *arg) {
 
     //init OMX
     player->initOmx();
+
+    //close stream
+    if (stream) {
+        delete stream;
+        stream = NULL;
+    }
 
     //done
     player->threadRunning = false;
@@ -163,8 +181,6 @@ bool AminoOmxVideoPlayer::initOmx() {
     client = ilclient_init();
 
     if (!client) {
-        fclose(file);
-
         lastError = "could not initialize ilclient";
 
         return false;
@@ -173,7 +189,6 @@ bool AminoOmxVideoPlayer::initOmx() {
     //init OMX
     if (OMX_Init() != OMX_ErrorNone) {
         ilclient_destroy(client);
-        fclose(file);
 
         lastError = "could not initialize OMX";
 
@@ -265,7 +280,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         format.nSize = sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE);
         format.nVersion.nVersion = OMX_VERSION;
         format.nPortIndex = 130;
-        format.eCompressionFormat = OMX_VIDEO_CodingAVC;
+        format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
 
         if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) != OMX_ErrorNone) {
             lastError = "could not set video format";
@@ -329,7 +344,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             }
 
             //read from file
-            unsigned int data_len = fread(dest, 1, buf->nAllocLen, file);
+            unsigned int data_len = streamd->read(dest, buf->nAllocLen);
 
             if (DEBUG_OMX_READ) {
                 printf("OMX: data read %i\n", (int)data_len);
@@ -481,13 +496,13 @@ void AminoOmxVideoPlayer::textureThread(void *arg) {
 
     bool res = player->useTexture();
 
-    handleInitDone(res);
+    player->handleInitDone(res);
 }
 
 /**
  * Setup texture.
  */
-void AminoOmxVideoPlayer::useTexture() {
+bool AminoOmxVideoPlayer::useTexture() {
     //Enable the output port and tell egl_render to use the texture as a buffer
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
     if (OMX_SendCommand(ILC_GET_HANDLE(egl_render), OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
