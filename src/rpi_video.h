@@ -23,6 +23,7 @@ public:
     virtual unsigned int read(unsigned char *dest, unsigned int length) = 0;
 
     std::string getLastError();
+
 protected:
     std::string lastError;
 };

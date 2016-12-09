@@ -214,5 +214,7 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
         printf("video: init done\n");
     }
 
+    assert(texture);
+
     texture->videoPlayerInitDone();
 }

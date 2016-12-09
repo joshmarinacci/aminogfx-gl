@@ -26,6 +26,9 @@ AnyVideoStream::~AnyVideoStream() {
     //empty
 }
 
+/**
+ * Get last error.
+ */
 std::string AnyVideoStream::getLastError() {
     return lastError;
 }
@@ -108,6 +111,10 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
 void AminoOmxVideoPlayer::init() {
     //we are on the OpenGL thread
 
+    if (DEBUG_OMX) {
+        printf("-> init OMX video player\n");
+    }
+
     //stream
     if (!initStream()) {
         handleInitDone(false);
@@ -126,6 +133,13 @@ void AminoOmxVideoPlayer::init() {
  * Init video stream.
  */
 bool AminoOmxVideoPlayer::initStream() {
+    if (DEBUG_OMX) {
+        printf("-> init stream\n");
+    }
+
+    assert(video);
+    assert(!stream);
+
     if (video->isLocalFile()) {
         //local file
         stream = new VideoFileStream(video->getLocalFile());
