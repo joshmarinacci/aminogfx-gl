@@ -683,6 +683,14 @@ AminoJSObject* AminoGfxMacFactory::create() {
 //
 
 /**
+ * Initialize the stream.
+ */
+bool AminoMacVideoPlayer::initStream() {
+    lastError = "videos not supported";
+    return false;
+}
+
+/**
  * Initialize the video player.
  */
 void AminoMacVideoPlayer::init() {

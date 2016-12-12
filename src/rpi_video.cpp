@@ -116,8 +116,15 @@ void AminoOmxVideoPlayer::init() {
     }
 
     //stream
-    if (!initStream()) {
+    assert(stream);
+
+    if (!stream->init()) {
+        lastError = stream->getLastError();
+        delete stream;
+        stream = NULL;
+
         handleInitDone(false);
+
         return;
     }
 
@@ -139,22 +146,13 @@ bool AminoOmxVideoPlayer::initStream() {
 
     assert(video);
     assert(!stream);
-printf("cbx1\n");
+
     if (video->isLocalFile()) {
         //local file
-printf("cbx2\n");
         stream = new VideoFileStream(video->getLocalFile());
     } else {
         //error
         lastError = "unknown source";
-    }
-printf("cbx3\n");
-    if (stream) {
-        if (!stream->init()) {
-            lastError = stream->getLastError();
-            delete stream;
-            stream = NULL;
-        }
     }
 
     return stream != NULL;

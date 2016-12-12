@@ -15,6 +15,7 @@ class AminoMacVideoPlayer : public AminoVideoPlayer {
 public:
     AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video);
 
+    bool initStream() override;
     void init() override;
     void initVideoTexture() override;
 };

@@ -52,6 +52,7 @@ public:
     AminoVideoPlayer(AminoTexture *texture, AminoVideo *video);
     virtual ~AminoVideoPlayer();
 
+    virtual bool initStream() = 0;
     virtual void init() = 0;
     virtual void initVideoTexture() = 0;
     virtual void destroy();

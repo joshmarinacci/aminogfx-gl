@@ -58,7 +58,7 @@ public:
     bool initTexture();
 
     //stream
-    bool initStream();
+    bool initStream() override;
     void closeStream();
 
     //OMX

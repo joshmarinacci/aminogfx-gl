@@ -32,6 +32,8 @@ bool AminoVideo::hasVideo() {
 
 /**
  * Check if local file.
+ *
+ * Note: must be called on main thread!
  */
 bool AminoVideo::isLocalFile() {
     std::string fileName = getLocalFile();
@@ -41,6 +43,8 @@ bool AminoVideo::isLocalFile() {
 
 /**
  * Get local file name.
+ *
+ * Note: must be called on main thread!
  */
 std::string AminoVideo::getLocalFile() {
     Nan::MaybeLocal<v8::Value> srcValue = Nan::Get(handle(), Nan::New<v8::String>("src").ToLocalChecked());
@@ -121,6 +125,8 @@ AminoJSObject* AminoVideoFactory::create() {
 
 /**
  * Constructor.
+ *
+ * Note: has to be called on main thread!
  */
 AminoVideoPlayer::AminoVideoPlayer(AminoTexture *texture, AminoVideo *video): texture(texture), video(video) {
     //check source

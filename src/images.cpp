@@ -1128,17 +1128,34 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
     obj->videoPlayer = (static_cast<AminoGfx *>(obj->eventHandler))->createVideoPlayer(obj, video);
 
+    assert(obj->videoPlayer);
+
+    if (!obj->videoPlayer->initStream()) {
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error(obj->videoPlayer->getLastError().c_str()) };
+
+        callback->Call(info.This(), argc, argv);
+
+        delete obj->videoPlayer;
+        obj->videoPlayer = NULL;
+
+        return;
+    }
+
     if (DEBUG_BASE) {
         printf("enqueue: create video texture\n");
     }
 
     //async loading (OpenGL thread)
     obj->callback = new Nan::Callback(callback);
+
     obj->enqueueValueUpdate(video, static_cast<asyncValueCallback>(&AminoTexture::createVideoTexture));
 }
 
 /**
  * Create video texture.
+ *
+ * Note: on OpenGL thread.
  */
 void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
     if (state == AsyncValueUpdate::STATE_APPLY) {
