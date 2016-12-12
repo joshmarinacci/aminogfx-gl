@@ -215,9 +215,10 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
     }
 
     initDone = true;
+    this->ready = ready;
 
     if (DEBUG_VIDEOS) {
-        printf("video: init done\n");
+        printf("video: init done (ready: %s)\n", ready ? "true":"false");
     }
 
     assert(texture);
