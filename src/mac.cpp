@@ -698,6 +698,17 @@ void AminoMacVideoPlayer::init() {
     handleInitDone(false);
 }
 
+/**
+ * Init video texture on OpenGL thread.
+ */
+void AminoMacVideoPlayer::initVideoTexture() {
+    //ignored
+}
+
+//
+// Exit handler
+//
+
 void exitHandler(void *arg) {
     //Note: not called on Ctrl-C (use process.on('SIGINT', ...))
     if (DEBUG_BASE) {

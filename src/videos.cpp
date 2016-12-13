@@ -155,7 +155,7 @@ void AminoVideoPlayer::destroy() {
 /**
  * Destroy the video player.
  */
-void destroyAminoVideoPlayer() {
+void AminoVideoPlayer::destroyAminoVideoPlayer() {
     //empty
 }
 
