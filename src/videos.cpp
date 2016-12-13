@@ -2,6 +2,10 @@
 #include "base.h"
 #include "images.h"
 
+extern "C" {
+    #include "libavformat/avformat.h"
+}
+
 //
 // AminoVideo
 //
@@ -224,4 +228,93 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
     assert(texture);
 
     texture->videoPlayerInitDone();
+}
+
+//
+// VideoDemuxer
+//
+
+VideoDemuxer::VideoDemuxer() {
+    //empty
+}
+
+VideoDemuxer::~VideoDemuxer() {
+    //empty
+}
+
+/**
+ * Initialize the demuxer.
+ */
+bool VideoDemuxer::init() {
+    //register all codecs and formats
+    av_register_all();
+
+    return true;
+}
+
+/**
+ * Load a video from a file.
+ */
+bool VideoDemuxer::loadFile(std::string filename) {
+    const char *file = filename.c_str();
+    AVFormatContext *context = avformat_alloc_context();
+
+    if (avformat_open_input(&context, file, 0, NULL) != 0) {
+        lastError = "file open error";
+        avformat_close_input(&context);
+        return false;
+    }
+
+    //find stream
+    if (avformat_find_stream_info(context, NULL) < 0) {
+        lastError = "could not find streams";
+        avformat_close_input(&context);
+        return false;
+    }
+
+    //debug
+    if (DEBUG_VIDEOS) {
+        av_dump_format(context, 0, file, 0);
+    }
+
+    //get video stream
+    int videoStream = -1;
+
+    for (unsigned int i = 0; i < context->nb_streams; i++) {
+        if (context->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            videoStream = i;
+            break;
+        }
+    }
+
+    if (videoStream == -1) {
+        lastError = "not a video";
+        avformat_close_input(&context);
+        return false;
+    }
+
+    //debug
+    if (DEBUG_VIDEOS) {
+        AVStream *stream = context->streams[videoStream];
+        int64_t duration = stream->duration;
+
+        printf("video found: duration=%i s\n", (int)duration * stream->time_base.num / stream->time_base.den);
+
+        if (stream->codecpar->codec_id == AV_CODEC_ID_H264) {
+            printf(" -> H264\n");
+        }
+    }
+
+    //cbx
+
+    avformat_close_input(&context);
+
+    return true;
+}
+
+/**
+ * Get the last error.
+ */
+std::string VideoDemuxer::getLastError() {
+    return lastError;
 }

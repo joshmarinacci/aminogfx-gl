@@ -686,14 +686,24 @@ AminoJSObject* AminoGfxMacFactory::create() {
  * Initialize the stream.
  */
 bool AminoMacVideoPlayer::initStream() {
-    lastError = "videos not supported";
-    return false;
+    //get file name
+    filename = video->getLocalFile();
+
+    return true;
 }
 
 /**
  * Initialize the video player.
  */
 void AminoMacVideoPlayer::init() {
+    //cbx test
+    VideoDemuxer *demuxer = new VideoDemuxer();
+
+    demuxer->init();
+    demuxer->loadFile(filename);
+    delete demuxer;
+
+    //stop
     lastError = "videos not supported";
     handleInitDone(false);
 }

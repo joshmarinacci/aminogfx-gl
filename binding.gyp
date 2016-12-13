@@ -54,7 +54,9 @@
                         '-framework IOKit',
                         '<!@(freetype-config --libs)',
                         '-ljpeg',
-                        '-lpng'
+                        '-lpng',
+                        '-lavcodec',
+                        '-lavformat'
                     ],
                     "sources": [
                         "src/mac.cpp",
@@ -99,7 +101,9 @@
                                 "-lvchiq_arm",
 		                        '<!@(freetype-config --libs)',
                                 "-ljpeg",
-                                "-lpng"
+                                "-lpng",
+                                '-lavcodec',
+                                '-lavformat'
 		                    ],
 		                    "defines": [
 		                        "RPI"

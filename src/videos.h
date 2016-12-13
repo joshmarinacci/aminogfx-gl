@@ -52,8 +52,8 @@ public:
     AminoVideoPlayer(AminoTexture *texture, AminoVideo *video);
     virtual ~AminoVideoPlayer();
 
-    virtual bool initStream() = 0;
-    virtual void init() = 0;
+    virtual bool initStream() = 0; //called on main thread
+    virtual void init() = 0; //called on OpenGL thread
     virtual void initVideoTexture() = 0;
     virtual void destroy();
     void destroyAminoVideoPlayer();
@@ -84,6 +84,23 @@ protected:
     void handlePlaybackError();
 
     void handleInitDone(bool ready);
+};
+
+/**
+ * Demux a video container.
+ */
+class VideoDemuxer {
+public:
+    VideoDemuxer();
+    virtual ~VideoDemuxer();
+
+    bool init();
+    bool loadFile(std::string filename);
+
+    std::string getLastError();
+
+private:
+    std::string lastError;
 };
 
 #endif
