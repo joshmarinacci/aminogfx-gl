@@ -24,12 +24,12 @@
     "onecolor": "^3.0.4",
     "request": "^2.75.0"
   },
-  "author": {
-    "name": "Josh Marinacci",
-    "email": "joshua@marinacci.org",
-    "url": "http://joshondesign.com/"
-  },
-  "contributors": [
+  "maintainers": [
+    {
+      "name": "Josh Marinacci",
+      "email": "joshua@marinacci.org",
+      "url": "http://joshondesign.com/"
+    },
     {
       "name": "Christoph Bratschi",
       "email": "bratschi@appamics.com",
