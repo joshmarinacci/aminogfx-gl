@@ -52,6 +52,7 @@ protected:
     //stats
     static int activeInstances;
     static int totalInstances;
+    static std::vector<AminoJSObject *> jsInstances;
 
     AminoJSObject(std::string name);
     ~AminoJSObject();
