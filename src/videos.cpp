@@ -281,7 +281,8 @@ bool VideoDemuxer::loadFile(std::string filename) {
     int videoStream = -1;
 
     for (unsigned int i = 0; i < context->nb_streams; i++) {
-        if (context->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+        //FIXME warning on macOS (codecpar not available on RPi)
+        if (context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             videoStream = i;
             break;
         }
@@ -300,7 +301,8 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
         printf("video found: duration=%i s\n", (int)duration * stream->time_base.num / stream->time_base.den);
 
-        if (stream->codecpar->codec_id == AV_CODEC_ID_H264) {
+        //FIXME warning on macOS (codecpar not available on RPi)
+        if (stream->codec->codec_id == AV_CODEC_ID_H264) {
             printf(" -> H264\n");
         }
     }
