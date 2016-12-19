@@ -1698,6 +1698,40 @@ public:
     }
 
     ~AminoGroup() {
+        if (!destroyed) {
+            destroyAminoGroup();
+        }
+    }
+
+    /**
+     * Free all resources.
+     */
+    void destroy() override {
+        if (destroyed) {
+            return;
+        }
+
+        //instance
+        destroyAminoGroup();
+
+        //base
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free children.
+     */
+    void destroyAminoGroup() {
+        //free children references
+        std::size_t count = children.size();
+
+        for (std::size_t i = 0; i < count; i++) {
+            AminoNode *item = children[i];
+
+            item->release();
+        }
+
+        children.clear();
     }
 
     void setup() override {
@@ -1840,7 +1874,7 @@ private:
 
             assert(data);
 
-            //keep retained instance
+            //keep retained instance (retained before)
 
             if (DEBUG_BASE) {
                 printf("-> insertChild()\n");
@@ -1892,12 +1926,12 @@ private:
         //remove pointer
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
 
-        if (pos != children.end()) {
-            children.erase(pos);
+        assert(pos != children.end());
 
-            //remove strong reference (on main thread)
-            update->releaseLater = node;
-        }
+        children.erase(pos);
+
+        //remove strong reference (on main thread)
+        update->releaseLater = node;
     }
 };
 

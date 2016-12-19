@@ -673,13 +673,20 @@ Group.prototype.insertAfter = function (item, sibling) {
 /**
  * Remove one or more children from this group.
  */
-Group.prototype.remove = function (child) {
-    const n = this.children.indexOf(child);
+Group.prototype.remove = function () {
+    const count = arguments.length;
 
-    if (n >=  0) {
-        this._remove(child);
-        this.children.splice(n, 1);
-        child.parent = null;
+    for (let i = 0; i < count; i++) {
+        const child = arguments[i];
+        const n = this.children.indexOf(child);
+
+        if (n >=  0) {
+            this._remove(child);
+            this.children.splice(n, 1);
+            child.parent = null;
+        } else {
+            throw new Error('not a child');
+        }
     }
 
     return this;
@@ -692,7 +699,10 @@ Group.prototype.clear = function () {
     const count = this.children.length;
 
     for (let i = 0; i < count; i++) {
-        this._remove(this.children[i]);
+        const child = this.children[i];
+
+        this._remove(child);
+        child.parent = null;
     }
 
     this.children = [];

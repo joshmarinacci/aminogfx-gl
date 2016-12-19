@@ -1543,6 +1543,7 @@ NAN_METHOD(AminoTexture::Destroy) {
 
     assert(obj);
 
+    //destroy instance
     obj->destroy();
 }
 
