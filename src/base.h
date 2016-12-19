@@ -719,6 +719,9 @@ public:
         }
     }
 
+    /**
+     * Handle JS constructor params.
+     */
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
         assert(info.Length() == 3);
 
@@ -819,6 +822,9 @@ public:
         AminoJSObject::createInstance(info, getFactory());
     }
 
+    /**
+     * Start animation.
+     */
     static NAN_METHOD(Start) {
         assert(info.Length() == 1);
 
@@ -830,6 +836,9 @@ public:
         obj->handleStart(data);
     }
 
+    /**
+     * Start animation.
+     */
     void handleStart(v8::Local<v8::Object> &data) {
         if (started) {
             Nan::ThrowTypeError("already started");
@@ -985,6 +994,9 @@ public:
     //TODO resume
     //TODO reset (start from beginning)
 
+    /**
+     * Stop and destroy animation.
+     */
     static NAN_METHOD(Stop) {
         AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
 
