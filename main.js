@@ -2465,6 +2465,8 @@ function makeProp(obj, name, val) {
         return this;
     };
 
+    //Note: no unbind method -> use prop.unwatchAll()
+
     //attach
     obj[name] = prop;
 };
