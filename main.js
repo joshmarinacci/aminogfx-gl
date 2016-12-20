@@ -676,13 +676,22 @@ Group.prototype.insertAfter = function (item, sibling) {
 Group.prototype.remove = function () {
     const count = arguments.length;
 
+    if (count === 0) {
+        //special case: remove from parent
+        if (this.parent) {
+            this.parent.remove(this);
+        }
+
+        return;
+    }
+
     for (let i = 0; i < count; i++) {
         const child = arguments[i];
-        const n = this.children.indexOf(child);
+        const pos = this.children.indexOf(child);
 
-        if (n >=  0) {
+        if (pos >=  0) {
             this._remove(child);
-            this.children.splice(n, 1);
+            this.children.splice(pos, 1);
             child.parent = null;
         } else {
             throw new Error('not a child');
