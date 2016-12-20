@@ -252,6 +252,9 @@ bool VideoDemuxer::init() {
     return true;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 /**
  * Load a video from a file.
  */
@@ -281,7 +284,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
     int videoStream = -1;
 
     for (unsigned int i = 0; i < context->nb_streams; i++) {
-        //FIXME warning on macOS (codecpar not available on RPi)
+        //Note: warning on macOS (codecpar not available on RPi)
         if (context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             videoStream = i;
             break;
@@ -301,7 +304,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
         printf("video found: duration=%i s\n", (int)duration * stream->time_base.num / stream->time_base.den);
 
-        //FIXME warning on macOS (codecpar not available on RPi)
+        //Note: warning on macOS (codecpar not available on RPi)
         if (stream->codec->codec_id == AV_CODEC_ID_H264) {
             printf(" -> H264\n");
         }
@@ -313,6 +316,8 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     return true;
 }
+
+#pragma GCC diagnostic pop
 
 /**
  * Get the last error.
