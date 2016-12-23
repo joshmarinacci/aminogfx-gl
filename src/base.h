@@ -1734,15 +1734,7 @@ public:
      * Free children.
      */
     void destroyAminoGroup() {
-        //free children references
-        std::size_t count = children.size();
-
-        for (std::size_t i = 0; i < count; i++) {
-            AminoNode *item = children[i];
-
-            item->release();
-        }
-
+        //reset children
         children.clear();
     }
 
@@ -1828,8 +1820,7 @@ private:
 
         AminoNode *node = static_cast<AminoNode *>(update->valueObj);
 
-        //keep retained instance
-        update->valueObj = NULL;
+        //Note: reference kept on JS side
 
         if (DEBUG_BASE) {
             printf("-> addChild()\n");
@@ -1865,8 +1856,7 @@ private:
             return;
         }
 
-        //retain instance of child
-        child->retain();
+        //Note: reference kept on JS side
 
         //handle async
         group_insert_t *data = new group_insert_t();
@@ -1885,8 +1875,6 @@ private:
             group_insert_t *data = (group_insert_t *)update->data;
 
             assert(data);
-
-            //keep retained instance (retained before)
 
             if (DEBUG_BASE) {
                 printf("-> insertChild()\n");
@@ -1941,9 +1929,6 @@ private:
         assert(pos != children.end());
 
         children.erase(pos);
-
-        //remove strong reference (on main thread)
-        update->releaseLater = node;
     }
 };
 

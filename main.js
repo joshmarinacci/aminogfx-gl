@@ -592,6 +592,10 @@ function rotateFunc(rx, ry, rz) {
 Group.prototype.add = function () {
     const count = arguments.length;
 
+    if (count === 0) {
+        throw new Error('missing parameter');
+    }
+
     for (let i = 0; i < count; i++) {
         const node = arguments[i];
 
@@ -599,7 +603,7 @@ Group.prototype.add = function () {
             throw new Error('can\'t add a null child to a group');
         }
 
-        if (this.children.indexOf(node) != -1) {
+        if (this.children.indexOf(node) !== -1) {
             throw new Error('child was added before');
         }
 
@@ -623,11 +627,11 @@ Group.prototype.insertAt = function (item, pos) {
         throw new Error('can\'t add a null child to a group');
     }
 
-    if (this.children.indexOf(item) != -1) {
+    if (this.children.indexOf(item) !== -1) {
         throw new Error('child was added before');
     }
 
-    if (item == this || item.parent) {
+    if (item === this || item.parent) {
         throw new Error('already added to different group');
     }
 
