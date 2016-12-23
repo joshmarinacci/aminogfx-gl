@@ -739,7 +739,7 @@ Group.prototype.raiseToTop = function (node) {
  * Attention: do not call if shared textures are used by any child.
  */
 Group.prototype.destroy = function () {
-    this.children.forEach((node) => {
+    this.children.forEach(node => {
         if (node.destroy) {
             node.destroy();
         }
