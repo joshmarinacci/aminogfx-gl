@@ -1034,6 +1034,8 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
 
+        v8::Local<v8::Object> obj = handle();
+
         if (this->textureId == INVALID_TEXTURE) {
             //failed
 
@@ -1041,15 +1043,13 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(handle(), argc, argv);
+                callback->Call(obj, argc, argv);
                 delete callback;
                 callback = NULL;
             }
 
             return;
         }
-
-        v8::Local<v8::Object> obj = handle();
 
         Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
         Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
