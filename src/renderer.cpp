@@ -190,6 +190,16 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
 
     mul_matrix(modelView, pixelM, m4);
 
+    /*
+    //shear test
+    GLfloat shearM[16], modelView2[16];
+
+    //make_shear_x_matrix(1. / 10., shearM);
+    make_shear_x_matrix(- 1. / 10., shearM);
+    mul_matrix(modelView2, shearM, modelView);
+    copy_matrix(modelView, modelView2);
+    */
+
     //set viewport
     glViewport(0, 0, viewportW, viewportH);
 }

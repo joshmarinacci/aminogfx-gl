@@ -26,6 +26,8 @@ void make_identity_matrix(GLfloat *m);
 void make_scale_matrix(GLfloat xs, GLfloat ys, GLfloat zs, GLfloat *m);
 void make_trans_matrix(GLfloat x, GLfloat y, GLfloat z, GLfloat *m);
 void make_trans_z_matrix(GLfloat z, GLfloat *m);
+void make_shear_x_matrix(GLfloat sx, GLfloat *m);
+void make_shear_y_matrix(GLfloat sy, GLfloat *m);
 
 void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b);
 

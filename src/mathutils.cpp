@@ -157,6 +157,24 @@ void make_trans_z_matrix(GLfloat z, GLfloat *m) {
 }
 
 /**
+ * Create horizontal shear matrix.
+ */
+void make_shear_x_matrix(GLfloat sx, GLfloat *m) {
+    make_identity_matrix(m);
+
+    m[4] = sx;
+}
+
+/**
+ * Create vertical shear matrix.
+ */
+void make_shear_y_matrix(GLfloat sy, GLfloat *m) {
+    make_identity_matrix(m);
+
+    m[1] = sy;
+}
+
+/**
  * Matrix multiplication (4x4).
  *
  * @param prod result
