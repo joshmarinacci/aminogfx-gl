@@ -4,10 +4,8 @@
  * Reset 4x4 matrix with zero values.
  */
 void clear_matrix(GLfloat *m) {
-    int i;
-
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
+    for (int i = 0; i < 16; i++) {
+        m[i] = 0.0f;
     }
 }
 
@@ -17,18 +15,17 @@ void clear_matrix(GLfloat *m) {
  * @param angle angle in degrees.
  */
 void make_y_rot_matrix(GLfloat angle, GLfloat *m) {
-    float rad = angle * M_PI / 180.0;
+    float rad = angle * M_PI / 180.0f;
     float c = cos(rad);
     float s = sin(rad);
-    int i;
 
     //reset
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
+    for (int i = 0; i < 16; i++) {
+        m[i] = 0.0f;
     }
 
     //identity values
-    m[0] = m[5] = m[10] = m[15] = 1.0;
+    m[0] = m[5] = m[10] = m[15] = 1.0f;
 
     //rotation values
     m[0]  = c;
@@ -43,18 +40,17 @@ void make_y_rot_matrix(GLfloat angle, GLfloat *m) {
  * @param angle angle in degrees.
  */
 void make_z_rot_matrix(GLfloat angle, GLfloat *m) {
-    float rad = angle * M_PI / 180.0;
+    float rad = angle * M_PI / 180.0f;
     float c = cos(rad);
     float s = sin(rad);
-    int i;
 
     //reset
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
+    for (int i = 0; i < 16; i++) {
+        m[i] = 0.0f;
     }
 
     //identity values
-    m[0] = m[5] = m[10] = m[15] = 1.0;
+    m[0] = m[5] = m[10] = m[15] = 1.0f;
 
     //rotation values
     m[0] = c;
@@ -69,18 +65,17 @@ void make_z_rot_matrix(GLfloat angle, GLfloat *m) {
  * @param angle angle in degrees.
  */
 void make_x_rot_matrix(GLfloat angle, GLfloat *m) {
-    float rad = angle * M_PI / 180.0;
+    float rad = angle * M_PI / 180.0f;
     float c = cos(rad);
     float s = sin(rad);
-    int i;
 
     //reset
-    for (i = 0; i < 16; i++) {
-        m[i] = 0.0;
+    for (int i = 0; i < 16; i++) {
+        m[i] = 0.0f;
     }
 
     //identity values
-    m[0] = m[5] = m[10] = m[15] = 1.0;
+    m[0] = m[5] = m[10] = m[15] = 1.0f;
 
     //rotation values
     m[5]  = c;
@@ -95,10 +90,18 @@ void make_x_rot_matrix(GLfloat angle, GLfloat *m) {
 void print_matrix(GLfloat *m) {
     printf("matrix ");
 
-    for (int i = 0; i < 16; i++) {
-        printf("%.1f  ", m[i]);
+    for (int y = 0; y < 4; y++) {
+        for (int x = 0; x < 4; x++) {
+            GLfloat value = m[x * 4 + y];
 
-        if (i%4 == 3) {
+            if (floorf(value) == value) {
+                printf("%i  ", (int)value);
+            } else {
+                printf("%f  ", value);
+            }
+        }
+
+        if (y < 3) {
             printf(", ");
         }
     }
@@ -110,18 +113,16 @@ void print_matrix(GLfloat *m) {
  * Create identity matrix.
  */
 void make_identity_matrix(GLfloat *m) {
-   int i;
-
    //reset
-   for (i = 0; i < 16; i++) {
+   for (int i = 0; i < 16; i++) {
       m[i] = 0.0;
    }
 
    //diagonal elements
-   m[0] = 1;
-   m[5] = 1;
-   m[10] = 1;
-   m[15] = 1;
+   m[0] = 1.f;
+   m[5] = 1.f;
+   m[10] = 1.f;
+   m[15] = 1.f;
 }
 
 /**
@@ -133,7 +134,6 @@ void make_scale_matrix(GLfloat xs, GLfloat ys, GLfloat zs, GLfloat *m) {
    m[0] = xs;
    m[5] = ys;
    m[10] = zs;
-   m[15] = 1.0;
 }
 
 /**
@@ -172,6 +172,164 @@ void make_shear_y_matrix(GLfloat sy, GLfloat *m) {
     make_identity_matrix(m);
 
     m[1] = sy;
+}
+
+/**
+ * Quad to quad mapping matrix (see vguComputeWarpQuadToQuad()).
+ *
+ * Based on OpenVG implemenation (see https://github.com/rcmaniac25/OpenVG-BlackBerry/blob/master/OpenVG/src/riVGU.cpp)
+ */
+bool make_quad_to_quad_matrix(GLfloat dx0, GLfloat dy0, GLfloat dx1, GLfloat dy1, GLfloat dx2, GLfloat dy2, GLfloat dx3, GLfloat dy3, GLfloat sx0, GLfloat sy0, GLfloat sx1, GLfloat sy1, GLfloat sx2, GLfloat sy2, GLfloat sx3, GLfloat sy3, GLfloat *matrix) {
+    if (!matrix) {
+		return false;
+    }
+
+    //source
+	GLfloat qtos[16];
+	bool ret1 = make_quad_to_square_matrix(sx0, sy0, sx1, sy1, sx2, sy2, sx3, sy3, qtos);
+
+	if (!ret1) {
+		return false;
+    }
+
+    //dest
+	GLfloat stoq[16];
+	bool ret2 = make_square_to_quad_matrix(dx0, dy0, dx1, dy1, dx2, dy2, dx3, dy3, stoq);
+
+	if (!ret2) {
+		return false;
+    }
+
+    //result
+    mul_matrix(matrix, stoq, qtos);
+
+	return true;
+}
+
+/**
+ * Quad to square mapping matrix.
+ *
+ * See vguComputeWarpQuadToSquare().
+ */
+bool make_quad_to_square_matrix(GLfloat sx0, GLfloat sy0, GLfloat sx1, GLfloat sy1, GLfloat sx2, GLfloat sy2, GLfloat sx3, GLfloat sy3, GLfloat *matrix) {
+    if (!matrix) {
+        return false;
+    }
+
+    //calc square to quad
+	GLfloat mat[16];
+	bool ret = make_square_to_quad_matrix(sx0, sy0, sx1, sy1, sx2, sy2, sx3, sy3, mat);
+
+    if (!ret) {
+        return false;
+    }
+
+    //invert
+    bool nonsingular = invert_matrix(mat, matrix);
+
+	if (!nonsingular) {
+        return false;
+    }
+
+    //debug
+    //printf("inverted:\n");
+    //print_matrix(matrix);
+
+	return true;
+}
+
+/**
+ * Square to quad mapping matrix.
+ *
+ * See vguComputeWarpSquareToQuad().
+ */
+bool make_square_to_quad_matrix(GLfloat dx0, GLfloat dy0, GLfloat dx1, GLfloat dy1, GLfloat dx2, GLfloat dy2, GLfloat dx3, GLfloat dy3, GLfloat *matrix) {
+    if (!matrix) {
+        return false;
+    }
+
+	//from Heckbert:Fundamentals of Texture Mapping and Image Warping
+	//Note that his mapping of vertices is different from OpenVG's
+	//(0,0) => (dx0,dy0)
+	//(1,0) => (dx1,dy1)
+	//(0,1) => (dx2,dy2)
+	//(1,1) => (dx3,dy3)
+
+	GLfloat diffx1 = dx1 - dx3;
+	GLfloat diffy1 = dy1 - dy3;
+	GLfloat diffx2 = dx2 - dx3;
+	GLfloat diffy2 = dy2 - dy3;
+
+	GLfloat det = diffx1 * diffy2 - diffx2 * diffy1;
+
+    //printf("diff: %f, %f, %f, %f, det=%f\n", diffx1, diffy1, diffx2, diffy2, det);
+
+    if (det == 0.0f) {
+		return false;
+    }
+
+	GLfloat sumx = dx0 - dx1 + dx3 - dx2;
+	GLfloat sumy = dy0 - dy1 + dy3 - dy2;
+
+	if (sumx == 0.0f && sumy == 0.0f) {
+		//affine mapping
+		matrix[0] = dx1 - dx0;
+		matrix[1] = dy1 - dy0;
+		matrix[2] = 0.0f;
+        matrix[3] = 0.0f;
+
+		matrix[4] = dx3 - dx1;
+		matrix[5] = dy3 - dy1;
+		matrix[6] = 0.0f;
+        matrix[7] = 0.0f;
+
+        matrix[8]  = 0.0f;
+		matrix[9]  = 0.0f;
+		matrix[10] = 1.0f;
+        matrix[11] = 0.0f;
+
+        matrix[12] = dx0; //tx
+        matrix[13] = dy0; //ty
+        matrix[14] = 0.0f;
+        matrix[15] = 1.0f;
+
+        //debug
+        //printf("affine:\n");
+        //print_matrix(matrix);
+
+        return true;
+	}
+
+    //non-affine mapping
+	GLfloat oodet = 1.0f / det;
+	GLfloat g = (sumx * diffy2 - diffx2 * sumy) * oodet;
+	GLfloat h = (diffx1 * sumy - sumx * diffy1) * oodet;
+
+	matrix[0] = dx1 - dx0 + g * dx1;
+	matrix[1] = dy1 - dy0 + g * dy1;
+	matrix[2] = 0.0f;
+    matrix[3] = g; //w0
+
+	matrix[4] = dx2 - dx0 + h * dx2;
+	matrix[5] = dy2 - dy0 + h * dy2;
+	matrix[6] = 0.0f;
+    matrix[7] = h; //w1
+
+    matrix[8]  = 0.0f;
+	matrix[9]  = 0.0f;
+	matrix[10] = 1.0f;
+    matrix[11] = 0.0f;
+
+    matrix[12] = dx0; //tx
+    matrix[13] = dy0; //ty
+    matrix[14] = 0.0f;
+    matrix[15] = 1.0f;
+
+    //debug
+    //printf("non-affine:\n");
+    //print_matrix(matrix);
+
+	return true;
 }
 
 /**
@@ -333,31 +491,31 @@ void loadPixelPerfectOrthographicMatrix(GLfloat *m, float width, float height, f
       z: [n, f] to [-1, 1]
     */
 
-    float r = width / 2;
-    float t = height / 2;
+    GLfloat r = width / 2.f;
+    GLfloat t = height / 2.f;
     //float n = - z_near;
-    float n = - z_eye;
-    float f = - z_far;
+    GLfloat n = - z_eye;
+    GLfloat f = - z_far;
 
-    m[0] = 1 / r;
-    m[1] = 0;
-    m[2] = 0;
-    m[3] = 0;
+    m[0] = 1.f / r;
+    m[1] = 0.f;
+    m[2] = 0.f;
+    m[3] = 0.f;
 
-    m[4] = 0;
-    m[5] = 1 / t;
-    m[6] = 0;
-    m[7] = 0;
+    m[4] = 0.f;
+    m[5] = 1.f / t;
+    m[6] = 0.f;
+    m[7] = 0.f;
 
-    m[8]  = 0;
-    m[9]  = 0;
-    m[10] = - 2 / (f - n);
-    m[11] = 0;
+    m[8]  = 0.f;
+    m[9]  = 0.f;
+    m[10] = - 2.f / (f - n);
+    m[11] = 0.f;
 
-    m[12] = 0;
-    m[13] = 0;
+    m[12] = 0.f;
+    m[13] = 0.f;
     m[14] = - (f + n) / (f - n);
-    m[15] = 1;
+    m[15] = 1.f;
 }
 
 /**
@@ -379,8 +537,7 @@ void transpose_matrix(GLfloat *b, const GLfloat *a) {
 /**
  * Invert a matrix.
  */
-bool invert_matrix(const GLfloat m[16], GLfloat invOut[16])
-{
+bool invert_matrix(const GLfloat m[16], GLfloat invOut[16]) {
     //see http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
     GLfloat inv[16], det;
     int i;
@@ -499,13 +656,15 @@ bool invert_matrix(const GLfloat m[16], GLfloat invOut[16])
 
     det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
 
-    if (det == 0)
+    if (det == 0) {
         return false;
+    }
 
-    det = 1.0 / det;
+    det = 1.0f / det;
 
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < 16; i++) {
         invOut[i] = inv[i] * det;
+    }
 
     return true;
 }
