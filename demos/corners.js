@@ -3,7 +3,26 @@
 var path = require('path');
 var amino = require('../main.js');
 
-var gfx = new amino.AminoGfx();
+var gfx = new amino.AminoGfx({
+    perspective: {
+        /*
+        src: [
+            0.2, 0.,
+            0.8, 0.,
+            0., 1.,
+            1., 1.
+        ]
+        */
+        /*
+        dst: [
+            0.2, 0.,
+            0.8, 0.,
+            0., 1.,
+            1., 1.
+        ]
+        */
+    }
+});
 
 gfx.start(function (err) {
     if (err) {

@@ -156,6 +156,45 @@ void AminoRenderer::setupPerspective(v8::Local<v8::Object> &perspective) {
             eye = eyeValue->NumberValue();
         }
     }
+
+    //projection correction (non-affine)
+    Nan::MaybeLocal<v8::Value> srcMaybe = Nan::Get(perspective, Nan::New<v8::String>("src").ToLocalChecked());
+
+    if (!srcMaybe.IsEmpty()) {
+        v8::Local<v8::Value> value = srcMaybe.ToLocalChecked();
+
+        if (value->IsArray()) {
+            v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+            std::size_t count = arr->Length();
+
+            assert(count == 8);
+
+            for (std::size_t i = 0; i < count; i++) {
+                corrSrc[i] = (GLfloat)(arr->Get(i)->NumberValue());
+            }
+
+            corrUsed = true;
+        }
+    }
+
+    Nan::MaybeLocal<v8::Value> dstMaybe = Nan::Get(perspective, Nan::New<v8::String>("dst").ToLocalChecked());
+
+    if (!dstMaybe.IsEmpty()) {
+        v8::Local<v8::Value> value = dstMaybe.ToLocalChecked();
+
+        if (value->IsArray()) {
+            v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+            std::size_t count = arr->Length();
+
+            assert(count == 8);
+
+            for (std::size_t i = 0; i < count; i++) {
+                corrDst[i] = (GLfloat)(arr->Get(i)->NumberValue());
+            }
+
+            corrUsed = true;
+        }
+    }
 }
 
 /**
@@ -190,15 +229,30 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
 
     mul_matrix(modelView, pixelM, m4);
 
-    /*
-    //shear test
-    GLfloat shearM[16], modelView2[16];
+    //perspective correction
+    if (corrUsed) {
+        GLfloat quadM[16], modelView2[16];
+        bool res = make_quad_to_quad_matrix(
+            //dest
+            corrDst[0] * width, corrDst[1] * height,
+            corrDst[2] * width, corrDst[3] * height,
+            corrDst[4] * width, corrDst[5] * height,
+            corrDst[6] * width, corrDst[7] * height,
 
-    //make_shear_x_matrix(1. / 10., shearM);
-    make_shear_x_matrix(- 1. / 10., shearM);
-    mul_matrix(modelView2, shearM, modelView);
-    copy_matrix(modelView, modelView2);
-    */
+            //src
+            corrSrc[0] * width, corrSrc[1] * height,
+            corrSrc[2] * width, corrSrc[3] * height,
+            corrSrc[4] * width, corrSrc[5] * height,
+            corrSrc[6] * width, corrSrc[7] * height,
+
+            quadM
+        );
+
+        assert(res);
+
+        mul_matrix(modelView2, modelView, quadM);
+        copy_matrix(modelView, modelView2);
+    }
 
     //set viewport
     glViewport(0, 0, viewportW, viewportH);
