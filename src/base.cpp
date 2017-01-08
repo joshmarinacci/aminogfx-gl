@@ -122,6 +122,9 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetPrototypeMethod(tpl, "getTime", GetTime);
     Nan::SetMethod(tpl, "getTime", GetTime);
 
+    //settings
+    Nan::SetPrototypeMethod(tpl, "updatePerspective", UpdatePerspective);
+
     // stats
     Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
 
@@ -904,6 +907,23 @@ void AminoGfx::setRoot(AminoGroup *group) {
     if (group) {
         group->retain();
     }
+}
+
+/**
+ * Update the perspective.
+ */
+NAN_METHOD(AminoGfx::UpdatePerspective) {
+    AminoGfx *gfx = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(gfx);
+
+    //data
+    v8::Local<v8::Object> perspective = info[0]->ToObject();
+
+    gfx->renderer->setupPerspective(perspective);
+
+    //use in next rendering cycle
+    gfx->viewportChanged = true;
 }
 
 /**

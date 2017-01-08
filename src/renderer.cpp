@@ -103,6 +103,8 @@ void AminoRenderer::setup() {
 
 /**
  * Setup perspective default values.
+ *
+ * Note: does not call any OpenGL functions.
  */
 void AminoRenderer::setupPerspective(v8::Local<v8::Object> &perspective) {
     //orthographic

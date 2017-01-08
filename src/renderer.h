@@ -312,6 +312,10 @@ private:
     float far = -2048;//dynamic: -2048/-300
     float eye = 600;
 
+    GLfloat corrSrc[8] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
+    GLfloat corrDst[8] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
+    bool corrUsed = false;
+
     //matrix
     GLfloat modelView[16];
     GLContext *ctx = NULL;
