@@ -203,6 +203,9 @@ bool make_quad_to_quad_matrix(GLfloat dx0, GLfloat dy0, GLfloat dx1, GLfloat dy1
     //result
     mul_matrix(matrix, stoq, qtos);
 
+    //debug
+    //print_matrix(matrix);
+
 	return true;
 }
 
