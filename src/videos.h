@@ -4,8 +4,7 @@
 #include "base_js.h"
 #include "gfx.h"
 
-//cbx
-#define DEBUG_VIDEOS true
+#define DEBUG_VIDEOS false
 
 class AminoVideoFactory;
 class AminoTexture;
