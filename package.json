@@ -1,6 +1,6 @@
 {
   "name": "aminogfx-gl",
-  "version": "1.3.3",
+  "version": "1.3.9",
   "description": "AminoGFX implementation for OpenGL / GLES2",
   "main": "main.js",
   "scripts": {
@@ -24,12 +24,12 @@
     "onecolor": "^3.0.4",
     "request": "^2.75.0"
   },
-  "author": {
-    "name": "Josh Marinacci",
-    "email": "joshua@marinacci.org",
-    "url": "http://joshondesign.com/"
-  },
-  "contributors": [
+  "maintainers": [
+    {
+      "name": "Josh Marinacci",
+      "email": "joshua@marinacci.org",
+      "url": "http://joshondesign.com/"
+    },
     {
       "name": "Christoph Bratschi",
       "email": "bratschi@appamics.com",

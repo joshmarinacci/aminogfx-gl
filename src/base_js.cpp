@@ -3,6 +3,7 @@
 #include <sstream>
 
 #define DEBUG_ASYNC false
+#define DEBUG_JS_INSTANCES false
 
 //
 //  AminoJSObjectFactory
@@ -38,6 +39,10 @@ AminoJSObject::AminoJSObject(std::string name): name(name) {
 
     activeInstances++;
     totalInstances++;
+
+    if (DEBUG_JS_INSTANCES) {
+        jsInstances.push_back(this);
+    }
 }
 
 /**
@@ -51,7 +56,7 @@ AminoJSObject::~AminoJSObject() {
     }
 
     if (!destroyed) {
-        destroy();
+        destroyAminoJSObject();
     }
 
     //free properties
@@ -66,6 +71,14 @@ AminoJSObject::~AminoJSObject() {
 
     //instance count
     activeInstances--;
+
+    if (DEBUG_JS_INSTANCES) {
+        std::vector<AminoJSObject *>::iterator pos = std::find(jsInstances.begin(), jsInstances.end(), this);
+
+        assert(pos != jsInstances.end());
+
+        jsInstances.erase(pos);
+    }
 }
 
 /**
@@ -101,6 +114,13 @@ void AminoJSObject::setup() {
 void AminoJSObject::destroy() {
     destroyed = true;
 
+    destroyAminoJSObject();
+}
+
+/**
+ * Free all resources used by this instance.
+ */
+void AminoJSObject::destroyAminoJSObject() {
     //event handler
     clearEventHandler();
 }
@@ -173,6 +193,7 @@ void AminoJSObject::createInstance(Nan::NAN_METHOD_ARGS_TYPE info, AminoJSObject
 
     assert(obj);
 
+    //bind to C++ instance
     obj->Wrap(info.This());
 
     //pre-init
@@ -787,8 +808,10 @@ std::string* AminoJSObject::toNewString(v8::Local<v8::Value> &value) {
     return new std::string(*str);
 }
 
+//static initializers
 int AminoJSObject::activeInstances = 0;
 int AminoJSObject::totalInstances = 0;
+std::vector<AminoJSObject *> AminoJSObject::jsInstances;
 
 //
 // AminoJSObject::AnyProperty
@@ -1567,7 +1590,7 @@ AminoJSObject::ObjectProperty::ObjectProperty(AminoJSObject *obj, std::string na
  * Utf8Property destructor.
  */
 AminoJSObject::ObjectProperty::~ObjectProperty() {
-    //release instance
+    //release instance (Note: non-virtual function)
     destroy();
 }
 
@@ -1846,6 +1869,8 @@ AminoJSEventObject::AminoJSEventObject(std::string name): AminoJSObject(name) {
 }
 
 AminoJSEventObject::~AminoJSEventObject() {
+    //Note: all called methods are not virtual
+
     //JS updates
     handleJSUpdates();
     delete jsUpdates;
@@ -1980,6 +2005,34 @@ void AminoJSEventObject::getStats(v8::Local<v8::Object> &obj) {
     Nan::Set(obj, Nan::New("asyncUpdates").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)asyncUpdates->size()));
     Nan::Set(obj, Nan::New("asyncDeletes").ToLocalChecked(), Nan::New<v8::Uint32>((uint32_t)asyncDeletes->size()));
     */
+
+    //output instance stats
+    if (DEBUG_JS_INSTANCES) {
+        //collect items
+        std::map<std::string, int> counter;
+        std::size_t count = jsInstances.size();
+
+        for (std::size_t i = 0; i < count; i++) {
+            AminoJSObject *item = jsInstances[i];
+            std::string name = item->getName();
+
+            //check existing
+            std::map<std::string, int>::iterator it = counter.find(name);
+
+            if (it != counter.end()) {
+                it->second++;
+            } else {
+                counter.insert(std::pair<std::string, int>(name, 1));
+            }
+        }
+
+        //output
+        printf("JS Instances:\n");
+
+        for (std::map<std::string, int>::iterator it = counter.begin(); it != counter.end(); it++) {
+            printf(" %s: %i\n", it->first.c_str(), it->second);
+        }
+    }
 }
 
 /**

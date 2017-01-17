@@ -21,6 +21,12 @@ public:
         //empty
     }
 
+    ~AminoGfxMac() {
+        if (!destroyed) {
+            destroyAminoGfxMac();
+        }
+    }
+
     /**
      * Get factory instance.
      */
@@ -106,9 +112,17 @@ private:
             return;
         }
 
+        //instance
+        destroyAminoGfxMac();
+
         //destroy basic instance
         AminoGfx::destroy();
+    }
 
+    /**
+     * Destroy GLFW instance.
+     */
+    void destroyAminoGfxMac() {
         //GLFW
         if (window) {
             glfwDestroyWindow(window);
@@ -629,6 +643,13 @@ private:
             item.second->updateAtlasTexture(atlas);
         }
     }
+
+    /**
+     * Create video player.
+     */
+    AminoVideoPlayer *createVideoPlayer(AminoTexture *texture, AminoVideo *video) override {
+        return new AminoMacVideoPlayer(texture, video);
+    }
 };
 
 //static initializers
@@ -638,6 +659,10 @@ std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLF
 //
 // AminoGfxMacFactory
 //
+
+AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
+    //empty
+}
 
 /**
  * Create AminoGfx factory.
@@ -652,6 +677,47 @@ AminoGfxMacFactory::AminoGfxMacFactory(Nan::FunctionCallback callback): AminoJSO
 AminoJSObject* AminoGfxMacFactory::create() {
     return new AminoGfxMac();
 }
+
+//
+// AminoMacVideoPlayer
+//
+
+/**
+ * Initialize the stream.
+ */
+bool AminoMacVideoPlayer::initStream() {
+    //get file name
+    filename = video->getLocalFile();
+
+    return true;
+}
+
+/**
+ * Initialize the video player.
+ */
+void AminoMacVideoPlayer::init() {
+    //cbx test
+    VideoDemuxer *demuxer = new VideoDemuxer();
+
+    demuxer->init();
+    demuxer->loadFile(filename);
+    delete demuxer;
+
+    //stop
+    lastError = "videos not supported";
+    handleInitDone(false);
+}
+
+/**
+ * Init video texture on OpenGL thread.
+ */
+void AminoMacVideoPlayer::initVideoTexture() {
+    //ignored
+}
+
+//
+// Exit handler
+//
 
 void exitHandler(void *arg) {
     //Note: not called on Ctrl-C (use process.on('SIGINT', ...))

@@ -23,6 +23,8 @@
                 #"src/images/upng.c",
                 "src/images.cpp",
 
+                "src/videos.cpp",
+
                 "src/shaders.cpp",
                 "src/renderer.cpp",
                 "src/mathutils.cpp"
@@ -35,13 +37,11 @@
             ],
             "cflags": [
                 "-Wall",
-                "-std=c++11",
-                # get stack trace on ARM
-                "-funwind-tables",
-                "-rdynamic"
+                "-std=c++11"
             ],
 
             'conditions': [
+                # macOS
                 ['OS=="mac"', {
                     "include_dirs": [
                         " <!@(freetype-config --cflags)",
@@ -54,7 +54,9 @@
                         '-framework IOKit',
                         '<!@(freetype-config --libs)',
                         '-ljpeg',
-                        '-lpng'
+                        '-lpng',
+                        '-lavcodec',
+                        '-lavformat'
                     ],
                     "sources": [
                         "src/mac.cpp",
@@ -79,30 +81,54 @@
                     }
                 }],
 
+                # Raspberry Pi
                 ['OS=="linux"', {
 					"conditions" : [
 	                    ["target_arch=='arm'", {
 		                    "sources": [
-		                        "src/rpi.cpp"
+                                "src/ilclient/ilclient.c",
+                                "src/ilclient/ilcore.c",
+		                        "src/rpi.cpp",
+                                "src/rpi_video.cpp"
 		                    ],
 		                    "libraries": [
-		                        "-L/opt/vc/lib/ -lbcm_host",
+		                        "-L/opt/vc/lib/",
+                                "-lbcm_host",
 		                        "-lGLESv2",
 		                        "-lEGL",
+                                "-lopenmaxil",
+                                "-lvcos",
+                                "-lvchiq_arm",
 		                        '<!@(freetype-config --libs)',
                                 "-ljpeg",
-                                "-lpng"
+                                "-lpng",
+                                '-lavcodec',
+                                '-lavformat'
 		                    ],
 		                    "defines": [
 		                        "RPI"
 		                    ],
 		                    "include_dirs": [
 		                        "/opt/vc/include/",
+                                "/opt/vc/include/IL/",
 		                        "/usr/include/freetype2",
 		                        "/opt/vc/include/interface/vcos/pthreads",
 		                        "/opt/vc/include/interface/vmcs_host/linux",
+                                "/opt/vc/include/interface/vchiq/",
 		                        '<!@(freetype-config --cflags)'
-		                    ]
+		                    ],
+                            "cflags": [
+                                "-DHAVE_LIBOPENMAX=2",
+                                "-DOMX",
+                                "-DOMX_SKIP64BIT",
+                                "-DUSE_EXTERNAL_OMX",
+                                "-DHAVE_LIBBCM_HOST",
+                                "-DUSE_EXTERNAL_LIBBCM_HOST",
+                                "-DUSE_VCHIQ_ARM",
+                                # get stack trace on ARM
+                                "-funwind-tables",
+                                "-rdynamic"
+                            ]
 		                }],
 
 		                ["target_arch!='arm'", {

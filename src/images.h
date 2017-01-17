@@ -3,6 +3,7 @@
 
 #include "base_js.h"
 #include "gfx.h"
+#include "videos.h"
 
 class AminoImageFactory;
 
@@ -23,6 +24,7 @@ public:
 
     bool hasImage();
     void destroy() override;
+    void destroyAminoImage();
     GLuint createTexture(GLuint textureId);
     static GLuint createTexture(GLuint textureId, char *bufferData, size_t bufferLength, int w, int h, int bpp);
 
@@ -72,6 +74,7 @@ public:
     ~AminoTexture();
 
     void destroy() override;
+    void destroyAminoTexture();
 
     //creation
     static AminoTextureFactory* getFactory();
@@ -79,8 +82,16 @@ public:
     //init
     static v8::Local<v8::Function> GetInitFunction();
 
+    //video
+    void initVideoTexture();
+    void videoPlayerInitDone();
+
 private:
     Nan::Callback *callback = NULL;
+
+    //video
+    AminoVideo *video = NULL;
+    AminoVideoPlayer *videoPlayer = NULL;
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 
@@ -89,13 +100,18 @@ private:
 
     //JS methods
     static NAN_METHOD(LoadTextureFromImage);
+    static NAN_METHOD(LoadTextureFromVideo);
     static NAN_METHOD(LoadTextureFromBuffer);
     static NAN_METHOD(LoadTextureFromFont);
     static NAN_METHOD(Destroy);
 
     void createTexture(AsyncValueUpdate *update, int state);
+    void createVideoTexture(AsyncValueUpdate *update, int state);
     void createTextureFromBuffer(AsyncValueUpdate *update, int state);
     void createTextureFromFont(AsyncValueUpdate *update, int state);
+
+    void initVideoTextureHandler(AsyncValueUpdate *update, int state);
+    void handleVideoPlayerInitDone(JSCallbackUpdate *update);
 };
 
 /**

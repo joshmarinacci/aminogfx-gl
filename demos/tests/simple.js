@@ -103,6 +103,12 @@ gfx.start(function (err) {
     //iv.w(50).h(100); //clamp test
     iv.size('contain');
 
+    // 5) position
+    //iv.position('left');
+    //iv.position('right');
+    //iv.position('right top');
+    iv.position('right center');
+
     g.add(iv);
 
     //GC tests

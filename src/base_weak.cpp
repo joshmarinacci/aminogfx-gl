@@ -117,6 +117,10 @@ AminoJSWeakReference::~AminoJSWeakReference()  {
     }
 
     assert(!weak || !weak->hasReference());
+
+    if (!destroyed) {
+        destroyAminoJSWeakReference();
+    }
 }
 
 /**
@@ -132,15 +136,24 @@ AminoWeakReference *AminoJSWeakReference::getWeakReference() {
  * Free all resources.
  */
 void AminoJSWeakReference::destroy() {
-    if (DEBUG_WEAK) {
-        printf("AminoJSWeakReference::destroy()\n");
-    }
-
     if (destroyed) {
         return;
     }
 
+    //instance
+    destroyAminoJSWeakReference();
+
+    //base class
     AminoJSObject::destroy();
+}
+
+/**
+ * Free all resources.
+ */
+void AminoJSWeakReference::destroyAminoJSWeakReference() {
+    if (DEBUG_WEAK) {
+        printf("AminoJSWeakReference::destroy()\n");
+    }
 
     if (weak) {
         delete weak;
@@ -298,7 +311,7 @@ AminoWeakReferenceFactory::AminoWeakReferenceFactory(Nan::FunctionCallback callb
 }
 
 /**
- * Create AminoImage instance.
+ * Create AminoJSWeakReference instance.
  */
 AminoJSObject* AminoWeakReferenceFactory::create() {
     return new AminoJSWeakReference();

@@ -52,6 +52,7 @@ protected:
     //stats
     static int activeInstances;
     static int totalInstances;
+    static std::vector<AminoJSObject *> jsInstances;
 
     AminoJSObject(std::string name);
     ~AminoJSObject();
@@ -59,6 +60,7 @@ protected:
     virtual void preInit(Nan::NAN_METHOD_ARGS_TYPE info);
     virtual void setup();
     virtual void destroy();
+    void destroyAminoJSObject();
 
     //properties
     void updateProperty(std::string name, v8::Local<v8::Value> &value);
@@ -340,6 +342,7 @@ protected:
     bool enqueueValueUpdate(AminoJSObject *value, asyncValueCallback callback);
     bool enqueueValueUpdate(unsigned int value, void *data, asyncValueCallback callback);
     bool enqueueValueUpdate(v8::Local<v8::Value> &value, void *data, asyncValueCallback callback);
+
     virtual bool enqueueValueUpdate(AsyncValueUpdate *update);
 
     class JSPropertyUpdate: public AnyAsyncUpdate {

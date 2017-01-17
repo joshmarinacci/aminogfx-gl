@@ -612,7 +612,9 @@ AminoImage::AminoImage(): AminoJSObject(getFactory()->name) {
  * Destructor.
  */
 AminoImage::~AminoImage()  {
-    //empty
+    if (!destroyed) {
+        destroyAminoImage();
+    }
 }
 
 /**
@@ -626,8 +628,21 @@ bool AminoImage::hasImage() {
  * Free all resources.
  */
 void AminoImage::destroy() {
-    AminoJSObject::destroy();
+    if (destroyed) {
+        return;
+    }
 
+    //instance
+    destroyAminoImage();
+
+    //base class
+    AminoJSObject::destroy();
+}
+
+/**
+ * Free all resources.
+ */
+void AminoImage::destroyAminoImage() {
     buffer.Reset();
     bufferData = NULL;
     bufferLength = 0;
@@ -823,7 +838,9 @@ AminoTexture::AminoTexture(): AminoJSObject(getFactory()->name) {
  * Destructor.
  */
 AminoTexture::~AminoTexture()  {
-    //empty
+    if (!destroyed) {
+        destroyAminoTexture();
+    }
 }
 
 /**
@@ -834,6 +851,16 @@ void AminoTexture::destroy() {
         return;
     }
 
+    destroyAminoTexture();
+
+    //Note: frees eventHandler
+    AminoJSObject::destroy();
+}
+
+/**
+ * Free resources.
+ */
+void AminoTexture::destroyAminoTexture() {
     if (callback) {
         delete callback;
         callback = NULL;
@@ -855,8 +882,10 @@ void AminoTexture::destroy() {
         Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
     }
 
-    //Note: frees eventHandler
-    AminoJSObject::destroy();
+    if (video) {
+        video->release();
+        video = NULL;
+    }
 }
 
 /**
@@ -880,6 +909,7 @@ v8::Local<v8::Function> AminoTexture::GetInitFunction() {
 
     //methods
     Nan::SetPrototypeMethod(tpl, "loadTextureFromImage", LoadTextureFromImage);
+    Nan::SetPrototypeMethod(tpl, "loadTextureFromVideo", LoadTextureFromVideo);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromFont", LoadTextureFromFont);
     Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
@@ -1004,13 +1034,247 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
 
+        v8::Local<v8::Object> obj = handle();
+
         if (this->textureId == INVALID_TEXTURE) {
             //failed
-            int argc = 1;
-            v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-            callback->Call(handle(), argc, argv);
+            if (callback) {
+                int argc = 1;
+                v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
+
+                callback->Call(obj, argc, argv);
+                delete callback;
+                callback = NULL;
+            }
+
             return;
+        }
+
+        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::New(w));
+        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::New(h));
+
+        //callback
+        if (callback) {
+            int argc = 2;
+            v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
+
+            callback->Call(obj, argc, argv);
+            delete callback;
+            callback = NULL;
+        }
+    }
+}
+
+/**
+ * Load texture asynchronously.
+ *
+ * loadTextureFromVideo(video, callback)
+ */
+NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
+    if (DEBUG_IMAGES) {
+        printf("-> loadTextureFromVideo()\n");
+    }
+
+    assert(info.Length() == 2);
+
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+    v8::Local<v8::Function> callback = info[1].As<v8::Function>();
+
+    assert(obj);
+
+    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+        //already set
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
+
+        callback->Call(info.This(), argc, argv);
+        return;
+    }
+
+    //video
+    AminoVideo *video = Nan::ObjectWrap::Unwrap<AminoVideo>(info[0]->ToObject());
+
+    assert(video);
+
+    if (!video->hasVideo()) {
+        //missing video
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error("missing video data") };
+
+        callback->Call(info.This(), argc, argv);
+        return;
+    }
+
+    //check old instance
+    if (obj->video) {
+        obj->video->release();
+        obj->video = NULL;
+    }
+
+    if (obj->videoPlayer) {
+        delete obj->videoPlayer;
+        obj->videoPlayer = NULL;
+    }
+
+    //keep instance
+    video->retain();
+    obj->video = video;
+
+    //create player
+    if (DEBUG_VIDEOS) {
+        printf("creating video player\n");
+    }
+
+    obj->videoPlayer = (static_cast<AminoGfx *>(obj->eventHandler))->createVideoPlayer(obj, video);
+
+    assert(obj->videoPlayer);
+
+    if (!obj->videoPlayer->initStream()) {
+        int argc = 1;
+        v8::Local<v8::Value> argv[1] = { Nan::Error(obj->videoPlayer->getLastError().c_str()) };
+
+        callback->Call(info.This(), argc, argv);
+
+        delete obj->videoPlayer;
+        obj->videoPlayer = NULL;
+
+        return;
+    }
+
+    if (DEBUG_BASE) {
+        printf("enqueue: create video texture\n");
+    }
+
+    //async loading (OpenGL thread)
+    obj->callback = new Nan::Callback(callback);
+
+    obj->enqueueValueUpdate(video, static_cast<asyncValueCallback>(&AminoTexture::createVideoTexture));
+}
+
+/**
+ * Create video texture.
+ *
+ * Note: on OpenGL thread.
+ */
+void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
+    if (state == AsyncValueUpdate::STATE_APPLY) {
+        //create texture on OpenGL thread
+
+        if (DEBUG_IMAGES) {
+            printf("-> createVideoTexture()\n");
+        }
+
+        AminoVideo *video = static_cast<AminoVideo *>(update->valueObj);
+
+        assert(video);
+
+        bool newTexture = this->textureId == INVALID_TEXTURE;
+        GLuint textureId = this->textureId;
+
+        if (newTexture) {
+            glGenTextures(1, &textureId);
+
+            assert(textureId != INVALID_TEXTURE);
+        }
+
+        //debug
+        if (DEBUG_VIDEOS) {
+            printf("-> createVideoTexture() new=%i id=%i\n", (int)newTexture, (int)textureId);
+        }
+
+        if (textureId != INVALID_TEXTURE) {
+            //set values
+            this->textureId = textureId;
+
+            if (newTexture) {
+                ownTexture = true;
+            }
+
+            //initialize
+            if (videoPlayer) {
+                if (DEBUG_VIDEOS) {
+                    printf("-> init video player\n");
+                }
+
+                videoPlayer->init();
+            }
+
+            //stats
+            if (newTexture) {
+               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+            }
+        }
+    } else if (state == AsyncValueUpdate::STATE_DELETE) {
+        //on main thread
+
+        if (this->textureId == INVALID_TEXTURE) {
+            //failed
+
+            if (callback) {
+                int argc = 1;
+                v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
+
+                callback->Call(handle(), argc, argv);
+                delete callback;
+                callback = NULL;
+            }
+        }
+    }
+}
+
+/**
+ * Prepare OpenGL callback.
+ */
+void AminoTexture::initVideoTexture() {
+    //enqueue
+    enqueueValueUpdate(0, this, static_cast<asyncValueCallback>(&AminoTexture::initVideoTextureHandler));
+}
+
+/**
+ * Initialize texture on OpenGL thread.
+ */
+void AminoTexture::initVideoTextureHandler(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    assert(videoPlayer);
+
+    videoPlayer->initVideoTexture();
+}
+
+/**
+ * Video player init failed
+ */
+void AminoTexture::videoPlayerInitDone() {
+    if (DEBUG_VIDEOS) {
+        printf("videoPlayerInitDone()\n");
+    }
+
+    //switch to main thread
+    enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoTexture::handleVideoPlayerInitDone), NULL, NULL);
+}
+
+/**
+ * Inform JS callback about video state.
+ */
+void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
+    if (DEBUG_VIDEOS) {
+        printf("handleVideoPlayerInitDone()\n");
+    }
+
+    assert(videoPlayer);
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //check state
+    if (videoPlayer->isReady()) {
+        videoPlayer->getVideoDimension(w, h);
+
+        if (DEBUG_VIDEOS) {
+            printf("-> ready: %ix%i\n", w, h);
         }
 
         v8::Local<v8::Object> obj = handle();
@@ -1024,6 +1288,22 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
             callback->Call(obj, argc, argv);
+            delete callback;
+            callback = NULL;
+        }
+    } else {
+        //failed
+        const char *error = videoPlayer->getLastError().c_str();
+
+        if (DEBUG_VIDEOS) {
+            printf("-> error: %s\n", error);
+        }
+
+        if (callback) {
+            int argc = 1;
+            v8::Local<v8::Value> argv[1] = { Nan::Error(error) };
+
+            callback->Call(handle(), argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1263,6 +1543,7 @@ NAN_METHOD(AminoTexture::Destroy) {
 
     assert(obj);
 
+    //destroy instance
     obj->destroy();
 }
 

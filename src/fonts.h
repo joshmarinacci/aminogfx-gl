@@ -80,6 +80,7 @@ protected:
     std::map<int, texture_font_t *> fontSizes;
 
     void destroy() override;
+    void destroyAminoFont();
 };
 
 /**

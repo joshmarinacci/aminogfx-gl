@@ -67,6 +67,9 @@ public:
     void notifyTextureCreated();
     static void updateAtlasTextures(texture_atlas_t *atlas);
 
+    //video
+    virtual AminoVideoPlayer *createVideoPlayer(AminoTexture *texture, AminoVideo *video) = 0;
+
 protected:
     static int instanceCount;
     static std::vector<AminoGfx *> instances;
@@ -172,6 +175,7 @@ protected:
     bool isRendering();
 
     void destroy() override;
+    void destroyAminoGfx();
 
     virtual bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) { return false; };
     void updateSize(int w, int h); //call after size event
@@ -195,6 +199,7 @@ private:
 
     static NAN_METHOD(SetRoot);
     static NAN_METHOD(ClearAnimations);
+    static NAN_METHOD(UpdatePerspective);
     static NAN_METHOD(GetStats);
     static NAN_METHOD(GetTime);
 
@@ -405,7 +410,9 @@ public:
     }
 
     ~AminoText() {
-        //empty
+        if (!destroyed) {
+            destroyAminoText();
+        }
     }
 
     /**
@@ -422,9 +429,24 @@ public:
     }
 
     /**
-     * Free buffers.
+     * Free all resources.
      */
     void destroy() override {
+        if (destroyed) {
+            return;
+        }
+
+        //instance
+        destroyAminoText();
+
+        //base
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free buffers.
+     */
+    void destroyAminoText() {
         if (buffer) {
             if (eventHandler) {
                 if (getAminoGfx()->deleteVertexBufferAsync(buffer)) {
@@ -448,9 +470,6 @@ public:
 
         fontSize = NULL;
         texture.textureId = INVALID_TEXTURE;
-
-        //base
-        AminoNode::destroy();
     }
 
     /**
@@ -696,9 +715,14 @@ public:
     }
 
     ~AminoAnim() {
-        //see destroy
+        if (!destroyed) {
+            destroyAminoAnim();
+        }
     }
 
+    /**
+     * Handle JS constructor params.
+     */
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override {
         assert(info.Length() == 3);
 
@@ -733,9 +757,25 @@ public:
         obj->addAnimation(this);
     }
 
+    /**
+     * Free all resources.
+     */
     void destroy() override {
-        AminoJSObject::destroy();
+        if (destroyed) {
+            return;
+        }
 
+        //instance
+        destroyAminoAnim();
+
+        //base class
+        AminoJSObject::destroy();
+    }
+
+    /**
+     * Free instance data.
+     */
+    void destroyAminoAnim() {
         if (prop) {
             prop->release();
             prop = NULL;
@@ -783,6 +823,9 @@ public:
         AminoJSObject::createInstance(info, getFactory());
     }
 
+    /**
+     * Start animation.
+     */
     static NAN_METHOD(Start) {
         assert(info.Length() == 1);
 
@@ -794,6 +837,9 @@ public:
         obj->handleStart(data);
     }
 
+    /**
+     * Start animation.
+     */
     void handleStart(v8::Local<v8::Object> &data) {
         if (started) {
             Nan::ThrowTypeError("already started");
@@ -949,6 +995,9 @@ public:
     //TODO resume
     //TODO reset (start from beginning)
 
+    /**
+     * Stop and destroy animation.
+     */
     static NAN_METHOD(Stop) {
         AminoAnim *obj = Nan::ObjectWrap::Unwrap<AminoAnim>(info.This());
 
@@ -1206,17 +1255,34 @@ public:
     }
 
     ~AminoRect() {
-        //empty
+        if (!destroyed) {
+            destroyAminoRect();
+        }
     }
 
     /**
      * Free resources.
      */
     void destroy() override {
-        AminoNode::destroy();
+        if (destroyed) {
+            return;
+        }
 
+        //instance
+        destroyAminoRect();
+
+        //base class
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free instance resources.
+     */
+    void destroyAminoRect() {
         //release object values
-        propTexture->destroy();
+        if (propTexture) {
+            propTexture->destroy();
+        }
     }
 
     /**
@@ -1483,14 +1549,30 @@ public:
     }
 
     ~AminoModel() {
+        if (!destroyed) {
+            destroyAminoModel();
+        }
     }
 
     /**
      * Free all resources.
      */
     void destroy() override {
-        AminoNode::destroy();
+        if (destroyed) {
+            return;
+        }
 
+        //instance
+        destroyAminoModel();
+
+        //base class
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free instance resources.
+     */
+    void destroyAminoModel() {
         //free buffers
         if (eventHandler) {
             if (vboVertex != INVALID_BUFFER) {
@@ -1629,6 +1711,32 @@ public:
     }
 
     ~AminoGroup() {
+        if (!destroyed) {
+            destroyAminoGroup();
+        }
+    }
+
+    /**
+     * Free all resources.
+     */
+    void destroy() override {
+        if (destroyed) {
+            return;
+        }
+
+        //instance
+        destroyAminoGroup();
+
+        //base
+        AminoNode::destroy();
+    }
+
+    /**
+     * Free children.
+     */
+    void destroyAminoGroup() {
+        //reset children
+        children.clear();
     }
 
     void setup() override {
@@ -1713,8 +1821,7 @@ private:
 
         AminoNode *node = static_cast<AminoNode *>(update->valueObj);
 
-        //keep retained instance
-        update->valueObj = NULL;
+        //Note: reference kept on JS side
 
         if (DEBUG_BASE) {
             printf("-> addChild()\n");
@@ -1750,8 +1857,7 @@ private:
             return;
         }
 
-        //retain instance of child
-        child->retain();
+        //Note: reference kept on JS side
 
         //handle async
         group_insert_t *data = new group_insert_t();
@@ -1770,8 +1876,6 @@ private:
             group_insert_t *data = (group_insert_t *)update->data;
 
             assert(data);
-
-            //keep retained instance
 
             if (DEBUG_BASE) {
                 printf("-> insertChild()\n");
@@ -1823,12 +1927,9 @@ private:
         //remove pointer
         std::vector<AminoNode *>::iterator pos = std::find(children.begin(), children.end(), node);
 
-        if (pos != children.end()) {
-            children.erase(pos);
+        assert(pos != children.end());
 
-            //remove strong reference (on main thread)
-            update->releaseLater = node;
-        }
+        children.erase(pos);
     }
 };
 

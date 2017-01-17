@@ -84,15 +84,30 @@ AminoFont::AminoFont(): AminoJSObject(getFactory()->name) {
 }
 
 AminoFont::~AminoFont() {
-    //empty
+    if (!destroyed) {
+        destroyAminoFont();
+    }
 }
 
 /**
  * Destroy font data.
  */
 void AminoFont::destroy() {
-    AminoJSObject::destroy();
+    if (destroyed) {
+        return;
+    }
 
+    //instance
+    destroyAminoFont();
+
+    //base class
+    AminoJSObject::destroy();
+}
+
+/**
+ * Destroy font data.
+ */
+void AminoFont::destroyAminoFont() {
     //font sizes
     for (std::map<int, texture_font_t *>::iterator it = fontSizes.begin(); it != fontSizes.end(); it++) {
         texture_font_delete(it->second);

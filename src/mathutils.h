@@ -26,6 +26,12 @@ void make_identity_matrix(GLfloat *m);
 void make_scale_matrix(GLfloat xs, GLfloat ys, GLfloat zs, GLfloat *m);
 void make_trans_matrix(GLfloat x, GLfloat y, GLfloat z, GLfloat *m);
 void make_trans_z_matrix(GLfloat z, GLfloat *m);
+void make_shear_x_matrix(GLfloat sx, GLfloat *m);
+void make_shear_y_matrix(GLfloat sy, GLfloat *m);
+
+bool make_quad_to_quad_matrix(GLfloat dx0, GLfloat dy0, GLfloat dx1, GLfloat dy1, GLfloat dx2, GLfloat dy2, GLfloat dx3, GLfloat dy3, GLfloat sx0, GLfloat sy0, GLfloat sx1, GLfloat sy1, GLfloat sx2, GLfloat sy2, GLfloat sx3, GLfloat sy3, GLfloat *matrix);
+bool make_quad_to_square_matrix(GLfloat sx0, GLfloat sy0, GLfloat sx1, GLfloat sy1, GLfloat sx2, GLfloat sy2, GLfloat sx3, GLfloat sy3, GLfloat *matrix);
+bool make_square_to_quad_matrix(GLfloat dx0, GLfloat dy0, GLfloat dx1, GLfloat dy1, GLfloat dx2, GLfloat dy2, GLfloat dx3, GLfloat dy3, GLfloat *matrix);
 
 void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b);
 

@@ -34,6 +34,11 @@ AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
 }
 
 AminoGfx::~AminoGfx() {
+    //instance values
+    if (!destroyed) {
+        destroyAminoGfx();
+    }
+
     //callback
     if (startCallback) {
         delete startCallback;
@@ -76,6 +81,9 @@ NAN_MODULE_INIT(AminoGfx::InitClasses) {
     //image class
     AminoImage::Init(target);
 
+    //video class
+    AminoVideo::Init(target);
+
     //fonts class
     AminoFonts::Init(target);
 
@@ -113,6 +121,9 @@ void AminoGfx::Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, AminoJSObject
     Nan::SetPrototypeMethod(tpl, "clearAnimations", ClearAnimations);
     Nan::SetPrototypeMethod(tpl, "getTime", GetTime);
     Nan::SetMethod(tpl, "getTime", GetTime);
+
+    //settings
+    Nan::SetPrototypeMethod(tpl, "updatePerspective", UpdatePerspective);
 
     // stats
     Nan::SetPrototypeMethod(tpl, "_getStats", GetStats);
@@ -719,6 +730,23 @@ NAN_METHOD(AminoGfx::Destroy) {
  * Note: has to run on main thread.
  */
 void AminoGfx::destroy() {
+    if (destroyed) {
+        return;
+    }
+
+    //instance
+    destroyAminoGfx();
+
+    //base destroy
+    AminoJSEventObject::destroy();
+}
+
+/**
+ * Stop rendering and free resources.
+ *
+ * Note: has to run on main thread.
+ */
+void AminoGfx::destroyAminoGfx() {
     //stop thread
     stopRenderingThread();
 
@@ -747,9 +775,6 @@ void AminoGfx::destroy() {
 
     //params
     createParams.Reset();
-
-    //base destroy
-    AminoJSEventObject::destroy();
 
     //debug
     if (DEBUG_BASE) {
@@ -882,6 +907,23 @@ void AminoGfx::setRoot(AminoGroup *group) {
     if (group) {
         group->retain();
     }
+}
+
+/**
+ * Update the perspective.
+ */
+NAN_METHOD(AminoGfx::UpdatePerspective) {
+    AminoGfx *gfx = Nan::ObjectWrap::Unwrap<AminoGfx>(info.This());
+
+    assert(gfx);
+
+    //data
+    v8::Local<v8::Object> perspective = info[0]->ToObject();
+
+    gfx->renderer->setupPerspective(perspective);
+
+    //use in next rendering cycle
+    gfx->viewportChanged = true;
 }
 
 /**
