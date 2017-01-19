@@ -19,7 +19,7 @@
     "async": "^2.0.0-rc.6",
     "feedparser": "^2.1.0",
     "moment": "^2.13.0",
-    "nan": "^2.0.9",
+    "nan": "^2.5.0",
     "node-pre-gyp": "0.6.x",
     "onecolor": "^3.0.4",
     "request": "^2.75.0"

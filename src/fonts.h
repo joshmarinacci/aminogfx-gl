@@ -62,7 +62,7 @@ public:
     static AminoFontFactory* getFactory();
 
     //init
-    static v8::Local<v8::Function> GetInitFunction();
+    static v8::Local<v8::FunctionTemplate> GetInitFunction();
 
 private:
     //Note: instance kept
@@ -112,7 +112,7 @@ public:
     static AminoFontSizeFactory* getFactory();
 
     //init
-    static v8::Local<v8::Function> GetInitFunction();
+    static v8::Local<v8::FunctionTemplate> GetInitFunction();
 
 private:
     //JS constructor
