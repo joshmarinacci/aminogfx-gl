@@ -73,3 +73,5 @@ Or use:
 ```
 node demos/circle.js
 ```
+
+Example of all supported features are in the demos subfolder.
