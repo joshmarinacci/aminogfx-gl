@@ -1,5 +1,6 @@
 # aminogfx-gl
-AminoGFX implementation for OpenGL 2 / OpenGL ES 2
+
+AminoGfx implementation for OpenGL 2 / OpenGL ES 2. Node.js based animation framework supporting images, texts, primitives, 3D transformations and realtime animations. Basic video support on Raspberry Pi (beta feature).
 
 ## Platforms
 
