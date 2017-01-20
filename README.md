@@ -1,22 +1,75 @@
 # aminogfx-gl
-AminoGFX implementation for OpenGL / GLES2
+AminoGFX implementation for OpenGL 2 / OpenGL ES 2
 
-If you are building this by hand you'll need to have pkg-config installed, and glfw3 and freetype.
+## Platforms
 
-On MacOSX w/ Brew:
+* macOS
+* Raspberry Pi
+
+## Requirements
+
+In order to build the native components a couple of libraries and tools are needed.
+
+* Node.js 4.x or 7.x
+ * There is a bug in Node.js v6.9.1 (see https://github.com/nodejs/node/issues/9288).
+* Freetype 2.7.
+* libpng.
+* libjpeg.
+
+### macOS
+
+* GLFW 3.2.
+* FFMPEG
+
+MacPorts setup:
+
+```
+sudo port install glfw freetype ffmpeg
+```
+
+Homebrew setup:
 
 ```
 brew install pkg-config
 brew tap homebrew/versions
 brew install glfw3
 brew install freetype
-npm install
-node demos/circle.js
 ```
 
+### Raspberry Pi
 
-During development you'll want to rebuild the source constantly. use
+* libjpeg-dev
+* libav
+* Raspbian (other Linux variants should work too)
+
+Setup:
+
+```
+sudo apt-get install libjpeg-dev libavformat-dev
+```
+
+## Installation
+
+```
+npm install
+```
+
+## Build
+
+During development you'll want to rebuild the source constantly:
 
 ```
 npm install --build-from-source
+```
+
+Or use:
+
+```
+./rebuild.sh
+```
+
+## Demo
+
+```
+node demos/circle.js
 ```
