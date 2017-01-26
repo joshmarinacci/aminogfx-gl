@@ -49,7 +49,7 @@ public:
     static NAN_MODULE_INIT(Init);
 
     //init
-    static v8::Local<v8::Function> GetInitFunction();
+    static v8::Local<v8::FunctionTemplate> GetInitFunction();
 
 protected:
     void destroy() override;

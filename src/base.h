@@ -517,14 +517,14 @@ public:
     /**
      * Initialize Group template.
      */
-    static v8::Local<v8::Function> GetInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
         //prototype methods
         // -> none
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
     /**
@@ -805,7 +805,7 @@ public:
     /**
      * Initialize Group template.
      */
-    static v8::Local<v8::Function> GetInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
         //methods
@@ -813,7 +813,7 @@ public:
         Nan::SetPrototypeMethod(tpl, "stop", Stop);
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
     /**
@@ -1332,13 +1332,13 @@ public:
     /**
      * Initialize Rect template.
      */
-    static v8::Local<v8::Function> GetRectInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetRectInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getRectFactory());
 
         //no methods
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
     /**
@@ -1368,13 +1368,13 @@ public:
     /**
      * Initialize ImageView template.
      */
-    static v8::Local<v8::Function> GetImageViewInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetImageViewInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getImageViewFactory());
 
         //no methods
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
     /**
@@ -1487,13 +1487,13 @@ public:
     /**
      * Initialize Group template.
      */
-    static v8::Local<v8::Function> GetInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
         //no methods
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
     /**
@@ -1635,13 +1635,13 @@ public:
     /**
      * Initialize Group template.
      */
-    static v8::Local<v8::Function> GetInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
         //no methods
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
     /**
@@ -1771,7 +1771,7 @@ public:
     /**
      * Initialize Group template.
      */
-    static v8::Local<v8::Function> GetInitFunction() {
+    static v8::Local<v8::FunctionTemplate> GetInitFunction() {
         v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
         //prototype methods
@@ -1780,7 +1780,7 @@ public:
         Nan::SetPrototypeMethod(tpl, "_remove", Remove);
 
         //template function
-        return Nan::GetFunction(tpl).ToLocalChecked();
+        return tpl;
     }
 
 private:

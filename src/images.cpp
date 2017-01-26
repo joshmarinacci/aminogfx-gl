@@ -904,7 +904,7 @@ AminoTextureFactory* AminoTexture::getFactory() {
 /**
  * Initialize Texture template.
  */
-v8::Local<v8::Function> AminoTexture::GetInitFunction() {
+v8::Local<v8::FunctionTemplate> AminoTexture::GetInitFunction() {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
     //methods
@@ -915,7 +915,7 @@ v8::Local<v8::Function> AminoTexture::GetInitFunction() {
     Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
 
     //template function
-    return Nan::GetFunction(tpl).ToLocalChecked();
+    return tpl;
 }
 
 /**

@@ -141,13 +141,13 @@ AminoFontFactory* AminoFont::getFactory() {
 /**
  * Initialize Group template.
  */
-v8::Local<v8::Function> AminoFont::GetInitFunction() {
+v8::Local<v8::FunctionTemplate> AminoFont::GetInitFunction() {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
     //no methods
 
     //template function
-    return Nan::GetFunction(tpl).ToLocalChecked();
+    return tpl;
 }
 
 /**
@@ -287,7 +287,7 @@ AminoFontSizeFactory* AminoFontSize::getFactory() {
 /**
  * Initialize AminoFontSize template.
  */
-v8::Local<v8::Function> AminoFontSize::GetInitFunction() {
+v8::Local<v8::FunctionTemplate> AminoFontSize::GetInitFunction() {
     v8::Local<v8::FunctionTemplate> tpl = AminoJSObject::createTemplate(getFactory());
 
     //methods
@@ -295,7 +295,7 @@ v8::Local<v8::Function> AminoFontSize::GetInitFunction() {
     Nan::SetPrototypeMethod(tpl, "getFontMetrics", GetFontMetrics);
 
     //template function
-    return Nan::GetFunction(tpl).ToLocalChecked();
+    return tpl;
 }
 
 /**

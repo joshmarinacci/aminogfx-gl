@@ -80,7 +80,7 @@ public:
     static AminoTextureFactory* getFactory();
 
     //init
-    static v8::Local<v8::Function> GetInitFunction();
+    static v8::Local<v8::FunctionTemplate> GetInitFunction();
 
     //video
     void initVideoTexture();
