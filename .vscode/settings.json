@@ -2,5 +2,6 @@
 {
     "window.reopenFolders": "all",
     "files.trimTrailingWhitespace": true,
-    "telemetry.enableTelemetry": false
+    "telemetry.enableTelemetry": false,
+    "files.associations": {}
 }
