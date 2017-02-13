@@ -250,10 +250,15 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
             quadM
         );
 
-        assert(res);
+        if (res) {
+            mul_matrix(modelView2, modelView, quadM);
+            copy_matrix(modelView, modelView2);
+        } else {
+            //failed
 
-        mul_matrix(modelView2, modelView, quadM);
-        copy_matrix(modelView, modelView2);
+            //show warning
+            printf("error: invalid perspective correction coordinates\n");
+        }
     }
 
     //set viewport
