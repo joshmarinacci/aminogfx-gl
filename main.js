@@ -1712,6 +1712,7 @@ AminoFonts.prototype.init = function () {
 
     //default fonts
     this.registerFont({
+        //Source Sans Pro (https://fonts.google.com/specimen/Source+Sans+Pro)
         name: 'source',
         weights: {
             200: {
@@ -1726,7 +1727,6 @@ AminoFonts.prototype.init = function () {
                 normal: 'SourceSansPro-Regular.ttf',
                 italic: 'SourceSansPro-Italic.ttf'
             },
-
             600: {
                 normal: 'SourceSansPro-Semibold.ttf',
                 italic: 'SourceSansPro-SemiboldItalic.ttf'
@@ -1743,6 +1743,22 @@ AminoFonts.prototype.init = function () {
     });
 
     this.registerFont({
+        //Noto UI (https://fonts.google.com/specimen/Source+Sans+Pro)
+        name: 'noto-ui',
+        weights: {
+            400: {
+                normal: 'NotoSansUI-Regular.ttf',
+                italic: 'NotoSansUI-Italic.ttf'
+            },
+            700: {
+                normal: 'NotoSansUI-Bold.ttf',
+                italic: 'NotoSansUI-BoldItalic'
+            }
+        }
+    });
+
+    this.registerFont({
+        //Font-Awesome (https://github.com/FortAwesome/Font-Awesome/blob/master/fonts/fontawesome-webfont.ttf)
         name: 'awesome',
         weights: {
             400: {
@@ -1790,8 +1806,8 @@ AminoFonts.prototype.getFont = function (descr, callback) {
 
     const name = descr.name || this.defaultFont.name;
     const size = Math.round(descr.size || 20);
-    const weight = descr.weight || 400;
-    const style = descr.style || 'normal';
+    let weight = descr.weight || 400;
+    let style = descr.style || 'normal';
 
     //console.log('getFont() ' + name + ' ' + size + ' ' + weight + ' ' + style);
 
