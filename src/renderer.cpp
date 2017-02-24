@@ -159,6 +159,23 @@ void AminoRenderer::setupPerspective(v8::Local<v8::Object> &perspective) {
         }
     }
 
+    //vanishing point
+    Nan::MaybeLocal<v8::Value> vpMaybe = Nan::Get(perspective, Nan::New<v8::String>("vp").ToLocalChecked());
+
+    if (!vpMaybe.IsEmpty()) {
+        v8::Local<v8::Value> value = vpMaybe.ToLocalChecked();
+
+        if (value->IsArray()) {
+            v8::Handle<v8::Array> arr = v8::Handle<v8::Array>::Cast(value);
+            std::size_t count = arr->Length();
+
+            assert(count == 2);
+
+            vanishingPoint[0] = (GLfloat)(arr->Get(0)->NumberValue());
+            vanishingPoint[1] = (GLfloat)(arr->Get(1)->NumberValue());
+        }
+    }
+
     //projection correction (non-affine)
     Nan::MaybeLocal<v8::Value> srcMaybe = Nan::Get(perspective, Nan::New<v8::String>("src").ToLocalChecked());
 
@@ -231,9 +248,13 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
 
     mul_matrix(modelView, pixelM, m4);
 
+    //vanishing point (setup)
+    GLfloat vpX = vanishingPoint[0];
+    GLfloat vpY = vanishingPoint[1];
+
     //perspective correction
     if (corrUsed) {
-        GLfloat quadM[16], modelView2[16];
+        GLfloat quadM[16];
         bool res = make_quad_to_quad_matrix(
             //dest
             corrDst[0] * width, corrDst[1] * height,
@@ -247,18 +268,47 @@ void AminoRenderer::updateViewport(GLfloat width, GLfloat height, GLfloat viewpo
             corrSrc[4] * width, corrSrc[5] * height,
             corrSrc[6] * width, corrSrc[7] * height,
 
+            //result
             quadM
         );
 
         if (res) {
+            GLfloat modelView2[16];
+
             mul_matrix(modelView2, modelView, quadM);
             copy_matrix(modelView, modelView2);
+
+            //vanishing point correction
+            if (!orthographic) {
+                GLfloat x = vpX * width;
+                GLfloat y = vpY * height;
+
+                //debug
+                //printf("vp org: %f %f\n", vpX, vpY);
+
+                //transform coordinate
+                GLfloat divider = quadM[3] * x + quadM[7] * y + quadM[15];
+                GLfloat newX = (quadM[0] * x + quadM[4] * y + quadM[12]) / divider;
+                GLfloat newY = (quadM[1] * x + quadM[5] * y + quadM[13]) / divider;
+
+                vpX = newX / width;
+                vpY = newY / height;
+
+                //debug
+                //printf("vp res: %f %f\n", vpX, vpY);
+            }
         } else {
             //failed
 
             //show warning
             printf("error: invalid perspective correction coordinates\n");
         }
+    }
+
+    //vanishing point
+    if (!orthographic) {
+        modelView[8] += -2.0f * (vpX - .5f);
+        modelView[9] += 2.0f * (vpY - .5f);
     }
 
     //set viewport
