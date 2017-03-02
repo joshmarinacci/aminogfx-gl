@@ -12,7 +12,7 @@ AminoGfx implementation for OpenGL 2 / OpenGL ES 2. Node.js based animation fram
 In order to build the native components a couple of libraries and tools are needed.
 
 * Node.js 4.x or 7.x
- * There is a bug in Node.js v6.9.1 (see https://github.com/nodejs/node/issues/9288).
+ * There is a bug in Node.js v6.9.1 (see https://github.com/nodejs/node/issues/9288; fixed in Node.js > 6.10?).
 * Freetype 2.7.
 * libpng.
 * libjpeg.
