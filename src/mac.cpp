@@ -700,7 +700,16 @@ void AminoMacVideoPlayer::init() {
     VideoDemuxer *demuxer = new VideoDemuxer();
 
     demuxer->init();
-    demuxer->loadFile(filename);
+
+    if (demuxer->loadFile(filename)) {
+        demuxer->initStream();
+//cbx more
+        //test: save to file
+        //demuxer->saveStream("test_h264.h264");
+
+//        demuxer->readFrame();
+    }
+
     delete demuxer;
 
     //stop

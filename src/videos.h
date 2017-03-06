@@ -4,7 +4,13 @@
 #include "base_js.h"
 #include "gfx.h"
 
-#define DEBUG_VIDEOS false
+extern "C" {
+    #include "libavformat/avformat.h"
+    #include "libswscale/swscale.h"
+}
+
+//cbx FIXME
+#define DEBUG_VIDEOS true
 
 class AminoVideoFactory;
 class AminoTexture;
@@ -96,11 +102,28 @@ public:
 
     bool init();
     bool loadFile(std::string filename);
+    bool initStream();
+
+    bool saveStream(std::string filename);
+    bool readFrame();
 
     std::string getLastError();
 
 private:
     std::string lastError;
+
+    //context
+    AVFormatContext *context = NULL;
+    AVCodecContext *codecCtx = NULL;
+
+    //stream info
+    int videoStream = -1;
+    size_t width = 0;
+    size_t height = 0;
+    float durationSecs = -1.f;
+    bool isH264 = false;
+
+    void close();
 };
 
 #endif

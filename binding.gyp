@@ -56,7 +56,8 @@
                         '-ljpeg',
                         '-lpng',
                         '-lavcodec',
-                        '-lavformat'
+                        '-lavformat',
+                        '-lswscale'
                     ],
                     "sources": [
                         "src/mac.cpp",
@@ -103,7 +104,8 @@
                                 "-ljpeg",
                                 "-lpng",
                                 '-lavcodec',
-                                '-lavformat'
+                                '-lavformat',
+                                '-lswscale'
 		                    ],
 		                    "defines": [
 		                        "RPI"

@@ -2,10 +2,6 @@
 #include "base.h"
 #include "images.h"
 
-extern "C" {
-    #include "libavformat/avformat.h"
-}
-
 //
 // AminoVideo
 //
@@ -234,12 +230,15 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
 // VideoDemuxer
 //
 
+/**
+ * See http://dranger.com/ffmpeg/tutorial01.html.
+ */
 VideoDemuxer::VideoDemuxer() {
     //empty
 }
 
 VideoDemuxer::~VideoDemuxer() {
-    //empty
+    close();
 }
 
 /**
@@ -259,33 +258,42 @@ bool VideoDemuxer::init() {
  * Load a video from a file.
  */
 bool VideoDemuxer::loadFile(std::string filename) {
+    //close previous instances
+    close();
+
+    //init
     const char *file = filename.c_str();
-    AVFormatContext *context = avformat_alloc_context();
+
+    context = avformat_alloc_context();
 
     if (avformat_open_input(&context, file, 0, NULL) != 0) {
         lastError = "file open error";
-        avformat_close_input(&context);
+        close();
+
         return false;
     }
 
     //find stream
     if (avformat_find_stream_info(context, NULL) < 0) {
         lastError = "could not find streams";
-        avformat_close_input(&context);
+        close();
+
         return false;
     }
 
     //debug
     if (DEBUG_VIDEOS) {
+        //output video format details
         av_dump_format(context, 0, file, 0);
     }
 
     //get video stream
-    int videoStream = -1;
+    videoStream = -1;
 
     for (unsigned int i = 0; i < context->nb_streams; i++) {
         //Note: warning on macOS (codecpar not available on RPi)
         if (context->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+            //found video stream
             videoStream = i;
             break;
         }
@@ -293,31 +301,279 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     if (videoStream == -1) {
         lastError = "not a video";
-        avformat_close_input(&context);
+        close();
+
         return false;
     }
 
+    //calc duration
+    AVStream *stream = context->streams[videoStream];
+    int64_t duration = stream->duration;
+
+    durationSecs = duration * stream->time_base.num / (float)stream->time_base.den;
+
+    //check H264
+    codecCtx = stream->codec;
+
+    width = codecCtx->width;
+    height = codecCtx->height;
+    isH264 = codecCtx->codec_id == AV_CODEC_ID_H264;
+
     //debug
     if (DEBUG_VIDEOS) {
-        AVStream *stream = context->streams[videoStream];
-        int64_t duration = stream->duration;
-
-        printf("video found: duration=%i s\n", (int)duration * stream->time_base.num / stream->time_base.den);
+        printf("video found: duration=%i s\n", (int)durationSecs);
 
         //Note: warning on macOS (codecpar not available on RPi)
-        if (stream->codec->codec_id == AV_CODEC_ID_H264) {
+        if (isH264) {
             printf(" -> H264\n");
         }
     }
 
-    //cbx
+    return true;
+}
 
-    avformat_close_input(&context);
+/**
+ * Initialize decoder.
+ */
+bool VideoDemuxer::initStream() {
+    if (!codecCtx) {
+        return false;
+    }
+
+    AVCodec *codec = NULL;
+
+    //find the decoder for the video stream
+    codec = avcodec_find_decoder(codecCtx->codec_id);
+
+    if (!codec) {
+        lastError = "unsupported codec";
+        return false;
+    }
+
+    //copy context
+    AVCodecContext *codecCtxOrig = codecCtx;
+
+    codecCtx = avcodec_alloc_context3(codec);
+
+    //Note: deprecated warning on macOS
+    if (avcodec_copy_context(codecCtx, codecCtxOrig) != 0) {
+        lastError = "could not copy codec context";
+        return false;
+    }
+
+    //open codec
+    AVDictionary *opts = NULL;
+
+    if (avcodec_open2(codecCtx, codec, &opts) < 0) {
+        lastError = "could not open codec";
+        return false;
+    }
+
+    if (DEBUG_VIDEOS) {
+        //show dictionary
+        AVDictionaryEntry *t = NULL;
+
+        while ((t = av_dict_get(opts, "", t, AV_DICT_IGNORE_SUFFIX))) {
+            printf(" -> %s: %s\n", t->key, t->value);
+        }
+    }
+
+    av_dict_free(&opts);
+
+    //debug
+    if (DEBUG_VIDEOS) {
+        printf(" -> stream initialized\n");
+    }
+
+    return true;
+}
+
+/**
+ * Save raw video stream to file (H264 only).
+ *
+ * See http://stackoverflow.com/questions/13290413/why-decoding-frames-from-avi-container-and-encode-them-to-h264-mp4-doesnt-work.
+ */
+bool VideoDemuxer::saveStream(std::string filename) {
+    //check if ready
+    if (!context || !codecCtx || !isH264) {
+        return false;
+    }
+
+    //prepare
+    AVOutputFormat *outFmt = av_guess_format("h264", NULL, NULL);
+
+    if (!outFmt) {
+        return false;
+    }
+
+    AVFormatContext *outCtx = NULL;
+    int err = avformat_alloc_output_context2(&outCtx, outFmt, NULL, NULL);
+
+    if (err < 0 || !outCtx) {
+        return false;
+    }
+
+    AVStream *inStrm = context->streams[videoStream];
+    AVStream *outStrm = avformat_new_stream(outCtx, inStrm->codec->codec);
+    bool res = false;
+
+    //settings
+    avcodec_copy_context(outStrm->codec, inStrm->codec);
+
+    //prevent warning on macOS
+    outStrm->time_base = inStrm->time_base;
+
+    err = avio_open(&outCtx->pb, filename.c_str(), AVIO_FLAG_WRITE);
+
+    if (err < 0) {
+        goto done;
+    }
+
+#if (LIBAVFORMAT_VERSION_MAJOR == 53)
+    AVFormatParameters params = { 0 };
+
+    err = av_set_parameters(outCtx, &params);
+
+    if (err < 0) {
+        goto done;
+    }
+
+    av_write_header(outFmtCtx);
+#else
+    if (avformat_write_header(outCtx, NULL) < 0) {
+        goto done;
+    }
+#endif
+
+    while (true) {
+        AVPacket packet;
+
+        av_init_packet(&packet);
+
+        err = AVERROR(EAGAIN);
+
+        while (AVERROR(EAGAIN) == err) {
+            err = av_read_frame(context, &packet);
+        }
+
+        if (err < 0) {
+            if (AVERROR_EOF != err && AVERROR(EIO) != err) {
+                goto done;
+            } else {
+                //end of file
+                break;
+            }
+        }
+
+        if (packet.stream_index == videoStream) {
+            packet.stream_index = 0;
+            packet.pos = -1;
+
+            err = av_interleaved_write_frame(outCtx, &packet);
+
+            if (err < 0) {
+                goto done;
+            }
+        }
+
+        av_free_packet(&packet);
+    }
+
+    av_write_trailer(outCtx);
+
+    //done
+    res = true;
+
+    //debug
+    //printf("-> wrote file\n");
+
+done:
+    if (!(outCtx->oformat->flags & AVFMT_NOFILE) && outCtx->pb) {
+        avio_close(outCtx->pb);
+    }
+
+    avformat_free_context(outCtx);
+
+    return res;
+}
+
+bool VideoDemuxer::readFrame() {
+    if (!context || !codecCtx) {
+        return false;
+    }
+
+    //allocate video frame
+    AVFrame *frame = av_frame_alloc();
+
+    //allocate an AVFrame structure
+    AVFrame *frameRGB = av_frame_alloc();
+
+    if (!frameRGB) {
+        lastError = "could not allocate frame";
+        return false;
+    }
+
+    uint8_t *buffer = NULL;
+    int numBytes;
+
+    //determine required buffer size and allocate buffer
+    //Note: deprecated warning on macOS
+    numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
+    buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+
+    //read
+    //Note: deprecated warning on macOS
+    avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
+
+    //initialize SWS context for software scaling
+    struct SwsContext *sws_ctx = NULL;
+
+    sws_ctx = sws_getContext(codecCtx->width, codecCtx->height, codecCtx->pix_fmt, codecCtx->width, codecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+
+    //read frames
+    AVPacket packet;
+
+    while (av_read_frame(context, &packet) >= 0) {
+        //is this a packet from the video stream?
+        if (packet.stream_index == videoStream) {
+	        //decode video frame
+            int frameFinished;
+
+            avcodec_decode_video2(codecCtx, frame, &frameFinished, &packet);
+
+            //did we get a video frame?
+            if (frameFinished) {
+                //convert the image from its native format to RGB
+                sws_scale(sws_ctx, (uint8_t const * const *)frame->data, frame->linesize, 0, codecCtx->height, frameRGB->data, frameRGB->linesize);
+
+                //cbx use frame
+                printf("frame read\n"); //cbx
+            }
+        }
+
+        //free the packet that was allocated by av_read_frame
+        av_free_packet(&packet);
+    }
 
     return true;
 }
 
 #pragma GCC diagnostic pop
+
+/**
+ * Close handlers.
+ */
+void VideoDemuxer::close() {
+    if (context) {
+        avformat_close_input(&context);
+        context = NULL;
+    }
+
+    //cbx more
+
+    codecCtx = NULL;
+    videoStream = -1;
+}
 
 /**
  * Get the last error.
