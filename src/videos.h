@@ -81,7 +81,7 @@ protected:
     std::string lastError;
 
     //settings
-    bool loop = true;
+    int loop = -1;
 
     //video
     int videoW = 0;
@@ -100,12 +100,13 @@ enum READ_FRAME_RESULT {
 };
 
 /**
- * Demux a video container.
+ * Demux a video container stream.
  */
 class VideoDemuxer {
 public:
     size_t width = 0;
     size_t height = 0;
+    float fps = -1;
     float durationSecs = -1.f;
     bool isH264 = false;
 
@@ -118,6 +119,7 @@ public:
 
     bool saveStream(std::string filename);
     READ_FRAME_RESULT readFrame();
+    bool rewind();
     uint8_t *getFrameData(int &id);
 
     std::string getLastError();
@@ -130,6 +132,7 @@ private:
     AVCodecContext *codecCtx = NULL;
 
     //stream info
+    std::string filename;
     int videoStream = -1;
 
     //read
@@ -139,8 +142,8 @@ private:
     uint8_t *buffer = NULL;
     struct SwsContext *sws_ctx = NULL;
 
-    void close();
-    void closeReadFrame();
+    void close(bool destroy);
+    void closeReadFrame(bool destroy);
 };
 
 #endif

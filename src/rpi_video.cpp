@@ -369,9 +369,14 @@ bool AminoOmxVideoPlayer::initOmx() {
                     printf("OMX: rewind stream\n");
                 }
 
-                if (!loop) {
-                    handlePlaybackDone();
-                    break;
+                if (loop > 0) {
+                    loop--;
+
+                    if (loop == 0) {
+                        //end playback
+                        handlePlaybackDone();
+                        break;
+                    }
                 }
 
                 if (!stream->rewind()) {

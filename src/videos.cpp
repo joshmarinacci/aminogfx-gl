@@ -239,7 +239,7 @@ VideoDemuxer::VideoDemuxer() {
 
 VideoDemuxer::~VideoDemuxer() {
     //free resources
-    close();
+    close(true);
 }
 
 /**
@@ -260,7 +260,9 @@ bool VideoDemuxer::init() {
  */
 bool VideoDemuxer::loadFile(std::string filename) {
     //close previous instances
-    close();
+    close(false);
+
+    this->filename = filename;
 
     //init
     const char *file = filename.c_str();
@@ -269,7 +271,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     if (avformat_open_input(&context, file, 0, NULL) != 0) {
         lastError = "file open error";
-        close();
+        close(false);
 
         return false;
     }
@@ -277,7 +279,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
     //find stream
     if (avformat_find_stream_info(context, NULL) < 0) {
         lastError = "could not find streams";
-        close();
+        close(false);
 
         return false;
     }
@@ -302,7 +304,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     if (videoStream == -1) {
         lastError = "not a video";
-        close();
+        close(false);
 
         return false;
     }
@@ -313,16 +315,20 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     durationSecs = duration * stream->time_base.num / (float)stream->time_base.den;
 
+    if (durationSecs < 0) {
+        durationSecs = -1;
+    }
+
     //check H264
     codecCtx = stream->codec;
-
+    fps = codecCtx->framerate.num / (float)codecCtx->framerate.den;
     width = codecCtx->width;
     height = codecCtx->height;
     isH264 = codecCtx->codec_id == AV_CODEC_ID_H264;
 
     //debug
     if (DEBUG_VIDEOS) {
-        printf("video found: duration=%i s\n", (int)durationSecs);
+        printf("video found: duration=%i s, fps=%f\n", (int)durationSecs, fps);
 
         //Note: warning on macOS (codecpar not available on RPi)
         if (isH264) {
@@ -519,12 +525,14 @@ done:
             return READ_ERROR;
         }
 
-        //determine required buffer size and allocate buffer
-        //Note: deprecated warning on macOS
-        int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
-        //int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height, 1);
+        if (!buffer) {
+            //determine required buffer size and allocate buffer
+            //Note: deprecated warning on macOS
+            int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
+            //int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height, 1);
 
-        buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+            buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+        }
 
         //fill buffer
         //Note: deprecated warning on macOS
@@ -593,34 +601,69 @@ done:
 #pragma GCC diagnostic pop
 
 /**
+ * Rewind playback (go back to first frame).
+ */
+bool VideoDemuxer::rewind() {
+    //reload & verify
+    size_t prevW = width;
+    size_t prevH = height;
+
+    if (!loadFile(filename) || prevW != width || prevH != height) {
+        return false;
+    }
+
+    //load first frame
+    return initStream() && readFrame() == READ_OK;
+
+    //FIXME did not work
+    /*
+    if (!context) {
+        return false;
+    }
+
+    return av_seek_frame(context, videoStream, 0, AVSEEK_FLAG_FRAME) >= 0;
+    */
+}
+
+/**
  * Get frame data.
  */
 uint8_t *VideoDemuxer::getFrameData(int &id) {
     id = frameRGBCount;
 
-    return frameRGB ? frameRGB->data[0]:NULL; //Note: could also use buffer
+    return buffer; //same as frameRGB->data[0]
 }
 
 /**
  * Close handlers.
  */
-void VideoDemuxer::close() {
+void VideoDemuxer::close(bool destroy) {
     if (context) {
         avformat_close_input(&context);
         context = NULL;
     }
 
-    codecCtx = NULL;
+    if (codecCtx) {
+        avcodec_free_context(&codecCtx);
+        codecCtx = NULL;
+    }
+
     videoStream = -1;
 
+    durationSecs = -1;
+    fps = -1;
+    width = 0;
+    height = 0;
+    isH264 = false;
+
     //close read
-    closeReadFrame();
+    closeReadFrame(destroy);
 }
 
 /**
  * Free readFrame() resources.
  */
-void VideoDemuxer::closeReadFrame() {
+void VideoDemuxer::closeReadFrame(bool destroy) {
     if (frame) {
         av_frame_free(&frame);
         frame = NULL;
@@ -633,7 +676,8 @@ void VideoDemuxer::closeReadFrame() {
 
     frameRGBCount = -1;
 
-    if (buffer) {
+    //Note: kept until demuxer is destroyed
+    if (buffer && destroy) {
         av_free(buffer);
         buffer = NULL;
     }

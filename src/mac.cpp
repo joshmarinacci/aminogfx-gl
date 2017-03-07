@@ -788,11 +788,47 @@ void AminoMacVideoPlayer::initDemuxer() {
     texture->initVideoTexture();
 
     //cbx TODO playback loop
-    while (demuxer->readFrame() == READ_OK) {
-        usleep(100000);
-    }
+    while (true) {
+        int res = demuxer->readFrame();
 
-    //cbx loop
+        if (res == READ_ERROR) {
+            if (DEBUG_VIDEOS) {
+                printf("-> read error\n");
+            }
+
+            handlePlaybackError();
+            return;
+        }
+
+        if (res == READ_END_OF_VIDEO) {
+            if (DEBUG_VIDEOS) {
+                printf("-> end of video\n");
+            }
+
+            if (loop > 0) {
+                loop--;
+
+                if (loop == 0) {
+                    //end playback
+                    handlePlaybackDone();
+                    return;
+                }
+            }
+
+            //rewind
+            if (!demuxer->rewind()) {
+                handlePlaybackError();
+                return;
+            }
+
+            if (DEBUG_VIDEOS) {
+                printf("-> rewind\n");
+            }
+        }
+
+        //cbx correct timing
+        usleep(10000);
+    }
 }
 
 /**
