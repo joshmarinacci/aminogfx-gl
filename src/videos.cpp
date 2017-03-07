@@ -238,6 +238,7 @@ VideoDemuxer::VideoDemuxer() {
 }
 
 VideoDemuxer::~VideoDemuxer() {
+    //free resources
     close();
 }
 
@@ -497,43 +498,63 @@ done:
     return res;
 }
 
-bool VideoDemuxer::readFrame() {
+/**
+ * Read a video frame.
+ */
+ READ_FRAME_RESULT VideoDemuxer::readFrame() {
     if (!context || !codecCtx) {
-        return false;
+        return READ_ERROR;
     }
 
-    //allocate video frame
-    AVFrame *frame = av_frame_alloc();
+    //initialize
+    if (!frame) {
+        //allocate video frame
+        frame = av_frame_alloc();
 
-    //allocate an AVFrame structure
-    AVFrame *frameRGB = av_frame_alloc();
+        //allocate an AVFrame structure
+        frameRGB = av_frame_alloc();
 
-    if (!frameRGB) {
-        lastError = "could not allocate frame";
-        return false;
+        if (!frame || !frameRGB) {
+            lastError = "could not allocate frame";
+            return READ_ERROR;
+        }
+
+        //determine required buffer size and allocate buffer
+        //Note: deprecated warning on macOS
+        int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
+        //int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height, 1);
+
+        buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+
+        //fill buffer
+        //Note: deprecated warning on macOS
+
+        avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
+        //av_image_fill_arrays(frameRGB->data, frameRGB->linesize, buffer, AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height, 1);
+
+        //initialize SWS context for software scaling
+        sws_ctx = sws_getContext(codecCtx->width, codecCtx->height, codecCtx->pix_fmt, codecCtx->width, codecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
     }
-
-    uint8_t *buffer = NULL;
-    int numBytes;
-
-    //determine required buffer size and allocate buffer
-    //Note: deprecated warning on macOS
-    numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
-    buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-
-    //read
-    //Note: deprecated warning on macOS
-    avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
-
-    //initialize SWS context for software scaling
-    struct SwsContext *sws_ctx = NULL;
-
-    sws_ctx = sws_getContext(codecCtx->width, codecCtx->height, codecCtx->pix_fmt, codecCtx->width, codecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
 
     //read frames
     AVPacket packet;
+    READ_FRAME_RESULT res = READ_OK;
 
-    while (av_read_frame(context, &packet) >= 0) {
+    while (true) {
+        int status = av_read_frame(context, &packet);
+
+        //check end of video
+        if (status == AVERROR_EOF) {
+            res = READ_END_OF_VIDEO;
+            goto done;
+        }
+
+        //check error
+        if (status < 0) {
+            res = READ_ERROR;
+            goto done;
+        }
+
         //is this a packet from the video stream?
         if (packet.stream_index == videoStream) {
 	        //decode video frame
@@ -546,19 +567,39 @@ bool VideoDemuxer::readFrame() {
                 //convert the image from its native format to RGB
                 sws_scale(sws_ctx, (uint8_t const * const *)frame->data, frame->linesize, 0, codecCtx->height, frameRGB->data, frameRGB->linesize);
 
-                //cbx use frame
+                //frameRGB is ready
+                frameRGBCount++;
+
+                //debug
                 printf("frame read\n"); //cbx
+
+                goto done;
             }
         }
 
+        //process next frame
+        continue;
+
+done:
         //free the packet that was allocated by av_read_frame
         av_free_packet(&packet);
+
+        break;
     }
 
-    return true;
+    return res;
 }
 
 #pragma GCC diagnostic pop
+
+/**
+ * Get frame data.
+ */
+uint8_t *VideoDemuxer::getFrameData(int &id) {
+    id = frameRGBCount;
+
+    return frameRGB ? frameRGB->data[0]:NULL; //Note: could also use buffer
+}
 
 /**
  * Close handlers.
@@ -569,10 +610,38 @@ void VideoDemuxer::close() {
         context = NULL;
     }
 
-    //cbx more
-
     codecCtx = NULL;
     videoStream = -1;
+
+    //close read
+    closeReadFrame();
+}
+
+/**
+ * Free readFrame() resources.
+ */
+void VideoDemuxer::closeReadFrame() {
+    if (frame) {
+        av_frame_free(&frame);
+        frame = NULL;
+    }
+
+    if (frameRGB) {
+        av_frame_free(&frameRGB);
+        frameRGB = NULL;
+    }
+
+    frameRGBCount = -1;
+
+    if (buffer) {
+        av_free(buffer);
+        buffer = NULL;
+    }
+
+    if (sws_ctx) {
+        sws_freeContext(sws_ctx);
+        sws_ctx = NULL;
+    }
 }
 
 /**

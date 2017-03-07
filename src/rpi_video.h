@@ -68,6 +68,7 @@ public:
     void destroyOmx();
 
     void initVideoTexture() override;
+    void updateVideoTexture() override;
     static void textureThread(void *arg);
     bool useTexture();
 

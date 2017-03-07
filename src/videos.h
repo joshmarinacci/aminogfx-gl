@@ -61,6 +61,7 @@ public:
     virtual bool initStream() = 0; //called on main thread
     virtual void init() = 0; //called on OpenGL thread
     virtual void initVideoTexture() = 0;
+    virtual void updateVideoTexture() = 0;
     virtual void destroy();
     void destroyAminoVideoPlayer();
 
@@ -92,11 +93,22 @@ protected:
     void handleInitDone(bool ready);
 };
 
+enum READ_FRAME_RESULT {
+    READ_OK = 0,
+    READ_ERROR,
+    READ_END_OF_VIDEO
+};
+
 /**
  * Demux a video container.
  */
 class VideoDemuxer {
 public:
+    size_t width = 0;
+    size_t height = 0;
+    float durationSecs = -1.f;
+    bool isH264 = false;
+
     VideoDemuxer();
     virtual ~VideoDemuxer();
 
@@ -105,7 +117,8 @@ public:
     bool initStream();
 
     bool saveStream(std::string filename);
-    bool readFrame();
+    READ_FRAME_RESULT readFrame();
+    uint8_t *getFrameData(int &id);
 
     std::string getLastError();
 
@@ -118,12 +131,16 @@ private:
 
     //stream info
     int videoStream = -1;
-    size_t width = 0;
-    size_t height = 0;
-    float durationSecs = -1.f;
-    bool isH264 = false;
+
+    //read
+    AVFrame *frame = NULL;
+    AVFrame *frameRGB = NULL;
+    int frameRGBCount = -1;
+    uint8_t *buffer = NULL;
+    struct SwsContext *sws_ctx = NULL;
 
     void close();
+    void closeReadFrame();
 };
 
 #endif

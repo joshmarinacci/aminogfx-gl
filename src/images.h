@@ -85,6 +85,7 @@ public:
     //video
     void initVideoTexture();
     void videoPlayerInitDone();
+    void prepareTexture();
 
 private:
     Nan::Callback *callback = NULL;

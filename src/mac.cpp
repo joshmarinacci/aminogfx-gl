@@ -660,10 +660,6 @@ std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLF
 // AminoGfxMacFactory
 //
 
-AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
-    //empty
-}
-
 /**
  * Create AminoGfx factory.
  */
@@ -682,6 +678,14 @@ AminoJSObject* AminoGfxMacFactory::create() {
 // AminoMacVideoPlayer
 //
 
+AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
+    //empty
+}
+
+AminoMacVideoPlayer::~AminoMacVideoPlayer() {
+    closeDemuxer();
+}
+
 /**
  * Initialize the stream.
  */
@@ -696,32 +700,178 @@ bool AminoMacVideoPlayer::initStream() {
  * Initialize the video player.
  */
 void AminoMacVideoPlayer::init() {
-    //cbx test
-    VideoDemuxer *demuxer = new VideoDemuxer();
+    //we are on the OpenGL thread
 
-    demuxer->init();
+    //initialize demuxer
+    assert(filename.length());
 
-    if (demuxer->loadFile(filename)) {
-        demuxer->initStream();
-//cbx more
-        //test: save to file
-        //demuxer->saveStream("test_h264.h264");
+    demuxer = new VideoDemuxer();
 
-//        demuxer->readFrame();
+    if (!demuxer->init()) {
+        lastError = demuxer->getLastError();
+        delete demuxer;
+        demuxer = NULL;
+
+        handleInitDone(false);
+
+        return;
     }
 
-    delete demuxer;
+    //create demuxer thread
+    int res = uv_thread_create(&thread, demuxerThread, this);
 
-    //stop
-    lastError = "videos not supported";
-    handleInitDone(false);
+    assert(res == 0);
+
+    threadRunning = true;
+}
+
+/**
+ * Demuxer thread.
+ */
+void AminoMacVideoPlayer::demuxerThread(void *arg) {
+    AminoMacVideoPlayer *player = static_cast<AminoMacVideoPlayer *>(arg);
+
+    assert(player);
+
+    //init demuxer
+    player->initDemuxer();
+
+    //Note: demuxer not closed
+
+    //done
+    player->threadRunning = false;
+}
+
+/**
+ * Init demuxer.
+ */
+void AminoMacVideoPlayer::initDemuxer() {
+    assert(demuxer);
+
+    //load file
+    if (!demuxer->loadFile(filename)) {
+        lastError = demuxer->getLastError();
+        handleInitDone(false);
+        return;
+    }
+
+    //set video size
+    videoW = demuxer->width;
+    videoH = demuxer->height;
+
+    //initialize stream
+    if (!demuxer->initStream()) {
+        lastError = demuxer->getLastError();
+        handleInitDone(false);
+        return;
+    }
+
+    //test: save to file
+    //demuxer->saveStream("test_h264.h264");
+
+    //read first frame
+    READ_FRAME_RESULT res = demuxer->readFrame();
+
+    if (res == READ_END_OF_VIDEO) {
+        lastError = "empty video";
+        handleInitDone(false);
+        return;
+    }
+
+    if (res == READ_ERROR) {
+        lastError = "could not load video stream";
+        handleInitDone(false);
+        return;
+    }
+
+    //switch to renderer thread
+    texture->initVideoTexture();
+
+    //cbx TODO playback loop
+    while (demuxer->readFrame() == READ_OK) {
+        usleep(100000);
+    }
+
+    //cbx loop
+}
+
+/**
+ * Free the demuxer instance.
+ */
+void AminoMacVideoPlayer::closeDemuxer() {
+    //free demuxer
+    if (demuxer) {
+        delete demuxer;
+        demuxer = NULL;
+    }
 }
 
 /**
  * Init video texture on OpenGL thread.
  */
 void AminoMacVideoPlayer::initVideoTexture() {
-    //ignored
+    if (DEBUG_VIDEOS) {
+        printf("video: init video texture\n");
+    }
+
+    if (!initTexture()) {
+        handleInitDone(false);
+        return;
+    }
+
+    //done
+    handleInitDone(true);
+}
+
+/**
+ * Init texture.
+ */
+bool AminoMacVideoPlayer::initTexture() {
+    glBindTexture(GL_TEXTURE_2D, texture->textureId);
+
+    //size (has to be equal to video dimension!)
+    GLsizei textureW = videoW;
+    GLsizei textureH = videoH;
+
+    assert(demuxer);
+
+    GLvoid *data = demuxer->getFrameData(frameId);
+
+    assert(data);
+    assert(textureW > 0);
+    assert(textureH > 0);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureW, textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    return true;
+}
+
+/**
+ * Update the texture.
+ */
+void AminoMacVideoPlayer::updateVideoTexture() {
+    if (!demuxer) {
+        return;
+    }
+
+    int id;
+    GLvoid *data = demuxer->getFrameData(id);
+
+    if (id == frameId) {
+        return;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture->textureId);
+
+    GLsizei textureW = videoW;
+    GLsizei textureH = videoH;
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, textureW, textureH, GL_RGB, GL_UNSIGNED_BYTE, data);
 }
 
 //

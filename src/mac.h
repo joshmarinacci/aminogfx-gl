@@ -20,13 +20,25 @@ public:
 class AminoMacVideoPlayer : public AminoVideoPlayer {
 public:
     AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video);
+    ~AminoMacVideoPlayer();
 
     bool initStream() override;
     void init() override;
     void initVideoTexture() override;
+    void updateVideoTexture() override;
+    bool initTexture();
 
 private:
     std::string filename;
+    VideoDemuxer *demuxer = NULL;
+    int frameId = -1;
+
+    uv_thread_t thread;
+    bool threadRunning = false;
+
+    void initDemuxer();
+    void closeDemuxer();
+    static void demuxerThread(void *arg);
 };
 
 #endif

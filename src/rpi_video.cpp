@@ -515,7 +515,7 @@ void AminoOmxVideoPlayer::initVideoTexture() {
 
     //ready
 
-    //run on thread
+    //run on thread (do not block rendering thread)
     uv_thread_t thread;
     int res = uv_thread_create(&thread, textureThread, this);
 
@@ -602,6 +602,13 @@ bool AminoOmxVideoPlayer::initTexture() {
     }
 
     return true;
+}
+
+/**
+ * Update the video texture.
+ */
+void AminoOmxVideoPlayer::updateVideoTexture() {
+    //not needed
 }
 
 /**

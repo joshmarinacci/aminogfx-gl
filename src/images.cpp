@@ -690,6 +690,8 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
     glBindTexture(GL_TEXTURE_2D, texture);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+    //Note: glTexSubImage2D() would probably be faster for updates
+
     if (bpp == 3) {
         //RGB (24-bit)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, bufferData);
@@ -1307,6 +1309,15 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
             delete callback;
             callback = NULL;
         }
+    }
+}
+
+/**
+ * Prepare the texture.
+ */
+void AminoTexture::prepareTexture() {
+    if (videoPlayer) {
+        videoPlayer->updateVideoTexture();
     }
 }
 
