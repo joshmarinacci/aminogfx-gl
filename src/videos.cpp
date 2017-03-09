@@ -345,8 +345,15 @@ bool VideoDemuxer::loadFile(std::string filename) {
     //check H264
     codecCtx = stream->codec;
 
+    /*
+    //Note: not available in libav!
     if (codecCtx->framerate.num > 0 && codecCtx->framerate.den > 0) {
         fps = codecCtx->framerate.num / (float)codecCtx->framerate.den;
+    }
+    */
+
+    if (codecCtx->time_base.num > 0 && codecCtx->time_base.den > 0) {
+        fps = 1 / (codecCtx->time_base.num / (float)codecCtx->time_base.den);
     }
 
     width = codecCtx->width;
@@ -607,7 +614,7 @@ done:
                 //timing
                 double pts;
 
-                if (packet.dts != AV_NOPTS_VALUE) {
+                if (packet.dts != (int64_t)AV_NOPTS_VALUE) {
                     pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
                 } else {
                     pts = 0;

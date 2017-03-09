@@ -43,12 +43,13 @@ brew install freetype
 * libjpeg-dev
 * libav
 * libswscale-dev
+* libavcodec-dev
 * Raspbian (other Linux variants should work too)
 
 Setup:
 
 ```
-sudo apt-get install libjpeg-dev libavformat-dev libswscale-dev
+sudo apt-get install libjpeg-dev libavformat-dev libswscale-dev libavcodec-dev
 ```
 
 ## Installation
