@@ -13,13 +13,14 @@ In order to build the native components a couple of libraries and tools are need
 
 * Node.js 4.x or 7.x
  * There is a bug in Node.js v6.9.1 (see https://github.com/nodejs/node/issues/9288; fixed in Node.js > 6.10?).
-* Freetype 2.7.
-* libpng.
-* libjpeg.
+* Freetype 2.7
+* libpng
+* libjpeg
+* libswscale
 
 ### macOS
 
-* GLFW 3.2.
+* GLFW 3.2
 * FFMPEG
 
 MacPorts setup:
@@ -41,12 +42,13 @@ brew install freetype
 
 * libjpeg-dev
 * libav
+* libswscale-dev
 * Raspbian (other Linux variants should work too)
 
 Setup:
 
 ```
-sudo apt-get install libjpeg-dev libavformat-dev
+sudo apt-get install libjpeg-dev libavformat-dev libswscale-dev
 ```
 
 ## Installation
