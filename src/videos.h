@@ -118,8 +118,8 @@ public:
     bool initStream();
 
     bool saveStream(std::string filename);
-    READ_FRAME_RESULT readFrame();
-    bool rewind();
+    READ_FRAME_RESULT readFrame(double &time);
+    bool rewind(double &time);
     uint8_t *getFrameData(int &id);
 
     std::string getLastError();
@@ -134,11 +134,13 @@ private:
     //stream info
     std::string filename;
     int videoStream = -1;
+    AVStream *stream = NULL;
 
     //read
     AVFrame *frame = NULL;
     AVFrame *frameRGB = NULL;
     int frameRGBCount = -1;
+    double lastPts = 0;
     uint8_t *buffer = NULL;
     struct SwsContext *sws_ctx = NULL;
 

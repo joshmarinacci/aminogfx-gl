@@ -2,6 +2,8 @@
 #include "base.h"
 #include "images.h"
 
+#define DEBUG_VIDEO_FRAMES false
+
 //
 // AminoVideo
 //
@@ -330,10 +332,11 @@ bool VideoDemuxer::loadFile(std::string filename) {
     }
 
     //calc duration
-    AVStream *stream = context->streams[videoStream];
+    stream = context->streams[videoStream];
+
     int64_t duration = stream->duration;
 
-    durationSecs = duration * stream->time_base.num / (float)stream->time_base.den;
+    durationSecs = duration * av_q2d(stream->time_base);
 
     if (durationSecs < 0) {
         durationSecs = -1;
@@ -444,15 +447,14 @@ bool VideoDemuxer::saveStream(std::string filename) {
         return false;
     }
 
-    AVStream *inStrm = context->streams[videoStream];
-    AVStream *outStrm = avformat_new_stream(outCtx, inStrm->codec->codec);
+    AVStream *outStrm = avformat_new_stream(outCtx, stream->codec->codec);
     bool res = false;
 
     //settings
-    avcodec_copy_context(outStrm->codec, inStrm->codec);
+    avcodec_copy_context(outStrm->codec, stream->codec);
 
     //prevent warning on macOS
-    outStrm->time_base = inStrm->time_base;
+    outStrm->time_base = stream->time_base;
 
     err = avio_open(&outCtx->pb, filename.c_str(), AVIO_FLAG_WRITE);
 
@@ -531,7 +533,7 @@ done:
 /**
  * Read a video frame.
  */
- READ_FRAME_RESULT VideoDemuxer::readFrame() {
+ READ_FRAME_RESULT VideoDemuxer::readFrame(double &time) {
     if (!context || !codecCtx) {
         return READ_ERROR;
     }
@@ -601,9 +603,36 @@ done:
 
                 //frameRGB is ready
                 frameRGBCount++;
-//cbx TODO: pts, dts, duration (unit: time_base; better use dts)
+
+                //timing
+                double pts;
+
+                if (packet.dts != AV_NOPTS_VALUE) {
+                    pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
+                } else {
+                    pts = 0;
+                }
+
+                if (pts != 0) {
+                    //store last value
+                    lastPts = pts;
+                } else {
+                    //use last value
+                    pts = lastPts;
+                }
+
+                //calc next value
+                double frameDelay = av_q2d(stream->codec->time_base);
+
+                frameDelay += frame->repeat_pict * (frameDelay * .5); //support repeating frames
+                lastPts += frameDelay;
+
+                time = pts;
+
                 //debug
-                printf("frame read\n"); //cbx
+                if (DEBUG_VIDEO_FRAMES) {
+                    printf("frame read: time=%f s\n", pts);
+                }
 
                 goto done;
             }
@@ -627,7 +656,7 @@ done:
 /**
  * Rewind playback (go back to first frame).
  */
-bool VideoDemuxer::rewind() {
+bool VideoDemuxer::rewind(double &time) {
     //reload & verify
     size_t prevW = width;
     size_t prevH = height;
@@ -637,7 +666,7 @@ bool VideoDemuxer::rewind() {
     }
 
     //load first frame
-    return initStream() && readFrame() == READ_OK;
+    return initStream() && readFrame(time) == READ_OK;
 
     //FIXME did not work
     /*
@@ -673,6 +702,7 @@ void VideoDemuxer::close(bool destroy) {
     }
 
     videoStream = -1;
+    stream = NULL;
 
     durationSecs = -1;
     fps = -1;
@@ -699,6 +729,7 @@ void VideoDemuxer::closeReadFrame(bool destroy) {
     }
 
     frameRGBCount = -1;
+    lastPts = 0;
 
     //Note: kept until demuxer is destroyed
     if (buffer && destroy) {

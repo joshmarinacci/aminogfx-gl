@@ -770,7 +770,9 @@ void AminoMacVideoPlayer::initDemuxer() {
     //demuxer->saveStream("test_h264.h264");
 
     //read first frame
-    READ_FRAME_RESULT res = demuxer->readFrame();
+    double timeStart;
+    READ_FRAME_RESULT res = demuxer->readFrame(timeStart);
+    double timeStartSys = getTime() / 1000;
 
     if (res == READ_END_OF_VIDEO) {
         lastError = "empty video";
@@ -787,9 +789,11 @@ void AminoMacVideoPlayer::initDemuxer() {
     //switch to renderer thread
     texture->initVideoTexture();
 
-    //cbx TODO playback loop
+    //playback loop
     while (true) {
-        int res = demuxer->readFrame();
+        double time;
+        int res = demuxer->readFrame(time);
+        double timeSys = getTime() / 1000;
 
         if (res == READ_ERROR) {
             if (DEBUG_VIDEOS) {
@@ -816,18 +820,29 @@ void AminoMacVideoPlayer::initDemuxer() {
             }
 
             //rewind
-            if (!demuxer->rewind()) {
+            if (!demuxer->rewind(timeStart)) {
                 handlePlaybackError();
                 return;
             }
+
+            timeStartSys = getTime() / 1000;
+            timeSys = timeStartSys;
+
+            time = timeStart;
 
             if (DEBUG_VIDEOS) {
                 printf("-> rewind\n");
             }
         }
 
-        //cbx correct timing
-        usleep(10000);
+        //correct timing
+        double timeSleep = (time - timeStart) - (timeSys - timeStartSys);
+
+        if (timeSleep > 0) {
+            usleep(timeSleep * 1000000);
+        }
+
+        //FIXME cbx: frame is shown too early (use two buffers)
     }
 }
 
@@ -895,12 +910,18 @@ void AminoMacVideoPlayer::updateVideoTexture() {
         return;
     }
 
+    //get current frame
     int id;
     GLvoid *data = demuxer->getFrameData(id);
 
     if (id == frameId) {
+        //debug
+        //printf("skipping frame\n");
+
         return;
     }
+
+    frameId = id;
 
     glBindTexture(GL_TEXTURE_2D, texture->textureId);
 
