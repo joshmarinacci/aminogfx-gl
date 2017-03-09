@@ -249,6 +249,13 @@ bool VideoDemuxer::init() {
     //register all codecs and formats
     av_register_all();
 
+    //support network calls
+    avformat_network_init();
+
+    if (DEBUG_VIDEOS) {
+        printf("using libav %u.%u.%u\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVFORMAT_VERSION_MICRO);
+    }
+
     return true;
 }
 
@@ -264,12 +271,25 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     this->filename = filename;
 
+    if (DEBUG_VIDEOS) {
+        printf("loading video: %s\n", filename.c_str());
+    }
+
     //init
     const char *file = filename.c_str();
 
     context = avformat_alloc_context();
 
-    if (avformat_open_input(&context, file, 0, NULL) != 0) {
+    AVDictionary *opts = NULL;
+
+    //options
+    //av_dict_set(&opts, "rtsp_transport", "tcp", 0); //TCP instead of UDP
+
+    int res = avformat_open_input(&context, file, NULL, &opts);
+
+    av_dict_free(&opts);
+
+    if (res != 0) {
         lastError = "file open error";
         close(false);
 
@@ -321,7 +341,11 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     //check H264
     codecCtx = stream->codec;
-    fps = codecCtx->framerate.num / (float)codecCtx->framerate.den;
+
+    if (codecCtx->framerate.num > 0 && codecCtx->framerate.den > 0) {
+        fps = codecCtx->framerate.num / (float)codecCtx->framerate.den;
+    }
+
     width = codecCtx->width;
     height = codecCtx->height;
     isH264 = codecCtx->codec_id == AV_CODEC_ID_H264;
@@ -577,7 +601,7 @@ done:
 
                 //frameRGB is ready
                 frameRGBCount++;
-
+//cbx TODO: pts, dts, duration (unit: time_base; better use dts)
                 //debug
                 printf("frame read\n"); //cbx
 
