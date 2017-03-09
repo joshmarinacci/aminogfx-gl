@@ -442,17 +442,37 @@ bool VideoDemuxer::saveStream(std::string filename) {
 
     //prepare
     AVOutputFormat *outFmt = av_guess_format("h264", NULL, NULL);
+    int err;
 
     if (!outFmt) {
         return false;
     }
 
+    /*
+     * avformat_alloc_output_context2() is not supported by libav!
+     *
+     * FFMPEG implementation:
+     *
+     * https://www.ffmpeg.org/doxygen/3.0/mux_8c_source.html
+     */
+
+#ifndef USING_LIBAV
     AVFormatContext *outCtx = NULL;
-    int err = avformat_alloc_output_context2(&outCtx, outFmt, NULL, NULL);
+
+    err = avformat_alloc_output_context2(&outCtx, outFmt, NULL, NULL);
 
     if (err < 0 || !outCtx) {
         return false;
     }
+#else
+    AVFormatContext *outCtx = avformat_alloc_context();
+
+    if (!outCtx) {
+        return false;
+    }
+
+    outCtx->oformat = outFmt;
+#endif
 
     AVStream *outStrm = avformat_new_stream(outCtx, stream->codec->codec);
     bool res = false;
@@ -615,7 +635,11 @@ done:
                 double pts;
 
                 if (packet.dts != (int64_t)AV_NOPTS_VALUE) {
+#ifndef USING_LIBAV
                     pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
+#else
+                    pts = frame->pts * av_q2d(stream->time_base);
+#endif
                 } else {
                     pts = 0;
                 }
