@@ -405,6 +405,23 @@ void AminoGfxRPi::populateRuntimeProperties(v8::Local<v8::Object> &obj) {
     //GLES
     Nan::Set(obj, Nan::New("eglVendor").ToLocalChecked(), Nan::New(std::string(eglQueryString(display, EGL_VENDOR))).ToLocalChecked());
     Nan::Set(obj, Nan::New("eglVersion").ToLocalChecked(), Nan::New(std::string(eglQueryString(display, EGL_VERSION))).ToLocalChecked());
+
+    //VC
+    char resp[80] = "";
+
+    if (vc_gencmd(resp, sizeof resp, "get_mem gpu") == 0) {
+        //GPU memory in MB
+       int gpuMem = 0;
+
+       vc_gencmd_number_property(resp, "gpu", &gpuMem);
+
+       if (gpuMem > 0) {
+           Nan::Set(obj, Nan::New("gpu_mem").ToLocalChecked(), Nan::New(gpuMem));
+
+           //debug
+            printf("gpu_mem: %i\n", gpuMem); //cbx
+       }
+   }
 }
 
 /**
