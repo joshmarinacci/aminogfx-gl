@@ -790,3 +790,86 @@ void VideoDemuxer::closeReadFrame(bool destroy) {
 std::string VideoDemuxer::getLastError() {
     return lastError;
 }
+
+//
+// AnyVideoStream
+//
+
+AnyVideoStream::AnyVideoStream() {
+    //empty
+}
+
+AnyVideoStream::~AnyVideoStream() {
+    //empty
+}
+
+/**
+ * Get last error.
+ */
+std::string AnyVideoStream::getLastError() {
+    return lastError;
+}
+
+//
+// VideoFileStream
+//
+
+VideoFileStream::VideoFileStream(std::string filename): AnyVideoStream(), filename(filename) {
+    if (DEBUG_VIDEOS) {
+        printf("create video file stream\n");
+    }
+
+    //empty
+}
+
+VideoFileStream::~VideoFileStream() {
+    if (file) {
+        fclose(file);
+        file = NULL;
+    }
+}
+
+/**
+ * Open the file.
+ */
+bool VideoFileStream::init() {
+    if (DEBUG_VIDEOS) {
+        printf("-> init video file stream\n");
+    }
+//cbx check local H264
+    file = fopen(filename.c_str(), "rb");
+
+    if (!file) {
+        lastError = "file not found";
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Rewind the file stream.
+ */
+bool VideoFileStream::rewind() {
+    if (DEBUG_VIDEOS) {
+        printf("-> rewind video file stream\n");
+    }
+
+    std::rewind(file);
+
+    return true;
+}
+
+/**
+ * Read from the stream.
+ */
+unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
+    return fread(dest, 1, length, file);
+}
+
+/**
+ * Check end of stream.
+ */
+bool VideoFileStream::endOfStream() {
+    return feof(file);
+}

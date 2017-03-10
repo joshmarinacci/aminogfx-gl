@@ -14,89 +14,6 @@
 #define DEBUG_OMX_BUFFER false
 
 //
-// AnyVideoStream
-//
-
-AnyVideoStream::AnyVideoStream() {
-    //empty
-}
-
-AnyVideoStream::~AnyVideoStream() {
-    //empty
-}
-
-/**
- * Get last error.
- */
-std::string AnyVideoStream::getLastError() {
-    return lastError;
-}
-
-//
-// VideoFileStream
-//
-
-VideoFileStream::VideoFileStream(std::string filename): AnyVideoStream(), filename(filename) {
-    if (DEBUG_OMX) {
-        printf("create video file stream\n");
-    }
-
-    //empty
-}
-
-VideoFileStream::~VideoFileStream() {
-    if (file) {
-        fclose(file);
-        file = NULL;
-    }
-}
-
-/**
- * Open the file.
- */
-bool VideoFileStream::init() {
-    if (DEBUG_OMX) {
-        printf("-> init video file stream\n");
-    }
-
-    file = fopen(filename.c_str(), "rb");
-
-    if (!file) {
-        lastError = "file not found";
-        return false;
-    }
-
-    return true;
-}
-
-/**
- * Rewind the file stream.
- */
-bool VideoFileStream::rewind() {
-    if (DEBUG_OMX) {
-        printf("-> rewind video file stream\n");
-    }
-
-    std::rewind(file);
-
-    return true;
-}
-
-/**
- * Read from the stream.
- */
-unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
-    return fread(dest, 1, length, file);
-}
-
-/**
- * Check end of stream.
- */
-bool VideoFileStream::endOfStream() {
-    return feof(file);
-}
-
-//
 // AminoOmxVideoPlayer
 //
 
@@ -318,6 +235,14 @@ bool AminoOmxVideoPlayer::initOmx() {
         format.nPortIndex = 130;
         format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
 
+        /*
+         * TODO more formats
+         *
+         *   - OMX_VIDEO_CodingMPEG4          non-H264 MP4 formats (H263, DivX, ...)
+         *   - OMX_VIDEO_CodingMPEG2          needs license
+         *   - OMX_VIDEO_CodingTheora         Theora
+         */
+
         if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) != OMX_ErrorNone) {
             lastError = "could not set video format";
             status = -16;
@@ -456,6 +381,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                 buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
                 first_packet = false;
             } else {
+                //TODO should we pass the timing information from FFmpeg/libav?
                 buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
             }
 

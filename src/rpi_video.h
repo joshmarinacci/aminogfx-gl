@@ -9,45 +9,6 @@ extern "C" {
 }
 
 /**
- * Abstract video stream.
- */
-class AnyVideoStream {
-public:
-    AnyVideoStream();
-    virtual ~AnyVideoStream();
-
-    virtual bool init() = 0;
-
-    virtual bool endOfStream() = 0;
-    virtual bool rewind() = 0;
-    virtual unsigned int read(unsigned char *dest, unsigned int length) = 0;
-
-    std::string getLastError();
-
-protected:
-    std::string lastError;
-};
-
-/**
- * Video file stream.
- */
-class VideoFileStream : public AnyVideoStream {
-public:
-    VideoFileStream(std::string filename);
-    ~VideoFileStream();
-
-    bool init() override;
-
-    bool endOfStream() override;
-    bool rewind() override;
-    unsigned int read(unsigned char *dest, unsigned int length) override;
-
-private:
-    std::string filename;
-    FILE *file = NULL;
-};
-
-/**
  * OMX Video Player.
  */
 class AminoOmxVideoPlayer : public AminoVideoPlayer {
