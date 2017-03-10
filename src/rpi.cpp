@@ -411,17 +411,17 @@ void AminoGfxRPi::populateRuntimeProperties(v8::Local<v8::Object> &obj) {
 
     if (vc_gencmd(resp, sizeof resp, "get_mem gpu") == 0) {
         //GPU memory in MB
-       int gpuMem = 0;
+        int gpuMem = 0;
 
-       vc_gencmd_number_property(resp, "gpu", &gpuMem);
+        vc_gencmd_number_property(resp, "gpu", &gpuMem);
 
-       if (gpuMem > 0) {
-           Nan::Set(obj, Nan::New("gpu_mem").ToLocalChecked(), Nan::New(gpuMem));
+        if (gpuMem > 0) {
+            Nan::Set(obj, Nan::New("gpu_mem").ToLocalChecked(), Nan::New(gpuMem));
 
-           //debug
-            printf("gpu_mem: %i\n", gpuMem); //cbx
-       }
-   }
+            //debug
+            //printf("gpu_mem: %i\n", gpuMem);
+        }
+    }
 }
 
 /**
