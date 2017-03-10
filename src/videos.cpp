@@ -254,6 +254,13 @@ bool VideoDemuxer::init() {
     //support network calls
     avformat_network_init();
 
+    //log level
+    if (DEBUG_VIDEOS) {
+        av_log_set_level(AV_LOG_INFO);
+    } else {
+        av_log_set_level(AV_LOG_QUIET);
+    }
+
     if (DEBUG_VIDEOS) {
         printf("using libav %u.%u.%u\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVFORMAT_VERSION_MICRO);
     }
@@ -286,6 +293,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     //options
     //av_dict_set(&opts, "rtsp_transport", "tcp", 0); //TCP instead of UDP
+    av_dict_set(&opts, "user_agent", "AminoGfx", 0);
 
     int res = avformat_open_input(&context, file, NULL, &opts);
 
@@ -456,7 +464,8 @@ bool VideoDemuxer::saveStream(std::string filename) {
      * https://www.ffmpeg.org/doxygen/3.0/mux_8c_source.html
      */
 
-#ifndef USING_LIBAV
+#ifdef MAC
+    //FFmpeg
     AVFormatContext *outCtx = NULL;
 
     err = avformat_alloc_output_context2(&outCtx, outFmt, NULL, NULL);
@@ -465,6 +474,7 @@ bool VideoDemuxer::saveStream(std::string filename) {
         return false;
     }
 #else
+    //libav
     AVFormatContext *outCtx = avformat_alloc_context();
 
     if (!outCtx) {
@@ -635,7 +645,7 @@ done:
                 double pts;
 
                 if (packet.dts != (int64_t)AV_NOPTS_VALUE) {
-#ifndef USING_LIBAV
+#ifdef MAC
                     pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
 #else
                     pts = frame->pts * av_q2d(stream->time_base);
