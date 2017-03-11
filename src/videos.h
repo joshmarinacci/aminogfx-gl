@@ -119,7 +119,12 @@ public:
     bool initStream();
 
     bool saveStream(std::string filename);
-    READ_FRAME_RESULT readFrame(double &time);
+
+    READ_FRAME_RESULT readRGBFrame(double &time);
+
+    READ_FRAME_RESULT readFrame(AVPacket *packet);
+    void freeFrame(AVPacket *packet);
+
     bool rewind(double &time);
     uint8_t *getFrameData(int &id);
 

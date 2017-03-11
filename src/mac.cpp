@@ -771,7 +771,7 @@ void AminoMacVideoPlayer::initDemuxer() {
 
     //read first frame
     double timeStart;
-    READ_FRAME_RESULT res = demuxer->readFrame(timeStart);
+    READ_FRAME_RESULT res = demuxer->readRGBFrame(timeStart);
     double timeStartSys = getTime() / 1000;
 
     if (res == READ_END_OF_VIDEO) {
@@ -792,7 +792,7 @@ void AminoMacVideoPlayer::initDemuxer() {
     //playback loop
     while (true) {
         double time;
-        int res = demuxer->readFrame(time);
+        int res = demuxer->readRGBFrame(time);
         double timeSys = getTime() / 1000;
 
         if (res == READ_ERROR) {

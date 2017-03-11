@@ -292,7 +292,7 @@ bool VideoDemuxer::loadFile(std::string filename) {
     AVDictionary *opts = NULL;
 
     //options
-    //av_dict_set(&opts, "rtsp_transport", "tcp", 0); //TCP instead of UDP
+    //av_dict_set(&opts, "rtsp_transport", "tcp", 0); //TCP instead of UDP (must be supported by server)
     av_dict_set(&opts, "user_agent", "AminoGfx", 0);
 
     int res = avformat_open_input(&context, file, NULL, &opts);
@@ -568,9 +568,43 @@ done:
 }
 
 /**
- * Read a video frame.
+ * Read a video packet.
  */
- READ_FRAME_RESULT VideoDemuxer::readFrame(double &time) {
+READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
+    while (true) {
+        int status = av_read_frame(context, packet);
+
+        //check end of video
+        if (status == AVERROR_EOF) {
+            return READ_END_OF_VIDEO;
+        }
+
+        //check error
+        if (status < 0) {
+            return READ_ERROR;
+        }
+
+        //is this a packet from the video stream?
+        if (packet->stream_index == videoStream) {
+            return READ_OK;
+        }
+
+        //process next frame
+    }
+}
+
+/**
+ * Free a video packet.
+ */
+void VideoDemuxer::freeFrame(AVPacket *packet) {
+    //free the packet that was allocated by av_read_frame
+    av_free_packet(packet);
+}
+
+/**
+ * Read a video frame in RGB format.
+ */
+ READ_FRAME_RESULT VideoDemuxer::readRGBFrame(double &time) {
     if (!context || !codecCtx) {
         return READ_ERROR;
     }
@@ -607,28 +641,15 @@ done:
         sws_ctx = sws_getContext(codecCtx->width, codecCtx->height, codecCtx->pix_fmt, codecCtx->width, codecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
     }
 
-    //read frames
+    //read frame
     AVPacket packet;
-    READ_FRAME_RESULT res = READ_OK;
+    READ_FRAME_RESULT res;
 
     while (true) {
-        int status = av_read_frame(context, &packet);
+        res = readFrame(&packet);
 
-        //check end of video
-        if (status == AVERROR_EOF) {
-            res = READ_END_OF_VIDEO;
-            goto done;
-        }
-
-        //check error
-        if (status < 0) {
-            res = READ_ERROR;
-            goto done;
-        }
-
-        //is this a packet from the video stream?
-        if (packet.stream_index == videoStream) {
-	        //decode video frame
+        if (res == READ_OK) {
+            //decode video frame
             int frameFinished;
 
             avcodec_decode_video2(codecCtx, frame, &frameFinished, &packet);
@@ -677,15 +698,13 @@ done:
 
                 goto done;
             }
+
+            //next frame
+            continue;
         }
 
-        //process next frame
-        continue;
-
 done:
-        //free the packet that was allocated by av_read_frame
-        av_free_packet(&packet);
-
+        freeFrame(&packet);
         break;
     }
 
@@ -707,16 +726,7 @@ bool VideoDemuxer::rewind(double &time) {
     }
 
     //load first frame
-    return initStream() && readFrame(time) == READ_OK;
-
-    //FIXME did not work
-    /*
-    if (!context) {
-        return false;
-    }
-
-    return av_seek_frame(context, videoStream, 0, AVSEEK_FLAG_FRAME) >= 0;
-    */
+    return initStream() && readRGBFrame(time) == READ_OK;
 }
 
 /**
