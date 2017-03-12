@@ -125,7 +125,8 @@ public:
     READ_FRAME_RESULT readFrame(AVPacket *packet);
     void freeFrame(AVPacket *packet);
 
-    bool rewind(double &time);
+    bool rewind();
+    bool rewindRGB(double &time);
     uint8_t *getFrameData(int &id);
 
     std::string getLastError();
@@ -190,7 +191,17 @@ public:
 
 private:
     std::string filename;
+
+    //file
     FILE *file = NULL;
+
+    //demuxer
+    VideoDemuxer *demuxer = NULL;
+    AVPacket packet;
+    bool hasPacket = false;
+    bool eof = false;
+    bool failed = false;
+    unsigned int packetOffset = 0;
 };
 
 #endif

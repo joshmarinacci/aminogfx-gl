@@ -279,9 +279,12 @@ bool AminoOmxVideoPlayer::initOmx() {
             //feed data and wait until we get port settings changed
             unsigned char *dest = buf->pBuffer;
 
+            //read from file
+            unsigned int data_len = stream->read(dest, buf->nAllocLen);
+
             //check end
-            if (stream->endOfStream()) {
-                //check if stream contains video
+            if (data_len == 0 && stream->endOfStream()) {
+                //check if stream contained video data
                 if (!ready) {
                     //case: no video in stream
                     lastError = "stream without valid video data";
@@ -307,10 +310,10 @@ bool AminoOmxVideoPlayer::initOmx() {
                 if (!stream->rewind()) {
                     break;
                 }
-            }
 
-            //read from file
-            unsigned int data_len = stream->read(dest, buf->nAllocLen);
+                //read next block
+                data_len = stream->read(dest, buf->nAllocLen);
+            }
 
             if (DEBUG_OMX_READ) {
                 printf("OMX: data read %i\n", (int)data_len);
@@ -371,6 +374,9 @@ bool AminoOmxVideoPlayer::initOmx() {
 
             if (!data_len) {
                 //read error occured
+                lastError = "IO error";
+                handlePlaybackError();
+
                 break;
             }
 

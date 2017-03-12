@@ -571,6 +571,10 @@ done:
  * Read a video packet.
  */
 READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
+    if (!context || !codecCtx) {
+        return READ_ERROR;
+    }
+
     while (true) {
         int status = av_read_frame(context, packet);
 
@@ -716,7 +720,7 @@ done:
 /**
  * Rewind playback (go back to first frame).
  */
-bool VideoDemuxer::rewind(double &time) {
+bool VideoDemuxer::rewind() {
     //reload & verify
     size_t prevW = width;
     size_t prevH = height;
@@ -725,8 +729,20 @@ bool VideoDemuxer::rewind(double &time) {
         return false;
     }
 
+    //prepare stream
+    return initStream();
+}
+
+/**
+ * Rewind RGB stream.
+ */
+bool VideoDemuxer::rewindRGB(double &time) {
+    if (!rewind()) {
+        return false;
+    }
+
     //load first frame
-    return initStream() && readRGBFrame(time) == READ_OK;
+    return readRGBFrame(time) == READ_OK;
 }
 
 /**
@@ -837,6 +853,16 @@ VideoFileStream::~VideoFileStream() {
         fclose(file);
         file = NULL;
     }
+
+    if (hasPacket) {
+        demuxer->freeFrame(&packet);
+        hasPacket = false;
+    }
+
+    if (demuxer) {
+        delete demuxer;
+        demuxer = NULL;
+    }
 }
 
 /**
@@ -846,12 +872,39 @@ bool VideoFileStream::init() {
     if (DEBUG_VIDEOS) {
         printf("-> init video file stream\n");
     }
-//cbx check local H264
-    file = fopen(filename.c_str(), "rb");
 
-    if (!file) {
-        lastError = "file not found";
-        return false;
+    //check local H264 (direct file access)
+    std::string postfix = ".h264";
+    bool isLocalH264 = false;
+
+    if (filename.compare(filename.length() - postfix.length(), postfix.length(), postfix) == 0 && filename.find("://") == std::string::npos) {
+        isLocalH264 = true;
+    }
+
+    if (isLocalH264) {
+        //local file
+        file = fopen(filename.c_str(), "rb");
+
+        if (!file) {
+            lastError = "file not found";
+            return false;
+        }
+
+        if (DEBUG_VIDEOS) {
+            printf("-> local H264 file\n");
+        }
+    } else {
+        //any stream
+        demuxer = new VideoDemuxer();
+
+        if (!demuxer->loadFile(filename) || !demuxer->initStream()) {
+            lastError = demuxer->getLastError();
+            return false;
+        }
+
+        if (DEBUG_VIDEOS) {
+            printf("-> video stream\n");
+        }
     }
 
     return true;
@@ -865,7 +918,22 @@ bool VideoFileStream::rewind() {
         printf("-> rewind video file stream\n");
     }
 
-    std::rewind(file);
+    if (file) {
+        //file
+        std::rewind(file);
+    } else if (demuxer) {
+        //stream
+        if (hasPacket) {
+            demuxer->freeFrame(&packet);
+            hasPacket = false;
+        }
+
+        eof = false;
+        failed = false;
+
+        //rewind stream
+        return demuxer->rewind();
+    }
 
     return true;
 }
@@ -874,12 +942,98 @@ bool VideoFileStream::rewind() {
  * Read from the stream.
  */
 unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
-    return fread(dest, 1, length, file);
+    if (file) {
+        //read block from file (Note: ferror() returns error state)
+        return fread(dest, 1, length, file);
+    } else if (demuxer) {
+        //check existing packet
+        unsigned int offset = 0;
+
+        if (hasPacket) {
+            unsigned int dataLeft = packet.size - packetOffset;
+            unsigned int dataLen = std::min(dataLeft, length);
+
+            memcpy(dest, packet.data + packetOffset, dataLen);
+            offset = dataLen;
+
+            //check packet
+            if (dataLeft == dataLen) {
+                //all consumed
+                demuxer->freeFrame(&packet);
+                hasPacket = false;
+                packetOffset = 0;
+            } else {
+                //data left
+                packetOffset += dataLen;
+                return offset;
+            }
+
+            //check buffer
+            if (offset == length) {
+                //buffer full
+                return offset;
+            }
+
+            //read next packet
+        }
+
+        //check EOF
+        if (eof || failed) {
+            return offset;
+        }
+
+        //read new packet
+        READ_FRAME_RESULT res = demuxer->readFrame(&packet);
+
+        if (res == READ_END_OF_VIDEO) {
+            eof = true;
+            demuxer->freeFrame(&packet);
+
+            return offset;
+        }
+
+        if (res != READ_OK) {
+            failed = true;
+            demuxer->freeFrame(&packet);
+
+            return offset;
+        }
+
+        //fill buffer
+        hasPacket = true;
+
+        unsigned int dataLeft = length - offset;
+        unsigned int dataLen = std::min(dataLeft, (unsigned int)packet.size);
+
+        memcpy(dest + offset, packet.data, dataLen);
+        offset += dataLen;
+
+        if (dataLen < (unsigned int)packet.size) {
+            //data left
+            packetOffset = dataLen;
+        } else {
+            //all consumed
+            demuxer->freeFrame(&packet);
+            hasPacket = false;
+        }
+
+        return offset;
+    }
+
+    return 0;
 }
 
 /**
  * Check end of stream.
  */
 bool VideoFileStream::endOfStream() {
-    return feof(file);
+    if (file) {
+        return feof(file);
+    } else if (demuxer) {
+        return eof;
+    }
+
+    assert(false);
+
+    return true;
 }

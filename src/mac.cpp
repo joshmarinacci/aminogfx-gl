@@ -820,7 +820,7 @@ void AminoMacVideoPlayer::initDemuxer() {
             }
 
             //rewind
-            if (!demuxer->rewind(timeStart)) {
+            if (!demuxer->rewindRGB(timeStart)) {
                 handlePlaybackError();
                 return;
             }
