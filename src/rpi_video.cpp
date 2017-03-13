@@ -101,7 +101,7 @@ void AminoOmxVideoPlayer::destroyAminoOmxVideoPlayer() {
     if (threadRunning) {
         int res = uv_thread_join(&thread);
 
-        assert(res == 0)
+        assert(res == 0);
     }
 
     //free EGL texture
