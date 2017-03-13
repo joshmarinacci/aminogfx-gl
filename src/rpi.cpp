@@ -929,7 +929,7 @@ EGLImageKHR AminoGfxRPi::createEGLImage(GLuint textureId) {
  */
 void AminoGfxRPi::destroyEGLImage(EGLImageKHR eglImage) {
     //switch to rendering thread
-    enqueueValueUpdate(0, (void *)eglImage, static_cast<asyncValueCallback>(&AminoGfxRPi::destroyEGLImageHandler));
+    enqueueValueUpdate((unsigned int)0, (void *)eglImage, static_cast<asyncValueCallback>(&AminoGfxRPi::destroyEGLImageHandler));
 }
 
 /**
