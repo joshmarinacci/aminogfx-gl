@@ -265,6 +265,7 @@ VideoDemuxer::~VideoDemuxer() {
 bool VideoDemuxer::init() {
     //register all codecs and formats
     av_register_all();
+    avcodec_register_all();
 
     //support network calls
     avformat_network_init();
@@ -312,23 +313,25 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
         return false;
     }
 
+    //options
     AVDictionary *opts = NULL;
 
-    //options
     //av_dict_set(&opts, "rtsp_transport", "tcp", 0); //TCP instead of UDP (must be supported by server)
     //av_dict_set(&opts, "user_agent", "AminoGfx", 0);
+
     if (!options.empty()) {
         av_dict_parse_string(&opts, options.c_str(), "=", ":", 0);
     }
 
+    //open
     int res = avformat_open_input(&context, file, NULL, &opts);
 
     av_dict_free(&opts);
 
-    if (res != 0) {
+    if (res < 0) {
         std::stringstream stream;
 
-        //cbx FIXME -0xcf5250f8 on RPi
+        //cbx FIXME -0xcf5250f8 on RPi (see https://github.com/libav/libav/blob/12ab667e219e7fbf8e9aef3731039b75c822df25/libavformat/utils.c)
 
         stream << "file open error (-0x" << std::hex << res << ")";
         lastError = stream.str();

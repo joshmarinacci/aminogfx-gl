@@ -13,6 +13,7 @@ player.playVideo({
     //  Digoo M1Q (default password, on local network => modify parameters; see https://www.ispyconnect.com/man.aspx?n=Digoo#)
     //
 
+    //FIXME cbx lost packages
     src: 'rtsp://admin:20160404@' + ip + '/onvif1'
     //src: 'rtsp://admin:20160404@' + ip + '/onvif2' //low res
 
