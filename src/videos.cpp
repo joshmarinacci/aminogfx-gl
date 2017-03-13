@@ -23,32 +23,11 @@ AminoVideo::~AminoVideo()  {
 }
 
 /**
- * Check if video is available.
- *
- * Note: must be called on main thread.
- */
-bool AminoVideo::hasVideo() {
-    //check src
-    return isLocalFile();
-}
-
-/**
- * Check if local file.
- *
- * Note: must be called on main thread!
- */
-bool AminoVideo::isLocalFile() {
-    std::string fileName = getLocalFile();
-
-    return fileName.length() > 0;
-}
-
-/**
  * Get local file name.
  *
  * Note: must be called on main thread!
  */
-std::string AminoVideo::getLocalFile() {
+std::string AminoVideo::getPlaybackSource() {
     Nan::MaybeLocal<v8::Value> srcValue = Nan::Get(handle(), Nan::New<v8::String>("src").ToLocalChecked());
 
     if (srcValue.IsEmpty()) {
@@ -60,6 +39,28 @@ std::string AminoVideo::getLocalFile() {
     if (srcLocal->IsString()) {
         //file or URL
         return AminoJSObject::toString(srcLocal);
+    }
+
+    return "";
+}
+
+/**
+ * Get playback options (FFmpeg/libav).
+ *
+ * Note: must be called on main thread!
+ */
+std::string AminoVideo::getPlaybackOptions() {
+    Nan::MaybeLocal<v8::Value> optsValue = Nan::Get(handle(), Nan::New<v8::String>("opts").ToLocalChecked());
+
+    if (optsValue.IsEmpty()) {
+        return "";
+    }
+
+    v8::Local<v8::Value> optsLocal = optsValue.ToLocalChecked();
+
+    if (optsLocal->IsString()) {
+        //file or URL
+        return AminoJSObject::toString(optsLocal);
     }
 
     return "";
@@ -131,10 +132,7 @@ AminoJSObject* AminoVideoFactory::create() {
  * Note: has to be called on main thread!
  */
 AminoVideoPlayer::AminoVideoPlayer(AminoTexture *texture, AminoVideo *video): texture(texture), video(video) {
-    //check source
-    if (!video->isLocalFile()) {
-        lastError = "unknown source";
-    }
+    //empty
 }
 
 /**
@@ -274,11 +272,12 @@ bool VideoDemuxer::init() {
 /**
  * Load a video from a file.
  */
-bool VideoDemuxer::loadFile(std::string filename) {
+bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     //close previous instances
     close(false);
 
     this->filename = filename;
+    this->options = options;
 
     if (DEBUG_VIDEOS) {
         printf("loading video: %s\n", filename.c_str());
@@ -293,7 +292,10 @@ bool VideoDemuxer::loadFile(std::string filename) {
 
     //options
     //av_dict_set(&opts, "rtsp_transport", "tcp", 0); //TCP instead of UDP (must be supported by server)
-    av_dict_set(&opts, "user_agent", "AminoGfx", 0);
+    //av_dict_set(&opts, "user_agent", "AminoGfx", 0);
+    if (!options.empty()) {
+        av_dict_parse_string(&opts, options.c_str(), "=", ":", 0);
+    }
 
     int res = avformat_open_input(&context, file, NULL, &opts);
 
@@ -725,7 +727,7 @@ bool VideoDemuxer::rewind() {
     size_t prevW = width;
     size_t prevH = height;
 
-    if (!loadFile(filename) || prevW != width || prevH != height) {
+    if (!loadFile(filename, options) || prevW != width || prevH != height) {
         return false;
     }
 
@@ -840,7 +842,7 @@ std::string AnyVideoStream::getLastError() {
 // VideoFileStream
 //
 
-VideoFileStream::VideoFileStream(std::string filename): AnyVideoStream(), filename(filename) {
+VideoFileStream::VideoFileStream(std::string filename, std::string options): AnyVideoStream(), filename(filename), options(options) {
     if (DEBUG_VIDEOS) {
         printf("create video file stream\n");
     }
@@ -897,7 +899,7 @@ bool VideoFileStream::init() {
         //any stream
         demuxer = new VideoDemuxer();
 
-        if (!demuxer->loadFile(filename) || !demuxer->initStream()) {
+        if (!demuxer->loadFile(filename, options) || !demuxer->initStream()) {
             lastError = demuxer->getLastError();
             return false;
         }

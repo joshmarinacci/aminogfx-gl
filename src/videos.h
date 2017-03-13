@@ -25,10 +25,8 @@ public:
     AminoVideo();
     ~AminoVideo();
 
-    bool hasVideo();
-
-    bool isLocalFile();
-    std::string getLocalFile();
+    std::string getPlaybackSource();
+    std::string getPlaybackOptions();
 
     //creation
     static AminoVideoFactory* getFactory();
@@ -115,7 +113,7 @@ public:
     virtual ~VideoDemuxer();
 
     bool init();
-    bool loadFile(std::string filename);
+    bool loadFile(std::string filename, std::string options);
     bool initStream();
 
     bool saveStream(std::string filename);
@@ -140,6 +138,7 @@ private:
 
     //stream info
     std::string filename;
+    std::string options;
     int videoStream = -1;
     AVStream *stream = NULL;
 
@@ -180,7 +179,7 @@ protected:
  */
 class VideoFileStream : public AnyVideoStream {
 public:
-    VideoFileStream(std::string filename);
+    VideoFileStream(std::string filename, std::string options);
     ~VideoFileStream();
 
     bool init() override;
@@ -191,6 +190,7 @@ public:
 
 private:
     std::string filename;
+    std::string options;
 
     //file
     FILE *file = NULL;

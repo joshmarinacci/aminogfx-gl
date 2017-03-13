@@ -30,6 +30,7 @@ public:
 
 private:
     std::string filename;
+    std::string options;
     VideoDemuxer *demuxer = NULL;
     int frameId = -1;
 

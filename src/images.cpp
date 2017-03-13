@@ -888,6 +888,11 @@ void AminoTexture::destroyAminoTexture() {
         video->release();
         video = NULL;
     }
+
+    if (videoPlayer) {
+        delete videoPlayer;
+        videoPlayer = NULL;
+    }
 }
 
 /**
@@ -1099,7 +1104,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
     assert(video);
 
-    if (!video->hasVideo()) {
+    if (video->getPlaybackSource().empty()) {
         //missing video
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("missing video data") };

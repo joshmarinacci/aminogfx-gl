@@ -691,7 +691,8 @@ AminoMacVideoPlayer::~AminoMacVideoPlayer() {
  */
 bool AminoMacVideoPlayer::initStream() {
     //get file name
-    filename = video->getLocalFile();
+    filename = video->getPlaybackSource();
+    options = video->getPlaybackOptions();
 
     return true;
 }
@@ -749,7 +750,7 @@ void AminoMacVideoPlayer::initDemuxer() {
     assert(demuxer);
 
     //load file
-    if (!demuxer->loadFile(filename)) {
+    if (!demuxer->loadFile(filename, options)) {
         lastError = demuxer->getLastError();
         handleInitDone(false);
         return;

@@ -8,8 +8,10 @@ const player = require('./player');
  */
 
 player.playVideo({
+    src: 'rtsp://mpv.cdn3.bigCDN.com:554/bigCDN/definst/mp4:bigbuckbunnyiphone_400.mp4',
+
     //Note: TCP stream needed (UDP timeout, retrying with TCP)
-    src: 'rtsp://mpv.cdn3.bigCDN.com:554/bigCDN/definst/mp4:bigbuckbunnyiphone_400.mp4'
+    opts: 'rtsp_transport=tcp'
 }, (err, video) => {
     //empty
 });
