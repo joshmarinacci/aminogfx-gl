@@ -61,7 +61,7 @@ std::string AminoVideo::getPlaybackOptions() {
     v8::Local<v8::Value> optsLocal = optsValue.ToLocalChecked();
 
     if (optsLocal->IsString()) {
-        //file or URL
+        //playback options
         return AminoJSObject::toString(optsLocal);
     }
 
@@ -313,6 +313,9 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
         return false;
     }
 
+    //test: disable UDP re-ordering
+    //context->max_delay = 0;
+
     //options
     AVDictionary *opts = NULL;
 
@@ -321,6 +324,17 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
     if (!options.empty()) {
         av_dict_parse_string(&opts, options.c_str(), "=", ":", 0);
+
+        if (DEBUG_VIDEOS) {
+            //show dictionary
+            AVDictionaryEntry *t = NULL;
+
+            printf("Options:\n");
+
+            while ((t = av_dict_get(opts, "", t, AV_DICT_IGNORE_SUFFIX))) {
+                printf(" %s: %s\n", t->key, t->value);
+            }
+        }
     }
 
     //open
@@ -351,6 +365,7 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     //debug
     if (DEBUG_VIDEOS) {
         //output video format details
+//cbx no output on RTSP Digoo case
         av_dump_format(context, 0, file, 0);
     }
 

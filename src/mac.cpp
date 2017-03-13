@@ -6,6 +6,7 @@
 
 #define DEBUG_GLFW false
 #define DEBUG_RENDER false
+#define DEBUG_VIDEO_TIMING false
 
 /**
  * Mac AminoGfx implementation.
@@ -841,6 +842,10 @@ void AminoMacVideoPlayer::initDemuxer() {
 
         if (timeSleep > 0) {
             usleep(timeSleep * 1000000);
+
+            if (DEBUG_VIDEO_TIMING) {
+                printf("sleep: %f ms\n", timeSleep * 1000);
+            }
         }
 
         //FIXME cbx: frame is shown too early (use two buffers)

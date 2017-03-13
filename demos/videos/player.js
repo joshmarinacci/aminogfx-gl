@@ -22,6 +22,7 @@ function playVideo(opts, done) {
         const video = new amino.AminoVideo();
 
         video.src = opts.src;
+        video.opts = opts.opts;
 
         //rect
         const dispW = this.w();
