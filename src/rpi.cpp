@@ -921,8 +921,28 @@ AminoVideoPlayer* AminoGfxRPi::createVideoPlayer(AminoTexture *texture, AminoVid
  * Create EGL Image.
  */
 EGLImageKHR AminoGfxRPi::createEGLImage(GLuint textureId) {
-    //TODO eglDestroyImageKHR(state->display, (EGLImageKHR) eglImage) cbx
     return eglCreateImageKHR(display, context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)textureId, 0);
+}
+
+/**
+ * Destroy EGL Image.
+ */
+void AminoGfxRPi::destroyEGLImage(EGLImageKHR eglImage) {
+    //switch to rendering thread
+    enqueueValueUpdate(0, eglImage, static_cast<asyncValueCallback>(&AminoGfxRPi::destroyEGLImageHandler));
+}
+
+/**
+ * Destroy EGL Image texture on OpenGL thread.
+ */
+void AminoGfxRPi::destroyEGLImageHandler(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    assert(update->data);
+
+    eglDestroyImageKHR(display, (EGLImageKHR)update->data);
 }
 
 //static initializers

@@ -147,6 +147,12 @@ AminoVideoPlayer::~AminoVideoPlayer() {
  * Destroy the video player.
  */
 void AminoVideoPlayer::destroy() {
+    if (destroyed) {
+        return;
+    }
+
+    destroyed = true;
+
     destroyAminoVideoPlayer();
 
     //overwrite
@@ -192,7 +198,7 @@ void AminoVideoPlayer::handlePlaybackDone() {
             printf("video: playback done\n");
         }
 
-        //TODO send event
+        //cbx TODO send event
     }
 }
 
@@ -200,17 +206,23 @@ void AminoVideoPlayer::handlePlaybackDone() {
  * Playback failed.
  */
 void AminoVideoPlayer::handlePlaybackError() {
+    if (destroyed) {
+        return;
+    }
+
+    //cbx TODO set state
+
     //stop
     handlePlaybackDone();
 
-    //TODO send event
+    //cbx TODO send event
 }
 
 /**
  * Video is ready for playback.
  */
 void AminoVideoPlayer::handleInitDone(bool ready) {
-    if (initDone) {
+    if (destroyed || initDone) {
         return;
     }
 
@@ -224,6 +236,9 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
     assert(texture);
 
     texture->videoPlayerInitDone();
+
+    //send event
+    //cbx TODO
 }
 
 //

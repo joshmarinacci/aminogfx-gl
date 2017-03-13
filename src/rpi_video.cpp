@@ -19,6 +19,12 @@
 
 AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
     //empty
+
+    //Note: checks if source is provided
+}
+
+AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
+    destroyAminoOmxVideoPlayer();
 }
 
 /**
@@ -45,11 +51,11 @@ void AminoOmxVideoPlayer::init() {
     }
 
     //create OMX thread
+    threadRunning = true;
+
     int res = uv_thread_create(&thread, omxThread, this);
 
     assert(res == 0);
-
-    threadRunning = true;
 }
 
 /**
@@ -63,15 +69,48 @@ bool AminoOmxVideoPlayer::initStream() {
     assert(video);
     assert(!stream);
 
-    if (video->isLocalFile()) {
-        //local file
-        stream = new VideoFileStream(video->getLocalFile());
-    } else {
-        //error
-        lastError = "unknown source";
-    }
+    stream = new VideoFileStream(video->getPlaybackSource(), video->getPlaybackOptions());
 
     return stream != NULL;
+}
+
+/**
+ * Destroy placer.
+ */
+void AminoOmxVideoPlayer::destroy() {
+    if (destroyed) {
+        return;
+    }
+
+    destroyed = true;
+
+    //instance
+    destroyAminoOmxVideoPlayer();
+
+    //base class
+    AminoVideoPlayer::destroy();
+}
+
+/**
+ * Destroy OMX player instance.
+ */
+void AminoOmxVideoPlayer::destroyAminoOmxVideoPlayer() {
+    //stop playback
+    destroyOmx();
+
+    if (threadRunning) {
+        int res = uv_thread_join(&thread);
+
+        assert(res == 0)
+    }
+
+    //free EGL texture
+    if (eglImage) {
+        AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
+
+        gfx->destroyEGLImage(eglImage);
+        eglImage = NULL;
+    }
 }
 
 /**
@@ -509,7 +548,7 @@ bool AminoOmxVideoPlayer::useTexture() {
 }
 
 /**
- * Init texture.
+ * Init texture (on rendering thread).
  */
 bool AminoOmxVideoPlayer::initTexture() {
     glBindTexture(GL_TEXTURE_2D, texture->textureId);
@@ -552,11 +591,6 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
  * Destroy OMX.
  */
 void AminoOmxVideoPlayer::destroyOmx() {
-    if (stream) {
-        delete stream;
-        stream = NULL;
-    }
-
     if (!omxInitialized) {
         return;
     }

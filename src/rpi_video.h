@@ -14,9 +14,13 @@ extern "C" {
 class AminoOmxVideoPlayer : public AminoVideoPlayer {
 public:
     AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *video);
+    ~AminoOmxVideoPlayer();
 
     void init() override;
     bool initTexture();
+
+    void destroy() override;
+    void destroyAminoOmxVideoPlayer();
 
     //stream
     bool initStream() override;
