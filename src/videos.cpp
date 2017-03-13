@@ -305,6 +305,13 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
     context = avformat_alloc_context();
 
+    if (!context) {
+        lastError = "could not allocate context";
+        close(false);
+
+        return false;
+    }
+
     AVDictionary *opts = NULL;
 
     //options
@@ -320,6 +327,8 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
     if (res != 0) {
         std::stringstream stream;
+
+        //cbx FIXME -0xcf5250f8 on RPi
 
         stream << "file open error (-0x" << std::hex << res << ")";
         lastError = stream.str();
