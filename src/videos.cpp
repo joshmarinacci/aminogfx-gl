@@ -2,6 +2,8 @@
 #include "base.h"
 #include "images.h"
 
+#include <sstream>
+
 #define DEBUG_VIDEO_FRAMES false
 
 //
@@ -317,7 +319,10 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     av_dict_free(&opts);
 
     if (res != 0) {
-        lastError = "file open error (" + std::to_string(res) + ")";
+        std::stringstream stream;
+
+        stream << "file open error (-0x" << std::hex << res << ")";
+        lastError = stream.str();
         close(false);
 
         return false;
