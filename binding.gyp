@@ -37,6 +37,8 @@
             ],
             "cflags": [
                 "-Wall",
+            ],
+            "cxxflags": [
                 "-std=c++11"
             ],
 
