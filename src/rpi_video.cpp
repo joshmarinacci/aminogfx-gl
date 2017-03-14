@@ -10,7 +10,8 @@
 #include <semaphore.h>
 
 #define DEBUG_OMX false
-#define DEBUG_OMX_READ false
+//cbx
+#define DEBUG_OMX_READ true
 #define DEBUG_OMX_BUFFER false
 
 //
@@ -326,6 +327,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //check if stream contained video data
                 if (!ready) {
                     //case: no video in stream
+                    //FIXME cbx happens with libav content
                     lastError = "stream without valid video data";
                     handleInitDone(false);
                     break;

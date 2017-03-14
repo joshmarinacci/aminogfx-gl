@@ -242,18 +242,24 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
     assert(texture);
 
     //set state
-    playing = true;
+    playing = ready;
 
     //send event
 
-    // 1) texture is ready
+    //texture is ready
     texture->videoPlayerInitDone();
 
-    // 2) metadata available
-    fireEvent("loadedmetadata");
+    if (ready) {
+        //metadata available
+        fireEvent("loadedmetadata");
 
-    // 3) playing
-    fireEvent("playing");
+        //playing
+        fireEvent("playing");
+    } else {
+        //failed
+        failed = true;
+        fireEvent("error");
+    }
 }
 
 /**
@@ -382,8 +388,6 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
     if (res < 0) {
         std::stringstream stream;
-
-        //cbx FIXME -0xcf5250f8 on RPi (see https://github.com/libav/libav/blob/12ab667e219e7fbf8e9aef3731039b75c822df25/libavformat/utils.c)
 
         stream << "file open error (-0x" << std::hex << res << ")";
         lastError = stream.str();
@@ -1039,6 +1043,8 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
             unsigned int dataLeft = packet.size - packetOffset;
             unsigned int dataLen = std::min(dataLeft, length);
 
+            printf("-> filling read buffer (prev packet): %i of %i\n", dataLen, length); //cbx
+
             memcpy(dest, packet.data + packetOffset, dataLen);
             offset = dataLen;
 
@@ -1090,6 +1096,8 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
 
         unsigned int dataLeft = length - offset;
         unsigned int dataLen = std::min(dataLeft, (unsigned int)packet.size);
+
+        printf("-> filling read buffer (new packet): %i of %i\n", dataLen, dataLeft); //cbx
 
         memcpy(dest + offset, packet.data, dataLen);
         offset += dataLen;
