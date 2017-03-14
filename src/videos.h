@@ -113,6 +113,7 @@ public:
     float fps = -1;
     float durationSecs = -1.f;
     bool isH264 = false;
+    bool realtime = false;
 
     VideoDemuxer();
     virtual ~VideoDemuxer();

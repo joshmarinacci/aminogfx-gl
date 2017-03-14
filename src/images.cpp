@@ -1351,10 +1351,8 @@ void AminoTexture::handleFireVideoEvent(JSCallbackUpdate *update) {
     //create scope
     Nan::HandleScope scope;
 
-    //cbx call fireVideoEvent(event)
-    v8::Local<v8::Function> fireEventFunc = Nan::Get(handle(), Nan::New<v8::String>("fireEvent").ToLocalChecked()).ToLocalChecked().As<v8::Function>();
-
     //call
+    v8::Local<v8::Function> fireEventFunc = Nan::Get(handle(), Nan::New<v8::String>("fireEvent").ToLocalChecked()).ToLocalChecked().As<v8::Function>();
     int argc = 1;
     v8::Local<v8::Value> argv[] = { Nan::New<v8::String>(event->c_str()).ToLocalChecked() };
 

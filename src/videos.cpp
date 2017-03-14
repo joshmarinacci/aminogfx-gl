@@ -350,7 +350,7 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     //av_dict_set(&opts, "user_agent", "AminoGfx", 0);
 
     if (!options.empty()) {
-        av_dict_parse_string(&opts, options.c_str(), "=", ":", 0);
+        av_dict_parse_string(&opts, options.c_str(), "=", " ", 0);
 
         if (DEBUG_VIDEOS) {
             //show dictionary
@@ -362,6 +362,17 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
                 printf(" %s: %s\n", t->key, t->value);
             }
         }
+    }
+
+    //check realtime
+    AVDictionaryEntry *entry = av_dict_get(opts, "amino_realtime", NULL, AV_DICT_MATCH_CASE);
+
+    if (entry) {
+        //use setting
+        realtime = strcmp(entry->value, "0") != 0 && strcmp(entry->value, "false") != 0;
+    } else {
+        //check RTSP
+        realtime = filename.find("rtsp://") == 0;
     }
 
     //open
@@ -392,7 +403,6 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     //debug
     if (DEBUG_VIDEOS) {
         //output video format details
-//cbx no output on RTSP Digoo case
         av_dump_format(context, 0, file, 0);
     }
 
@@ -446,7 +456,7 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
     //debug
     if (DEBUG_VIDEOS) {
-        printf("video found: duration=%i s, fps=%f\n", (int)durationSecs, fps);
+        printf("video found: duration=%i s, fps=%f, realtime=%s\n", (int)durationSecs, fps, realtime ? "true":"false");
 
         //Note: warning on macOS (codecpar not available on RPi)
         if (isH264) {

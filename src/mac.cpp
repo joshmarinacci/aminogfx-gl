@@ -840,13 +840,15 @@ void AminoMacVideoPlayer::initDemuxer() {
         }
 
         //correct timing
-        double timeSleep = (time - timeStart) - (timeSys - timeStartSys);
+        if (!demuxer->realtime) {
+            double timeSleep = (time - timeStart) - (timeSys - timeStartSys);
 
-        if (timeSleep > 0) {
-            usleep(timeSleep * 1000000);
+            if (timeSleep > 0) {
+                usleep(timeSleep * 1000000);
 
-            if (DEBUG_VIDEO_TIMING) {
-                printf("sleep: %f ms\n", timeSleep * 1000);
+                if (DEBUG_VIDEO_TIMING) {
+                    printf("sleep: %f ms\n", timeSleep * 1000);
+                }
             }
         }
 
