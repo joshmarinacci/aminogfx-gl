@@ -274,6 +274,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         format.nVersion.nVersion = OMX_VERSION;
         format.nPortIndex = 130;
         format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
+        //TODO cbx xFramerate -> 25 * (1 << 16);
 
         /*
          * TODO more formats
@@ -294,6 +295,21 @@ bool AminoOmxVideoPlayer::initOmx() {
         if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
             lastError = "video decode port error";
             status = -17;
+        }
+    }
+
+    //frame validation (see https://www.raspberrypi.org/forums/viewtopic.php?f=70&t=15983)
+    if (status == 0) {
+        OMX_PARAM_BRCMVIDEODECODEERRORCONCEALMENTTYPE ec;
+
+        memset(&ec, 0, sizeof ec);
+        ec.nSize = sizeof ec;
+        ec.nVersion.nVersion = OMX_VERSION;
+        ec.bStartWithValidFrame = OMX_FALSE;
+
+        if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamBrcmVideoDecodeErrorConcealment, &ec) != OMX_ErrorNone) {
+            lastError = "error concealment type";
+            status = -18;
         }
     }
 
@@ -327,7 +343,26 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //check if stream contained video data
                 if (!ready) {
                     //case: no video in stream
+
                     //FIXME cbx happens with libav content
+                    /*
+                     * Works:
+                     *
+                     *   - Digoo M1Q
+                     *     - h264 (Main), yuv420p, 1280x960
+                     *
+                     * Fails:
+                     *
+                     *   - M4V
+                     *     - h264 (Constrained Baseline), yuv420p, 480x270
+                     *   - HTTPS
+                     *     - h264 (Main), yuv420p, 1920x1080
+                     *   - RTSP Bugsbunny
+                     *     - h264 (Constrained Baseline), yuv420p, 320x180
+                     */
+
+                    //TODO cbx STARTTIME, NALu
+
                     lastError = "stream without valid video data";
                     handleInitDone(false);
                     break;
