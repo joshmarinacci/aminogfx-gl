@@ -86,6 +86,7 @@ public:
     void initVideoTexture();
     void videoPlayerInitDone();
     void prepareTexture();
+    void fireVideoEvent(std::string event);
 
 private:
     Nan::Callback *callback = NULL;
@@ -113,6 +114,7 @@ private:
 
     void initVideoTextureHandler(AsyncValueUpdate *update, int state);
     void handleVideoPlayerInitDone(JSCallbackUpdate *update);
+    void handleFireVideoEvent(JSCallbackUpdate *update);
 };
 
 /**

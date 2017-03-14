@@ -1244,6 +1244,7 @@ ImageView.prototype.destroy = function () {
         this.image(null);
         abortTempImage(this);
         img.destroy();
+        img.listeners = null;
     }
 };
 
@@ -1532,6 +1533,7 @@ Model.prototype.destroy = function () {
     if (texture) {
         abortTempImage(this);
         texture.destroy();
+        texture.listeners = null;
     }
 };
 
@@ -1999,6 +2001,88 @@ Texture.prototype.loadTexture = function (src, callback) {
         this.loadTextureFromFont(src, callback);
     } else {
         throw new Error('unknown source');
+    }
+};
+
+/**
+ * Add an event listener.
+ */
+Texture.prototype.addEventListener = function (event, callback) {
+    if (arguments.length === 1) {
+        callback = event;
+        event = '_all';
+    }
+
+    if (!this.listeners) {
+        this.listeners = [];
+    }
+
+    let items = this.listeners[event];
+
+    if (!items) {
+        items = [ callback ];
+        this.listeners[event] = items;
+    } else {
+        items.push(callback);
+    }
+
+    return this;
+};
+
+/**
+ * Remove a event listener.
+ */
+Texture.prototype.removeEventListener = function (event, callback) {
+    if (!this.listeners) {
+        return this;
+    }
+
+    if (arguments.length === 1) {
+        callback = event;
+        event = '_all';
+    }
+
+    const items = this.listeners[event];
+
+    if (items) {
+        const idx = items.indexOf(callback);
+
+        if (idx !== -1) {
+            this.listeners.splice(idx, 1);
+        }
+    }
+
+    return this;
+};
+
+/**
+ * Fire an event.
+ */
+Texture.prototype.fireEvent = function (event) {
+    if (!this.listeners) {
+        return;
+    }
+
+    //event handlers
+    let items = this.listeners[event];
+
+    if (items) {
+        const count = items.length;
+
+        for (let i = 0; i < count; i++) {
+            items[i](event);
+        }
+    }
+
+    //global handlers
+    items = this.listeners['_all'];
+
+    if (items) {
+        const count = items.length;
+
+        for (let i = 0; i < count; i++) {
+            items[i](event);
+        }
     }
 };
 

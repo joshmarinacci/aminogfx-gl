@@ -1326,6 +1326,43 @@ void AminoTexture::prepareTexture() {
     }
 }
 
+/**
+ * Fire video event.
+ */
+void AminoTexture::fireVideoEvent(std::string event) {
+    //switch to main thread
+    std::string *param = new std::string(event);
+
+    enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoTexture::handleFireVideoEvent), NULL, param);
+}
+
+/**
+ * Fire video event (on main thread).
+ */
+void AminoTexture::handleFireVideoEvent(JSCallbackUpdate *update) {
+    std::string *event = static_cast<std::string *>(update->data);
+
+    assert(event);
+
+    if (DEBUG_VIDEOS) {
+        printf("handleFireVideoEvent() %s\n", event->c_str());
+    }
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //cbx call fireVideoEvent(event)
+    v8::Local<v8::Function> fireEventFunc = Nan::Get(handle(), Nan::New<v8::String>("fireEvent").ToLocalChecked()).ToLocalChecked().As<v8::Function>();
+
+    //call
+    int argc = 1;
+    v8::Local<v8::Value> argv[] = { Nan::New<v8::String>(event->c_str()).ToLocalChecked() };
+
+    fireEventFunc->Call(handle(), argc, argv);
+
+    delete event;
+}
+
 typedef struct {
     char *bufferData;
     size_t bufferLen;

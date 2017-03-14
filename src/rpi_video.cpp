@@ -59,7 +59,7 @@ void AminoOmxVideoPlayer::init() {
 }
 
 /**
- * Init video stream.
+ * Init video stream (on main stream).
  */
 bool AminoOmxVideoPlayer::initStream() {
     if (DEBUG_OMX) {
@@ -349,6 +349,8 @@ bool AminoOmxVideoPlayer::initOmx() {
                 if (!stream->rewind()) {
                     break;
                 }
+
+                handleRewind();
 
                 //read next block
                 data_len = stream->read(dest, buf->nAllocLen);

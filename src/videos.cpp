@@ -200,7 +200,9 @@ void AminoVideoPlayer::handlePlaybackDone() {
             printf("video: playback done\n");
         }
 
-        //cbx TODO send event
+        if (!failed) {
+            fireEvent("ended");
+        }
     }
 }
 
@@ -212,12 +214,14 @@ void AminoVideoPlayer::handlePlaybackError() {
         return;
     }
 
-    //cbx TODO set state
+    //set state
+    if (playing && !failed) {
+        failed = true;
+        fireEvent("error");
+    }
 
     //stop
     handlePlaybackDone();
-
-    //cbx TODO send event
 }
 
 /**
@@ -237,10 +241,33 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
 
     assert(texture);
 
-    texture->videoPlayerInitDone();
+    //set state
+    playing = true;
 
     //send event
-    //cbx TODO
+
+    // 1) texture is ready
+    texture->videoPlayerInitDone();
+
+    // 2) metadata available
+    fireEvent("loadedmetadata");
+
+    // 3) playing
+    fireEvent("playing");
+}
+
+/**
+ * Video was rewinded.
+ */
+void AminoVideoPlayer::handleRewind() {
+    fireEvent("rewind");
+}
+
+/**
+ * Fire video player event.
+ */
+void AminoVideoPlayer::fireEvent(std::string event) {
+    texture->fireVideoEvent(event);
 }
 
 //

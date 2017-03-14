@@ -76,6 +76,7 @@ protected:
     bool initDone = false;
     bool ready = false;
     bool playing = false;
+    bool failed = false;
     bool destroyed = false;
     std::string lastError;
 
@@ -90,6 +91,10 @@ protected:
     void handlePlaybackError();
 
     void handleInitDone(bool ready);
+
+    void handleRewind();
+
+    void fireEvent(std::string event);
 };
 
 enum READ_FRAME_RESULT {

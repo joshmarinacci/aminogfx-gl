@@ -24,19 +24,29 @@ function playVideo(opts, done) {
         video.src = opts.src;
         video.opts = opts.opts;
 
-        //rect
+        //image view
         const dispW = this.w();
         const dispH = this.h();
-        const rect = this.createImageView().w(dispW).h(dispH).position('center top').size('contain').src(video);
+        const iv = this.createImageView().w(dispW).h(dispH).position('center top').size('contain').src(video);
 
-        rect.w.bindTo(this.w);
-        rect.h.bindTo(this.h);
+        iv.w.bindTo(this.w);
+        iv.h.bindTo(this.h);
 
+        //events
+        iv.image.watch(video => {
+            if (video) {
+                video.addEventListener(event => {
+                    console.log('video event: ' + event);
+                });
+            }
+        });
+
+        //display info
         console.log('display size: ' + dispW + 'x' + dispH);
 
         done(null, video);
 
-        this.root.add(rect);
+        this.root.add(iv);
     });
 }
 

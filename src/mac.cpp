@@ -688,7 +688,7 @@ AminoMacVideoPlayer::~AminoMacVideoPlayer() {
 }
 
 /**
- * Initialize the stream.
+ * Initialize the stream (on main thread).
  */
 bool AminoMacVideoPlayer::initStream() {
     //get file name
@@ -831,6 +831,8 @@ void AminoMacVideoPlayer::initDemuxer() {
             timeSys = timeStartSys;
 
             time = timeStart;
+
+            handleRewind();
 
             if (DEBUG_VIDEOS) {
                 printf("-> rewind\n");
