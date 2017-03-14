@@ -983,7 +983,7 @@ bool VideoFileStream::init() {
         //any stream
         demuxer = new VideoDemuxer();
 
-        if (!demuxer->loadFile(filename, options) || !demuxer->initStream()) {
+        if (!demuxer->init() || !demuxer->loadFile(filename, options) || !demuxer->initStream()) {
             lastError = demuxer->getLastError();
             return false;
         }
