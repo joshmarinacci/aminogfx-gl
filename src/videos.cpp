@@ -5,6 +5,7 @@
 #include <sstream>
 
 #define DEBUG_VIDEO_FRAMES false
+#define DEBUG_VIDEO_STREAM false
 
 //
 // AminoVideo
@@ -1071,8 +1072,7 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
             unsigned int dataLeft = size - packetOffset;
             unsigned int dataLen = std::min(dataLeft, length);
 
-            //cbx rename
-            if (DEBUG_VIDEOS) {
+            if (DEBUG_VIDEO_STREAM) {
                 printf("-> writing header: %i\n", dataLen);
             }
 
@@ -1102,9 +1102,11 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
             unsigned int dataLeft = packet.size - packetOffset;
             unsigned int dataLen = std::min(dataLeft, length - offset);
 
-            printf("-> filling read buffer (prev packet): %i of %i\n", dataLen, length); //cbx
+            if (DEBUG_VIDEO_STREAM) {
+                printf("-> filling read buffer (prev packet): %i of %i\n", dataLen, length);
+            }
 
-            memcpy(dest, packet.data + packetOffset, dataLen);
+            memcpy(dest + offset, packet.data + packetOffset, dataLen);
             offset += dataLen;
 
             //check packet
@@ -1156,7 +1158,9 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
         unsigned int dataLeft = length - offset;
         unsigned int dataLen = std::min(dataLeft, (unsigned int)packet.size);
 
-        printf("-> filling read buffer (new packet): %i of %i\n", dataLen, dataLeft); //cbx
+        if (DEBUG_VIDEO_STREAM) {
+            printf("-> filling read buffer (new packet): %i of %i\n", dataLen, dataLeft);
+        }
 
         memcpy(dest + offset, packet.data, dataLen);
         offset += dataLen;
