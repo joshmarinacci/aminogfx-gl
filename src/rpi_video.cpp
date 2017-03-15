@@ -285,7 +285,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         format.nVersion.nVersion = OMX_VERSION;
         format.nPortIndex = 130;
         format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-        //TODO cbx xFramerate -> 25 * (1 << 16);
+        //TODO xFramerate -> 25 * (1 << 16)
 
         /*
          * TODO more formats
@@ -384,17 +384,12 @@ bool AminoOmxVideoPlayer::initOmx() {
                      *   - RTSP Bugsbunny
                      *     - h264 (Constrained Baseline), yuv420p, 320x180
                      *     - FIXME does not play smooth enough (lost frames every second)
-                     *
-                     * Fails: cbx
-                     *
                      *   - M4V
                      *     - h264 (Constrained Baseline), yuv420p, 480x270
                      *   - HTTPS
                      *     - h264 (Main), yuv420p, 1920x1080
                      *
                      */
-
-                    //TODO cbx STARTTIME, NALu
 
                     lastError = "stream without valid video data";
                     handleInitDone(false);
@@ -495,7 +490,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             buf->nFilledLen = data_len;
             buf->nOffset = 0;
             buf->nFlags = omxFlags;
-            //cbx buf->nTimeStamp
+            //TODO buf->nTimeStamp
 
             if (first_packet && (omxFlags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
                 buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
