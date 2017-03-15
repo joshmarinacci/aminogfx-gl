@@ -126,6 +126,7 @@ public:
 
     READ_FRAME_RESULT readRGBFrame(double &time);
 
+    bool hasH264NaluStartCodes();
     bool getHeader(uint8_t **data, int *size);
     READ_FRAME_RESULT readFrame(AVPacket *packet);
     void freeFrame(AVPacket *packet);
@@ -173,9 +174,10 @@ public:
 
     virtual bool endOfStream() = 0;
     virtual bool rewind() = 0;
-    virtual unsigned int read(unsigned char *dest, unsigned int length) = 0;
+    virtual unsigned int read(unsigned char *dest, unsigned int length, unsigned int &omxFlags) = 0;
 
     virtual bool isH264() = 0;
+    virtual bool hasH264NaluStartCodes() = 0;
 
     std::string getLastError();
 
@@ -195,9 +197,10 @@ public:
 
     bool endOfStream() override;
     bool rewind() override;
-    unsigned int read(unsigned char *dest, unsigned int length) override;
+    unsigned int read(unsigned char *dest, unsigned int length, unsigned int &omxFlags) override;
 
     bool isH264() override;
+    bool hasH264NaluStartCodes() override;
 
 private:
     std::string filename;

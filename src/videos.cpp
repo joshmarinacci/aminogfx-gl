@@ -5,7 +5,8 @@
 #include <sstream>
 
 #define DEBUG_VIDEO_FRAMES false
-#define DEBUG_VIDEO_STREAM false
+//cbx
+#define DEBUG_VIDEO_STREAM true
 
 //
 // AminoVideo
@@ -659,6 +660,18 @@ done:
 }
 
 /**
+ * Check if NALU start codes are used (or format is annex b).
+ */
+bool VideoDemuxer::hasH264NaluStartCodes() {
+    if (!context || !codecCtx || !isH264) {
+        return false;
+    }
+
+    //Note: avcC atom  starts with 0x1
+    return codecCtx->extradata_size < 7 || !codecCtx->extradata || *codecCtx->extradata != 0x1;
+}
+
+/**
  * Read the optional video header.
  */
 bool VideoDemuxer::getHeader(uint8_t **data, int *size) {
@@ -1051,13 +1064,11 @@ bool VideoFileStream::rewind() {
 /**
  * Read from the stream.
  */
-unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
+unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, unsigned int &omxFlags) {
     if (file) {
         //read block from file (Note: ferror() returns error state)
         return fread(dest, 1, length, file);
     } else if (demuxer) {
-        unsigned int offset = 0;
-
         //header
         if (!headerRead) {
             uint8_t *data;
@@ -1077,36 +1088,33 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
             }
 
             memcpy(dest, data + packetOffset, dataLen);
-            offset = dataLen;
 
             //check packet
             if (dataLeft == dataLen) {
                 //all consumed
                 packetOffset = 0;
                 headerRead = true;
+                omxFlags |= 0x80; //OMX_BUFFERFLAG_CODECCONFIG
             } else {
                 //data left
                 packetOffset += dataLen;
-                return offset;
             }
 
-            //check buffer
-            if (offset == length) {
-                //buffer full
-                return offset;
-            }
+            return dataLen;
         }
 
         //check existing packet
+        unsigned int offset = 0;
+
         if (hasPacket) {
             unsigned int dataLeft = packet.size - packetOffset;
-            unsigned int dataLen = std::min(dataLeft, length - offset);
+            unsigned int dataLen = std::min(dataLeft, length);
 
             if (DEBUG_VIDEO_STREAM) {
                 printf("-> filling read buffer (prev packet): %i of %i\n", dataLen, length);
             }
 
-            memcpy(dest + offset, packet.data + packetOffset, dataLen);
+            memcpy(dest, packet.data + packetOffset, dataLen);
             offset += dataLen;
 
             //check packet
@@ -1172,6 +1180,7 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
             //all consumed
             demuxer->freeFrame(&packet);
             hasPacket = false;
+            omxFlags |= 0x10; //OMX_BUFFERFLAG_ENDOFFRAME
         }
 
         return offset;
@@ -1200,4 +1209,11 @@ bool VideoFileStream::endOfStream() {
  */
 bool VideoFileStream::isH264() {
     return file || (demuxer && demuxer->isH264);
+}
+
+/**
+ * Check if NALU start codes are used (or annex b).
+ */
+bool VideoFileStream::hasH264NaluStartCodes() {
+    return demuxer && demuxer->hasH264NaluStartCodes();
 }

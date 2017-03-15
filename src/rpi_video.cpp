@@ -324,6 +324,26 @@ bool AminoOmxVideoPlayer::initOmx() {
         }
     }
 
+    //NALU
+    if (status == 0 && stream->hasH264NaluStartCodes()) {
+        if (DEBUG_VIDEOS) {
+            printf("-> set OMX_NaluFormatStartCodes\n");
+        }
+
+        OMX_NALSTREAMFORMATTYPE nsft;
+
+        memset(&nsft, 0, sizeof nsft);
+        nsft.nSize = sizeof nsft;
+        nsft.nVersion.nVersion = OMX_VERSION;
+        nsft.nPortIndex = 130;
+        nsft.eNaluFormat = OMX_NaluFormatStartCodes;
+
+        if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamNalStreamFormatSelect, &nsft)) != OMX_ErrorNone) {
+            lastError = "NAL selection error";
+            status = -19;
+        }
+    }
+
     //init done
     omxInitialized = true;
 
@@ -347,7 +367,8 @@ bool AminoOmxVideoPlayer::initOmx() {
             unsigned char *dest = buf->pBuffer;
 
             //read from file
-            unsigned int data_len = stream->read(dest, buf->nAllocLen);
+            unsigned int omxFlags = 0;
+            unsigned int data_len = stream->read(dest, buf->nAllocLen, &omxFlags);
 
             //check end
             if (data_len == 0 && stream->endOfStream()) {
@@ -472,13 +493,15 @@ bool AminoOmxVideoPlayer::initOmx() {
 
             buf->nFilledLen = data_len;
             buf->nOffset = 0;
+            buf->nFlags = omxFlags;
+            //cbx buf->nTimeStamp
 
-            if (first_packet) {
-                buf->nFlags = OMX_BUFFERFLAG_STARTTIME;
+            if (first_packet && (omxFlags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
+                buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
                 first_packet = false;
             } else {
                 //TODO should we pass the timing information from FFmpeg/libav?
-                buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN;
+                buf->nFlags |= OMX_BUFFERFLAG_TIME_UNKNOWN;
             }
 
             if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
