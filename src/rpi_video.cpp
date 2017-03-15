@@ -55,7 +55,7 @@ void AminoOmxVideoPlayer::init() {
     if (!stream->isH264()) {
         lastError = "unsupported format";
         delete stream;
-        stream = null;
+        stream = NULL;
 
         handleInitDone(false);
 
