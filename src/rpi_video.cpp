@@ -324,7 +324,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         }
     }
 
-    //NALU
+    //NALU (see https://www.khronos.org/registry/OpenMAX-IL/extensions/KHR/OpenMAX_IL_1_1_2_Extension%20NAL%20Unit%20Packaging.pdf)
     if (status == 0 && stream->hasH264NaluStartCodes()) {
         if (DEBUG_VIDEOS) {
             printf("-> set OMX_NaluFormatStartCodes\n");
@@ -337,8 +337,8 @@ bool AminoOmxVideoPlayer::initOmx() {
         nsft.nVersion.nVersion = OMX_VERSION;
         nsft.nPortIndex = 130;
         nsft.eNaluFormat = OMX_NaluFormatStartCodes;
-
-        if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamNalStreamFormatSelect, &nsft)) != OMX_ErrorNone) {
+cbx
+        if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), (OMX_INDEXTYPE)OMX_IndexParamNalStreamFormatSelect, &nsft) != OMX_ErrorNone) {
             lastError = "NAL selection error";
             status = -19;
         }
@@ -423,7 +423,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                 handleRewind();
 
                 //read next block
-                data_len = stream->read(dest, buf->nAllocLen);
+                data_len = stream->read(dest, buf->nAllocLen, &omxFlags);
             }
 
             if (DEBUG_OMX_READ) {
