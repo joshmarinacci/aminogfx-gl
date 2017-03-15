@@ -126,6 +126,7 @@ public:
 
     READ_FRAME_RESULT readRGBFrame(double &time);
 
+    bool getHeader(uint8_t **data, int *size);
     READ_FRAME_RESULT readFrame(AVPacket *packet);
     void freeFrame(AVPacket *packet);
 
@@ -174,6 +175,8 @@ public:
     virtual bool rewind() = 0;
     virtual unsigned int read(unsigned char *dest, unsigned int length) = 0;
 
+    virtual bool isH264() = 0;
+
     std::string getLastError();
 
 protected:
@@ -194,6 +197,8 @@ public:
     bool rewind() override;
     unsigned int read(unsigned char *dest, unsigned int length) override;
 
+    bool isH264() override;
+
 private:
     std::string filename;
     std::string options;
@@ -208,6 +213,7 @@ private:
     bool eof = false;
     bool failed = false;
     unsigned int packetOffset = 0;
+    bool headerRead = false;
 };
 
 #endif

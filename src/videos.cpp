@@ -658,6 +658,24 @@ done:
 }
 
 /**
+ * Read the optional video header.
+ */
+bool VideoDemuxer::getHeader(uint8_t **data, int *size) {
+    if (!context || !codecCtx) {
+        return false;
+    }
+
+    if (codecCtx->extradata && codecCtx->extradata_size > 0) {
+        *data = codecCtx->extradata;
+        *size = codecCtx->extradata_size;
+
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Read a video packet.
  */
 READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
@@ -1020,6 +1038,7 @@ bool VideoFileStream::rewind() {
 
         eof = false;
         failed = false;
+        headerRead = false;
 
         //rewind stream
         return demuxer->rewind();
@@ -1036,17 +1055,57 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length) {
         //read block from file (Note: ferror() returns error state)
         return fread(dest, 1, length, file);
     } else if (demuxer) {
-        //check existing packet
         unsigned int offset = 0;
 
+        //header
+        if (!headerRead) {
+            uint8_t *data;
+            int size;
+
+            if (!demuxer->getHeader(&data, &size)) {
+                //no header available
+                headerRead = true;
+            }
+
+            //fill
+            unsigned int dataLeft = size - packetOffset;
+            unsigned int dataLen = std::min(dataLeft, length);
+
+            //cbx rename
+            if (DEBUG_VIDEOS) {
+                printf("-> writing header: %i\n", dataLen);
+            }
+
+            memcpy(dest, data + packetOffset, dataLen);
+            offset = dataLen;
+
+            //check packet
+            if (dataLeft == dataLen) {
+                //all consumed
+                packetOffset = 0;
+                headerRead = true;
+            } else {
+                //data left
+                packetOffset += dataLen;
+                return offset;
+            }
+
+            //check buffer
+            if (offset == length) {
+                //buffer full
+                return offset;
+            }
+        }
+
+        //check existing packet
         if (hasPacket) {
             unsigned int dataLeft = packet.size - packetOffset;
-            unsigned int dataLen = std::min(dataLeft, length);
+            unsigned int dataLen = std::min(dataLeft, length - offset);
 
             printf("-> filling read buffer (prev packet): %i of %i\n", dataLen, length); //cbx
 
             memcpy(dest, packet.data + packetOffset, dataLen);
-            offset = dataLen;
+            offset += dataLen;
 
             //check packet
             if (dataLeft == dataLen) {
@@ -1130,4 +1189,11 @@ bool VideoFileStream::endOfStream() {
     assert(false);
 
     return true;
+}
+
+/**
+ * Check if H264 video stream.
+ */
+bool VideoFileStream::isH264() {
+    return file || (demuxer && demuxer->isH264);
 }
