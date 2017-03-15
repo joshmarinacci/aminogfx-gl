@@ -355,21 +355,22 @@ bool AminoOmxVideoPlayer::initOmx() {
                 if (!ready) {
                     //case: no video in stream
 
-                    //FIXME cbx happens with libav content
                     /*
                      * Works:
                      *
                      *   - Digoo M1Q
                      *     - h264 (Main), yuv420p, 1280x960
+                     *   - RTSP Bugsbunny
+                     *     - h264 (Constrained Baseline), yuv420p, 320x180
+                     *     - FIXME does not play smooth enough (lost frames every second)
                      *
-                     * Fails:
+                     * Fails: cbx
                      *
                      *   - M4V
                      *     - h264 (Constrained Baseline), yuv420p, 480x270
                      *   - HTTPS
                      *     - h264 (Main), yuv420p, 1920x1080
-                     *   - RTSP Bugsbunny
-                     *     - h264 (Constrained Baseline), yuv420p, 320x180
+                     *
                      */
 
                     //TODO cbx STARTTIME, NALu
