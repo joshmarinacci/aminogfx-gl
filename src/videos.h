@@ -25,6 +25,7 @@ public:
     AminoVideo();
     ~AminoVideo();
 
+    bool getPlaybackLoop(int &loop);
     std::string getPlaybackSource();
     std::string getPlaybackOptions();
 

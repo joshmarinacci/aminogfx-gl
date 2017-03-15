@@ -403,12 +403,12 @@ bool AminoOmxVideoPlayer::initOmx() {
 
                 if (loop > 0) {
                     loop--;
+                }
 
-                    if (loop == 0) {
-                        //end playback
-                        handlePlaybackDone();
-                        break;
-                    }
+                if (loop == 0) {
+                    //end playback
+                    handlePlaybackDone();
+                    break;
                 }
 
                 if (!stream->rewind()) {

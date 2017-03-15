@@ -24,6 +24,10 @@ function playVideo(opts, done) {
         video.src = opts.src;
         video.opts = opts.opts;
 
+        if (opts.loop !== undefined) {
+            video.loop = opts.loop;
+        }
+
         //image view
         const dispW = this.w();
         const dispH = this.h();

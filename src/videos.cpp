@@ -27,6 +27,39 @@ AminoVideo::~AminoVideo()  {
 }
 
 /**
+ * Get playback loop value.
+ */
+bool AminoVideo::getPlaybackLoop(int &loop) {
+    Nan::MaybeLocal<v8::Value> loopValue = Nan::Get(handle(), Nan::New<v8::String>("loop").ToLocalChecked());
+
+    if (loopValue.IsEmpty()) {
+        return false;
+    }
+
+    v8::Local<v8::Value> loopLocal = loopValue.ToLocalChecked();
+
+    if (loopLocal->IsBoolean()) {
+        if (loopLocal->BooleanValue()) {
+            loop = -1;
+        } else {
+            loop = 0;
+        }
+
+        return true;
+    } else if (loopLocal->IsInt32()) {
+        loop = loopLocal->Int32Value();
+
+        if (loop < 0) {
+            loop = -1;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Get local file name.
  *
  * Note: must be called on main thread!
@@ -136,7 +169,8 @@ AminoJSObject* AminoVideoFactory::create() {
  * Note: has to be called on main thread!
  */
 AminoVideoPlayer::AminoVideoPlayer(AminoTexture *texture, AminoVideo *video): texture(texture), video(video) {
-    //empty
+    //playback settings
+    video->getPlaybackLoop(loop);
 }
 
 /**

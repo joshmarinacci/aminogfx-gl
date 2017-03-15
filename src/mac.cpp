@@ -813,12 +813,12 @@ void AminoMacVideoPlayer::initDemuxer() {
 
             if (loop > 0) {
                 loop--;
+            }
 
-                if (loop == 0) {
-                    //end playback
-                    handlePlaybackDone();
-                    return;
-                }
+            if (loop == 0) {
+                //end playback
+                handlePlaybackDone();
+                return;
             }
 
             //rewind
