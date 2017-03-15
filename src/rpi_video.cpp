@@ -368,7 +368,7 @@ cbx
 
             //read from file
             unsigned int omxFlags = 0;
-            unsigned int data_len = stream->read(dest, buf->nAllocLen, &omxFlags);
+            unsigned int data_len = stream->read(dest, buf->nAllocLen, omxFlags);
 
             //check end
             if (data_len == 0 && stream->endOfStream()) {
@@ -423,7 +423,8 @@ cbx
                 handleRewind();
 
                 //read next block
-                data_len = stream->read(dest, buf->nAllocLen, &omxFlags);
+                omxFlags = 0;
+                data_len = stream->read(dest, buf->nAllocLen, omxFlags);
             }
 
             if (DEBUG_OMX_READ) {
