@@ -337,7 +337,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         nsft.nVersion.nVersion = OMX_VERSION;
         nsft.nPortIndex = 130;
         nsft.eNaluFormat = OMX_NaluFormatStartCodes;
-cbx
+
         if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), (OMX_INDEXTYPE)OMX_IndexParamNalStreamFormatSelect, &nsft) != OMX_ErrorNone) {
             lastError = "NAL selection error";
             status = -19;
