@@ -285,7 +285,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         format.nVersion.nVersion = OMX_VERSION;
         format.nPortIndex = 130;
         format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-        //TODO xFramerate -> 25 * (1 << 16)
+        //TODO xFramerate -> 25 * (1 << 16) cbx
 
         /*
          * TODO more formats
@@ -367,8 +367,8 @@ bool AminoOmxVideoPlayer::initOmx() {
             unsigned char *dest = buf->pBuffer;
 
             //read from file
-            unsigned int omxFlags = 0;
-            unsigned int data_len = stream->read(dest, buf->nAllocLen, omxFlags);
+            omx_metadata_t omxData;
+            unsigned int data_len = stream->read(dest, buf->nAllocLen, omxData);
 
             //check end
             if (data_len == 0 && stream->endOfStream()) {
@@ -383,7 +383,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                      *     - h264 (Main), yuv420p, 1280x960
                      *   - RTSP Bugsbunny
                      *     - h264 (Constrained Baseline), yuv420p, 320x180
-                     *     - FIXME does not play smooth enough (lost frames every second)
+                     *     - FIXME cbx: does not play smooth enough (lost frames every second) -> wrong timing, plays way too fast
                      *   - M4V
                      *     - h264 (Constrained Baseline), yuv420p, 480x270
                      *   - HTTPS
@@ -407,6 +407,8 @@ bool AminoOmxVideoPlayer::initOmx() {
 
                 if (loop == 0) {
                     //end playback
+                    //cbx FIXME continue playback until last frame shown (stops to early)
+                    //cbx TODO OMX_BUFFERFLAG_EOS
                     handlePlaybackDone();
                     break;
                 }
@@ -418,14 +420,14 @@ bool AminoOmxVideoPlayer::initOmx() {
                 handleRewind();
 
                 //read next block
-                omxFlags = 0;
-                data_len = stream->read(dest, buf->nAllocLen, omxFlags);
+                data_len = stream->read(dest, buf->nAllocLen, omxData);
             }
 
             if (DEBUG_OMX_READ) {
                 printf("OMX: data read %i\n", (int)data_len);
             }
 
+            //handle port settings changes
             if (!port_settings_changed &&
                 ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
                 (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
@@ -471,8 +473,10 @@ bool AminoOmxVideoPlayer::initOmx() {
                 videoW = portdef.format.video.nFrameWidth;
                 videoH = portdef.format.video.nFrameHeight;
 
+                float fps = portdef.format.video.xFramerate / (float)(1 << 16);
+
                 if (DEBUG_OMX) {
-                    printf("video: %dx%d\n", videoW, videoH);
+                    printf("video: %dx%d@%.2f\n", videoW, videoH, fps);
                 }
 
                 //switch to renderer thread
@@ -483,16 +487,15 @@ bool AminoOmxVideoPlayer::initOmx() {
                 //read error occured
                 lastError = "IO error";
                 handlePlaybackError();
-
                 break;
             }
 
             buf->nFilledLen = data_len;
             buf->nOffset = 0;
-            buf->nFlags = omxFlags;
-            //TODO buf->nTimeStamp
+            buf->nFlags = omxData.flags;
+            buf->nTimeStamp = omxData.timeStamp; //in microseconds
 
-            if (first_packet && (omxFlags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
+            if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
                 buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
                 first_packet = false;
             } else {

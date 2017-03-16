@@ -754,6 +754,21 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
 }
 
 /**
+ * Get the presentation time (in seconds).
+ */
+double VideoDemuxer::getFramePts(AVPacket *packet) {
+    if (!stream || !packet) {
+        return 0;
+    }
+
+    if (packet->pts != (int64_t)AV_NOPTS_VALUE) {
+        return packet->pts * av_q2d(stream->time_base);
+    }
+
+    return 0;
+}
+
+/**
  * Free a video packet.
  */
 void VideoDemuxer::freeFrame(AVPacket *packet) {
@@ -829,7 +844,12 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
 #ifdef MAC
                     pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
 #else
-                    pts = frame->pts * av_q2d(stream->time_base);
+                    //fallback (currently not yet used)
+                    if (frame.pts != (int64_t)AV_NOPTS_VALUE) {
+                        pts = frame->pts * av_q2d(stream->time_base);
+                    } else {
+                        pts = 0;
+                    }
 #endif
                 } else {
                     pts = 0;
@@ -1098,11 +1118,15 @@ bool VideoFileStream::rewind() {
 /**
  * Read from the stream.
  */
-unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, unsigned int &omxFlags) {
+unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) {
     if (file) {
         //read block from file (Note: ferror() returns error state)
         return fread(dest, 1, length, file);
     } else if (demuxer) {
+        //reset OMX data
+        omxData.flags = 0;
+        omxData.timeStamp = 0;
+
         //header
         if (!headerRead) {
             uint8_t *data;
@@ -1128,7 +1152,7 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, uns
                 //all consumed
                 packetOffset = 0;
                 headerRead = true;
-                omxFlags |= 0x80; //OMX_BUFFERFLAG_CODECCONFIG
+                omxData.flags |= 0x80; //OMX_BUFFERFLAG_CODECCONFIG
             } else {
                 //data left
                 packetOffset += dataLen;
@@ -1207,6 +1231,10 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, uns
         memcpy(dest + offset, packet.data, dataLen);
         offset += dataLen;
 
+        //timing
+        omxData.timeStamp = demuxer->getFramePts(&packet) * 1000000;
+
+        //check state
         if (dataLen < (unsigned int)packet.size) {
             //data left
             packetOffset = dataLen;
@@ -1214,7 +1242,7 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, uns
             //all consumed
             demuxer->freeFrame(&packet);
             hasPacket = false;
-            omxFlags |= 0x10; //OMX_BUFFERFLAG_ENDOFFRAME
+            omxData.flags |= 0x10; //OMX_BUFFERFLAG_ENDOFFRAME
         }
 
         return offset;

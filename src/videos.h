@@ -130,6 +130,7 @@ public:
     bool hasH264NaluStartCodes();
     bool getHeader(uint8_t **data, int *size);
     READ_FRAME_RESULT readFrame(AVPacket *packet);
+    double getFramePts(AVPacket *packet);
     void freeFrame(AVPacket *packet);
 
     bool rewind();
@@ -163,6 +164,11 @@ private:
     void closeReadFrame(bool destroy);
 };
 
+struct omx_metadata_t {
+    unsigned int flags;
+    int64_t timeStamp;
+};
+
 /**
  * Abstract video stream.
  */
@@ -175,7 +181,8 @@ public:
 
     virtual bool endOfStream() = 0;
     virtual bool rewind() = 0;
-    virtual unsigned int read(unsigned char *dest, unsigned int length, unsigned int &omxFlags) = 0;
+
+    virtual unsigned int read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) = 0;
 
     virtual bool isH264() = 0;
     virtual bool hasH264NaluStartCodes() = 0;
@@ -198,7 +205,8 @@ public:
 
     bool endOfStream() override;
     bool rewind() override;
-    unsigned int read(unsigned char *dest, unsigned int length, unsigned int &omxFlags) override;
+
+    unsigned int read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) override;
 
     bool isH264() override;
     bool hasH264NaluStartCodes() override;
