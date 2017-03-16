@@ -691,10 +691,11 @@ void AminoOmxVideoPlayer::destroyOmx() {
  * Get current media time.
  */
 double AminoOmxVideoPlayer::getMediaTime() {
-    if (!playing) {
+    if (!playing || !list) {
         return -1;
     }
 
+    COMPONENT_T *clock = list[2];
     OMX_TIME_CONFIG_TIMESTAMPTYPE ts;
 
     memset(&ts, 0, sizeof(ts));
@@ -706,7 +707,7 @@ double AminoOmxVideoPlayer::getMediaTime() {
         return -1;
     }
 
-    int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)(ts.nTimestamp.nHighPart << 32));
+    int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)ts.nTimestamp.nHighPart << 32));
 
     return timestamp / 1000000.f;
 }
