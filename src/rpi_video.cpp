@@ -383,7 +383,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                      *     - h264 (Main), yuv420p, 1280x960
                      *   - RTSP Bugsbunny
                      *     - h264 (Constrained Baseline), yuv420p, 320x180
-                     *     - FIXME cbx: does not play smooth enough (lost frames every second) -> wrong timing, plays way too fast
+                     *     - FIXME cbx: does not play smooth enough (lost frames every second) -> also some issues on Mac
                      *   - M4V
                      *     - h264 (Constrained Baseline), yuv420p, 480x270
                      *   - HTTPS
