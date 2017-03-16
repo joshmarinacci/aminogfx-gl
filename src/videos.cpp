@@ -845,7 +845,7 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
                     pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
 #else
                     //fallback (currently not yet used)
-                    if (frame.pts != (int64_t)AV_NOPTS_VALUE) {
+                    if (frame->pts != (int64_t)AV_NOPTS_VALUE) {
                         pts = frame->pts * av_q2d(stream->time_base);
                     } else {
                         pts = 0;
