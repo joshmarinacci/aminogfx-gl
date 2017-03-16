@@ -166,7 +166,7 @@ private:
 
 struct omx_metadata_t {
     unsigned int flags;
-    int64_t timeStamp;
+    signed long long timeStamp;
 };
 
 /**

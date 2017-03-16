@@ -493,7 +493,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             buf->nFilledLen = data_len;
             buf->nOffset = 0;
             buf->nFlags = omxData.flags;
-            buf->nTimeStamp = omxData.timeStamp; //in microseconds
+            buf->nTimeStamp = (OMX_TICKS)omxData.timeStamp; //in microseconds
 
             if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
                 buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
