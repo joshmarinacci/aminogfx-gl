@@ -32,13 +32,15 @@ gfx.start(function (err) {
     //showCubeLighted(model1, true); //use texture
     showSphereLighted(model1);
 
+    //video
+    showVideoTexture(model1);
+
     root.add(model1);
 
     //some info
     console.log('screen: ' + JSON.stringify(gfx.screen));
     console.log('window size: ' + this.w() + 'x' + this.h());
 });
-
 
 /**
  * Simplest model.
@@ -481,4 +483,18 @@ function showSphereLighted(model) {
     //animate
     model.rx.anim().from(0).to(360).dur(5000).loop(-1).start();
     model.ry.anim().from(0).to(360).dur(5000).loop(-1).start();
+}
+
+/**
+ * Show video texture.
+ *
+ * @param {*} model1
+ */
+function showVideoTexture(model1) {
+    const video1 = new amino.AminoVideo();
+
+    video1.src = 'rtsp://mm2.pcslab.com/mm/7h1500.mp4';
+    video1.opts = 'rtsp_transport=tcp';
+
+    model1.src(video1);
 }
