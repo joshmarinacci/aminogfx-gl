@@ -1119,14 +1119,14 @@ bool VideoFileStream::rewind() {
  * Read from the stream.
  */
 unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) {
+    //reset OMX data
+    omxData.flags = 0;
+    omxData.timeStamp = 0;
+
     if (file) {
         //read block from file (Note: ferror() returns error state)
         return fread(dest, 1, length, file);
     } else if (demuxer) {
-        //reset OMX data
-        omxData.flags = 0;
-        omxData.timeStamp = 0;
-
         //header
         if (!headerRead) {
             uint8_t *data;
