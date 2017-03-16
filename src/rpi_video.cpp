@@ -702,11 +702,11 @@ double AminoOmxVideoPlayer::getMediaTime() {
     ts.nVersion.nVersion = OMX_VERSION;
     ts.nPortIndex = OMX_ALL;
 
-    if (OMX_GetParameter(clock, OMX_IndexConfigTimeCurrentMediaTime, &ts) != OMX_ErrorNone) {
+    if (OMX_GetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeCurrentMediaTime, &ts) != OMX_ErrorNone) {
         return -1;
     }
 
-    int64_t timestamp = ts.nTimestamp.nLowPart | (int64_t)(ts.nTimestamp.nHighPart << 32);
+    int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)(ts.nTimestamp.nHighPart << 32));
 
     return timestamp / 1000000.f;
 }
