@@ -3,5 +3,7 @@
     "window.reopenFolders": "all",
     "files.trimTrailingWhitespace": true,
     "telemetry.enableTelemetry": false,
-    "files.associations": {}
+    "files.associations": {
+        "*.tcc": "cpp"
+    }
 }
