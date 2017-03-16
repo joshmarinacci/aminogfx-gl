@@ -920,6 +920,8 @@ v8::Local<v8::FunctionTemplate> AminoTexture::GetInitFunction() {
     Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromFont", LoadTextureFromFont);
     Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
+    Nan::SetPrototypeMethod(tpl, "getMediaTime", GetMediaTime);
+    Nan::SetPrototypeMethod(tpl, "getDuration", GetDuration);
 
     //template function
     return tpl;
@@ -1596,6 +1598,40 @@ NAN_METHOD(AminoTexture::Destroy) {
 
     //destroy instance
     obj->destroy();
+}
+
+/**
+ * Get the media time (video playback).
+ */
+NAN_METHOD(AminoTexture::GetMediaTime) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    double mediaTime = -1;
+
+    if (obj->videoPlayer) {
+        mediaTime = obj->videoPlayer->getMediaTime();
+    }
+
+    info.GetReturnValue().Set(Nan::New(mediaTime));
+}
+
+/**
+ * Get the duration (video playback).
+ */
+NAN_METHOD(AminoTexture::GetDuration) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    double duration = -1;
+
+    if (obj->videoPlayer) {
+        duration = obj->videoPlayer->getDuration();
+    }
+
+    info.GetReturnValue().Set(Nan::New(duration));
 }
 
 //

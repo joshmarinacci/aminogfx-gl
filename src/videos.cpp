@@ -1279,3 +1279,14 @@ bool VideoFileStream::isH264() {
 bool VideoFileStream::hasH264NaluStartCodes() {
     return demuxer && demuxer->hasH264NaluStartCodes();
 }
+
+/**
+ * Get playback duration.
+ */
+double VideoFileStream::getDuration() {
+    if (demuxer) {
+        return demuxer->durationSecs;
+    }
+
+    return -1;
+}

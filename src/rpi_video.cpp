@@ -285,7 +285,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         format.nVersion.nVersion = OMX_VERSION;
         format.nPortIndex = 130;
         format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-        //TODO xFramerate -> 25 * (1 << 16) cbx
+        //TODO xFramerate -> 25 * (1 << 16)
 
         /*
          * TODO more formats
@@ -383,7 +383,7 @@ bool AminoOmxVideoPlayer::initOmx() {
                      *     - h264 (Main), yuv420p, 1280x960
                      *   - RTSP Bugsbunny
                      *     - h264 (Constrained Baseline), yuv420p, 320x180
-                     *     - FIXME cbx: does not play smooth enough (lost frames every second) -> also some issues on Mac
+                     *     - Note: playback issues seen on RPi and Mac, other RTSP examples work fine
                      *   - M4V
                      *     - h264 (Constrained Baseline), yuv420p, 480x270
                      *   - HTTPS
@@ -685,4 +685,39 @@ void AminoOmxVideoPlayer::destroyOmx() {
     ilclient_destroy(client);
 
     omxInitialized = false;
+}
+
+/**
+ * Get current media time.
+ */
+double AminoOmxVideoPlayer::getMediaTime() {
+    if (!playing) {
+        return -1;
+    }
+
+    OMX_TIME_CONFIG_TIMESTAMPTYPE ts;
+
+    memset(&ts, 0, sizeof(ts));
+    ts.nSize = sizeof(ts);
+    ts.nVersion.nVersion = OMX_VERSION;
+    ts.nPortIndex = OMX_ALL;
+
+    if (OMX_GetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeCurrentMediaTime, &ts) != OMX_ErrorNone) {
+        return -1;
+    }
+
+    signed long long timestamp = ts.nTimestamp.nLowPart | (ts.nTimestamp.nHighPart << 32);
+
+    return timestamp / 1000000.f;
+}
+
+/**
+ * Get video duration (-1 if unknown).
+ */
+double AminoOmxVideoPlayer::getDuration() {
+    if (stream) {
+        return stream->getDuration();
+    }
+
+    return -1;
 }

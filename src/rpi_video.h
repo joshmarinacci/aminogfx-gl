@@ -37,6 +37,10 @@ public:
     static void textureThread(void *arg);
     bool useTexture();
 
+    //metadata
+    double getMediaTime() override;
+    double getDuration() override;
+
 private:
     void *eglImage = NULL;
     ILCLIENT_T *client = NULL;

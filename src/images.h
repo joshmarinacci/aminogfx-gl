@@ -106,6 +106,8 @@ private:
     static NAN_METHOD(LoadTextureFromBuffer);
     static NAN_METHOD(LoadTextureFromFont);
     static NAN_METHOD(Destroy);
+    static NAN_METHOD(GetMediaTime);
+    static NAN_METHOD(GetDuration);
 
     void createTexture(AsyncValueUpdate *update, int state);
     void createVideoTexture(AsyncValueUpdate *update, int state);

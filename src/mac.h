@@ -28,6 +28,10 @@ public:
     void updateVideoTexture() override;
     bool initTexture();
 
+    //metadata
+    double getMediaTime() override;
+    double getDuration() override;
+
 private:
     std::string filename;
     std::string options;
@@ -36,6 +40,8 @@ private:
 
     uv_thread_t thread;
     bool threadRunning = false;
+
+    double mediaTime = -1;
 
     void initDemuxer();
     void closeDemuxer();

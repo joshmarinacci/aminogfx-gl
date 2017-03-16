@@ -67,7 +67,11 @@ public:
 
     bool isReady();
     std::string getLastError();
+
+    //metadata
     void getVideoDimension(int &w, int &h);
+    virtual double getMediaTime() = 0;
+    virtual double getDuration() = 0;
 
 protected:
     AminoTexture *texture;
@@ -184,8 +188,10 @@ public:
 
     virtual unsigned int read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) = 0;
 
+    //metadata
     virtual bool isH264() = 0;
     virtual bool hasH264NaluStartCodes() = 0;
+    virtual double getDuration() = 0;
 
     std::string getLastError();
 
@@ -208,8 +214,10 @@ public:
 
     unsigned int read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) override;
 
+    //metadata
     bool isH264() override;
     bool hasH264NaluStartCodes() override;
+    double getDuration() override;
 
 private:
     std::string filename;

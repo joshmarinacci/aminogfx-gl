@@ -852,6 +852,9 @@ void AminoMacVideoPlayer::initDemuxer() {
             }
         }
 
+        //update media time
+        mediaTime = getTime() / 1000 - timeStartSys;
+
         //FIXME cbx: frame is shown too early (use two buffers)
     }
 }
@@ -939,6 +942,28 @@ void AminoMacVideoPlayer::updateVideoTexture() {
     GLsizei textureH = videoH;
 
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, textureW, textureH, GL_RGB, GL_UNSIGNED_BYTE, data);
+}
+
+/**
+ * Get current media time.
+ */
+double AminoMacVideoPlayer::getMediaTime() {
+    if (playing) {
+        return mediaTime;
+    }
+
+    return -1;
+}
+
+/**
+ * Get video duration (-1 if unknown).
+ */
+double AminoMacVideoPlayer::getDuration() {
+    if (demuxer) {
+        return demuxer->durationSecs;
+    }
+
+    return -1;
 }
 
 //
