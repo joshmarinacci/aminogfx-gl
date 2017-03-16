@@ -52,4 +52,13 @@ gfx.start(function (err) {
 
     //display info
     console.log('display size: ' + this.w() + 'x' + this.h());
+
+    //show media time
+    iv1.image.watch(video => {
+        if (video) {
+            setInterval(() => {
+                console.log('time: ' + video.getMediaTime() + ' of ' + video.getDuration());
+            }, 1000);
+        }
+    });
 });
