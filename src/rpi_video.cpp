@@ -743,11 +743,12 @@ void AminoOmxVideoPlayer::destroyOmx() {
     if (DEBUG_OMX) {
         printf("-> tunnels closed\n");
     }
-
+//cbx blocks here
     //list
     ilclient_state_transition(list, OMX_StateIdle);
+printf("cbx: idle\n");
     ilclient_state_transition(list, OMX_StateLoaded);
-
+printf("cbx: loaded\n");
     ilclient_cleanup_components(list);
     egl_render = NULL;
     eglBuffer = NULL; //TODO do we have to free the buffer???
