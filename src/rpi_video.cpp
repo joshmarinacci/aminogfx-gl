@@ -353,6 +353,47 @@ bool AminoOmxVideoPlayer::initOmx() {
         printf("OMX init done\n");
     }
 
+    //playback
+    status = playOmx();
+
+    //done
+end:
+
+    //debug
+    if (DEBUG_OMX) {
+        printf("OMX done status: %i\n", status);
+    }
+
+    //check status
+    if (status != 0) {
+        //report error
+        if (!initDone) {
+            handleInitDone(false);
+        } else {
+            handlePlaybackError();
+        }
+    }
+
+    destroyOmx();
+
+    if (status == 0) {
+        if (!initDone) {
+            handleInitDone(true);
+        }
+
+        handlePlaybackDone();
+    }
+
+    return status == 0;
+}
+
+/**
+ * OMX playback loop.
+ */
+int AminoOmxVideoPlayer::playOmx() {
+    COMPONENT_T *video_decode = ist[0];
+    COMPONENT_T *video_scheduler = list[3];
+
     //start decoding
     OMX_BUFFERHEADERTYPE *buf;
     bool port_settings_changed = false;
@@ -389,9 +430,8 @@ bool AminoOmxVideoPlayer::initOmx() {
             //check if stream contained video data
             if (!ready) {
                 //case: no video in stream
-                status = -30;
                 lastError = "stream without valid video data";
-                goto end;
+                return -30;
             }
 
             //loop
@@ -436,8 +476,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
             if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
                 lastError = "video tunnel setup error";
-                status = -31;
-                goto end;
+                return -31;
             }
 
             //start scheduler
@@ -446,8 +485,7 @@ bool AminoOmxVideoPlayer::initOmx() {
             //now setup tunnel to egl_render
             if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
                 lastError = "egl_render tunnel setup error";
-                status = -32;
-                goto end;
+                return -32;
             }
 
             //set egl_render to idle
@@ -463,8 +501,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
             if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
                 lastError = "could not get video size";
-                status = -33;
-                goto end;
+                return -33;
             }
 
             videoW = portdef.format.video.nFrameWidth;
@@ -483,8 +520,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         if (!data_len) {
             //read error occured
             lastError = "IO error";
-            status = -40;
-            goto end;
+            return -40;
         }
 
         buf->nFilledLen = data_len;
@@ -507,8 +543,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
         if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
             lastError = "could not empty buffer";
-            status = -41;
-            goto end;
+            return -41;
         }
     }
 
@@ -523,47 +558,18 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
         lastError = "could not empty buffer (2)";
-        status = -50;
-        goto end;
+        return -50;
     }
 
     //wait for EOS from render
-    ilclient_wait_for_event(video_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
+    ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
 
     //need to flush the renderer to allow video_decode to disable its input port
     ilclient_flush_tunnels(tunnel, 0);
 
     ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
-    //done
-end:
-
-    //debug
-    if (DEBUG_OMX) {
-        printf("OMX done status: %i\n", status);
-    }
-
-    //check status
-    if (status != 0) {
-        //report error
-        if (!initDone) {
-            handleInitDone(false);
-        } else {
-            handlePlaybackError();
-        }
-    }
-
-    destroyOmx();
-
-    if (status == 0) {
-        if (!initDone) {
-            handleInitDone(true);
-        }
-
-        handlePlaybackDone();
-    }
-
-    return status == 0;
+    return 0;
 }
 
 /**
