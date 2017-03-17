@@ -108,6 +108,9 @@ private:
     static NAN_METHOD(Destroy);
     static NAN_METHOD(GetMediaTime);
     static NAN_METHOD(GetDuration);
+    static NAN_METHOD(StopPlayback);
+    static NAN_METHOD(PausePlayback);
+    static NAN_METHOD(ResumePlayback);
 
     void createTexture(AsyncValueUpdate *update, int state);
     void createVideoTexture(AsyncValueUpdate *update, int state);

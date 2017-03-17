@@ -375,7 +375,11 @@ end:
         if (!initDone) {
             handleInitDone(false);
         } else {
-            handlePlaybackError();
+            if (doStop) {
+                handlePlaybackStopped();
+            } else {
+                handlePlaybackError();
+            }
         }
     }
 
@@ -386,7 +390,11 @@ end:
             handleInitDone(true);
         }
 
-        handlePlaybackDone();
+        if (doStop) {
+            handlePlaybackStopped();
+        } else {
+            handlePlaybackDone();
+        }
     }
 
     return status == 0;
@@ -748,9 +756,14 @@ void AminoOmxVideoPlayer::destroyOmx() {
     //Note: blocks forever!!! Anyway, we are not re-using this player instance.
     //ilclient_state_transition(list, OMX_StateLoaded);
 
-    ilclient_cleanup_components(list);
+    if (eglBuffer) {
+        OMX_FreeBuffer(ILC_GET_HANDLE(egl_render), 221, eglBuffer);
+        eglBuffer = NULL;
+    }
+
     egl_render = NULL;
-    eglBuffer = NULL; //TODO cbx do we have to free the buffer???
+
+    ilclient_cleanup_components(list);
 
     if (DEBUG_OMX) {
         printf("-> components closed\n");
@@ -775,7 +788,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
  * Get current media time.
  */
 double AminoOmxVideoPlayer::getMediaTime() {
-    if (!playing || !list) {
+    if (!playing || !paused || !list) {
         return -1;
     }
 
@@ -805,4 +818,74 @@ double AminoOmxVideoPlayer::getDuration() {
     }
 
     return -1;
+}
+
+/**
+ * Stop playback.
+ */
+void AminoOmxVideoPlayer::stopPlayback() {
+    if (!playing && !paused) {
+        return;
+    }
+
+    //stop
+    doStop = true;
+    destroyOmx();
+    handlePlaybackStopped();
+}
+
+/**
+ * Pause playback.
+ */
+bool AminoOmxVideoPlayer::pausePlayback() {
+    if (!playing) {
+        return true;
+    }
+
+    //pause OMX
+    if (!setOmxSpeed(0)) {
+        return false;
+    }
+
+    //pause stream
+    stream->pause();
+
+    //set state
+    handlePlaybackPaused();
+
+    return true;
+}
+
+/**
+ * Resume (stopped) playback.
+ */
+bool AminoOmxVideoPlayer::resumePlayback() {
+    if (!paused) {
+        return true;
+    }
+
+    //resume OMX
+    setOmxSpeed(1 << 16);
+
+    //resume stream
+    stream->resume();
+
+    //set state
+    handlePlaybackResumed();
+
+    return true;
+}
+
+/**
+ * Set OMX playback speed.
+ */
+void AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
+    OMX_TIME_CONFIG_SCALETYPE st;
+
+    memset(&st, 0, sizeof(st));
+    st.nSize = sizeof(st);
+    st.nVersion.nVersion = OMX_VERSION;
+    st.xScale = 0;
+
+    return OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeScale, &st) == OMX_ErrorNone;
 }

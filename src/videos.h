@@ -66,12 +66,18 @@ public:
     void destroyAminoVideoPlayer();
 
     bool isReady();
+    bool isPlaying();
+    bool isPaused();
+
     std::string getLastError();
 
     //metadata
     void getVideoDimension(int &w, int &h);
     virtual double getMediaTime() = 0;
     virtual double getDuration() = 0;
+    virtual void stopPlayback() = 0;
+    virtual bool pausePlayback() = 0;
+    virtual bool resumePlayback() = 0;
 
 protected:
     AminoTexture *texture;
@@ -81,6 +87,8 @@ protected:
     bool initDone = false;
     bool ready = false;
     bool playing = false;
+    bool paused = false;
+
     bool failed = false;
     bool destroyed = false;
     std::string lastError;
@@ -94,6 +102,9 @@ protected:
 
     void handlePlaybackDone();
     void handlePlaybackError();
+    void handlePlaybackStopped();
+    void handlePlaybackPaused();
+    void handlePlaybackResumed();
 
     void handleInitDone(bool ready);
 
@@ -136,6 +147,9 @@ public:
     READ_FRAME_RESULT readFrame(AVPacket *packet);
     double getFramePts(AVPacket *packet);
     void freeFrame(AVPacket *packet);
+
+    void pause();
+    void resume();
 
     bool rewind();
     bool rewindRGB(double &time);
@@ -188,6 +202,9 @@ public:
 
     virtual unsigned int read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) = 0;
 
+    virtual void pause() = 0;
+    virtual void resume() = 0;
+
     //metadata
     virtual bool isH264() = 0;
     virtual bool hasH264NaluStartCodes() = 0;
@@ -213,6 +230,9 @@ public:
     bool rewind() override;
 
     unsigned int read(unsigned char *dest, unsigned int length, omx_metadata_t &omxData) override;
+
+    void pause() override;
+    void resume() override;
 
     //metadata
     bool isH264() override;

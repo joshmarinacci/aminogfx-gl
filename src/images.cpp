@@ -919,9 +919,15 @@ v8::Local<v8::FunctionTemplate> AminoTexture::GetInitFunction() {
     Nan::SetPrototypeMethod(tpl, "loadTextureFromVideo", LoadTextureFromVideo);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromFont", LoadTextureFromFont);
+
     Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
+
+    // playback
     Nan::SetPrototypeMethod(tpl, "getMediaTime", GetMediaTime);
     Nan::SetPrototypeMethod(tpl, "getDuration", GetDuration);
+    Nan::SetPrototypeMethod(tpl, "stop", StopPlayback);
+    Nan::SetPrototypeMethod(tpl, "pause", PausePlayback);
+    Nan::SetPrototypeMethod(tpl, "play", ResumePlayback);
 
     //template function
     return tpl;
@@ -1632,6 +1638,45 @@ NAN_METHOD(AminoTexture::GetDuration) {
     }
 
     info.GetReturnValue().Set(Nan::New(duration));
+}
+
+/**
+ * Stop playback.
+ */
+NAN_METHOD(AminoTexture::StopPlayback) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    if (obj->videoPlayer) {
+        obj->videoPlayer->stopPlayback();
+    }
+}
+
+/**
+ * Pause playback.
+ */
+NAN_METHOD(AminoTexture::PausePlayback) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    if (obj->videoPlayer) {
+        obj->videoPlayer->pausePlayback();
+    }
+}
+
+/**
+ * Resume playback.
+ */
+NAN_METHOD(AminoTexture::ResumePlayback) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    if (obj->videoPlayer) {
+        obj->videoPlayer->resumePlayback();
+    }
 }
 
 //

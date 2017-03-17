@@ -680,11 +680,17 @@ AminoJSObject* AminoGfxMacFactory::create() {
 //
 
 AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
-    //empty
+    //semaphore
+    int res = uv_sem_init(&pauseSem, 0);
+
+    assert(res == 0);
 }
 
 AminoMacVideoPlayer::~AminoMacVideoPlayer() {
     closeDemuxer();
+
+    //semaphore
+    uv_sem_destroy(&pauseSem);
 }
 
 /**
@@ -793,6 +799,40 @@ void AminoMacVideoPlayer::initDemuxer() {
 
     //playback loop
     while (true) {
+        //check stop
+        if (doStop) {
+            //end playback
+            handlePlaybackStopped();
+            return;
+        }
+
+        //check pause
+        if (doPause) {
+            double pauseTime = getTime() / 1000;
+
+            demuxer->pause();
+            handlePlaybackPaused();
+
+            //wait
+            uv_sem_wait(&pauseSem);
+            doPause = false;
+
+            if (!doStop) {
+                //change state
+                demuxer->resume();
+                handlePlaybackResumed();
+
+                //change time
+                double resumeTime = getTime() / 1000;
+
+                timeStartSys += resumeTime - pauseTime;
+            }
+
+            //next
+            continue;
+        }
+
+        //next frame
         double time;
         int res = demuxer->readRGBFrame(time);
         double timeSys = getTime() / 1000;
@@ -863,6 +903,16 @@ void AminoMacVideoPlayer::initDemuxer() {
  * Free the demuxer instance.
  */
 void AminoMacVideoPlayer::closeDemuxer() {
+    //stop playback
+    stopPlayback();
+
+    //wait for thread
+    if (threadRunning) {
+        int res = uv_thread_join(&thread);
+
+        assert(res == 0);
+    }
+
     //free demuxer
     if (demuxer) {
         delete demuxer;
@@ -948,7 +998,7 @@ void AminoMacVideoPlayer::updateVideoTexture() {
  * Get current media time.
  */
 double AminoMacVideoPlayer::getMediaTime() {
-    if (playing) {
+    if (playing || paused) {
         return mediaTime;
     }
 
@@ -964,6 +1014,51 @@ double AminoMacVideoPlayer::getDuration() {
     }
 
     return -1;
+}
+
+/**
+ * Stop playback.
+ */
+void AminoMacVideoPlayer::stopPlayback() {
+    if (!playing && !paused) {
+        return;
+    }
+
+    //stop
+    doStop = true;
+
+    if (paused) {
+        //resume thread
+        uv_sem_post(&pauseSem);
+    }
+}
+
+/**
+ * Pause playback.
+ */
+bool AminoMacVideoPlayer::pausePlayback() {
+    if (!playing) {
+        return true;
+    }
+
+    //pause
+    doPause = true;
+
+    return true;
+}
+
+/**
+ * Resume (stopped) playback.
+ */
+bool AminoMacVideoPlayer::resumePlayback() {
+    if (!paused) {
+        return true;
+    }
+
+    //resume thread
+    uv_sem_post(&pauseSem);
+
+    return true;
 }
 
 //

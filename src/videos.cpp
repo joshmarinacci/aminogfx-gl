@@ -211,6 +211,20 @@ bool AminoVideoPlayer::isReady() {
 }
 
 /**
+ * Check if playing.
+ */
+bool AminoVideoPlayer::isPlaying() {
+    return playing;
+}
+
+/**
+ * Check if paused.
+ */
+bool AminoVideoPlayer::isPaused() {
+    return paused;
+}
+
+/**
  * Get last error.
  */
 std::string AminoVideoPlayer::getLastError() {
@@ -233,8 +247,9 @@ void AminoVideoPlayer::handlePlaybackDone() {
         return;
     }
 
-    if (playing) {
+    if (playing || paused) {
         playing = false;
+        paused = false;
 
         if (DEBUG_VIDEOS) {
             printf("video: playback done\n");
@@ -255,13 +270,80 @@ void AminoVideoPlayer::handlePlaybackError() {
     }
 
     //set state
-    if (playing && !failed) {
+    if ((playing || paused) && !failed) {
         failed = true;
+
+        if (DEBUG_VIDEOS) {
+            printf("video: playback error\n");
+        }
+
         fireEvent("error");
     }
 
-    //stop
+    //done
     handlePlaybackDone();
+}
+
+/**
+ * Playback was stopped.
+ */
+void AminoVideoPlayer::handlePlaybackStopped() {
+    if (destroyed) {
+        return;
+    }
+
+    //send event
+    if (playing || paused) {
+        if (DEBUG_VIDEOS) {
+            printf("video: playback stopped\n");
+        }
+
+        //Note: not part of HTML5
+        fireEvent("stop");
+    }
+
+    //done
+    handlePlaybackDone();
+}
+
+/**
+ * Playback was paused.
+ */
+void AminoVideoPlayer::handlePlaybackPaused() {
+    if (destroyed) {
+        return;
+    }
+
+    if (playing) {
+        playing = false;
+        paused = true;
+
+        if (DEBUG_VIDEOS) {
+            printf("video: playback paused\n");
+        }
+
+        fireEvent("pause");
+    }
+}
+
+/**
+ * Playback was resumed.
+ */
+void AminoVideoPlayer::handlePlaybackResumed() {
+    if (destroyed) {
+        return;
+    }
+
+    if (paused) {
+        paused = false;
+        playing = true;
+
+        if (DEBUG_VIDEOS) {
+            printf("video: playback resumed\n");
+        }
+
+        fireEvent("play");
+    }
 }
 
 /**
@@ -283,6 +365,7 @@ void AminoVideoPlayer::handleInitDone(bool ready) {
 
     //set state
     playing = ready;
+    paused = false;
 
     //send event
 
@@ -898,6 +981,24 @@ done:
 #pragma GCC diagnostic pop
 
 /**
+ * Pause reading frames.
+ */
+void VideoDemuxer::pause() {
+    if (context) {
+        av_read_pause(context);
+    }
+}
+
+/**
+ * Resume reading frames.
+ */
+void VideoDemuxer::resume() {
+    if (context) {
+        av_read_play(context);
+    }
+}
+
+/**
  * Rewind playback (go back to first frame).
  */
 bool VideoDemuxer::rewind() {
@@ -1253,6 +1354,24 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, omx
     }
 
     return 0;
+}
+
+/**
+ * Pause reading.
+ */
+void VideoFileStream::pause() {
+    if (demuxer) {
+        demuxer->pause();
+    }
+}
+
+/**
+ * Resume reading.
+ */
+void VideoFileStream::resume() {
+    if (demuxer) {
+        demuxer->resume();
+    }
 }
 
 /**

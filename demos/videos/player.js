@@ -33,6 +33,8 @@ function playVideo(opts, done) {
         const dispH = this.h();
         const iv = this.createImageView().w(dispW).h(dispH).position('center top').size('contain').src(video);
 
+        //cbx FIXME contain does not work (video has size of image view)
+
         iv.w.bindTo(this.w);
         iv.h.bindTo(this.h);
 
@@ -42,6 +44,10 @@ function playVideo(opts, done) {
                 video.addEventListener(event => {
                     console.log('video event: ' + event);
                 });
+
+                if (opts.ready) {
+                    opts.ready(video);
+                }
             }
         });
 

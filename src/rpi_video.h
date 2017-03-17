@@ -41,6 +41,11 @@ public:
     //metadata
     double getMediaTime() override;
     double getDuration() override;
+    void stopPlayback() override;
+    bool pausePlayback() override;
+    bool resumePlayback() override;
+
+    void setOmxSpeed(OMX_S32 speed);
 
 private:
     void *eglImage = NULL;
@@ -54,6 +59,7 @@ private:
     COMPONENT_T *list[5];
     bool omxDestroyed = false;
     uv_mutex_t omxLock;
+    bool doStop = false;
 
 public:
     COMPONENT_T *egl_render = NULL;

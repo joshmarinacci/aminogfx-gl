@@ -31,6 +31,9 @@ public:
     //metadata
     double getMediaTime() override;
     double getDuration() override;
+    void stopPlayback() override;
+    bool pausePlayback() override;
+    bool resumePlayback() override;
 
 private:
     std::string filename;
@@ -42,6 +45,9 @@ private:
     bool threadRunning = false;
 
     double mediaTime = -1;
+    bool doStop = false;
+    bool doPause = false;
+    uv_sem_t pauseSem;
 
     void initDemuxer();
     void closeDemuxer();
