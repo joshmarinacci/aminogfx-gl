@@ -51,7 +51,7 @@ private:
 
     TUNNEL_T tunnel[4];
     COMPONENT_T *list[5];
-    bool omxInitialized = false;
+    bool omxDestroyed = false;
 
 public:
     COMPONENT_T *egl_render = NULL;

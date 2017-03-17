@@ -19,9 +19,9 @@
 //
 
 AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
-    //empty
-
-    //Note: checks if source is provided
+    //init memory buffers
+    memset(list, 0, sizeof(list));
+    memset(tunnel, 0, sizeof(tunnel));
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
@@ -165,6 +165,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         printf("OMX: handleFillBufferDone()\n");
     }
 
+    //write to texture buffer
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), player->eglBuffer) != OMX_ErrorNone) {
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
@@ -186,17 +187,15 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     if (!client) {
         lastError = "could not initialize ilclient";
-
-        return false;
+        status = -1;
+        goto end;
     }
 
     //init OMX
     if (OMX_Init() != OMX_ErrorNone) {
-        ilclient_destroy(client);
-
         lastError = "could not initialize OMX";
-
-        return false;
+        status = -2;
+        goto end;
     }
 
     //buffer callback
@@ -207,16 +206,17 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     if (ilclient_create_component(client, &video_decode, "video_decode", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
         lastError = "video_decode error";
-        status = -14;
+        status = -10;
+        goto end;
     }
 
-    memset(list, 0, sizeof(list));
     list[0] = video_decode;
 
     //create egl_render
-    if (status == 0 && ilclient_create_component(client, &egl_render, "egl_render", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_OUTPUT_BUFFERS)) != 0) {
+    if (ilclient_create_component(client, &egl_render, "egl_render", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_OUTPUT_BUFFERS)) != 0) {
         lastError = "egl_render error";
-        status = -14;
+        status = -11;
+        goto end;
     }
 
     list[1] = egl_render;
@@ -224,109 +224,106 @@ bool AminoOmxVideoPlayer::initOmx() {
     //create clock
     COMPONENT_T *clock = NULL;
 
-    if (status == 0 && ilclient_create_component(client, &clock, "clock", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+    if (ilclient_create_component(client, &clock, "clock", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "clock error";
-        status = -14;
+        status = -12;
+        goto end;
     }
 
     list[2] = clock;
 
-    if (clock) {
-        OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
+    //config clock
+    OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
-        memset(&cstate, 0, sizeof(cstate));
-        cstate.nSize = sizeof(cstate);
-        cstate.nVersion.nVersion = OMX_VERSION;
-        cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
-        cstate.nWaitMask = 1;
+    memset(&cstate, 0, sizeof(cstate));
+    cstate.nSize = sizeof(cstate);
+    cstate.nVersion.nVersion = OMX_VERSION;
+    cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
+    cstate.nWaitMask = 1;
 
-        if (OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
-            lastError = "could not set clock";
-            status = -13;
-        }
+    if (OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
+        lastError = "could not set clock";
+        status = -13;
+        goto end;
     }
 
     //create video_scheduler
     COMPONENT_T *video_scheduler = NULL;
 
-    if (status == 0 && ilclient_create_component(client, &video_scheduler, "video_scheduler", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
+    if (ilclient_create_component(client, &video_scheduler, "video_scheduler", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "video_scheduler error";
         status = -14;
+        goto end;
     }
 
     list[3] = video_scheduler;
 
-    memset(tunnel, 0, sizeof(tunnel));
-
+    //set tunnels (source & sink ports)
     set_tunnel(tunnel, video_decode, 131, video_scheduler, 10);
     set_tunnel(tunnel + 1, video_scheduler, 11, egl_render, 220);
     set_tunnel(tunnel + 2, clock, 80, video_scheduler, 12);
 
     //setup clock tunnel first
-    if (status == 0 && ilclient_setup_tunnel(tunnel + 2, 0, 0) != 0) {
+    if (ilclient_setup_tunnel(tunnel + 2, 0, 0) != 0) {
         lastError = "tunnel setup error";
         status = -15;
-    } else {
-        //switch to executing state (why?)
-        ilclient_change_component_state(clock, OMX_StateExecuting);
+        goto end;
     }
 
-    if (status == 0) {
-        //switch to idle state
-        ilclient_change_component_state(video_decode, OMX_StateIdle);
-    }
+    //switch clock to executing state
+    ilclient_change_component_state(clock, OMX_StateExecuting);
 
-    //format
-    if (status == 0) {
-        OMX_VIDEO_PARAM_PORTFORMATTYPE format;
+    //switch video decoder to idle state
+    ilclient_change_component_state(video_decode, OMX_StateIdle);
 
-        memset(&format, 0, sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
-        format.nSize = sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE);
-        format.nVersion.nVersion = OMX_VERSION;
-        format.nPortIndex = 130;
-        format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-        //TODO xFramerate -> 25 * (1 << 16)
+    //video format
+    OMX_VIDEO_PARAM_PORTFORMATTYPE format;
 
-        /*
-         * TODO more formats
-         *
-         *   - OMX_VIDEO_CodingMPEG4          non-H264 MP4 formats (H263, DivX, ...)
-         *   - OMX_VIDEO_CodingMPEG2          needs license
-         *   - OMX_VIDEO_CodingTheora         Theora
-         */
+    memset(&format, 0, sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
+    format.nSize = sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE);
+    format.nVersion.nVersion = OMX_VERSION;
+    format.nPortIndex = 130;
+    format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
+    //TODO xFramerate -> 25 * (1 << 16)
 
-        if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) != OMX_ErrorNone) {
-            lastError = "could not set video format";
-            status = -16;
-        }
+    /*
+     * TODO more formats
+     *
+     *   - OMX_VIDEO_CodingMPEG4          non-H264 MP4 formats (H263, DivX, ...)
+     *   - OMX_VIDEO_CodingMPEG2          needs license
+     *   - OMX_VIDEO_CodingTheora         Theora
+     */
+
+    if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) != OMX_ErrorNone) {
+        lastError = "could not set video format";
+        status = -16;
+        goto end;
     }
 
     //video decode
-    if (status == 0) {
-        if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
-            lastError = "video decode port error";
-            status = -17;
-        }
+    if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
+        lastError = "video decode port error";
+        status = -17;
+        goto end;
     }
 
     //frame validation (see https://www.raspberrypi.org/forums/viewtopic.php?f=70&t=15983)
-    if (status == 0) {
-        OMX_PARAM_BRCMVIDEODECODEERRORCONCEALMENTTYPE ec;
+    OMX_PARAM_BRCMVIDEODECODEERRORCONCEALMENTTYPE ec;
 
-        memset(&ec, 0, sizeof ec);
-        ec.nSize = sizeof ec;
-        ec.nVersion.nVersion = OMX_VERSION;
-        ec.bStartWithValidFrame = OMX_FALSE;
+    memset(&ec, 0, sizeof ec);
+    ec.nSize = sizeof ec;
+    ec.nVersion.nVersion = OMX_VERSION;
+    ec.bStartWithValidFrame = OMX_FALSE;
 
-        if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamBrcmVideoDecodeErrorConcealment, &ec) != OMX_ErrorNone) {
-            lastError = "error concealment type";
-            status = -18;
-        }
+    if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamBrcmVideoDecodeErrorConcealment, &ec) != OMX_ErrorNone) {
+        lastError = "error concealment type";
+        status = -18;
+        goto end;
     }
 
     //NALU (see https://www.khronos.org/registry/OpenMAX-IL/extensions/KHR/OpenMAX_IL_1_1_2_Extension%20NAL%20Unit%20Packaging.pdf)
-    if (status == 0 && stream->hasH264NaluStartCodes()) {
-        if (DEBUG_VIDEOS) {
+    if (stream->hasH264NaluStartCodes()) {
+        if (DEBUG_OMX) {
             printf("-> set OMX_NaluFormatStartCodes\n");
         }
 
@@ -341,212 +338,224 @@ bool AminoOmxVideoPlayer::initOmx() {
         if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), (OMX_INDEXTYPE)OMX_IndexParamNalStreamFormatSelect, &nsft) != OMX_ErrorNone) {
             lastError = "NAL selection error";
             status = -19;
+            goto end;
         }
     }
-
-    //init done
-    omxInitialized = true;
 
     //debug
     if (DEBUG_OMX) {
-        printf("OMX init status: %i\n", status);
+        printf("OMX init done\n");
     }
 
-    //loop
-    if (status == 0) {
-        OMX_BUFFERHEADERTYPE *buf;
-        bool port_settings_changed = false;
-        bool first_packet = true;
+    //start decoding
+    OMX_BUFFERHEADERTYPE *buf;
+    bool port_settings_changed = false;
+    bool first_packet = true;
 
-        //executing
-        ilclient_change_component_state(video_decode, OMX_StateExecuting);
+    ilclient_change_component_state(video_decode, OMX_StateExecuting);
 
-        //data loop
-        while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
-            //feed data and wait until we get port settings changed
-            unsigned char *dest = buf->pBuffer;
+    /*
+     * Works:
+     *
+     *   - Digoo M1Q
+     *     - h264 (Main), yuv420p, 1280x960
+     *   - RTSP Bugsbunny
+     *     - h264 (Constrained Baseline), yuv420p, 320x180
+     *     - Note: playback issues seen on RPi and Mac, other RTSP examples work fine
+     *   - M4V
+     *     - h264 (Constrained Baseline), yuv420p, 480x270
+     *   - HTTPS
+     *     - h264 (Main), yuv420p, 1920x1080
+     *
+     */
 
-            //read from file
-            omx_metadata_t omxData;
-            unsigned int data_len = stream->read(dest, buf->nAllocLen, omxData);
+    //data loop (Note: never returns NULL)
+    while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
+        //feed data and wait until we get port settings changed
+        unsigned char *dest = buf->pBuffer;
 
-            //check end
-            if (data_len == 0 && stream->endOfStream()) {
-                //check if stream contained video data
-                if (!ready) {
-                    //case: no video in stream
+        //read from file
+        omx_metadata_t omxData;
+        unsigned int data_len = stream->read(dest, buf->nAllocLen, omxData);
 
-                    /*
-                     * Works:
-                     *
-                     *   - Digoo M1Q
-                     *     - h264 (Main), yuv420p, 1280x960
-                     *   - RTSP Bugsbunny
-                     *     - h264 (Constrained Baseline), yuv420p, 320x180
-                     *     - Note: playback issues seen on RPi and Mac, other RTSP examples work fine
-                     *   - M4V
-                     *     - h264 (Constrained Baseline), yuv420p, 480x270
-                     *   - HTTPS
-                     *     - h264 (Main), yuv420p, 1920x1080
-                     *
-                     */
-
-                    lastError = "stream without valid video data";
-                    handleInitDone(false);
-                    break;
-                }
-
-                //loop
-                if (DEBUG_OMX) {
-                    printf("OMX: rewind stream\n");
-                }
-
-                if (loop > 0) {
-                    loop--;
-                }
-
-                if (loop == 0) {
-                    //end playback
-                    //cbx FIXME continue playback until last frame shown (stops to early)
-                    //cbx TODO OMX_BUFFERFLAG_EOS
-                    handlePlaybackDone();
-                    break;
-                }
-
-                if (!stream->rewind()) {
-                    break;
-                }
-
-                handleRewind();
-
-                //read next block
-                data_len = stream->read(dest, buf->nAllocLen, omxData);
+        //check end
+        if (data_len == 0 && stream->endOfStream()) {
+            //check if stream contained video data
+            if (!ready) {
+                //case: no video in stream
+                status = -30;
+                lastError = "stream without valid video data";
+                goto end;
             }
 
-            if (DEBUG_OMX_READ) {
-                printf("OMX: data read %i\n", (int)data_len);
+            //loop
+            if (DEBUG_OMX) {
+                printf("OMX: rewind stream\n");
             }
 
-            //handle port settings changes
-            if (!port_settings_changed &&
-                ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
-                (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
-                //process once
-                port_settings_changed = true;
+            if (loop > 0) {
+                loop--;
+            }
 
-                if (DEBUG_OMX) {
-                    printf("OMX: egl_render setup\n");
-                }
+            if (loop == 0) {
+                //end playback
+                break;
+            }
 
-                if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
-                    lastError = "video tunnel setup error";
-                    status = -7;
-                    break;
-                }
+            if (!stream->rewind()) {
+                //could not rewind -> end playback
+                break;
+            }
 
-                ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
+            handleRewind();
 
-                //now setup tunnel to egl_render
-                if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
-                    lastError = "egl_render tunnel setup error";
-                    status = -12;
-                    break;
-                }
+            //read next block
+            data_len = stream->read(dest, buf->nAllocLen, omxData);
+        }
 
-                //Set egl_render to idle
-                ilclient_change_component_state(egl_render, OMX_StateIdle);
+        if (DEBUG_OMX_READ) {
+            printf("OMX: data read %i\n", (int)data_len);
+        }
 
-                //get video size
-                OMX_PARAM_PORTDEFINITIONTYPE portdef;
+        //handle port settings changes
+        if (!port_settings_changed &&
+            ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
+            (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
+            //process once
+            port_settings_changed = true;
 
-                memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
-                portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
-                portdef.nVersion.nVersion = OMX_VERSION;
-                portdef.nPortIndex = 131;
+            if (DEBUG_OMX) {
+                printf("OMX: egl_render setup\n");
+            }
 
-                if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-                    lastError = "could not get video size";
-                    status = -20;
-                    break;
-                }
+            if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
+                lastError = "video tunnel setup error";
+                status = -31;
+                goto end;
+            }
 
-                videoW = portdef.format.video.nFrameWidth;
-                videoH = portdef.format.video.nFrameHeight;
+            //start scheduler
+            ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
 
+            //now setup tunnel to egl_render
+            if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
+                lastError = "egl_render tunnel setup error";
+                status = -32;
+                goto end;
+            }
+
+            //set egl_render to idle
+            ilclient_change_component_state(egl_render, OMX_StateIdle);
+
+            //get video size
+            OMX_PARAM_PORTDEFINITIONTYPE portdef;
+
+            memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
+            portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
+            portdef.nVersion.nVersion = OMX_VERSION;
+            portdef.nPortIndex = 131;
+
+            if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+                lastError = "could not get video size";
+                status = -33;
+                goto end;
+            }
+
+            videoW = portdef.format.video.nFrameWidth;
+            videoH = portdef.format.video.nFrameHeight;
+
+            if (DEBUG_OMX) {
                 float fps = portdef.format.video.xFramerate / (float)(1 << 16);
 
-                if (DEBUG_OMX) {
-                    printf("video: %dx%d@%.2f\n", videoW, videoH, fps);
-                }
-
-                //switch to renderer thread
-                texture->initVideoTexture();
+                printf("video: %dx%d@%.2f\n", videoW, videoH, fps);
             }
 
-            if (!data_len) {
-                //read error occured
-                lastError = "IO error";
-                handlePlaybackError();
-                break;
-            }
-
-            buf->nFilledLen = data_len;
-            buf->nOffset = 0;
-            buf->nFlags = omxData.flags;
-
-            buf->nTimeStamp.nLowPart = omxData.timeStamp; //in microseconds
-            buf->nTimeStamp.nHighPart = omxData.timeStamp >> 32;
-
-            if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
-                buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
-                first_packet = false;
-            } else {
-                //TODO should we pass the timing information from FFmpeg/libav?
-                buf->nFlags |= OMX_BUFFERFLAG_TIME_UNKNOWN;
-            }
-
-            if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
-                lastError = "could not empty buffer";
-                status = -6;
-                break;
-            }
+            //switch to renderer thread (switches to playing state)
+            texture->initVideoTexture();
         }
 
-        buf->nFilledLen = 0;
-        buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
+        if (!data_len) {
+            //read error occured
+            lastError = "IO error";
+            status = -40;
+            goto end;
+        }
+
+        buf->nFilledLen = data_len;
+        buf->nOffset = 0;
+        buf->nFlags = omxData.flags;
+
+        if (omxData.timeStamp) {
+            //in microseconds
+            buf->nTimeStamp.nLowPart = omxData.timeStamp;
+            buf->nTimeStamp.nHighPart = omxData.timeStamp >> 32;
+        }
+
+        if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
+            buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
+            first_packet = false;
+        } else {
+            //TODO should we pass the timing information from FFmpeg/libav?
+            buf->nFlags |= OMX_BUFFERFLAG_TIME_UNKNOWN;
+        }
 
         if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
-            lastError = "could not empty buffer (2)";
-            status = -20;
-
-            //need to flush the renderer to allow video_decode to disable its input port
-            ilclient_flush_tunnels(tunnel, 0);
-
-            ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+            lastError = "could not empty buffer";
+            status = -41;
+            goto end;
         }
-
-        //check status
-        if (status != 0) {
-            //report error
-            if (!initDone) {
-                handleInitDone(false);
-            } else {
-                handlePlaybackError();
-            }
-        }
-    } else {
-        //init failed
-        handleInitDone(false);
     }
+
+    //end of feeding loop (end of stream case)
+
+    //safety check
+    assert(buf);
+
+    //send end of stream
+    buf->nFilledLen = 0;
+    buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
+
+    if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
+        lastError = "could not empty buffer (2)";
+        status = -50;
+        goto end;
+    }
+
+    //wait for EOS from render
+    ilclient_wait_for_event(video_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
+
+    //need to flush the renderer to allow video_decode to disable its input port
+    ilclient_flush_tunnels(tunnel, 0);
+
+    ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+
+    //done
+end:
 
     //debug
     if (DEBUG_OMX) {
         printf("OMX done status: %i\n", status);
     }
 
-    //done
+    //check status
+    if (status != 0) {
+        //report error
+        if (!initDone) {
+            handleInitDone(false);
+        } else {
+            handlePlaybackError();
+        }
+    }
+
     destroyOmx();
-    handlePlaybackDone();
+
+    if (status == 0) {
+        if (!initDone) {
+            handleInitDone(true);
+        }
+
+        handlePlaybackDone();
+    }
 
     return status == 0;
 }
@@ -666,25 +675,35 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
  * Destroy OMX.
  */
 void AminoOmxVideoPlayer::destroyOmx() {
-    if (!omxInitialized) {
+    if (omxDestroyed) {
         return;
     }
 
+    //TODO cbx: use lock
+
+    omxDestroyed = true;
+
+    //close tunnels
     ilclient_disable_tunnel(tunnel);
     ilclient_disable_tunnel(tunnel + 1);
     ilclient_disable_tunnel(tunnel + 2);
     ilclient_teardown_tunnels(tunnel);
 
+    memset(tunnel, 0, sizeof(tunnel));
+
+    //list
     ilclient_state_transition(list, OMX_StateIdle);
     ilclient_state_transition(list, OMX_StateLoaded);
 
     ilclient_cleanup_components(list);
 
+    //destroy OMX
     OMX_Deinit();
 
-    ilclient_destroy(client);
-
-    omxInitialized = false;
+    if (client) {
+        ilclient_destroy(client);
+        client = NULL;
+    }
 }
 
 /**

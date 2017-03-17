@@ -229,6 +229,10 @@ void AminoVideoPlayer::getVideoDimension(int &w, int &h) {
  * Playback ended.
  */
 void AminoVideoPlayer::handlePlaybackDone() {
+    if (destroyed) {
+        return;
+    }
+
     if (playing) {
         playing = false;
 
