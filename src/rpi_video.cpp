@@ -13,7 +13,8 @@
 #define DEBUG_OMX true
 //cbx
 #define DEBUG_OMX_READ true
-#define DEBUG_OMX_BUFFER false
+//cbx
+#define DEBUG_OMX_BUFFER true
 
 //
 // AminoOmxVideoPlayer
@@ -574,6 +575,7 @@ int AminoOmxVideoPlayer::playOmx() {
 
     //wait for EOS from render
     ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
+    //FIXME cbx getting timeout
 
     if (DEBUG_OMX) {
         printf("OMX: renderer EOS\n");
@@ -711,6 +713,10 @@ void AminoOmxVideoPlayer::destroyOmx() {
 
     omxDestroyed = true;
 
+    if (DEBUG_OMX) {
+        printf("OMX: destroying instance\n");
+    }
+
     //close tunnels
     ilclient_disable_tunnel(tunnel);
     ilclient_disable_tunnel(tunnel + 1);
@@ -733,6 +739,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
         client = NULL;
     }
 
+    //cbx FIXME not executed
     if (DEBUG_OMX) {
         printf("OMX: instance destroyed\n");
     }
