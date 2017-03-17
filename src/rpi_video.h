@@ -52,6 +52,7 @@ private:
     TUNNEL_T tunnel[4];
     COMPONENT_T *list[5];
     bool omxDestroyed = false;
+    uv_mutex_t omxLock;
 
 public:
     COMPONENT_T *egl_render = NULL;

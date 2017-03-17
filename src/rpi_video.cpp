@@ -22,10 +22,16 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
     //init memory buffers
     memset(list, 0, sizeof(list));
     memset(tunnel, 0, sizeof(tunnel));
+
+    //lock
+    uv_mutex_init(&omxLock);
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
     destroyAminoOmxVideoPlayer();
+
+    //lock
+    uv_mutex_destroy(&omxLock);
 }
 
 /**
@@ -675,11 +681,12 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
  * Destroy OMX.
  */
 void AminoOmxVideoPlayer::destroyOmx() {
+    uv_mutex_lock(&omxLock);
+
     if (omxDestroyed) {
+        uv_mutex_unlock(&omxLock);
         return;
     }
-
-    //TODO cbx: use lock
 
     omxDestroyed = true;
 
@@ -704,6 +711,8 @@ void AminoOmxVideoPlayer::destroyOmx() {
         ilclient_destroy(client);
         client = NULL;
     }
+
+    uv_mutex_unlock(&omxLock);
 }
 
 /**
