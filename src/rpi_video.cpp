@@ -11,10 +11,8 @@
 
 //cbx
 #define DEBUG_OMX true
-//cbx
-#define DEBUG_OMX_READ true
-//cbx
-#define DEBUG_OMX_BUFFER true
+#define DEBUG_OMX_READ false
+#define DEBUG_OMX_BUFFER false
 
 //
 // AminoOmxVideoPlayer
@@ -743,16 +741,16 @@ void AminoOmxVideoPlayer::destroyOmx() {
     if (DEBUG_OMX) {
         printf("-> tunnels closed\n");
     }
-//cbx blocks here
+
     //list
     ilclient_state_transition(list, OMX_StateIdle);
-printf("cbx: idle\n"); //!!! hangs here
-    //Note: blocks forever!!!
+
+    //Note: blocks forever!!! Anyway, we are not re-using this player instance.
     //ilclient_state_transition(list, OMX_StateLoaded);
 
     ilclient_cleanup_components(list);
     egl_render = NULL;
-    eglBuffer = NULL; //TODO do we have to free the buffer???
+    eglBuffer = NULL; //TODO cbx do we have to free the buffer???
 
     if (DEBUG_OMX) {
         printf("-> components closed\n");
@@ -766,7 +764,6 @@ printf("cbx: idle\n"); //!!! hangs here
         client = NULL;
     }
 
-    //cbx FIXME not executed
     if (DEBUG_OMX) {
         printf("OMX: instance destroyed\n");
     }
