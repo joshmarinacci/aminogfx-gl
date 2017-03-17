@@ -173,6 +173,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
     //write to texture buffer
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), player->eglBuffer) != OMX_ErrorNone) {
+        //cbx FIXME fails at EOS
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
     }
@@ -432,21 +433,29 @@ int AminoOmxVideoPlayer::playOmx() {
             }
 
             //loop
-            if (DEBUG_OMX) {
-                printf("OMX: rewind stream\n");
-            }
-
             if (loop > 0) {
                 loop--;
             }
 
             if (loop == 0) {
                 //end playback
+                if (DEBUG_OMX) {
+                    printf("OMX: end playback (EOS)\n");
+                }
+
                 break;
+            }
+
+            if (DEBUG_OMX) {
+                printf("OMX: rewind stream\n");
             }
 
             if (!stream->rewind()) {
                 //could not rewind -> end playback
+                if (DEBUG_OMX) {
+                    printf("-> rewind failed!\n");
+                }
+
                 break;
             }
 
@@ -558,8 +567,16 @@ int AminoOmxVideoPlayer::playOmx() {
         return -50;
     }
 
+    if (DEBUG_OMX) {
+        printf("OMX: decoder EOS\n");
+    }
+
     //wait for EOS from render
     ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
+
+    if (DEBUG_OMX) {
+        printf("OMX: renderer EOS\n");
+    }
 
     //need to flush the renderer to allow video_decode to disable its input port
     ilclient_flush_tunnels(tunnel, 0);
@@ -708,11 +725,15 @@ void AminoOmxVideoPlayer::destroyOmx() {
     ilclient_cleanup_components(list);
 
     //destroy OMX
-    OMX_Deinit();
+    OMX_Deinit(); //Note: decreases instance counter
 
     if (client) {
         ilclient_destroy(client);
         client = NULL;
+    }
+
+    if (DEBUG_OMX) {
+        printf("OMX: instance destroyed\n");
     }
 
     uv_mutex_unlock(&omxLock);
