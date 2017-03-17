@@ -4,6 +4,11 @@
     "files.trimTrailingWhitespace": true,
     "telemetry.enableTelemetry": false,
     "files.associations": {
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "istream": "cpp",
+        "memory": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "utility": "cpp"
     }
 }
