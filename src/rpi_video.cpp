@@ -183,6 +183,9 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
  */
 bool AminoOmxVideoPlayer::initOmx() {
     int status = 0;
+    COMPONENT_T *video_decode = NULL;
+    COMPONENT_T *clock = NULL;
+    COMPONENT_T *video_scheduler = NULL;
 
     if (DEBUG_OMX) {
         printf("-> init OMX\n");
@@ -208,8 +211,6 @@ bool AminoOmxVideoPlayer::initOmx() {
     ilclient_set_fill_buffer_done_callback(client, handleFillBufferDone, this);
 
     //create video_decode
-    COMPONENT_T *video_decode = NULL;
-
     if (ilclient_create_component(client, &video_decode, "video_decode", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
         lastError = "video_decode error";
         status = -10;
@@ -228,8 +229,6 @@ bool AminoOmxVideoPlayer::initOmx() {
     list[1] = egl_render;
 
     //create clock
-    COMPONENT_T *clock = NULL;
-
     if (ilclient_create_component(client, &clock, "clock", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "clock error";
         status = -12;
@@ -254,8 +253,6 @@ bool AminoOmxVideoPlayer::initOmx() {
     }
 
     //create video_scheduler
-    COMPONENT_T *video_scheduler = NULL;
-
     if (ilclient_create_component(client, &video_scheduler, "video_scheduler", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "video_scheduler error";
         status = -14;
@@ -391,7 +388,7 @@ end:
  * OMX playback loop.
  */
 int AminoOmxVideoPlayer::playOmx() {
-    COMPONENT_T *video_decode = ist[0];
+    COMPONENT_T *video_decode = list[0];
     COMPONENT_T *video_scheduler = list[3];
 
     //start decoding
