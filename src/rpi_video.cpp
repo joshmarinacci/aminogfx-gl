@@ -178,6 +178,8 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         //cbx FIXME fails at EOS
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
+    } else {
+        player->bufferFilled = true;
     }
 }
 
@@ -574,8 +576,16 @@ int AminoOmxVideoPlayer::playOmx() {
     }
 
     //wait for EOS from render
-    ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
-    //FIXME cbx getting timeout
+
+    //Note: the following code is not working, getting a timeout after 10 s!
+    //ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
+
+    // -> monitor buffer update
+    while (bufferFilled && !omxDestroyed) {
+        //wait 100 ms (enough time to show the next frame)
+        bufferFilled = false;
+        usleep(100 * 1000);
+    }
 
     if (DEBUG_OMX) {
         printf("OMX: renderer EOS\n");

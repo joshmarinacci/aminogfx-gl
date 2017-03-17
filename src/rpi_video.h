@@ -58,6 +58,7 @@ private:
 public:
     COMPONENT_T *egl_render = NULL;
     OMX_BUFFERHEADERTYPE *eglBuffer = NULL;
+    bool bufferFilled = false;
     bool bufferError = false;
 };
 
