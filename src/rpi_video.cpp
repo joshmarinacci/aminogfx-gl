@@ -173,9 +173,14 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         printf("OMX: handleFillBufferDone()\n");
     }
 
+    //check state
+    if (player->omxDestroyed) {
+        //Note: last call happens while destroying OMX instance!
+        return;
+    }
+
     //write to texture buffer
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), player->eglBuffer) != OMX_ErrorNone) {
-        //cbx FIXME fails at EOS
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
     } else {
@@ -735,11 +740,21 @@ void AminoOmxVideoPlayer::destroyOmx() {
 
     memset(tunnel, 0, sizeof(tunnel));
 
+    if (DEBUG_OMX) {
+        printf("-> tunnels closed\n");
+    }
+
     //list
     ilclient_state_transition(list, OMX_StateIdle);
     ilclient_state_transition(list, OMX_StateLoaded);
 
     ilclient_cleanup_components(list);
+    egl_render = NULL;
+    eglBuffer = NULL; //TODO do we have to free the buffer???
+
+    if (DEBUG_OMX) {
+        printf("-> components closed\n");
+    }
 
     //destroy OMX
     OMX_Deinit(); //Note: decreases instance counter
