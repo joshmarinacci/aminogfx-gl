@@ -163,6 +163,7 @@ private:
     //context
     AVFormatContext *context = NULL;
     AVCodecContext *codecCtx = NULL;
+    bool codecCtxAlloc = false;
 
     //stream info
     std::string filename;

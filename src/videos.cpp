@@ -616,6 +616,7 @@ bool VideoDemuxer::initStream() {
     AVCodecContext *codecCtxOrig = codecCtx;
 
     codecCtx = avcodec_alloc_context3(codec);
+    codecCtxAlloc = true;
 
     //Note: deprecated warning on macOS
     if (avcodec_copy_context(codecCtx, codecCtxOrig) != 0) {
@@ -812,6 +813,8 @@ bool VideoDemuxer::getHeader(uint8_t **data, int *size) {
 
 /**
  * Read a video packet.
+ *
+ * Note: freeFrame() has to be called after the packet is consumed.
  */
 READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
     if (!context || !codecCtx) {
@@ -837,6 +840,7 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
         }
 
         //process next frame
+        av_free_packet(packet);
     }
 }
 
@@ -861,6 +865,9 @@ double VideoDemuxer::getFramePts(AVPacket *packet) {
 void VideoDemuxer::freeFrame(AVPacket *packet) {
     //free the packet that was allocated by av_read_frame
     av_free_packet(packet);
+
+    packet->data = NULL;
+    packet->size = 0;
 }
 
 /**
@@ -906,6 +913,10 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
     //read frame
     AVPacket packet;
     READ_FRAME_RESULT res;
+
+    av_init_packet(&packet);
+    packet.data = NULL;
+    packet.size = 0;
 
     while (true) {
         res = readFrame(&packet);
@@ -967,6 +978,7 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
             }
 
             //next frame
+            freeFrame(&packet);
             continue;
         }
 
@@ -1044,9 +1056,10 @@ void VideoDemuxer::close(bool destroy) {
         context = NULL;
     }
 
-    if (codecCtx) {
+    if (codecCtx && codecCtxAlloc) {
         avcodec_free_context(&codecCtx);
         codecCtx = NULL;
+        codecCtxAlloc = false;
     }
 
     videoStream = -1;
@@ -1176,12 +1189,19 @@ bool VideoFileStream::init() {
         }
     } else {
         //any stream
+
+        //init demuxer
         demuxer = new VideoDemuxer();
 
         if (!demuxer->init() || !demuxer->loadFile(filename, options) || !demuxer->initStream()) {
             lastError = demuxer->getLastError();
             return false;
         }
+
+        //init packet
+        av_init_packet(&packet);
+        packet.data = NULL;
+        packet.size = 0;
 
         if (DEBUG_VIDEOS) {
             printf("-> video stream\n");
