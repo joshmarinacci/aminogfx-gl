@@ -684,6 +684,9 @@ AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *vide
     int res = uv_sem_init(&pauseSem, 0);
 
     assert(res == 0);
+
+    //lock
+    uv_mutex_init(&frameLock);
 }
 
 AminoMacVideoPlayer::~AminoMacVideoPlayer() {
@@ -691,6 +694,9 @@ AminoMacVideoPlayer::~AminoMacVideoPlayer() {
 
     //semaphore
     uv_sem_destroy(&pauseSem);
+
+    //lock
+    uv_mutex_destroy(&frameLock);
 }
 
 /**
@@ -705,11 +711,9 @@ bool AminoMacVideoPlayer::initStream() {
 }
 
 /**
- * Initialize the video player.
+ * Initialize the video player (on the rendering thread).
  */
 void AminoMacVideoPlayer::init() {
-    //we are on the OpenGL thread
-
     //initialize demuxer
     assert(filename.length());
 
@@ -900,7 +904,7 @@ void AminoMacVideoPlayer::initDemuxer() {
 }
 
 /**
- * Free the demuxer instance.
+ * Free the demuxer instance (on main thread).
  */
 void AminoMacVideoPlayer::closeDemuxer() {
     //stop playback
@@ -915,8 +919,10 @@ void AminoMacVideoPlayer::closeDemuxer() {
 
     //free demuxer
     if (demuxer) {
+        uv_mutex_lock(&frameLock);
         delete demuxer;
         demuxer = NULL;
+        uv_mutex_unlock(&frameLock);
     }
 }
 
@@ -966,10 +972,13 @@ bool AminoMacVideoPlayer::initTexture() {
 }
 
 /**
- * Update the texture.
+ * Update the texture (on rendering thread).
  */
 void AminoMacVideoPlayer::updateVideoTexture() {
+    uv_mutex_lock(&frameLock);
+
     if (!demuxer) {
+        uv_mutex_unlock(&frameLock);
         return;
     }
 
@@ -977,10 +986,16 @@ void AminoMacVideoPlayer::updateVideoTexture() {
     int id;
     GLvoid *data = demuxer->getFrameData(id);
 
+    if (!data) {
+        uv_mutex_unlock(&frameLock);
+        return;
+    }
+
     if (id == frameId) {
         //debug
         //printf("skipping frame\n");
 
+        uv_mutex_unlock(&frameLock);
         return;
     }
 
@@ -992,6 +1007,8 @@ void AminoMacVideoPlayer::updateVideoTexture() {
     GLsizei textureH = videoH;
 
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, textureW, textureH, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    uv_mutex_unlock(&frameLock);
 }
 
 /**

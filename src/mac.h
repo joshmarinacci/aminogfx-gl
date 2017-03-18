@@ -40,6 +40,7 @@ private:
     std::string options;
     VideoDemuxer *demuxer = NULL;
     int frameId = -1;
+    uv_mutex_t frameLock;
 
     uv_thread_t thread;
     bool threadRunning = false;

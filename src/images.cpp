@@ -697,6 +697,16 @@ void AminoTexture::destroyAminoTexture() {
         callback = NULL;
     }
 
+    if (video) {
+        video->release();
+        video = NULL;
+    }
+
+    if (videoPlayer) {
+        delete videoPlayer;
+        videoPlayer = NULL;
+    }
+
     if (textureId != INVALID_TEXTURE) {
         //Note: we are on the main thread
         if (eventHandler && ownTexture) {
@@ -711,16 +721,6 @@ void AminoTexture::destroyAminoTexture() {
 
         Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::Undefined());
         Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
-    }
-
-    if (video) {
-        video->release();
-        video = NULL;
-    }
-
-    if (videoPlayer) {
-        delete videoPlayer;
-        videoPlayer = NULL;
     }
 }
 
@@ -1156,6 +1156,8 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
 
 /**
  * Prepare the texture.
+ *
+ * Note: texture is valid.
  */
 void AminoTexture::prepareTexture() {
     if (videoPlayer) {
