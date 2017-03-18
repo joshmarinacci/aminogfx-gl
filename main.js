@@ -970,11 +970,21 @@ ImageView.prototype.init = function () {
         applySize(texture, this.size(), this.position());
     });
 
+    this.w.watch(w => {
+        applySize(this.image(), this.size(), this.position());
+    });
+
+    this.h.watch(h => {
+        applySize(this.image(), this.size(), this.position());
+    });
+
     this.position.watch(pos => {
+        //new texture position
         applySize(this.image(), this.size(), pos);
     });
 
     this.size.watch(mode => {
+        //new mode
         applySize(this.image(), mode, this.position());
     });
 
@@ -1066,7 +1076,6 @@ ImageView.prototype.init = function () {
                         self.left(horz);
                         self.right(1);
                     }
-
 
                     // 2) vert
                     if (posVert === 'center') {
