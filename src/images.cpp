@@ -4,9 +4,6 @@
 #include <uv.h>
 
 extern "C" {
-    //#include "nanojpeg.h"
-    //#include "upng.h"
-
     #include <jpeglib.h>
 
     #define PNG_SKIP_SETJMP_CHECK
@@ -23,23 +20,23 @@ extern "C" {
 //
 
 struct myjpeg_error_mgr {
-  struct jpeg_error_mgr pub;	/* "public" fields */
+    struct jpeg_error_mgr pub;	/* "public" fields */
 
-  jmp_buf setjmp_buffer;	/* for return to caller */
+    jmp_buf setjmp_buffer;	/* for return to caller */
 };
 
 typedef struct myjpeg_error_mgr *myjpeg_error_ptr;
 
 METHODDEF(void) myjpeg_error_exit(j_common_ptr cinfo) {
-  /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
-  myjpeg_error_ptr myerr = (myjpeg_error_ptr) cinfo->err;
+    /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
+    myjpeg_error_ptr myerr = (myjpeg_error_ptr) cinfo->err;
 
-  /* Always display the message. */
-  /* We could postpone this until after returning, if we chose. */
-  (*cinfo->err->output_message)(cinfo);
+    /* Always display the message. */
+    /* We could postpone this until after returning, if we chose. */
+    (*cinfo->err->output_message)(cinfo);
 
-  /* Return control to the setjmp point */
-  longjmp(myerr->setjmp_buffer, 1);
+    /* Return control to the setjmp point */
+    longjmp(myerr->setjmp_buffer, 1);
 }
 
 //
@@ -85,14 +82,6 @@ private:
     bool imgAlpha;
     int imgBPP;
 
-    //temp buffers
-    //upng_t *upng = NULL;
-    bool isJpeg = false;
-
-    //mutex
-    static uv_mutex_t jpegMutex;
-    static bool jpegMutexInitialized;
-
 public:
     AsyncImageWorker(Nan::Callback *callback, v8::Local<v8::Object> &obj, v8::Local<v8::Value> &bufferObj) : AsyncWorker(callback) {
         SaveToPersistent("object", obj);
@@ -102,15 +91,6 @@ public:
 
         buffer = node::Buffer::Data(bufferObj);
         bufferLen = node::Buffer::Length(bufferObj);
-
-        //mutex
-        if (!jpegMutexInitialized) {
-            jpegMutexInitialized = true;
-
-            int res = uv_mutex_init(&jpegMutex);
-
-            assert(res == 0);
-        }
     }
 
     /**
@@ -145,13 +125,6 @@ public:
             decodePng();
         } else {
             decodeJpeg();
-
-            /*
-            //Note: libuv uses thread-pool, therefore use mutex to prevent parallel execution of JPEG decoder (parallel execution would be better in future using thread-safe code)
-            uv_mutex_lock(&jpegMutex);
-            decodeJpeg2();
-            uv_mutex_unlock(&jpegMutex);
-            */
         }
 
         if (DEBUG_THREADS) {
@@ -324,58 +297,6 @@ public:
     }
 
     /**
-     * Decode PNG image (using upng).
-     *
-     * Note: this code is thread-safe.
-     */
-     /*
-    void decodePng2() {
-        if (DEBUG_IMAGES) {
-            printf("decodePng()\n");
-        }
-
-        upng = upng_new_from_bytes((const unsigned char *)buffer, bufferLen);
-
-        if (upng == NULL) {
-            SetErrorMessage("error decoding PNG file");
-
-            if (DEBUG_IMAGES) {
-                printf("-> failed\n");
-            }
-
-            //console
-            if (DEBUG_IMAGES_CONSOLE) {
-                printf("error decoding PNG file\n");
-            }
-
-            return;
-        }
-
-        upng_decode(upng);
-
-        //    printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
-        //    printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
-
-        char *image = (char *)upng_get_buffer(upng);
-        int lengthout = upng_get_size(upng);
-
-        //    printf("length of uncompressed buffer = %d\n", lengthout);
-
-        //metadata
-        imgData = image;
-        imgDataLen = lengthout;
-        imgW = upng_get_width(upng);
-        imgH = upng_get_height(upng);
-        imgAlpha = upng_get_components(upng) == 4; //RGBA
-        imgBPP = upng_get_bpp(upng) / 8;
-
-        if (DEBUG_IMAGES) {
-            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
-        }
-    }
-    */
-
-    /**
      * Decode JPEG image (using libjpeg).
      *
      * Note: NOT thread-safe! Has to be called in single queue.
@@ -465,84 +386,6 @@ public:
         if (DEBUG_IMAGES) {
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
-
-        isJpeg = true;
-    }
-
-    /**
-     * Decode JPEG image (unsing nanojpeg).
-     *
-     * Note: NOT thread-safe! Has to be called in single queue.
-     */
-     /*
-    void decodeJpegOld() {
-        if (DEBUG_IMAGES) {
-            printf("decodeJpeg()\n");
-        }
-
-        //check thread
-        / *
-        uv_thread_t threadId = uv_thread_self();
-
-        printf("JPEG thread: %lu\n", threadId);
-        * /
-
-        njInit();
-
-        if (njDecode(buffer, bufferLen)) {
-            SetErrorMessage("error decoding JPEG file");
-
-            if (DEBUG_IMAGES) {
-                printf("-> failed\n");
-            }
-
-            //console
-            if (DEBUG_IMAGES_CONSOLE) {
-                printf("Error decoding the JPEG file.\n");
-            }
-
-            njDone();
-
-            return;
-        }
-
-        if (DEBUG_IMAGES) {
-            printf("-> got an image %dx%d\n", njGetWidth(), njGetHeight());
-            printf("-> data size = %d\n", njGetImageSize());
-        }
-
-        imgDataLen = njGetImageSize();
-        imgData = (char *)njGetImage();
-
-        imgW = njGetWidth();
-        imgH = njGetHeight();
-        imgAlpha = false;
-        imgBPP = njGetBPP();
-
-        //get ownership
-        njUnlinkImageData();
-
-        //free instance
-        njDone();
-
-        if (DEBUG_IMAGES) {
-            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
-        }
-
-        isJpeg = true;
-    }
-    */
-
-    /**
-     * Free all allocated buffers.
-     */
-    void freeImageBuffers() {
-        //free image and buffers
-        /*
-        if (upng) {
-            upng_free(upng);
-        }
-        */
     }
 
     /**
@@ -559,16 +402,8 @@ public:
         v8::Local<v8::Object> obj = GetFromPersistent("object")->ToObject();
         v8::Local<v8::Object> buff;
 
-        if (isJpeg) {
-            //transfer ownership
-            buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
-        } else {
-            //transfer ownership (libpng)
-            buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
-
-            //create copy (upng)
-            //buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
-        }
+        //transfer ownership
+        buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
 
         //create object
         Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(imgW));
@@ -576,9 +411,6 @@ public:
         Nan::Set(obj, Nan::New("alpha").ToLocalChecked(),  Nan::New(imgAlpha));
         Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(imgBPP));
         Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff);
-
-        //free memory
-        freeImageBuffers();
 
         //store local values
         AminoImage *img = Nan::ObjectWrap::Unwrap<AminoImage>(obj);
@@ -593,9 +425,6 @@ public:
         callback->Call(2, argv);
     }
 };
-
-uv_mutex_t AsyncImageWorker::jpegMutex;
-bool AsyncImageWorker::jpegMutexInitialized = false;
 
 //
 // AminoImage

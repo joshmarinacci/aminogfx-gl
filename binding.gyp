@@ -19,8 +19,6 @@
                 "src/fonts/mat4.c",
                 "src/fonts.cpp",
 
-                #"src/images/nanojpeg.c",
-                #"src/images/upng.c",
                 "src/images.cpp",
 
                 "src/videos.cpp",

@@ -23,11 +23,6 @@
 #include "vertex-buffer.h"
 #include "texture-font.h"
 
-extern "C" {
-    #include "nanojpeg.h"
-    #include "upng.h"
-}
-
 #define DEBUG_CRASH false
 
 const int GROUP = 1;
