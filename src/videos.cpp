@@ -171,6 +171,9 @@ AminoJSObject* AminoVideoFactory::create() {
 AminoVideoPlayer::AminoVideoPlayer(AminoTexture *texture, AminoVideo *video): texture(texture), video(video) {
     //playback settings
     video->getPlaybackLoop(loop);
+
+    //keep instance
+    video->retain();
 }
 
 /**
@@ -200,7 +203,10 @@ void AminoVideoPlayer::destroy() {
  * Destroy the video player.
  */
 void AminoVideoPlayer::destroyAminoVideoPlayer() {
-    //empty
+    if (video) {
+        video->release();
+        video = NULL;
+    }
 }
 
 /**

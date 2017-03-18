@@ -92,8 +92,9 @@ private:
     Nan::Callback *callback = NULL;
 
     //video
-    AminoVideo *video = NULL;
     AminoVideoPlayer *videoPlayer = NULL;
+    uv_mutex_t videoLock;
+    bool videoLockUsed = false;
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 

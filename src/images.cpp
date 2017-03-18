@@ -672,6 +672,11 @@ AminoTexture::~AminoTexture()  {
     if (!destroyed) {
         destroyAminoTexture();
     }
+
+    //lock
+    if (videoLockUsed) {
+        uv_mutex_destroy(&videoLock);
+    }
 }
 
 /**
@@ -689,7 +694,7 @@ void AminoTexture::destroy() {
 }
 
 /**
- * Free resources.
+ * Free resources (on main thread).
  */
 void AminoTexture::destroyAminoTexture() {
     if (callback) {
@@ -697,16 +702,15 @@ void AminoTexture::destroyAminoTexture() {
         callback = NULL;
     }
 
-    if (video) {
-        video->release();
-        video = NULL;
-    }
-
     if (videoPlayer) {
+        //acquire lock (rendering thread could access the videoPlayer right now)
+        uv_mutex_lock(&videoLock);
         delete videoPlayer;
         videoPlayer = NULL;
+        uv_mutex_unlock(&videoLock);
     }
 
+    //free texture
     if (textureId != INVALID_TEXTURE) {
         //Note: we are on the main thread
         if (eventHandler && ownTexture) {
@@ -950,20 +954,19 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
         return;
     }
 
-    //check old instance
-    if (obj->video) {
-        obj->video->release();
-        obj->video = NULL;
-    }
-
     if (obj->videoPlayer) {
+        //acquire lock
+        uv_mutex_lock(&obj->videoLock);
         delete obj->videoPlayer;
         obj->videoPlayer = NULL;
+        uv_mutex_unlock(&obj->videoLock);
     }
 
-    //keep instance
-    video->retain();
-    obj->video = video;
+    //create lock
+    if (!obj->videoLockUsed) {
+        uv_mutex_init(&obj->videoLock);
+        obj->videoLockUsed = true;
+    }
 
     //create player
     if (DEBUG_VIDEOS) {
@@ -980,8 +983,10 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
         callback->Call(info.This(), argc, argv);
 
+        uv_mutex_lock(&obj->videoLock);
         delete obj->videoPlayer;
         obj->videoPlayer = NULL;
+        uv_mutex_unlock(&obj->videoLock);
 
         return;
     }
@@ -1036,6 +1041,7 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
             }
 
             //initialize
+            uv_mutex_lock(&videoLock);
             if (videoPlayer) {
                 if (DEBUG_VIDEOS) {
                     printf("-> init video player\n");
@@ -1043,6 +1049,7 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
 
                 videoPlayer->init();
             }
+            uv_mutex_unlock(&videoLock);
 
             //stats
             if (newTexture) {
@@ -1083,9 +1090,12 @@ void AminoTexture::initVideoTextureHandler(AsyncValueUpdate *update, int state) 
         return;
     }
 
-    assert(videoPlayer);
+    uv_mutex_lock(&videoLock);
 
-    videoPlayer->initVideoTexture();
+    if (videoPlayer) {
+        videoPlayer->initVideoTexture();
+    }
+    uv_mutex_unlock(&videoLock);
 }
 
 /**
@@ -1108,7 +1118,9 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
         printf("handleVideoPlayerInitDone()\n");
     }
 
-    assert(videoPlayer);
+    if (!videoPlayer) {
+        return;
+    }
 
     //create scope
     Nan::HandleScope scope;
@@ -1155,14 +1167,20 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
 }
 
 /**
- * Prepare the texture.
+ * Prepare the texture (on rendering thread).
  *
  * Note: texture is valid.
  */
 void AminoTexture::prepareTexture() {
+    if (!videoLockUsed) {
+        return;
+    }
+
+    uv_mutex_lock(&videoLock);
     if (videoPlayer) {
         videoPlayer->updateVideoTexture();
     }
+    uv_mutex_unlock(&videoLock);
 }
 
 /**
