@@ -45,7 +45,7 @@ public:
     bool pausePlayback() override;
     bool resumePlayback() override;
 
-    void setOmxSpeed(OMX_S32 speed);
+    bool setOmxSpeed(OMX_S32 speed);
 
 private:
     void *eglImage = NULL;

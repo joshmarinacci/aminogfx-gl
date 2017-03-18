@@ -879,7 +879,8 @@ bool AminoOmxVideoPlayer::resumePlayback() {
 /**
  * Set OMX playback speed.
  */
-void AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
+bool AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
+    COMPONENT_T *clock = list[2];
     OMX_TIME_CONFIG_SCALETYPE st;
 
     memset(&st, 0, sizeof(st));
