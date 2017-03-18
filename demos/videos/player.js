@@ -54,7 +54,7 @@ function playVideo(opts, done) {
         //display info
         console.log('display size: ' + dispW + 'x' + dispH);
 
-        done(null, video);
+        done(null, video, iv);
 
         this.root.add(iv);
     });

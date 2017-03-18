@@ -59,7 +59,7 @@ if (global.gc) {
 let done = false;
 let cycle = 0;
 
-setInterval(function () {
+setInterval(() => {
     if (global.gc) {
         //console.log('forcing GC');
         global.gc();
