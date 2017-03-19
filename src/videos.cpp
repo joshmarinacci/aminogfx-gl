@@ -905,7 +905,10 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
 
             bufferSize = numBytes * sizeof(uint8_t);
             buffer = (uint8_t *)av_malloc(bufferSize);
-            bufferCurrent = (uint8_t *)av_malloc(bufferSize);
+
+            if (!bufferCurrent) {
+                bufferCurrent = (uint8_t *)av_malloc(bufferSize);
+            }
         }
 
         //fill buffer
@@ -1110,17 +1113,15 @@ void VideoDemuxer::closeReadFrame(bool destroy) {
     frameRGBCount = -1;
     lastPts = 0;
 
-    //Note: kept until demuxer is destroyed
-    if (destroy) {
-        if (buffer) {
-            av_free(buffer);
-            buffer = NULL;
-        }
+    if (buffer) {
+        av_free(buffer);
+        buffer = NULL;
+    }
 
-        if (bufferCurrent) {
-            av_free(bufferCurrent);
-            bufferCurrent = NULL;
-        }
+    //Note: kept until demuxer is destroyed
+    if (destroy && bufferCurrent) {
+        av_free(bufferCurrent);
+        bufferCurrent = NULL;
     }
 
     if (sws_ctx) {
