@@ -31,6 +31,7 @@ public:
     static void handleFillBufferDone(void *data, COMPONENT_T *comp);
     bool initOmx();
     int playOmx();
+    void stopOmx();
     void destroyOmx();
 
     void initVideoTexture() override;

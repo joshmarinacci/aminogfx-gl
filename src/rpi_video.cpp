@@ -114,13 +114,7 @@ void AminoOmxVideoPlayer::destroy() {
  */
 void AminoOmxVideoPlayer::destroyAminoOmxVideoPlayer() {
     //stop playback
-    destroyOmx();
-
-    if (threadRunning) {
-        int res = uv_thread_join(&thread);
-
-        assert(res == 0);
-    }
+    stopOmx();
 
     //free EGL texture
     if (eglImage) {
@@ -419,7 +413,7 @@ int AminoOmxVideoPlayer::playOmx() {
      *
      *   - Digoo M1Q
      *     - h264 (Main), yuv420p, 1280x960
-     *   - RTSP Bugsbunny
+     *   - RTSP Bigbuckbunny
      *     - h264 (Constrained Baseline), yuv420p, 320x180
      *     - Note: playback issues seen on RPi and Mac, other RTSP examples work fine
      *   - M4V
@@ -431,6 +425,11 @@ int AminoOmxVideoPlayer::playOmx() {
 
     //data loop (Note: never returns NULL)
     while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
+        //check stop
+        if (doStop) {
+            return 0;
+        }
+
         //feed data and wait until we get port settings changed
         unsigned char *dest = buf->pBuffer;
 
@@ -592,7 +591,7 @@ int AminoOmxVideoPlayer::playOmx() {
     //ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
 
     // -> monitor buffer update
-    while (bufferFilled && !omxDestroyed) {
+    while (bufferFilled && !omxDestroyed && !doStop) {
         //wait 100 ms (enough time to show the next frame)
         bufferFilled = false;
         usleep(100 * 1000);
@@ -608,6 +607,26 @@ int AminoOmxVideoPlayer::playOmx() {
     ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
     return 0;
+}
+
+/**
+ * Stops the OMX playback thread.
+ */
+void AminoOmxVideoPlayer::stopOmx() {
+    //cbx TODO check stop while paused
+    if (!omxDestroyed) {
+        if (DEBUG_OMX) {
+            printf("stopping OMX\n");
+        }
+
+        doStop = true;
+
+        if (threadRunning) {
+            int res = uv_thread_join(&thread);
+
+            assert(res == 0);
+        }
+    }
 }
 
 /**
@@ -788,7 +807,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
  * Get current media time.
  */
 double AminoOmxVideoPlayer::getMediaTime() {
-    if (!playing || !paused || !list) {
+    if ((!playing && !paused) || !list) {
         return -1;
     }
 
@@ -829,9 +848,8 @@ void AminoOmxVideoPlayer::stopPlayback() {
     }
 
     //stop
-    doStop = true;
-    destroyOmx();
-    handlePlaybackStopped();
+    //cbx TODO use thread
+    stopOmx();
 }
 
 /**
