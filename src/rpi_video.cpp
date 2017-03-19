@@ -861,6 +861,10 @@ bool AminoOmxVideoPlayer::pausePlayback() {
     }
 
     //pause OMX
+    if (DEBUG_OMX) {
+        printf("pausing OMX\n");
+    }
+
     if (!setOmxSpeed(0)) {
         return false;
     }
@@ -883,6 +887,10 @@ bool AminoOmxVideoPlayer::resumePlayback() {
     }
 
     //resume OMX
+    if (DEBUG_OMX) {
+        printf("resume OMX\n");
+    }
+
     setOmxSpeed(1 << 16);
 
     //resume stream
@@ -904,7 +912,14 @@ bool AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
     memset(&st, 0, sizeof(st));
     st.nSize = sizeof(st);
     st.nVersion.nVersion = OMX_VERSION;
-    st.xScale = 0;
+    st.xScale = speed;
 
-    return OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeScale, &st) == OMX_ErrorNone;
+    bool res = OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeScale, &st) == OMX_ErrorNone;
+
+    //cbx FIXME does not work
+    if (DEBUG_OMX && !res) {
+        printf("-> could not set OMX time scale!\n");
+    }
+
+    return res;
 }
