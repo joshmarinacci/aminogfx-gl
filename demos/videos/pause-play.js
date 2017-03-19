@@ -14,6 +14,12 @@ player.playVideo({
         setTimeout(() => {
             console.log('pausing playback');
             video.pause();
+
+            setTimeout(() => {
+                //cbx does not work on RPi
+                console.log('resuming playback');
+                video.play();
+            }, 4000);
         }, 4000);
 
         setInterval(() => {
