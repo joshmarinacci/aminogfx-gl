@@ -847,8 +847,7 @@ void AminoOmxVideoPlayer::stopPlayback() {
         return;
     }
 
-    //stop
-    //cbx TODO use thread
+    //stop (currently blocking implementation)
     stopOmx();
 }
 
