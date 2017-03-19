@@ -896,10 +896,11 @@ void AminoMacVideoPlayer::initDemuxer() {
             }
         }
 
+        //show
+        demuxer->switchRGBFrame();
+
         //update media time
         mediaTime = getTime() / 1000 - timeStartSys;
-
-        //FIXME cbx: frame is shown too early (use two buffers)
     }
 }
 

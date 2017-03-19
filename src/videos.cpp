@@ -903,7 +903,9 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
             int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
             //int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height, 1);
 
-            buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+            bufferSize = numBytes * sizeof(uint8_t);
+            buffer = (uint8_t *)av_malloc(bufferSize);
+            bufferCurrent = (uint8_t *)av_malloc(bufferSize);
         }
 
         //fill buffer
@@ -911,6 +913,8 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
 
         avpicture_fill((AVPicture *)frameRGB, buffer, AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height);
         //av_image_fill_arrays(frameRGB->data, frameRGB->linesize, buffer, AV_PIX_FMT_RGB24, codecCtx->width, codecCtx->height, 1);
+
+        switchRGBFrame();
 
         //initialize SWS context for software scaling
         sws_ctx = sws_getContext(codecCtx->width, codecCtx->height, codecCtx->pix_fmt, codecCtx->width, codecCtx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
@@ -999,6 +1003,14 @@ done:
 #pragma GCC diagnostic pop
 
 /**
+ * Switch active RGB frame.
+ */
+void VideoDemuxer::switchRGBFrame() {
+    memcpy(bufferCurrent, buffer, bufferSize);
+    bufferCount = frameRGBCount;
+}
+
+/**
  * Pause reading frames.
  */
 void VideoDemuxer::pause() {
@@ -1048,9 +1060,9 @@ bool VideoDemuxer::rewindRGB(double &time) {
  * Get frame data.
  */
 uint8_t *VideoDemuxer::getFrameData(int &id) {
-    id = frameRGBCount;
+    id = bufferCount;
 
-    return buffer; //same as frameRGB->data[0]
+    return bufferCurrent;
 }
 
 /**
@@ -1099,9 +1111,16 @@ void VideoDemuxer::closeReadFrame(bool destroy) {
     lastPts = 0;
 
     //Note: kept until demuxer is destroyed
-    if (buffer && destroy) {
-        av_free(buffer);
-        buffer = NULL;
+    if (destroy) {
+        if (buffer) {
+            av_free(buffer);
+            buffer = NULL;
+        }
+
+        if (bufferCurrent) {
+            av_free(bufferCurrent);
+            bufferCurrent = NULL;
+        }
     }
 
     if (sws_ctx) {

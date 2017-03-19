@@ -141,6 +141,7 @@ public:
     bool saveStream(std::string filename);
 
     READ_FRAME_RESULT readRGBFrame(double &time);
+    void switchRGBFrame();
 
     bool hasH264NaluStartCodes();
     bool getHeader(uint8_t **data, int *size);
@@ -177,6 +178,10 @@ private:
     int frameRGBCount = -1;
     double lastPts = 0;
     uint8_t *buffer = NULL;
+    uint8_t *bufferCurrent = NULL;
+    int bufferCount = -1;
+    unsigned int bufferSize = 0;
+
     struct SwsContext *sws_ctx = NULL;
 
     void close(bool destroy);
