@@ -138,8 +138,6 @@ public:
     bool loadFile(std::string filename, std::string options);
     bool initStream();
 
-    bool saveStream(std::string filename);
-
     READ_FRAME_RESULT readRGBFrame(double &time);
     void switchRGBFrame();
 
@@ -181,6 +179,7 @@ private:
     uint8_t *bufferCurrent = NULL;
     int bufferCount = -1;
     unsigned int bufferSize = 0;
+    bool paused = false;
 
     struct SwsContext *sws_ctx = NULL;
 

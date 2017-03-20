@@ -658,136 +658,6 @@ bool VideoDemuxer::initStream() {
 }
 
 /**
- * Save raw video stream to file (H264 only).
- *
- * See http://stackoverflow.com/questions/13290413/why-decoding-frames-from-avi-container-and-encode-them-to-h264-mp4-doesnt-work.
- */
-bool VideoDemuxer::saveStream(std::string filename) {
-    //check if ready
-    if (!context || !codecCtx || !isH264) {
-        return false;
-    }
-
-    //prepare
-    AVOutputFormat *outFmt = av_guess_format("h264", NULL, NULL);
-    int err;
-
-    if (!outFmt) {
-        return false;
-    }
-
-    /*
-     * avformat_alloc_output_context2() is not supported by libav!
-     *
-     * FFMPEG implementation:
-     *
-     * https://www.ffmpeg.org/doxygen/3.0/mux_8c_source.html
-     */
-
-#ifdef MAC
-    //FFmpeg
-    AVFormatContext *outCtx = NULL;
-
-    err = avformat_alloc_output_context2(&outCtx, outFmt, NULL, NULL);
-
-    if (err < 0 || !outCtx) {
-        return false;
-    }
-#else
-    //libav
-    AVFormatContext *outCtx = avformat_alloc_context();
-
-    if (!outCtx) {
-        return false;
-    }
-
-    outCtx->oformat = outFmt;
-#endif
-
-    AVStream *outStrm = avformat_new_stream(outCtx, stream->codec->codec);
-    bool res = false;
-
-    //settings
-    avcodec_copy_context(outStrm->codec, stream->codec);
-
-    //prevent warning on macOS
-    outStrm->time_base = stream->time_base;
-
-    err = avio_open(&outCtx->pb, filename.c_str(), AVIO_FLAG_WRITE);
-
-    if (err < 0) {
-        goto done;
-    }
-
-#if (LIBAVFORMAT_VERSION_MAJOR == 53)
-    AVFormatParameters params = { 0 };
-
-    err = av_set_parameters(outCtx, &params);
-
-    if (err < 0) {
-        goto done;
-    }
-
-    av_write_header(outFmtCtx);
-#else
-    if (avformat_write_header(outCtx, NULL) < 0) {
-        goto done;
-    }
-#endif
-
-    while (true) {
-        AVPacket packet;
-
-        av_init_packet(&packet);
-
-        err = AVERROR(EAGAIN);
-
-        while (AVERROR(EAGAIN) == err) {
-            err = av_read_frame(context, &packet);
-        }
-
-        if (err < 0) {
-            if (AVERROR_EOF != err && AVERROR(EIO) != err) {
-                goto done;
-            } else {
-                //end of file
-                break;
-            }
-        }
-
-        if (packet.stream_index == videoStream) {
-            packet.stream_index = 0;
-            packet.pos = -1;
-
-            err = av_interleaved_write_frame(outCtx, &packet);
-
-            if (err < 0) {
-                goto done;
-            }
-        }
-
-        av_free_packet(&packet);
-    }
-
-    av_write_trailer(outCtx);
-
-    //done
-    res = true;
-
-    //debug
-    //printf("-> wrote file\n");
-
-done:
-    if (!(outCtx->oformat->flags & AVFMT_NOFILE) && outCtx->pb) {
-        avio_close(outCtx->pb);
-    }
-
-    avformat_free_context(outCtx);
-
-    return res;
-}
-
-/**
  * Check if NALU start codes are used (or format is annex b).
  */
 bool VideoDemuxer::hasH264NaluStartCodes() {
@@ -828,6 +698,13 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
     }
 
     while (true) {
+        //check state
+        //cbx verify
+        if (paused) {
+            printf("-> readFrame() while paused!\n");
+        }
+
+        //read
         int status = av_read_frame(context, packet);
 
         //check end of video
@@ -1017,12 +894,19 @@ void VideoDemuxer::switchRGBFrame() {
  * Pause reading frames.
  */
 void VideoDemuxer::pause() {
+    if (paused) {
+        return;
+    }
+
+    paused = true;
+
     if (context) {
         if (DEBUG_VIDEOS) {
             printf("pausing stream\n");
         }
-//cbx FIXME blocks for a long time
-//cbx        av_read_pause(context);
+
+        //cbx FIXME blocks for a long time -> deadlock?
+        av_read_pause(context);
     }
 }
 
@@ -1030,9 +914,15 @@ void VideoDemuxer::pause() {
  * Resume reading frames.
  */
 void VideoDemuxer::resume() {
+    if (!paused) {
+        return;
+    }
+
+    paused = false;
+
     if (context) {
         if (DEBUG_VIDEOS) {
-            printf("resuming stream");
+            printf("resuming stream\n");
         }
 
         av_read_play(context);

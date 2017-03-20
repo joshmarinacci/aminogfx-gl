@@ -778,9 +778,6 @@ void AminoMacVideoPlayer::initDemuxer() {
         return;
     }
 
-    //test: save to file
-    //demuxer->saveStream("test_h264.h264");
-
     //read first frame
     double timeStart;
     READ_FRAME_RESULT res = demuxer->readRGBFrame(timeStart);
