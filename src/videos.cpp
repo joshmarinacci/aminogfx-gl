@@ -1018,6 +1018,10 @@ void VideoDemuxer::switchRGBFrame() {
  */
 void VideoDemuxer::pause() {
     if (context) {
+        if (DEBUG_VIDEOS) {
+            printf("pausing stream");
+        }
+
         av_read_pause(context);
     }
 }
@@ -1027,6 +1031,10 @@ void VideoDemuxer::pause() {
  */
 void VideoDemuxer::resume() {
     if (context) {
+        if (DEBUG_VIDEOS) {
+            printf("resuming stream");
+        }
+
         av_read_play(context);
     }
 }
