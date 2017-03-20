@@ -1019,10 +1019,10 @@ void VideoDemuxer::switchRGBFrame() {
 void VideoDemuxer::pause() {
     if (context) {
         if (DEBUG_VIDEOS) {
-            printf("pausing stream");
+            printf("pausing stream\n");
         }
-
-        av_read_pause(context);
+//cbx FIXME blocks for a long time
+//cbx        av_read_pause(context);
     }
 }
 
