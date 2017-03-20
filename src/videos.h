@@ -154,6 +154,8 @@ public:
     bool rewindRGB(double &time);
     uint8_t *getFrameData(int &id);
 
+    bool isTimeout();
+
     std::string getLastError();
 
 private:
@@ -170,6 +172,9 @@ private:
     int videoStream = -1;
     AVStream *stream = NULL;
 
+    //timeout
+    double timeout = 0;
+
     //read
     AVFrame *frame = NULL;
     AVFrame *frameRGB = NULL;
@@ -185,6 +190,8 @@ private:
 
     void close(bool destroy);
     void closeReadFrame(bool destroy);
+
+    void resetTimeout(double timeoutMS);
 };
 
 struct omx_metadata_t {

@@ -19,7 +19,7 @@
 #include <sys/time.h>
 
 /**
- * Get monotonic time for timer.
+ * Get monotonic time for timer (in milliseconds).
  */
 static double __attribute__((unused)) getTime(void) {
     struct timespec res;
@@ -42,7 +42,7 @@ static double __attribute__((unused)) getTime(void) {
 #include <time.h>
 
 /**
- * Get monotonic time for timer.
+ * Get monotonic time for timer (in milliseconds).
  */
 static double __attribute__((unused)) getTime(void) {
     struct timespec res;

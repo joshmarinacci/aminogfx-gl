@@ -450,6 +450,23 @@ bool VideoDemuxer::init() {
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 /**
+ * Timeout callback. Returns true if timeout occured.
+ */
+static int interruptCallback(void *opaque) {
+    VideoDemuxer *demuxer = static_cast<VideoDemuxer *>(opaque);
+
+    if (demuxer->isTimeout()) {
+        if (DEBUG_VIDEOS) {
+            printf("-> timeout occured\n");
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
  * Load a video from a file.
  */
 bool VideoDemuxer::loadFile(std::string filename, std::string options) {
@@ -474,6 +491,10 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
         return false;
     }
+
+    //register timeout handler
+    context->interrupt_callback.callback = interruptCallback;
+    context->interrupt_callback.opaque = this;
 
     //test: disable UDP re-ordering
     //context->max_delay = 0;
@@ -511,7 +532,10 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     }
 
     //open
-    int res = avformat_open_input(&context, file, NULL, &opts);
+    int res;
+
+    resetTimeout(3000);
+    res = avformat_open_input(&context, file, NULL, &opts);
 
     av_dict_free(&opts);
 
@@ -705,7 +729,10 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
         }
 
         //read
-        int status = av_read_frame(context, packet);
+        int status;
+
+        resetTimeout(1000);
+        status = av_read_frame(context, packet);
 
         //check end of video
         if (status == AVERROR_EOF) {
@@ -1026,6 +1053,20 @@ void VideoDemuxer::closeReadFrame(bool destroy) {
         sws_freeContext(sws_ctx);
         sws_ctx = NULL;
     }
+}
+
+/**
+ * Set timeout.
+ */
+void VideoDemuxer::resetTimeout(double timeoutMS) {
+    timeout = getTime() + timeoutMS;
+}
+
+/**
+ * Check if timeout occured.
+ */
+bool VideoDemuxer::isTimeout() {
+    return getTime() > timeout;
 }
 
 /**
