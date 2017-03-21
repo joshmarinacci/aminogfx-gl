@@ -736,8 +736,7 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
 
     while (true) {
         //check state
-        //cbx verify
-        if (paused) {
+        if (DEBUG_VIDEOS && paused) {
             printf("-> readFrame() while paused!\n");
         }
 
@@ -953,7 +952,6 @@ void VideoDemuxer::pause() {
             printf("pausing stream\n");
         }
 
-        //cbx FIXME blocks for a long time -> deadlock?
         av_read_pause(context);
     }
 }
