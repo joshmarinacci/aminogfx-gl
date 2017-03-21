@@ -903,14 +903,16 @@ bool AminoOmxVideoPlayer::resumePlayback() {
         return true;
     }
 
+    doPause = false;
+
+    //resume stream
+    stream->resume();
+
     //resume OMX
     if (DEBUG_OMX) {
         printf("resume OMX\n");
     }
 
-    doPause = false;
-
-    stream->resume();
     setOmxSpeed(1 << 16);
 
     //set state
