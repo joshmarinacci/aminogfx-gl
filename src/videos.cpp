@@ -754,6 +754,10 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
 
         //check error
         if (status < 0) {
+            if (DEBUG_VIDEOS) {
+                printf("-> read frame error: %i\n", status);
+            }
+
             return READ_ERROR;
         }
 

@@ -545,6 +545,7 @@ int AminoOmxVideoPlayer::playOmx() {
 
         if (!data_len) {
             //read error occured
+//cbx FIXME happens on play after pause
             lastError = "IO error";
             return -40;
         }
