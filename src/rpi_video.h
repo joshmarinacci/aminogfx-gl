@@ -62,6 +62,7 @@ private:
     uv_mutex_t omxLock;
     bool doStop = false;
     bool doPause = false;
+    uv_sem_t pauseSem;
 
 public:
     COMPONENT_T *egl_render = NULL;

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <semaphore.h>
 
-//cbx
+//cbx debug
 #define DEBUG_OMX true
 #define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
@@ -23,12 +23,20 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
     memset(list, 0, sizeof(list));
     memset(tunnel, 0, sizeof(tunnel));
 
+    //semaphore
+    int res = uv_sem_init(&pauseSem, 0);
+
+    assert(res == 0);
+
     //lock
     uv_mutex_init(&omxLock);
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
     destroyAminoOmxVideoPlayer();
+
+    //semaphore
+    uv_sem_destroy(&pauseSem);
 
     //lock
     uv_mutex_destroy(&omxLock);
@@ -431,9 +439,34 @@ int AminoOmxVideoPlayer::playOmx() {
         }
 
         //check pause
-        while (doPause) {
-            //cbx verify and switch to semaphore
-            usleep(100 * 1000);
+        if (doPause) {
+            //pause stream
+            stream->pause();
+
+            if (DEBUG_OMX) {
+                printf("paused stream\n");
+            }
+
+            //wait
+            uv_sem_wait(&pauseSem);
+            doPause = false;
+
+            if (doStop) {
+                return 0;
+            }
+
+            //resume stream
+            stream->resume();
+
+            //resume OMX
+            if (DEBUG_OMX) {
+                printf("resume OMX\n");
+            }
+
+            setOmxSpeed(1 << 16);
+
+            //set state
+            handlePlaybackResumed();
         }
 
         //feed data and wait until we get port settings changed
@@ -545,7 +578,6 @@ int AminoOmxVideoPlayer::playOmx() {
 
         if (!data_len) {
             //read error occured
-//cbx FIXME happens on play after pause
             lastError = "IO error";
             return -40;
         }
@@ -620,7 +652,6 @@ int AminoOmxVideoPlayer::playOmx() {
  * Stops the OMX playback thread.
  */
 void AminoOmxVideoPlayer::stopOmx() {
-    //cbx TODO check stop while paused
     if (!omxDestroyed) {
         if (DEBUG_OMX) {
             printf("stopping OMX\n");
@@ -628,6 +659,11 @@ void AminoOmxVideoPlayer::stopOmx() {
 
         doStop = true;
         doPause = false;
+
+        if (paused) {
+            //resume thread
+            uv_sem_post(&pauseSem);
+        }
 
         if (threadRunning) {
             int res = uv_thread_join(&thread);
@@ -881,13 +917,6 @@ bool AminoOmxVideoPlayer::pausePlayback() {
     if (DEBUG_OMX) {
         printf("paused OMX\n");
     }
-//cbx FIXME blocks
-    //pause stream
-    stream->pause();
-
-    if (DEBUG_OMX) {
-        printf("paused stream\n");
-    }
 
     //set state
     handlePlaybackPaused();
@@ -905,18 +934,8 @@ bool AminoOmxVideoPlayer::resumePlayback() {
 
     doPause = false;
 
-    //resume stream
-    stream->resume();
-
-    //resume OMX
-    if (DEBUG_OMX) {
-        printf("resume OMX\n");
-    }
-
-    setOmxSpeed(1 << 16);
-
-    //set state
-    handlePlaybackResumed();
+    //resume thread
+    uv_sem_post(&pauseSem);
 
     return true;
 }
