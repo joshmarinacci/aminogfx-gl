@@ -910,10 +910,8 @@ bool AminoOmxVideoPlayer::resumePlayback() {
 
     doPause = false;
 
-    setOmxSpeed(1 << 16);
-
-    //resume stream
     stream->resume();
+    setOmxSpeed(1 << 16);
 
     //set state
     handlePlaybackResumed();

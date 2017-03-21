@@ -749,6 +749,10 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
 
         //check end of video
         if (status == AVERROR_EOF) {
+            if (DEBUG_VIDEOS) {
+                printf("-> end of file\n");
+            }
+
             return READ_END_OF_VIDEO;
         }
 
