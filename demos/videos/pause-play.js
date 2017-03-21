@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const player = require('./player');
 
 /*
@@ -7,9 +8,17 @@ const player = require('./player');
  */
 
 player.playVideo({
+    //low res
+    src: path.join(__dirname, 'test.h264'),
+    loop: false,
+
     //720p (h264)
+    //Note: getting EOF on play()
+    /*
     src: 'rtsp://mm2.pcslab.com/mm/7h1500.mp4',
     opts: 'rtsp_transport=tcp',
+    */
+
     ready: video => {
         setTimeout(() => {
             console.log('pausing playback');
