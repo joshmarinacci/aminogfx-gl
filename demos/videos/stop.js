@@ -12,7 +12,9 @@ player.playVideo({
     opts: 'rtsp_transport=tcp',
     ready: video => {
         setTimeout(() => {
+            player.measureStart();
             video.stop();
+            player.measureEnd('stop()');
         }, 4000);
 
         setInterval(() => {

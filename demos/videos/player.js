@@ -59,3 +59,26 @@ function playVideo(opts, done) {
 }
 
 exports.playVideo = playVideo;
+
+let time;
+
+/**
+ * Start measuring interval.
+ */
+function measureStart() {
+    time = new Date().getTime();
+}
+
+/**
+ * Stop measuring.
+ *
+ * @param {*} name
+ */
+function measureEnd(name) {
+    const now = new Date().getTime();
+
+    console.log(name + ': ' + (now - time) + ' ms');
+}
+
+exports.measureStart = measureStart;
+exports.measureEnd = measureEnd;

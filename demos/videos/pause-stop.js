@@ -13,11 +13,15 @@ player.playVideo({
     ready: video => {
         setTimeout(() => {
             //first pause
+            player.measureStart();
             video.pause();
+            player.measureEnd('pause()');
 
             //wait & stop
             setTimeout(() => {
+                player.measureStart();
                 video.stop();
+                player.measureEnd('stop()');
             }, 1000);
         }, 4000);
 

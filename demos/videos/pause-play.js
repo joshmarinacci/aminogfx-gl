@@ -22,12 +22,17 @@ player.playVideo({
     ready: video => {
         setTimeout(() => {
             console.log('pausing playback');
+
+            player.measureStart();
             video.pause();
+            player.measureEnd('pause()');
 
             setTimeout(() => {
-                //cbx does not work on RPi
                 console.log('resuming playback');
+
+                player.measureStart();
                 video.play();
+                player.measureEnd('play()');
             }, 4000);
         }, 4000);
 
