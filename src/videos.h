@@ -174,6 +174,8 @@ private:
 
     //timeout
     double timeout = 0;
+    int timeoutOpen = 5000; //5s
+    int timeoutRead = 1000; //1s
 
     //read
     AVFrame *frame = NULL;
@@ -191,7 +193,7 @@ private:
     void close(bool destroy);
     void closeReadFrame(bool destroy);
 
-    void resetTimeout(double timeoutMS);
+    void resetTimeout(int timeoutMS);
 };
 
 struct omx_metadata_t {

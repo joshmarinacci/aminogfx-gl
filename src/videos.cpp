@@ -531,10 +531,23 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
         realtime = filename.find("rtsp://") == 0;
     }
 
+    //timeout settings
+    entry = av_dict_get(opts, "amino_timeout_open", NULL, AV_DICT_MATCH_CASE);
+
+    if (entry) {
+        timeoutOpen = std::stoi(entry->value);
+    }
+
+    entry = av_dict_get(opts, "amino_timeout_read", NULL, AV_DICT_MATCH_CASE);
+
+    if (entry) {
+        timeoutRead = std::stoi(entry->value);
+    }
+
     //open
     int res;
 
-    resetTimeout(3000);
+    resetTimeout(timeoutOpen);
     res = avformat_open_input(&context, file, NULL, &opts);
 
     av_dict_free(&opts);
@@ -731,7 +744,7 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
         //read
         int status;
 
-        resetTimeout(1000);
+        resetTimeout(timeoutRead);
         status = av_read_frame(context, packet);
 
         //check end of video
@@ -1058,7 +1071,7 @@ void VideoDemuxer::closeReadFrame(bool destroy) {
 /**
  * Set timeout.
  */
-void VideoDemuxer::resetTimeout(double timeoutMS) {
+void VideoDemuxer::resetTimeout(int timeoutMS) {
     timeout = getTime() + timeoutMS;
 }
 
