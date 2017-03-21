@@ -758,6 +758,7 @@ v8::Local<v8::FunctionTemplate> AminoTexture::GetInitFunction() {
     // playback
     Nan::SetPrototypeMethod(tpl, "getMediaTime", GetMediaTime);
     Nan::SetPrototypeMethod(tpl, "getDuration", GetDuration);
+    Nan::SetPrototypeMethod(tpl, "getState", GetState);
     Nan::SetPrototypeMethod(tpl, "stop", StopPlayback);
     Nan::SetPrototypeMethod(tpl, "pause", PausePlayback);
     Nan::SetPrototypeMethod(tpl, "play", ResumePlayback);
@@ -1487,6 +1488,23 @@ NAN_METHOD(AminoTexture::GetDuration) {
     }
 
     info.GetReturnValue().Set(Nan::New(duration));
+}
+
+/**
+ * Get player state.
+ */
+NAN_METHOD(AminoTexture::GetState) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    std::string state = "";
+
+    if (obj->videoPlayer) {
+        state = obj->videoPlayer->getState();
+    }
+
+    info.GetReturnValue().Set(Nan::New(state.c_str()).ToLocalChecked());
 }
 
 /**

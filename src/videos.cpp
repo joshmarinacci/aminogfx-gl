@@ -246,6 +246,25 @@ void AminoVideoPlayer::getVideoDimension(int &w, int &h) {
 }
 
 /**
+ * Get player state.
+ */
+std::string AminoVideoPlayer::getState() {
+    if (!initDone) {
+        return "loading";
+    }
+
+    if (failed) {
+        return "error";
+    } else if (playing) {
+        return "playing";
+    } else if (paused) {
+        return "paused";
+    }
+
+    return "stopped";
+}
+
+/**
  * Playback ended.
  */
 void AminoVideoPlayer::handlePlaybackDone() {

@@ -75,6 +75,7 @@ public:
     void getVideoDimension(int &w, int &h);
     virtual double getMediaTime() = 0;
     virtual double getDuration() = 0;
+    std::string getState();
     virtual void stopPlayback() = 0;
     virtual bool pausePlayback() = 0;
     virtual bool resumePlayback() = 0;
