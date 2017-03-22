@@ -108,8 +108,6 @@ void AminoOmxVideoPlayer::destroy() {
         return;
     }
 
-    destroyed = true;
-
     //instance
     destroyAminoOmxVideoPlayer();
 
@@ -125,11 +123,13 @@ void AminoOmxVideoPlayer::destroyAminoOmxVideoPlayer() {
     stopOmx();
 
     //free EGL texture
-    if (eglImage) {
+    if (eglImage != EGL_NO_IMAGE_KHR) {
         AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
 
+        assert(gfx);
+
         gfx->destroyEGLImage(eglImage);
-        eglImage = NULL;
+        eglImage = EGL_NO_IMAGE_KHR;
     }
 }
 

@@ -942,7 +942,13 @@ void AminoGfxRPi::destroyEGLImageHandler(AsyncValueUpdate *update, int state) {
 
     assert(update->data);
 
-    eglDestroyImageKHR(display, (EGLImageKHR)update->data);
+    if (DEBUG_VIDEOS) {
+        printf("destroying EGL image\n");
+    }
+
+    EGLBoolean res = eglDestroyImageKHR(display, (EGLImageKHR)update->data);
+
+    assert(res == EGL_TRUE);
 }
 
 //static initializers

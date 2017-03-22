@@ -197,6 +197,8 @@ void AminoVideoPlayer::destroy() {
     destroyAminoVideoPlayer();
 
     //overwrite
+
+    //end of destroy chain
 }
 
 /**

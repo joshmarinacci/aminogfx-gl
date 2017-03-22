@@ -112,9 +112,15 @@ void AminoJSObject::setup() {
  * Note: has to be called on main thread.
  */
 void AminoJSObject::destroy() {
+    if (destroyed) {
+        return;
+    }
+
     destroyed = true;
 
     destroyAminoJSObject();
+
+    //end of destroy chain
 }
 
 /**
@@ -1889,6 +1895,9 @@ AminoJSEventObject::~AminoJSEventObject() {
     assert(res == 0);
 }
 
+/**
+ * Get the event handler (this object).
+ */
 AminoJSEventObject* AminoJSEventObject::getEventHandler() {
     return this;
 }

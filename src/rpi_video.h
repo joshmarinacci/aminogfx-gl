@@ -49,7 +49,7 @@ public:
     bool setOmxSpeed(OMX_S32 speed);
 
 private:
-    void *eglImage = NULL;
+    EGLImageKHR eglImage = EGL_NO_IMAGE_KHR;
     ILCLIENT_T *client = NULL;
     AnyVideoStream *stream = NULL;
 

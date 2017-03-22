@@ -294,6 +294,10 @@ public:
      * Free all resources.
      */
     void destroy() override {
+        if (destroyed) {
+            return;
+        }
+
         AminoJSObject::destroy();
 
         //to be overwritten
