@@ -440,6 +440,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
         //check pause
         if (doPause) {
+            printf("requesting pause\n");//cbx not reached???
+
             //pause stream
             stream->pause();
 
@@ -933,7 +935,7 @@ bool AminoOmxVideoPlayer::resumePlayback() {
     }
 
     doPause = false;
-
+//cbx does not work
     //resume thread
     uv_sem_post(&pauseSem);
 
