@@ -438,16 +438,10 @@ int AminoOmxVideoPlayer::playOmx() {
             return 0;
         }
 
-        //check pause
+        //check pause cbx
+        /*
         if (doPause) {
             printf("requesting pause\n");//cbx not reached???
-
-            //pause stream
-            stream->pause();
-
-            if (DEBUG_OMX) {
-                printf("paused stream\n");
-            }
 
             //wait
             uv_sem_wait(&pauseSem);
@@ -456,20 +450,8 @@ int AminoOmxVideoPlayer::playOmx() {
             if (doStop) {
                 return 0;
             }
-
-            //resume stream
-            stream->resume();
-
-            //resume OMX
-            if (DEBUG_OMX) {
-                printf("resume OMX\n");
-            }
-
-            setOmxSpeed(1 << 16);
-
-            //set state
-            handlePlaybackResumed();
         }
+        */
 
         //feed data and wait until we get port settings changed
         unsigned char *dest = buf->pBuffer;
@@ -905,7 +887,7 @@ bool AminoOmxVideoPlayer::pausePlayback() {
         return true;
     }
 
-    //pause OMX
+    //pause OMX (stops reading)
     if (DEBUG_OMX) {
         printf("pausing OMX\n");
     }
@@ -918,6 +900,13 @@ bool AminoOmxVideoPlayer::pausePlayback() {
 
     if (DEBUG_OMX) {
         printf("paused OMX\n");
+    }
+
+    //pause stream
+    stream->pause();
+
+    if (DEBUG_OMX) {
+        printf("paused stream\n");
     }
 
     //set state
@@ -935,9 +924,22 @@ bool AminoOmxVideoPlayer::resumePlayback() {
     }
 
     doPause = false;
-//cbx does not work
-    //resume thread
-    uv_sem_post(&pauseSem);
+
+    //resume thread cbx
+    //uv_sem_post(&pauseSem);
+
+    //resume stream
+    stream->resume();
+
+    //resume OMX
+    if (DEBUG_OMX) {
+        printf("resume OMX\n");
+    }
+
+    setOmxSpeed(1 << 16);
+
+    //set state
+    handlePlaybackResumed();
 
     return true;
 }
