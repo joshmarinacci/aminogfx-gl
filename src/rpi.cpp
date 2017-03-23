@@ -502,6 +502,7 @@ void AminoGfxRPi::initRenderer() {
 
     surface = eglCreateWindowSurface(display, config, &native_window, NULL);
 
+    //Note: happens for instance if there is a resource leak (restart the RPi in this case)
     assert(surface != EGL_NO_SURFACE);
 
     //activate context (needed by JS code to create shaders)

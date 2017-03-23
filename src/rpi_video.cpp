@@ -413,6 +413,7 @@ int AminoOmxVideoPlayer::playOmx() {
     OMX_BUFFERHEADERTYPE *buf;
     bool port_settings_changed = false;
     bool first_packet = true;
+    int res = 0;
 
     ilclient_change_component_state(video_decode, OMX_StateExecuting);
 
@@ -435,7 +436,7 @@ int AminoOmxVideoPlayer::playOmx() {
     while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
         //check stop
         if (doStop) {
-            return 0;
+            goto end;
         }
 
         //check pause (prevent reading while paused; might not be called)
@@ -449,7 +450,7 @@ int AminoOmxVideoPlayer::playOmx() {
             uv_sem_wait(&pauseSem);
 
             if (doStop) {
-                return 0;
+                goto end;
             }
         }
 
@@ -466,7 +467,8 @@ int AminoOmxVideoPlayer::playOmx() {
             if (!ready) {
                 //case: no video in stream
                 lastError = "stream without valid video data";
-                return -30;
+                res = -30;
+                goto end;
             }
 
             //loop
@@ -519,7 +521,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
             if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
                 lastError = "video tunnel setup error";
-                return -31;
+                res = -31;
+                goto end;
             }
 
             //start scheduler
@@ -528,7 +531,8 @@ int AminoOmxVideoPlayer::playOmx() {
             //now setup tunnel to egl_render
             if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
                 lastError = "egl_render tunnel setup error";
-                return -32;
+                res = -32;
+                goto end;
             }
 
             //set egl_render to idle
@@ -544,7 +548,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
             if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
                 lastError = "could not get video size";
-                return -33;
+                res = -33;
+                goto end;
             }
 
             videoW = portdef.format.video.nFrameWidth;
@@ -563,7 +568,8 @@ int AminoOmxVideoPlayer::playOmx() {
         if (!data_len) {
             //read error occured
             lastError = "IO error";
-            return -40;
+            res = -40;
+            goto end;
         }
 
         buf->nFilledLen = data_len;
@@ -586,7 +592,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
         if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
             lastError = "could not empty buffer";
-            return -41;
+            res = -41;
+            goto end;
         }
     }
 
@@ -601,7 +608,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
     if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
         lastError = "could not empty buffer (2)";
-        return -50;
+        res = -50;
+        goto end;
     }
 
     if (DEBUG_OMX) {
@@ -624,9 +632,11 @@ int AminoOmxVideoPlayer::playOmx() {
         printf("OMX: renderer EOS\n");
     }
 
+end:
     //need to flush the renderer to allow video_decode to disable its input port
     ilclient_flush_tunnels(tunnel, 0);
 
+    //frees buffer
     ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
     return 0;
