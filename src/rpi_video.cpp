@@ -647,7 +647,7 @@ end:
     //frees buffer
     ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
-    return 0;
+    return res;
 }
 
 /**
