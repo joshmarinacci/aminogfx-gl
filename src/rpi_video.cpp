@@ -653,6 +653,7 @@ end:
         printf("OMX: disabling port buffers\n");
     }
 
+    //cbx FIXME hangs!
     ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
     return res;

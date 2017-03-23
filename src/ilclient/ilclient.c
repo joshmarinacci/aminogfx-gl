@@ -917,7 +917,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, unsigned int portIndex,
 
    error = OMX_SendCommand(comp->comp, OMX_CommandPortDisable, portIndex, NULL);
    vc_assert(error == OMX_ErrorNone);
-
+printf("cbx 1\n");
    while(num > 0)
    {
       VCOS_UNSIGNED set;
@@ -954,7 +954,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, unsigned int portIndex,
 
          vcos_semaphore_post(&comp->sema);
       }
-
+printf("cbx 2\n");
       while(list)
       {
          void *buf = list->pBuffer;
@@ -971,7 +971,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, unsigned int portIndex,
          num--;
          list = next;
       }
-
+printf("cbx 3\n");
       if(num)
       {
          OMX_U32 mask = ILCLIENT_PORT_DISABLED | ILCLIENT_EVENT_ERROR;
@@ -987,7 +987,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, unsigned int portIndex,
             return;
       }
    }
-
+printf("cbx 4\n");
    if(ilclient_wait_for_command_complete(comp, OMX_CommandPortDisable, portIndex) < 0)
       vc_assert(0);
 }
