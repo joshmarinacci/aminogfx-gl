@@ -59,7 +59,6 @@ private:
     TUNNEL_T tunnel[4];
     COMPONENT_T *list[5];
     bool omxDestroyed = false;
-    uv_mutex_t omxLock;
     bool doStop = false;
     bool doPause = false;
     uv_sem_t pauseSem;

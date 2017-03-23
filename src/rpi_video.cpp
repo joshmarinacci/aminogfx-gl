@@ -29,9 +29,6 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
     int res = uv_sem_init(&pauseSem, 0);
 
     assert(res == 0);
-
-    //lock
-    uv_mutex_init(&omxLock);
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
@@ -39,9 +36,6 @@ AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
 
     //semaphore
     uv_sem_destroy(&pauseSem);
-
-    //lock
-    uv_mutex_destroy(&omxLock);
 }
 
 /**
@@ -628,11 +622,9 @@ int AminoOmxVideoPlayer::playOmx() {
 
     //Note: the following code is not working, getting a timeout after 10 s!
     //ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
-end:
+
     // -> monitor buffer update
-    while (bufferFilled) {
-//cbx check
-//    while (bufferFilled && !omxDestroyed && !doStop) {
+    while (bufferFilled && !doStop) {
         //wait 100 ms (enough time to show the next frame)
         bufferFilled = false;
         usleep(100 * 1000);
@@ -642,7 +634,7 @@ end:
         printf("OMX: renderer EOS\n");
     }
 
-//cbx end:
+end:
     //need to flush the renderer to allow video_decode to disable its input port
     if (DEBUG_OMX) {
         printf("OMX: flushing tunnels\n");
@@ -656,7 +648,13 @@ end:
     }
 
     //cbx FIXME hangs!
-    ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+    if (!doStop) {
+        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+    } else {
+        //only free buffers
+        //cbx TODO
+        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+    }
 
     return res;
 }
@@ -806,18 +804,11 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
  * Destroy OMX.
  */
 void AminoOmxVideoPlayer::destroyOmx() {
-    uv_mutex_lock(&omxLock);
-
-    if (omxDestroyed) {
-        uv_mutex_unlock(&omxLock);
-        return;
-    }
-
-    omxDestroyed = true;
-
     if (DEBUG_OMX) {
         printf("OMX: destroying instance\n");
     }
+
+    omxDestroyed = true;
 
     //close tunnels
     ilclient_disable_tunnel(tunnel);
@@ -861,8 +852,6 @@ void AminoOmxVideoPlayer::destroyOmx() {
     if (DEBUG_OMX) {
         printf("OMX: instance destroyed\n");
     }
-
-    uv_mutex_unlock(&omxLock);
 }
 
 /**
