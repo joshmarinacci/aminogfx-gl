@@ -991,8 +991,11 @@ if (num == 1) break; //cbx
 */
    }
 printf("cbx 4\n");
+//cbx hangs here
+/* cbx
    if(ilclient_wait_for_command_complete(comp, OMX_CommandPortDisable, portIndex) < 0)
       vc_assert(0);
+*/
 }
 
 
