@@ -373,6 +373,12 @@ end:
 
     //check status
     if (status != 0) {
+        //add error code
+        std::ostringstream ss;
+
+        ss << lastError << " (" << status << ")";
+        lastError = ss.str();
+
         //report error
         if (!initDone) {
             handleInitDone(false);
