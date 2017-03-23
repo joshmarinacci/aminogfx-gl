@@ -917,7 +917,7 @@ void ilclient_disable_port_buffers(COMPONENT_T *comp, unsigned int portIndex,
 
    error = OMX_SendCommand(comp->comp, OMX_CommandPortDisable, portIndex, NULL);
    vc_assert(error == OMX_ErrorNone);
-printf("cbx 1 buffers=%i\n", num);
+printf("cbx 1 buffers=%i\n", num); //20 buffers
    while(num > 0)
    {
       VCOS_UNSIGNED set;
@@ -971,7 +971,8 @@ printf("cbx 2\n");
          num--;
          list = next;
       }
-printf("cbx 3 left=%i\n", num);
+printf("cbx 3 left=%i\n", num); //1 left
+if (num == 1) break; //cbx
 /* cbx
       if(num)
       {
