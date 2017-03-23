@@ -642,9 +642,17 @@ int AminoOmxVideoPlayer::playOmx() {
 
 end:
     //need to flush the renderer to allow video_decode to disable its input port
+    if (DEBUG_OMX) {
+        printf("OMX: flushing tunnels\n");
+    }
+
     ilclient_flush_tunnels(tunnel, 0);
 
     //frees buffer
+    if (DEBUG_OMX) {
+        printf("OMX: disabling port buffers\n");
+    }
+
     ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
     return res;
@@ -669,6 +677,10 @@ void AminoOmxVideoPlayer::stopOmx() {
         }
 
         if (threadRunning) {
+            if (DEBUG_OMX) {
+                printf("waiting for OMX thread to end\n");
+            }
+
             int res = uv_thread_join(&thread);
 
             assert(res == 0);
