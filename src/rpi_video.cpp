@@ -653,7 +653,7 @@ end:
     } else {
         //only free buffers
         //cbx TODO
-        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+//cbx        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
     }
 
     return res;
@@ -809,7 +809,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
     }
 
     omxDestroyed = true;
-
+//cbx hangs here
     //close tunnels
     ilclient_disable_tunnel(tunnel);
     ilclient_disable_tunnel(tunnel + 1);
