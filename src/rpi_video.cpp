@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <semaphore.h>
 
+#include <sstream>
+
 //cbx debug
 #define DEBUG_OMX true
 #define DEBUG_OMX_READ false
