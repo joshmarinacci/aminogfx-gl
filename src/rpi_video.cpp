@@ -75,9 +75,11 @@ void AminoOmxVideoPlayer::init() {
     //create OMX thread
     threadRunning = true;
 
-    int res = uv_thread_create(&thread, omxThread, this);
+//cbx    int res = uv_thread_create(&thread, omxThread, this);
+    VCOS_STATUS_T res = vcos_thread_create(&thread, "OMX thread", NULL, &omxThread, NULL);
 
-    assert(res == 0);
+    assert(res == VCOS_SUCCESS);
+//    assert(res == 0);
 }
 
 /**
@@ -667,9 +669,12 @@ void AminoOmxVideoPlayer::stopOmx() {
                 printf("waiting for OMX thread to end\n");
             }
 
-            int res = uv_thread_join(&thread);
+//cbx            int res = uv_thread_join(&thread);
+            VCOS_STATUS_T res = vcos_thread_join(&thread, NULL);
 
             assert(res == 0);
+
+//cbx check later            vcos_thread_cleanup(thread);
         }
     }
 }
@@ -690,14 +695,20 @@ void AminoOmxVideoPlayer::initVideoTexture() {
     //ready
 
     //run on thread (do not block rendering thread)
-    uv_thread_t thread;
-    int res = uv_thread_create(&thread, textureThread, this);
 
-    //cbx error seen on RPi video stress test
+//cbx    uv_thread_t thread;
+//    int res = uv_thread_create(&thread, textureThread, this);
+    VCOS_THREAD_T thread;
+    VCOS_STATUS_T res = vcos_thread_create(&thread, "init teyture thread", NULL, &textureThread, NULL);
+
+    //cbx FIXME error seen on RPi video stress test (EAGAIN, -11)
+    //  cat /proc/29565/status -> returns 19 (constant)
+    /*
     if (DEBUG_VIDEOS && res != 0) {
         //Note: positive value is pthread_create() error code
         printf("-> could not create thread: %i\n", res);
     }
+    */
 
     assert(res == 0);
 }

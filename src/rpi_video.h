@@ -53,7 +53,9 @@ private:
     ILCLIENT_T *client = NULL;
     AnyVideoStream *stream = NULL;
 
-    uv_thread_t thread;
+    //cbx
+    //uv_thread_t thread;
+    VCOS_THREAD_T thread;
     bool threadRunning = false;
 
     TUNNEL_T tunnel[4];

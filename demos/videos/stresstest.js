@@ -1,7 +1,7 @@
 'use strict';
 
 //launch: node --expose-gc demos/videos/stresstest.js
-//cbx FIXME texture thread assertion crash
+//cbx FIXME texture thread assertion crash (ca. 206/189 videos played -> reproducible)
 
 const path = require('path');
 const amino = require('../../main.js');
