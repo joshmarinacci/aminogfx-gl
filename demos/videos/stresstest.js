@@ -1,7 +1,7 @@
 'use strict';
 
 //launch: node --expose-gc demos/videos/stresstest.js
-//cbx FIXME 1) memory leak on RPi, 2) eglCreateImageKHR() error 0x505 (out of memory)
+//cbx FIXME texture thread assertion crash
 
 const path = require('path');
 const amino = require('../../main.js');

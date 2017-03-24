@@ -641,20 +641,6 @@ int AminoOmxVideoPlayer::playOmx() {
 
     ilclient_flush_tunnels(tunnel, 0);
 
-    //frees buffer
-    if (DEBUG_OMX) {
-        printf("OMX: disabling port buffers\n");
-    }
-
-    //cbx FIXME hangs!
-    if (!doStop) {
-//cbx        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
-    } else {
-        //only free buffers
-        //cbx TODO
-//cbx        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
-    }
-
     return res;
 }
 
@@ -706,6 +692,12 @@ void AminoOmxVideoPlayer::initVideoTexture() {
     //run on thread (do not block rendering thread)
     uv_thread_t thread;
     int res = uv_thread_create(&thread, textureThread, this);
+
+    //cbx error seen on RPi video stress test
+    if (DEBUG_VIDEOS && res != 0) {
+        //Note: positive value is pthread_create() error code
+        printf("-> could not create thread: %i\n", res);
+    }
 
     assert(res == 0);
 }
@@ -809,7 +801,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
 
     omxDestroyed = true;
 
-    //close tunnels
+    //disable tunnels
     ilclient_disable_tunnel(tunnel);
     ilclient_disable_tunnel(tunnel + 1);
     ilclient_disable_tunnel(tunnel + 2);
@@ -818,13 +810,16 @@ void AminoOmxVideoPlayer::destroyOmx() {
         printf("-> tunnels disabled\n");
     }
 
-    //cbx trying later call
-    ilclient_disable_port_buffers(list[0], 130, NULL, NULL, NULL);
+    //free buffers
+    COMPONENT_T *video_decode = list[0];
+
+    ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
 
     if (DEBUG_OMX) {
         printf("-> buffers disabled\n");
     }
 
+    //close tunnels
     ilclient_teardown_tunnels(tunnel);
 
     memset(tunnel, 0, sizeof(tunnel));
@@ -833,7 +828,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
         printf("-> tunnels closed\n");
     }
 
-    //list
+    //idle state
     ilclient_state_transition(list, OMX_StateIdle);
 
     //Note: blocks forever!!! Anyway, we are not re-using this player instance.

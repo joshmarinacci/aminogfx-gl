@@ -565,6 +565,16 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
         timeoutRead = std::stoi(entry->value);
     }
 
+    //dump format setting
+    bool dumpFormat = false;
+
+    entry = av_dict_get(opts, "amino_dump_format", NULL, AV_DICT_MATCH_CASE);
+
+    if (entry) {
+        //any value accepted
+        dumpFormat = true;
+    }
+
     //open
     int res;
 
@@ -592,7 +602,7 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     }
 
     //debug
-    if (DEBUG_VIDEOS) {
+    if (DEBUG_VIDEOS || dumpFormat) {
         //output video format details
         av_dump_format(context, 0, file, 0);
     }
