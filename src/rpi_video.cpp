@@ -698,7 +698,8 @@ void AminoOmxVideoPlayer::initVideoTexture() {
 
     //run on thread (do not block rendering thread)
 
-//cbx    uv_thread_t thread;
+//cbx
+    uv_thread_t thread;
     int res = uv_thread_create(&thread, textureThread, this);
 //    VCOS_THREAD_T thread;
 //    VCOS_STATUS_T res = vcos_thread_create(&thread, "init texture thread", NULL, &textureThread, this);
