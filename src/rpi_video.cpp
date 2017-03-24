@@ -672,9 +672,9 @@ void AminoOmxVideoPlayer::stopOmx() {
             }
 
 //cbx            int res = uv_thread_join(&thread);
-            VCOS_STATUS_T res = vcos_thread_join(&thread, NULL);
+            vcos_thread_join(&thread, NULL);
 
-            assert(res == 0);
+//            assert(res == 0);
 
 //cbx check later            vcos_thread_cleanup(thread);
         }
@@ -726,6 +726,8 @@ void* AminoOmxVideoPlayer::textureThread(void *arg) {
     bool res = player->useTexture();
 
     player->handleInitDone(res);
+
+    return NULL;
 }
 
 /**
