@@ -37,7 +37,7 @@ public:
 
     void initVideoTexture() override;
     void updateVideoTexture() override;
-    static void* textureThread(void *arg); //cbx
+    static void textureThread(void *arg); //cbx
     bool useTexture();
 
     //metadata
