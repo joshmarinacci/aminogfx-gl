@@ -76,7 +76,7 @@ void AminoOmxVideoPlayer::init() {
     threadRunning = true;
 
 //cbx    int res = uv_thread_create(&thread, omxThread, this);
-    VCOS_STATUS_T res = vcos_thread_create(&thread, "OMX thread", NULL, &omxThread, NULL);
+    VCOS_STATUS_T res = vcos_thread_create(&thread, "OMX thread", NULL, &omxThread, this);
 
     assert(res == VCOS_SUCCESS);
 //    assert(res == 0);
@@ -701,7 +701,7 @@ void AminoOmxVideoPlayer::initVideoTexture() {
 //cbx    uv_thread_t thread;
 //    int res = uv_thread_create(&thread, textureThread, this);
     VCOS_THREAD_T thread;
-    VCOS_STATUS_T res = vcos_thread_create(&thread, "init teyture thread", NULL, &textureThread, NULL);
+    VCOS_STATUS_T res = vcos_thread_create(&thread, "init teyture thread", NULL, &textureThread, this);
 
     //cbx FIXME error seen on RPi video stress test (EAGAIN, -11)
     //  cat /proc/29565/status -> returns 19 (constant)
