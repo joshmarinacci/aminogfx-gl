@@ -972,8 +972,6 @@ printf("cbx 2\n");
          list = next;
       }
 printf("cbx 3 left=%i\n", num); //1 left
-if (num == 1) break; //cbx
-/* cbx
       if(num)
       {
          OMX_U32 mask = ILCLIENT_PORT_DISABLED | ILCLIENT_EVENT_ERROR;
@@ -988,14 +986,11 @@ if (num == 1) break; //cbx
          if((set & ILCLIENT_PORT_DISABLED) && ilclient_remove_event(comp, OMX_EventCmdComplete, OMX_CommandPortDisable, 0, portIndex, 0) >= 0)
             return;
       }
-*/
    }
 printf("cbx 4\n");
 //cbx hangs here
-/* cbx
    if(ilclient_wait_for_command_complete(comp, OMX_CommandPortDisable, portIndex) < 0)
       vc_assert(0);
-*/
 }
 
 

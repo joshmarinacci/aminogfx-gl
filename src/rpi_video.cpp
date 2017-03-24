@@ -309,7 +309,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //video decode
+    //video decode buffers
     if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
         lastError = "video decode port error";
         status = -17;
@@ -438,7 +438,7 @@ int AminoOmxVideoPlayer::playOmx() {
     while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
         //check stop
         if (doStop) {
-            goto end;
+            break;
         }
 
         //check pause (prevent reading while paused; might not be called)
@@ -452,7 +452,7 @@ int AminoOmxVideoPlayer::playOmx() {
             uv_sem_wait(&pauseSem);
 
             if (doStop) {
-                goto end;
+                break;
             }
         }
 
@@ -470,7 +470,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 //case: no video in stream
                 lastError = "stream without valid video data";
                 res = -30;
-                goto end;
+                break;
             }
 
             //loop
@@ -524,7 +524,7 @@ int AminoOmxVideoPlayer::playOmx() {
             if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
                 lastError = "video tunnel setup error";
                 res = -31;
-                goto end;
+                break;
             }
 
             //start scheduler
@@ -534,7 +534,7 @@ int AminoOmxVideoPlayer::playOmx() {
             if (ilclient_setup_tunnel(tunnel + 1, 0, 1000) != 0) {
                 lastError = "egl_render tunnel setup error";
                 res = -32;
-                goto end;
+                break;
             }
 
             //set egl_render to idle
@@ -551,7 +551,7 @@ int AminoOmxVideoPlayer::playOmx() {
             if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
                 lastError = "could not get video size";
                 res = -33;
-                goto end;
+                break;
             }
 
             videoW = portdef.format.video.nFrameWidth;
@@ -571,9 +571,10 @@ int AminoOmxVideoPlayer::playOmx() {
             //read error occured
             lastError = "IO error";
             res = -40;
-            goto end;
+            break;
         }
 
+        //empty buffer
         buf->nFilledLen = data_len;
         buf->nOffset = 0;
         buf->nFlags = omxData.flags;
@@ -595,7 +596,7 @@ int AminoOmxVideoPlayer::playOmx() {
         if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
             lastError = "could not empty buffer";
             res = -41;
-            goto end;
+            break;
         }
     }
 
@@ -611,20 +612,19 @@ int AminoOmxVideoPlayer::playOmx() {
     if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
         lastError = "could not empty buffer (2)";
         res = -50;
-        goto end;
     }
 
     if (DEBUG_OMX) {
         printf("OMX: decoder EOS\n");
     }
 
-    //wait for EOS from render
+    //wait for EOS from renderer
 
     //Note: the following code is not working, getting a timeout after 10 s!
     //ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
 
-    // -> monitor buffer update
-    while (bufferFilled && !doStop) {
+    // -> monitor buffer update (last image was successfully shown)
+    while (bufferFilled && !doStop && res == 0) {
         //wait 100 ms (enough time to show the next frame)
         bufferFilled = false;
         usleep(100 * 1000);
@@ -634,7 +634,6 @@ int AminoOmxVideoPlayer::playOmx() {
         printf("OMX: renderer EOS\n");
     }
 
-end:
     //need to flush the renderer to allow video_decode to disable its input port
     if (DEBUG_OMX) {
         printf("OMX: flushing tunnels\n");
@@ -649,7 +648,7 @@ end:
 
     //cbx FIXME hangs!
     if (!doStop) {
-        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+//cbx        ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
     } else {
         //only free buffers
         //cbx TODO
@@ -809,11 +808,23 @@ void AminoOmxVideoPlayer::destroyOmx() {
     }
 
     omxDestroyed = true;
-//cbx hangs here
+
     //close tunnels
     ilclient_disable_tunnel(tunnel);
     ilclient_disable_tunnel(tunnel + 1);
     ilclient_disable_tunnel(tunnel + 2);
+
+    if (DEBUG_OMX) {
+        printf("-> tunnels disabled\n");
+    }
+
+    //cbx trying later call
+    ilclient_disable_port_buffers(list[0], 130, NULL, NULL, NULL);
+
+    if (DEBUG_OMX) {
+        printf("-> buffers disabled\n");
+    }
+
     ilclient_teardown_tunnels(tunnel);
 
     memset(tunnel, 0, sizeof(tunnel));
