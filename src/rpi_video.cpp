@@ -144,7 +144,7 @@ void AminoOmxVideoPlayer::closeStream() {
 /**
  * OMX thread.
  */
-void AminoOmxVideoPlayer::omxThread(void *arg) {
+void* AminoOmxVideoPlayer::omxThread(void *arg) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(arg);
 
     assert(player);
@@ -157,6 +157,8 @@ void AminoOmxVideoPlayer::omxThread(void *arg) {
 
     //done
     player->threadRunning = false;
+
+    return NULL;
 }
 
 /**
@@ -716,7 +718,7 @@ void AminoOmxVideoPlayer::initVideoTexture() {
 /**
  * Texture setup thread.
  */
-void AminoOmxVideoPlayer::textureThread(void *arg) {
+void* AminoOmxVideoPlayer::textureThread(void *arg) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(arg);
 
     assert(player);

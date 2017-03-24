@@ -27,7 +27,8 @@ public:
     void closeStream();
 
     //OMX
-    static void omxThread(void *arg);
+//cbx
+    static void* omxThread(void *arg);
     static void handleFillBufferDone(void *data, COMPONENT_T *comp);
     bool initOmx();
     int playOmx();
@@ -36,7 +37,7 @@ public:
 
     void initVideoTexture() override;
     void updateVideoTexture() override;
-    static void textureThread(void *arg);
+    static void* textureThread(void *arg); //cbx
     bool useTexture();
 
     //metadata
