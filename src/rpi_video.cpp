@@ -569,6 +569,7 @@ int AminoOmxVideoPlayer::playOmx() {
 
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
+//cbx check thread -> wait for texture
         }
 
         if (!data_len) {
@@ -698,9 +699,11 @@ void AminoOmxVideoPlayer::initVideoTexture() {
 
     //run on thread (do not block rendering thread)
 
-//cbx
-    uv_thread_t thread;
-    int res = uv_thread_create(&thread, textureThread, this);
+//cbx call directly
+textureThread(this);
+//    uv_thread_t thread;
+//    int res = uv_thread_create(&thread, textureThread, this);
+
 //    VCOS_THREAD_T thread;
 //    VCOS_STATUS_T res = vcos_thread_create(&thread, "init texture thread", NULL, &textureThread, this);
 
@@ -712,17 +715,15 @@ void AminoOmxVideoPlayer::initVideoTexture() {
         printf("-> could not create thread: %i\n", res);
     }
     */
-
-    assert(res == 0);
+//cbx vcos thread crashes right after first cycle
+//    assert(res == 0);
 //    assert(res == VCOS_SUCCESS);
-printf("thread running\n"); //cbx
 }
 
 /**
  * Texture setup thread.
  */
 void AminoOmxVideoPlayer::textureThread(void *arg) {
-printf("on texture thread\n"); //cbx
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(arg);
 
     assert(player);
@@ -730,8 +731,6 @@ printf("on texture thread\n"); //cbx
     bool res = player->useTexture();
 
     player->handleInitDone(res);
-printf("texture thread done\n"); //cbx
-//    return NULL;
 }
 
 /**

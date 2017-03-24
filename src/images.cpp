@@ -1096,6 +1096,7 @@ void AminoTexture::initVideoTextureHandler(AsyncValueUpdate *update, int state) 
     if (videoPlayer) {
         videoPlayer->initVideoTexture();
     }
+
     uv_mutex_unlock(&videoLock);
 }
 
