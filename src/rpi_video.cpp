@@ -729,7 +729,7 @@ printf("on texture thread\n"); //cbx
     bool res = player->useTexture();
 
     player->handleInitDone(res);
-
+printf("texture thread done\n"); //cbx
     return NULL;
 }
 
