@@ -75,11 +75,15 @@ void AminoOmxVideoPlayer::init() {
     //create OMX thread
     threadRunning = true;
 
-//cbx    int res = uv_thread_create(&thread, omxThread, this);
+#ifdef USE_OMX_VCOS_THREAD
     VCOS_STATUS_T res = vcos_thread_create(&thread, "OMX thread", NULL, &omxThread, this);
 
     assert(res == VCOS_SUCCESS);
-//    assert(res == 0);
+#else
+    int res = uv_thread_create(&thread, omxThread, this);
+
+    assert(res == 0);
+#endif
 }
 
 /**
@@ -672,12 +676,13 @@ void AminoOmxVideoPlayer::stopOmx() {
                 printf("waiting for OMX thread to end\n");
             }
 
-//cbx            int res = uv_thread_join(&thread);
+#ifdef USE_OMX_VCOS_THREAD
             vcos_thread_join(&thread, NULL);
+#else
+            int res = uv_thread_join(&thread);
 
-//            assert(res == 0);
-
-//cbx check later            vcos_thread_cleanup(thread);
+            assert(res == 0);
+#endif
         }
     }
 }
@@ -762,6 +767,7 @@ bool AminoOmxVideoPlayer::useTexture() {
 
     //request egl_render to write data to the texture buffer
     if (OMX_FillThisBuffer(ILC_GET_HANDLE(egl_render), eglBuffer) != OMX_ErrorNone) {
+//cbx happens (after 93/114 videos)
         lastError = "OMX_FillThisBuffer failed.";
         return false;
     }

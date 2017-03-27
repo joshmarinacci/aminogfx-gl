@@ -8,6 +8,8 @@ extern "C" {
     #include "EGL/eglext.h"
 }
 
+#define USE_OMX_VCOS_THREAD
+
 /**
  * OMX Video Player.
  */
@@ -27,8 +29,11 @@ public:
     void closeStream();
 
     //OMX
-//cbx
+#ifdef USE_OMX_VCOS_THREAD
     static void* omxThread(void *arg);
+#else
+    static void omxThread(void *arg);
+#endif
     static void handleFillBufferDone(void *data, COMPONENT_T *comp);
     bool initOmx();
     int playOmx();
@@ -54,9 +59,11 @@ private:
     ILCLIENT_T *client = NULL;
     AnyVideoStream *stream = NULL;
 
-    //cbx
-    //uv_thread_t thread;
+#ifdef USE_OMX_VCOS_THREAD
     VCOS_THREAD_T thread;
+#else
+    uv_thread_t thread;
+#endif
     bool threadRunning = false;
 
     TUNNEL_T tunnel[4];
