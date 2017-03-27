@@ -574,6 +574,10 @@ int AminoOmxVideoPlayer::playOmx() {
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
 //cbx check thread -> wait for texture
+while (!textureReady && !doStop) {
+    usleep(10 * 1000);
+}
+textureThread(this);
         }
 
         if (!data_len) {
@@ -705,7 +709,9 @@ void AminoOmxVideoPlayer::initVideoTexture() {
     //run on thread (do not block rendering thread)
 
 //cbx call directly
-textureThread(this);
+//textureThread(this);
+textureReady = true;
+
 //    uv_thread_t thread;
 //    int res = uv_thread_create(&thread, textureThread, this);
 
@@ -743,14 +749,21 @@ void AminoOmxVideoPlayer::textureThread(void *arg) {
  */
 bool AminoOmxVideoPlayer::useTexture() {
     //Enable the output port and tell egl_render to use the texture as a buffer
+    OMX_HANDLETYPE eglHandle = ILC_GET_HANDLE(egl_render);
+
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
-    if (OMX_SendCommand(ILC_GET_HANDLE(egl_render), OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
+    if (OMX_SendCommand(eglHandle, OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
         lastError = "OMX_CommandPortEnable failed.";
         return false;
     }
 
-    if (OMX_UseEGLImage(ILC_GET_HANDLE(egl_render), &eglBuffer, 221, NULL, eglImage) != OMX_ErrorNone) {
+    if (OMX_UseEGLImage(eglHandle, &eglBuffer, 221, NULL, eglImage) != OMX_ErrorNone) {
         lastError = "OMX_UseEGLImage failed.";
+        return false;
+    }
+
+    if (!eglBuffer) {
+        lastError = "could not get buffer";
         return false;
     }
 
@@ -766,8 +779,8 @@ bool AminoOmxVideoPlayer::useTexture() {
     }
 
     //request egl_render to write data to the texture buffer
-    if (OMX_FillThisBuffer(ILC_GET_HANDLE(egl_render), eglBuffer) != OMX_ErrorNone) {
-//cbx happens (after 93/114 videos)
+    if (OMX_FillThisBuffer(eglHandle, eglBuffer) != OMX_ErrorNone) {
+//cbx happens (after 93/114/363 videos)
         lastError = "OMX_FillThisBuffer failed.";
         return false;
     }

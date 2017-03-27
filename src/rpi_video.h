@@ -73,6 +73,9 @@ private:
     bool doPause = false;
     uv_sem_t pauseSem;
 
+    //cbx
+    bool textureReady = false;
+
 public:
     COMPONENT_T *egl_render = NULL;
     OMX_BUFFERHEADERTYPE *eglBuffer = NULL;
