@@ -42,8 +42,7 @@ public:
 
     void initVideoTexture() override;
     void updateVideoTexture() override;
-    static void textureThread(void *arg); //cbx
-    bool useTexture();
+    bool setupOmxTexture();
 
     //metadata
     double getMediaTime() override;
@@ -72,9 +71,7 @@ private:
     bool doStop = false;
     bool doPause = false;
     uv_sem_t pauseSem;
-
-    //cbx
-    bool textureReady = false;
+    uv_sem_t textureSem;
 
 public:
     COMPONENT_T *egl_render = NULL;

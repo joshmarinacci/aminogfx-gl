@@ -27,8 +27,10 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
 
     //semaphore
     int res = uv_sem_init(&pauseSem, 0);
+    int res2 = uv_sem_init(&textureSem, 0);
 
     assert(res == 0);
+    assert(res2 == 0);
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
@@ -36,6 +38,7 @@ AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
 
     //semaphore
     uv_sem_destroy(&pauseSem);
+    uv_sem_destroy(&textureSem);
 }
 
 /**
@@ -573,11 +576,24 @@ int AminoOmxVideoPlayer::playOmx() {
 
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
-//cbx check thread -> wait for texture
-while (!textureReady && !doStop) {
-    usleep(10 * 1000);
-}
-textureThread(this);
+
+            //wait for texture
+            uv_sem_wait(&textureSem);
+
+            if (!eglImage || doStop) {
+                //failed to create texture
+                handleInitDone(false);
+                break;
+            }
+
+            //setup OMX texture
+            if (!setupOmxTexture()) {
+                res = -34;
+                break;
+            }
+
+            //texture ready
+            handleInitDone(true);
         }
 
         if (!data_len) {
@@ -671,6 +687,7 @@ void AminoOmxVideoPlayer::stopOmx() {
         if (paused && !doPause) {
             //resume thread
             uv_sem_post(&pauseSem);
+            uv_sem_post(&textureSem);
         } else {
             doPause = false;
         }
@@ -700,54 +717,23 @@ void AminoOmxVideoPlayer::initVideoTexture() {
     }
 
     if (!initTexture()) {
+        //stop thread
+        doStop = true;
+        uv_sem_post(&textureSem);
+
+        //signal error
         handleInitDone(false);
         return;
     }
 
     //ready
-
-    //run on thread (do not block rendering thread)
-
-//cbx call directly
-//textureThread(this);
-textureReady = true;
-
-//    uv_thread_t thread;
-//    int res = uv_thread_create(&thread, textureThread, this);
-
-//    VCOS_THREAD_T thread;
-//    VCOS_STATUS_T res = vcos_thread_create(&thread, "init texture thread", NULL, &textureThread, this);
-
-    //cbx FIXME error seen on RPi video stress test (EAGAIN, -11)
-    //  cat /proc/29565/status -> returns 19 (constant)
-    /*
-    if (DEBUG_VIDEOS && res != 0) {
-        //Note: positive value is pthread_create() error code
-        printf("-> could not create thread: %i\n", res);
-    }
-    */
-//cbx vcos thread crashes right after first cycle
-//    assert(res == 0);
-//    assert(res == VCOS_SUCCESS);
-}
-
-/**
- * Texture setup thread.
- */
-void AminoOmxVideoPlayer::textureThread(void *arg) {
-    AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(arg);
-
-    assert(player);
-
-    bool res = player->useTexture();
-
-    player->handleInitDone(res);
+    uv_sem_post(&textureSem);
 }
 
 /**
  * Setup texture.
  */
-bool AminoOmxVideoPlayer::useTexture() {
+bool AminoOmxVideoPlayer::setupOmxTexture() {
     //Enable the output port and tell egl_render to use the texture as a buffer
     OMX_HANDLETYPE eglHandle = ILC_GET_HANDLE(egl_render);
 
@@ -780,7 +766,6 @@ bool AminoOmxVideoPlayer::useTexture() {
 
     //request egl_render to write data to the texture buffer
     if (OMX_FillThisBuffer(eglHandle, eglBuffer) != OMX_ErrorNone) {
-//cbx happens (after 93/114/363 videos)
         lastError = "OMX_FillThisBuffer failed.";
         return false;
     }
