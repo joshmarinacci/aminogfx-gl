@@ -1,6 +1,15 @@
 'use strict';
 
-//launch: node --expose-gc demos/videos/stresstest.js
+/*
+ * launch: node --expose-gc demos/videos/stresstest.js
+ *
+ * Rasperry Pi 3 results (28.03.2017):
+ *
+ *  - CPU: 12 - 18%
+ *  - Memory: 5.8%
+ *
+ *  At least 1'500 cycles stable without any leaks.
+ */
 
 const path = require('path');
 const amino = require('../../main.js');
