@@ -10,8 +10,7 @@ extern "C" {
     #include "libswscale/swscale.h"
 }
 
-//cbx debug
-#define DEBUG_VIDEOS true
+#define DEBUG_VIDEOS false
 
 class AminoVideoFactory;
 class AminoTexture;

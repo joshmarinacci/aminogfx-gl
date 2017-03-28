@@ -11,8 +11,7 @@
 
 #include <sstream>
 
-//cbx debug
-#define DEBUG_OMX true
+#define DEBUG_OMX false
 #define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
 

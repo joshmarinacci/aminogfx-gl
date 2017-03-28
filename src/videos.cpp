@@ -5,8 +5,7 @@
 #include <sstream>
 
 #define DEBUG_VIDEO_FRAMES false
-//cbx debug
-#define DEBUG_VIDEO_STREAM true
+#define DEBUG_VIDEO_STREAM false
 
 //
 // AminoVideo
