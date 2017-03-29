@@ -958,8 +958,12 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
     if (obj->videoPlayer) {
         //acquire lock
         uv_mutex_lock(&obj->videoLock);
-        delete obj->videoPlayer;
-        obj->videoPlayer = NULL;
+
+        if (obj->videoPlayer) {
+            delete obj->videoPlayer;
+            obj->videoPlayer = NULL;
+        }
+
         uv_mutex_unlock(&obj->videoLock);
     }
 
@@ -985,8 +989,12 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
         callback->Call(info.This(), argc, argv);
 
         uv_mutex_lock(&obj->videoLock);
-        delete obj->videoPlayer;
-        obj->videoPlayer = NULL;
+
+        if (obj->videoPlayer) {
+            delete obj->videoPlayer;
+            obj->videoPlayer = NULL;
+        }
+
         uv_mutex_unlock(&obj->videoLock);
 
         return;
@@ -1179,9 +1187,11 @@ void AminoTexture::prepareTexture() {
     }
 
     uv_mutex_lock(&videoLock);
+
     if (videoPlayer) {
         videoPlayer->updateVideoTexture();
     }
+
     uv_mutex_unlock(&videoLock);
 }
 
