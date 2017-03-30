@@ -571,6 +571,7 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
 
     if (entry) {
         //any value accepted
+printf("dump format enabled\n"); //cbx
         dumpFormat = true;
     }
 
