@@ -303,7 +303,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     format.nVersion.nVersion = OMX_VERSION;
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-    //TODO xFramerate -> 25 * (1 << 16)
+    format.xFramerate = 30 * (1 << 16); //cbx FIXME 30 fps
 
     /*
      * TODO more formats
