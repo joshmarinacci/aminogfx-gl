@@ -650,7 +650,10 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     */
 
     if (codecCtx->time_base.num > 0 && codecCtx->time_base.den > 0) {
-        fps = 1 / (codecCtx->time_base.num / (float)codecCtx->time_base.den);
+        fps = codecCtx->time_base.den / (float)codecCtx->time_base.num;
+
+        //debug
+        printf("framerate: %f\n", fps); //cbx
     }
 
     width = codecCtx->width;
