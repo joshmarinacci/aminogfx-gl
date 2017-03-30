@@ -573,6 +573,9 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
         //any value accepted
 printf("dump format enabled\n"); //cbx
         dumpFormat = true;
+
+        //change log level
+        av_log_set_level(AV_LOG_INFO);
     }
 
     //open
