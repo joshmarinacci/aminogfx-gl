@@ -19,7 +19,7 @@ player.playVideo({
     //src: 'rtsp://mm2.pcslab.com/mm/7m2000.mp4',
 
     //Note: TCP stream needed (UDP timeout, retrying with TCP)
-    opts: 'rtsp_transport=tcp'
+    opts: 'rtsp_transport=tcp amino_dump_format=1'
 }, (err, video) => {
     //empty
 });

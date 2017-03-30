@@ -9,7 +9,8 @@ const player = require('./player');
 
 player.playVideo({
     //cbx FIXME only plays with 27 fps!
-    src: path.join(__dirname, 'test.h264')
+    src: path.join(__dirname, 'test.h264'),
+    opts: 'amino_dump_format=1'
 }, (err, video) => {
     //empty
 });

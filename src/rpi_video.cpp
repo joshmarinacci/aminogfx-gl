@@ -614,10 +614,11 @@ int AminoOmxVideoPlayer::playOmx() {
         }
 
         if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
+            //first packet
             buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
             first_packet = false;
         } else {
-            //TODO cbx should we pass the timing information from FFmpeg/libav?
+            //video packet
             if (omxData.timeStamp) {
                 buf->nFlags |= OMX_BUFFERFLAG_TIME_IS_DTS;
             } else {

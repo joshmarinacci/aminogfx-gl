@@ -15,7 +15,8 @@ if (process.argv.length !== 3) {
 const file = process.argv[2];
 
 player.playVideo({
-    src: path.join(process.cwd(), file)
+    src: path.join(process.cwd(), file),
+    opts: 'amino_dump_format=1'
 }, (err, video) => {
     //empty
 });
