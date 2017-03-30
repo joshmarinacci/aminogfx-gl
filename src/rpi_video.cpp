@@ -303,7 +303,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     format.nVersion.nVersion = OMX_VERSION;
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-    format.xFramerate = 30 * (1 << 16); //cbx FIXME 30 fps
+    //format.xFramerate = 30 * (1 << 16); //30 fps
 
     /*
      * TODO more formats
@@ -617,8 +617,12 @@ int AminoOmxVideoPlayer::playOmx() {
             buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
             first_packet = false;
         } else {
-            //TODO should we pass the timing information from FFmpeg/libav?
-            buf->nFlags |= OMX_BUFFERFLAG_TIME_UNKNOWN;
+            //TODO cbx should we pass the timing information from FFmpeg/libav?
+            if (omxData.timeStamp) {
+                buf->nFlags |= OMX_BUFFERFLAG_TIME_IS_DTS;
+            } else {
+                buf->nFlags |= OMX_BUFFERFLAG_TIME_UNKNOWN;
+            }
         }
 
         if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
