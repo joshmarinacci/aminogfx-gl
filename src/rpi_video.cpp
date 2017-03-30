@@ -268,10 +268,31 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
+    //HDMI sync (Note: not well documented)
+    OMX_CONFIG_LATENCYTARGETTYPE lt;
+
+    memset(&lt, 0, sizeof(lt));
+    lt.nSize = sizeof(lt);
+    lt.nVersion.nVersion = OMX_VERSION;
+    lt.nPortIndex = OMX_ALL;
+    lt.bEnabled = OMX_TRUE;
+    lt.nFilter = 10;
+    lt.nTarget = 0;
+    lt.nShift = 3;
+    lt.nSpeedFactor = -60;
+    lt.nInterFactor = 100;
+    lt.nAdjCap = 100;
+
+    if (OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigLatencyTarget, &lt) != OMX_ErrorNone) {
+        lastError = "could not set clock latency";
+        status = -14;
+        goto end;
+    }
+
     //create video_scheduler
     if (ilclient_create_component(client, &video_scheduler, "video_scheduler", (ILCLIENT_CREATE_FLAGS_T)ILCLIENT_DISABLE_ALL_PORTS) != 0) {
         lastError = "video_scheduler error";
-        status = -14;
+        status = -15;
         goto end;
     }
 
@@ -285,7 +306,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     //setup clock tunnel first
     if (ilclient_setup_tunnel(tunnel + 2, 0, 0) != 0) {
         lastError = "tunnel setup error";
-        status = -15;
+        status = -16;
         goto end;
     }
 
@@ -303,8 +324,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     format.nVersion.nVersion = OMX_VERSION;
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-    //format.xFramerate = 30 * (1 << 16); //30 fps
-    format.xFramerate = 29.970030 * (1 << 16); //29.97 fps cbx
+    format.xFramerate = getFramerate() * (1 << 16);
 
     /*
      * TODO more formats
@@ -316,14 +336,14 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamVideoPortFormat, &format) != OMX_ErrorNone) {
         lastError = "could not set video format";
-        status = -16;
+        status = -17;
         goto end;
     }
 
     //video decode buffers
     if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
         lastError = "video decode port error";
-        status = -17;
+        status = -18;
         goto end;
     }
 
@@ -337,7 +357,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamBrcmVideoDecodeErrorConcealment, &ec) != OMX_ErrorNone) {
         lastError = "error concealment type";
-        status = -18;
+        status = -19;
         goto end;
     }
 
@@ -357,7 +377,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
         if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), (OMX_INDEXTYPE)OMX_IndexParamNalStreamFormatSelect, &nsft) != OMX_ErrorNone) {
             lastError = "NAL selection error";
-            status = -19;
+            status = -20;
             goto end;
         }
     }
@@ -921,6 +941,17 @@ double AminoOmxVideoPlayer::getDuration() {
     }
 
     return -1;
+}
+
+/**
+ * Get the framerate (0 if unknown).
+ */
+double AminoOmxVideoPlayer::getFramerate() {
+    if (stream) {
+        return stream->getFramerate();
+    }
+
+    return 0;
 }
 
 /**

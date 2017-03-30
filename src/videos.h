@@ -74,6 +74,7 @@ public:
     void getVideoDimension(int &w, int &h);
     virtual double getMediaTime() = 0;
     virtual double getDuration() = 0;
+    virtual double getFramerate() = 0;
     std::string getState();
     virtual void stopPlayback() = 0;
     virtual bool pausePlayback() = 0;
@@ -223,6 +224,7 @@ public:
     virtual bool isH264() = 0;
     virtual bool hasH264NaluStartCodes() = 0;
     virtual double getDuration() = 0;
+    virtual double getFramerate() = 0;
 
     std::string getLastError();
 
@@ -252,6 +254,7 @@ public:
     bool isH264() override;
     bool hasH264NaluStartCodes() override;
     double getDuration() override;
+    double getFramerate() override;
 
 private:
     std::string filename;

@@ -31,6 +31,7 @@ public:
     //metadata
     double getMediaTime() override;
     double getDuration() override;
+    double getFramerate() override;
     void stopPlayback() override;
     bool pausePlayback() override;
     bool resumePlayback() override;

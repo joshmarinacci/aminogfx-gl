@@ -1453,3 +1453,14 @@ double VideoFileStream::getDuration() {
 
     return -1;
 }
+
+/**
+ * Get the framerate (0 if unknown).
+ */
+double VideoFileStream::getFramerate() {
+    if (demuxer) {
+        return demuxer->fps;
+    }
+
+    return 0;
+}

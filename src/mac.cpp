@@ -1032,6 +1032,17 @@ double AminoMacVideoPlayer::getDuration() {
 }
 
 /**
+ * Get the framerate (0 if unknown).
+ */
+double AminoMacVideoPlayer::getFramerate() {
+    if (demuxer) {
+        return demuxer->fps;
+    }
+
+    return 0;
+}
+
+/**
  * Stop playback.
  */
 void AminoMacVideoPlayer::stopPlayback() {
