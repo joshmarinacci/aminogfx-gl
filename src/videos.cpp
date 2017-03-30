@@ -650,11 +650,10 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     */
 
     if (codecCtx->time_base.num > 0 && codecCtx->time_base.den > 0) {
-        //FIXME getting 59.940060 instead of 29.97 on RPi cbx
         fps = codecCtx->time_base.den / (float)codecCtx->time_base.num / codecCtx->ticks_per_frame;
 
         //debug
-        printf("framerate: %f\n", fps); //cbx
+        //printf("framerate: %f\n", fps);
     }
 
     width = codecCtx->width;
