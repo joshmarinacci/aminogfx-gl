@@ -642,15 +642,14 @@ bool VideoDemuxer::loadFile(std::string filename, std::string options) {
     //check H264
     codecCtx = stream->codec;
 
-    /*
-    //Note: not available in libav!
+    //Note: not available in libav! cbx
     if (codecCtx->framerate.num > 0 && codecCtx->framerate.den > 0) {
         fps = codecCtx->framerate.num / (float)codecCtx->framerate.den;
     }
-    */
 
     if (codecCtx->time_base.num > 0 && codecCtx->time_base.den > 0) {
-        fps = codecCtx->time_base.den / (float)codecCtx->time_base.num;
+        //FIXME getting 59.940060 instead of 29.97 on RPi cbx
+        fps = codecCtx->time_base.den / (float)codecCtx->time_base.num / codecCtx->ticks_per_frame;
 
         //debug
         printf("framerate: %f\n", fps); //cbx
