@@ -354,6 +354,45 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
+    //set buffer count TODO cbx
+    /*
+    OMX_PARAM_PORTDEFINITIONTYPE portdef;
+
+    memset(&portdef, 0, sizeof portdef);
+    portdef.nSize = sizeof portdef;
+    portdef.nVersion.nVersion = OMX_VERSION;
+    portdef.nPortIndex = 131;
+
+    if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+        lastError("could not get port definition");
+        status = -170;
+        goto end;
+    }
+
+    portdef.nPortIndex = 131;
+    portdef.nBufferCountActual = 20; //cbx TODO
+
+    if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+        lastError("could not set port definition");
+        status = -171;
+        goto end;
+    }
+    */
+
+    //free extra buffers
+    OMX_PARAM_U32TYPE eb;
+
+    memset(&eb, 0, sizeof eb);
+    eb.nSize = sizeof eb;
+    eb.nVersion.nVersion = OMX_VERSION;
+    eb.nU32 = 0;
+
+    if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamBrcmExtraBuffers, &eb) != OMX_ErrorNone) {
+        lastError("could not set extra buffers");
+        status = -172;
+        goto end;
+    }
+
     //video decode buffers
     if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
         lastError = "video decode port error";
@@ -604,11 +643,21 @@ int AminoOmxVideoPlayer::playOmx() {
 
 //cbx            if (DEBUG_OMX) {
             {
-                //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
                 //Note: buffer count not set.
                 double fps = portdef.format.video.xFramerate / (float)(1 << 16);
 
                 printf("video: %dx%d@%.2f bitrate=%i minBuffers=%i buffer=%i bufferSize=%i\n", videoW, videoH, fps, (int)portdef.format.video.nBitrate, portdef.nBufferCountMin, portdef.nBufferCountActual, portdef.nBufferSize);
+            }
+
+            //set egl render buffer
+            //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
+            portdef.nPortIndex = 131;
+            portdef.nBufferCountActual = 4; //cbx TODO
+
+            if (OMX_SetParameter(ILC_GET_HANDLE(egl_render), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+                lastError = "could not set render buffer";
+                res = -330;
+                break;
             }
 
             //switch to renderer thread (switches to playing state)
