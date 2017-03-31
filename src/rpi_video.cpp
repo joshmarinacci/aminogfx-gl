@@ -364,7 +364,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     portdef.nPortIndex = 131;
 
     if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-        lastError("could not get port definition");
+        lastError = "could not get port definition";
         status = -170;
         goto end;
     }
@@ -373,7 +373,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     portdef.nBufferCountActual = 20; //cbx TODO
 
     if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-        lastError("could not set port definition");
+        lastError = "could not set port definition";
         status = -171;
         goto end;
     }
@@ -388,7 +388,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     eb.nU32 = 0;
 
     if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamBrcmExtraBuffers, &eb) != OMX_ErrorNone) {
-        lastError("could not set extra buffers");
+        lastError = "could not set extra buffers";
         status = -172;
         goto end;
     }

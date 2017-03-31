@@ -826,7 +826,7 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
    vc_assert(error == OMX_ErrorNone);
 
    //debug
-   printf("buffers=%i size=%8\n", portdef.nBufferCountActual, portdef.nBufferSize); //cbx
+   printf("buffers=%i size=%i\n", portdef.nBufferCountActual, portdef.nBufferSize); //cbx
 
    for (i=0; i != portdef.nBufferCountActual; i++)
    {
