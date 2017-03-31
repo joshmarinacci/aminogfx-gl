@@ -354,7 +354,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //set buffer count TODO cbx
+    //set buffer count (Note: default buffer count is 20)
     /*
     OMX_PARAM_PORTDEFINITIONTYPE portdef;
 
@@ -370,7 +370,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     }
 
     portdef.nPortIndex = 131;
-    portdef.nBufferCountActual = 20; //cbx TODO
+    portdef.nBufferCountActual = 20; //default
 
     if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
         lastError = "could not set port definition";
@@ -651,7 +651,10 @@ int AminoOmxVideoPlayer::playOmx() {
 
             //set egl render buffer
             //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
-            portdef.nPortIndex = 131;
+            memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
+            portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
+            portdef.nVersion.nVersion = OMX_VERSION;
+            portdef.nPortIndex = 221;
             portdef.nBufferCountActual = 4; //cbx TODO
 
             if (OMX_SetParameter(ILC_GET_HANDLE(egl_render), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
