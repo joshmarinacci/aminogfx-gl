@@ -310,6 +310,20 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
+    //video reference clock
+    OMX_TIME_CONFIG_ACTIVEREFCLOCKTYPE arct;
+
+    memset(&arct, 0, sizeof(arct));
+    arct.nSize = sizeof(arct);
+    arct.nVersion.nVersion = OMX_VERSION;
+    arct.eClock = OMX_TIME_RefClockVideo;
+
+    if (OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeActiveRefClock, &arct) != OMX_ErrorNone) {
+        lastError = "could not set reference clock type";
+        status = -160;
+        goto end;
+    }
+
     //switch clock to executing state
     ilclient_change_component_state(clock, OMX_StateExecuting);
 
@@ -324,7 +338,15 @@ bool AminoOmxVideoPlayer::initOmx() {
     format.nVersion.nVersion = OMX_VERSION;
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-    format.xFramerate = getFramerate() * (1 << 16);
+
+    double framerate = getFramerate();
+
+    if (framerate > 0) {
+        format.xFramerate = framerate * (1 << 16);
+    } else {
+        //default: 25 fps
+        format.xFramerate = 25 * (1 << 16);
+    }
 
     /*
      * TODO more formats
@@ -588,10 +610,12 @@ int AminoOmxVideoPlayer::playOmx() {
             videoW = portdef.format.video.nFrameWidth;
             videoH = portdef.format.video.nFrameHeight;
 
-            if (DEBUG_OMX) {
-                float fps = portdef.format.video.xFramerate / (float)(1 << 16);
+//cbx            if (DEBUG_OMX) {
+            {
+                //cbx: max buffers is 8 (https://github.com/raspberrypi/firmware/issues/718)
+                double fps = portdef.format.video.xFramerate / (float)(1 << 16);
 
-                printf("video: %dx%d@%.2f\n", videoW, videoH, fps);
+                printf("video: %dx%d@%.2f bitrate=%i minBuffers=%i buffer=%i bufferSize=%i\n", videoW, videoH, fps, (int)portdef.format.video.nBitrate, portdef.nBufferCountMin, portdef.nBufferCountActual, portdef.nBufferSize);
             }
 
             //switch to renderer thread (switches to playing state)
@@ -759,8 +783,28 @@ void AminoOmxVideoPlayer::initVideoTexture() {
  * Setup texture.
  */
 bool AminoOmxVideoPlayer::setupOmxTexture() {
-    //Enable the output port and tell egl_render to use the texture as a buffer
+    //enable the output port and tell egl_render to use the texture as a buffer
     OMX_HANDLETYPE eglHandle = ILC_GET_HANDLE(egl_render);
+
+    //set render latency
+    OMX_CONFIG_LATENCYTARGETTYPE lt;
+
+    memset(&lt, 0, sizeof(lt));
+    lt.nSize = sizeof(lt);
+    lt.nVersion.nVersion = OMX_VERSION;
+    lt.nPortIndex = 221;
+    lt.bEnabled = OMX_TRUE;
+    lt.nFilter = 2;
+    lt.nTarget = 4000;
+    lt.nShift = 3;
+    lt.nSpeedFactor = -135;
+    lt.nInterFactor = 500;
+    lt.nAdjCap = 20;
+
+    if (OMX_SetConfig(eglHandle, OMX_IndexConfigLatencyTarget, &lt) != OMX_ErrorNone) {
+        lastError = "OMX_IndexConfigLatencyTarget failed.";
+        return false;
+    }
 
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
     if (OMX_SendCommand(eglHandle, OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
