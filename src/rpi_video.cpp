@@ -604,7 +604,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
 //cbx            if (DEBUG_OMX) {
             {
-                //cbx: max buffers is 8 (https://github.com/raspberrypi/firmware/issues/718)
+                //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
+                //Note: buffer count not set.
                 double fps = portdef.format.video.xFramerate / (float)(1 << 16);
 
                 printf("video: %dx%d@%.2f bitrate=%i minBuffers=%i buffer=%i bufferSize=%i\n", videoW, videoH, fps, (int)portdef.format.video.nBitrate, portdef.nBufferCountMin, portdef.nBufferCountActual, portdef.nBufferSize);
@@ -778,7 +779,8 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     //enable the output port and tell egl_render to use the texture as a buffer
     OMX_HANDLETYPE eglHandle = ILC_GET_HANDLE(egl_render);
 
-    //set render latency
+    //set render latency (Note: not supported on egl_render)
+    /*
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
     memset(&lt, 0, sizeof(lt));
@@ -797,6 +799,7 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
         lastError = "OMX_IndexConfigLatencyTarget failed.";
         return false;
     }
+    */
 
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
     if (OMX_SendCommand(eglHandle, OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
