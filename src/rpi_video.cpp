@@ -651,6 +651,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
             //set egl render buffer
             //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
+            //FIXME cbx fails -> too late?
+            /*
             memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
             portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
             portdef.nVersion.nVersion = OMX_VERSION;
@@ -662,6 +664,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 res = -330;
                 break;
             }
+            */
 
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
