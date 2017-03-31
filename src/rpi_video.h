@@ -52,6 +52,7 @@ public:
     bool pausePlayback() override;
     bool resumePlayback() override;
 
+    OMX_U32 getOmxFramerate();
     bool setOmxSpeed(OMX_S32 speed);
 
 private:

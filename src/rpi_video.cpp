@@ -338,15 +338,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     format.nVersion.nVersion = OMX_VERSION;
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
-
-    double framerate = getFramerate();
-
-    if (framerate > 0) {
-        format.xFramerate = framerate * (1 << 16);
-    } else {
-        //default: 25 fps
-        format.xFramerate = 25 * (1 << 16);
-    }
+    format.xFramerate = getOmxFramerate();
 
     /*
      * TODO more formats
@@ -996,6 +988,20 @@ double AminoOmxVideoPlayer::getFramerate() {
     }
 
     return 0;
+}
+
+/**
+ * Get OMX framerate.
+ */
+OMX_U32 AminoOmxVideoPlayer::getOmxFramerate() {
+    double framerate = getFramerate();
+
+    if (framerate > 0) {
+        return framerate * (1 << 16);
+    }
+
+    //default: 25 fps
+    return 25 * (1 << 16);
 }
 
 /**
