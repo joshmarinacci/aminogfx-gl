@@ -9,7 +9,7 @@ const amino = require('../../main.js');
  * @param {function} done
  */
 function playVideo(opts, done) {
-    const gfx = new amino.AminoGfx();
+    const gfx = new amino.AminoGfx(opts.gfxOpts);
 
     gfx.start(function (err) {
         if (err) {

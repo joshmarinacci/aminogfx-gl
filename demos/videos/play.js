@@ -16,7 +16,12 @@ const file = process.argv[2];
 
 player.playVideo({
     src: path.join(process.cwd(), file),
-    opts: 'amino_dump_format=1'
+    opts: 'amino_dump_format=1',
+    //cbx check
+    gfxOpts: {
+        resolution: '1080p@25'
+        //resolution: '1080p@30'
+    }
 }, (err, video) => {
     //empty
 });
