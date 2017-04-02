@@ -81,7 +81,7 @@ bool AnyShader::create() {
         //get error
         GLchar messages[256];
 
-        glGetProgramInfoLog(handle, sizeof(messages), 0, &messages[0]);
+        glGetProgramInfoLog(handle, sizeof messages, 0, &messages[0]);
 
         if (DEBUG_SHADER_ERRORS) {
             printf("shader linking failed: %s\n", messages);
@@ -133,7 +133,7 @@ GLuint AnyShader::compileShader(std::string source, const GLenum type) {
         //get error
         GLchar messages[256];
 
-        glGetShaderInfoLog(handle, sizeof(messages), 0, &messages[0]);
+        glGetShaderInfoLog(handle, sizeof messages, 0, &messages[0]);
 
         if (DEBUG_SHADER_ERRORS) {
             std::string typeStr;

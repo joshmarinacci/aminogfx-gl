@@ -21,8 +21,8 @@
 
 AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
     //init memory buffers
-    memset(list, 0, sizeof(list));
-    memset(tunnel, 0, sizeof(tunnel));
+    memset(list, 0, sizeof list);
+    memset(tunnel, 0, sizeof tunnel);
 
     //semaphore
     int res = uv_sem_init(&pauseSem, 0);
@@ -256,8 +256,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     //config clock
     OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
-    memset(&cstate, 0, sizeof(cstate));
-    cstate.nSize = sizeof(cstate);
+    memset(&cstate, 0, sizeof cstate);
+    cstate.nSize = sizeof cstate;
     cstate.nVersion.nVersion = OMX_VERSION;
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
     cstate.nWaitMask = 1;
@@ -271,8 +271,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     //HDMI sync (Note: not well documented)
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
-    memset(&lt, 0, sizeof(lt));
-    lt.nSize = sizeof(lt);
+    memset(&lt, 0, sizeof lt);
+    lt.nSize = sizeof lt;
     lt.nVersion.nVersion = OMX_VERSION;
     lt.nPortIndex = OMX_ALL;
     lt.bEnabled = OMX_TRUE;
@@ -313,8 +313,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     //video reference clock
     OMX_TIME_CONFIG_ACTIVEREFCLOCKTYPE arct;
 
-    memset(&arct, 0, sizeof(arct));
-    arct.nSize = sizeof(arct);
+    memset(&arct, 0, sizeof arct);
+    arct.nSize = sizeof arct;
     arct.nVersion.nVersion = OMX_VERSION;
     arct.eClock = OMX_TIME_RefClockVideo;
 
@@ -333,8 +333,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     //video format
     OMX_VIDEO_PARAM_PORTFORMATTYPE format;
 
-    memset(&format, 0, sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
-    format.nSize = sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE);
+    memset(&format, 0, sizeof format);
+    format.nSize = sizeof format;
     format.nVersion.nVersion = OMX_VERSION;
     format.nPortIndex = 130;
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
@@ -627,8 +627,8 @@ int AminoOmxVideoPlayer::playOmx() {
             //get video size
             OMX_PARAM_PORTDEFINITIONTYPE portdef;
 
-            memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
-            portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
+            memset(&portdef, 0, sizeof portdef);
+            portdef.nSize = sizeof portdef;
             portdef.nVersion.nVersion = OMX_VERSION;
             portdef.nPortIndex = 131;
 
@@ -653,8 +653,8 @@ int AminoOmxVideoPlayer::playOmx() {
             //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
             //FIXME cbx fails -> too late?
             /*
-            memset(&portdef, 0, sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
-            portdef.nSize = sizeof(OMX_PARAM_PORTDEFINITIONTYPE);
+            memset(&portdef, 0, sizeof portdef);
+            portdef.nSize = sizeof portdef;
             portdef.nVersion.nVersion = OMX_VERSION;
             portdef.nPortIndex = 221;
             portdef.nBufferCountActual = 4; //cbx TODO
@@ -838,8 +838,8 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     /*
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
-    memset(&lt, 0, sizeof(lt));
-    lt.nSize = sizeof(lt);
+    memset(&lt, 0, sizeof lt);
+    lt.nSize = sizeof lt;
     lt.nVersion.nVersion = OMX_VERSION;
     lt.nPortIndex = 221;
     lt.bEnabled = OMX_TRUE;
@@ -963,7 +963,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
     //close tunnels
     ilclient_teardown_tunnels(tunnel);
 
-    memset(tunnel, 0, sizeof(tunnel));
+    memset(tunnel, 0, sizeof tunnel);
 
     if (DEBUG_OMX) {
         printf("-> tunnels closed\n");
@@ -1012,8 +1012,8 @@ double AminoOmxVideoPlayer::getMediaTime() {
     COMPONENT_T *clock = list[2];
     OMX_TIME_CONFIG_TIMESTAMPTYPE ts;
 
-    memset(&ts, 0, sizeof(ts));
-    ts.nSize = sizeof(ts);
+    memset(&ts, 0, sizeof ts);
+    ts.nSize = sizeof ts;
     ts.nVersion.nVersion = OMX_VERSION;
     ts.nPortIndex = OMX_ALL;
 
@@ -1148,8 +1148,8 @@ bool AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
     COMPONENT_T *clock = list[2];
     OMX_TIME_CONFIG_SCALETYPE st;
 
-    memset(&st, 0, sizeof(st));
-    st.nSize = sizeof(st);
+    memset(&st, 0, sizeof st);
+    st.nSize = sizeof st;
     st.nVersion.nVersion = OMX_VERSION;
     st.xScale = speed;
 

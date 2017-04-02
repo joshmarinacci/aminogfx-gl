@@ -356,7 +356,7 @@ void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b) {
       P(i,3) = ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3);
    }
 
-   memcpy(prod, p, sizeof(p));
+   memcpy(prod, p, sizeof p);
 #undef A
 #undef B
 #undef PROD

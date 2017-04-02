@@ -565,11 +565,11 @@ void AminoGfxRPi::initInput() {
 
             char name[256] = "Unknown";
 
-            ioctl(fd, EVIOCGNAME(sizeof (name)), name);
+            ioctl(fd, EVIOCGNAME(sizeof name), name);
 
             printf("Reading from: %s (%s)\n", str,name);
 
-            ioctl(fd, EVIOCGPHYS(sizeof (name)), name);
+            ioctl(fd, EVIOCGPHYS(sizeof name), name);
 
             printf("Location %s (%s)\n", str,name);
 
@@ -579,7 +579,7 @@ void AminoGfxRPi::initInput() {
 
             u_int8_t evtype_b[(EV_MAX+7)/8];
 
-            memset(evtype_b, 0, sizeof(evtype_b));
+            memset(evtype_b, 0, sizeof evtype_b);
 
             if (ioctl(fd, EVIOCGBIT(0, EV_MAX), evtype_b) < 0) {
                 printf("error reading device info\n");
