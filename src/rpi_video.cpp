@@ -195,6 +195,14 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 }
 
 /**
+ * IL client reported errors.
+ */
+void omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data) {
+    //see http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___core_8h.html
+    fprintf(stderr, "OMX error: %i\n", data);
+}
+
+/**
  * Initialize OpenMax.
  */
 bool AminoOmxVideoPlayer::initOmx() {
@@ -216,6 +224,9 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
+    //set error handler
+    ilclient_set_error_callback(client, omxErrorHandler, this);
+
     //init OMX
     if (OMX_Init() != OMX_ErrorNone) {
         lastError = "could not initialize OMX";
@@ -226,7 +237,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     //buffer callback
     ilclient_set_fill_buffer_done_callback(client, handleFillBufferDone, this);
 
-    //create video_decode
+    //create video_decode (input buffer)
     if (ilclient_create_component(client, &video_decode, "video_decode", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_INPUT_BUFFERS)) != 0) {
         lastError = "video_decode error";
         status = -10;
@@ -235,7 +246,7 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     list[0] = video_decode;
 
-    //create egl_render
+    //create egl_render (output buffer)
     if (ilclient_create_component(client, &egl_render, "egl_render", (ILCLIENT_CREATE_FLAGS_T)(ILCLIENT_DISABLE_ALL_PORTS | ILCLIENT_ENABLE_OUTPUT_BUFFERS)) != 0) {
         lastError = "egl_render error";
         status = -11;
@@ -268,7 +279,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //HDMI sync (Note: not well documented)
+    //HDMI sync (Note: not well documented; FIXME seeing no effect)
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
     memset(&lt, 0, sizeof lt);
