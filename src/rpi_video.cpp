@@ -3,7 +3,6 @@
 
 #include "bcm_host.h"
 #include "interface/vchiq_arm/vchiq_if.h"
-#include "interface/vcos/vcos_logging.h"
 
 #include <linux/input.h>
 #include <dirent.h>
@@ -342,8 +341,8 @@ bool AminoOmxVideoPlayer::initOmx() {
         printf("-> init OMX\n");
     }
 
-    //VCOS log statements cbx
-    vcos_log_set_level(VCOS_LOG_CATEGORY, VCOS_LOG_TRACE);
+    //VCOS log statements (Note: VCOS_LOG_CATEGORY has to be defined first)
+    //vcos_log_set_level(VCOS_LOG_CATEGORY, VCOS_LOG_TRACE);
 
     //init il client
     client = ilclient_init();
