@@ -195,127 +195,192 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     }
 }
 
+//cbx TODO -2147479534
 /**
  * Get an OMX error as string.
  */
-std::string AminoOmxVideoPlayer::getOmxError(int err) {
+std::string AminoOmxVideoPlayer::getOmxError(OMX_S32 err) {
     switch (err) {
+        case OMX_ErrorNone:
+            //No error.
+            return "OMX_ErrorNone";
+
         case OMX_ErrorInsufficientResources:
+            //There were insufficient resources to perform the requested operation.
             return "OMX_ErrorInsufficientResources";
 
         case OMX_ErrorUndefined:
+            //There was an error, but the cause of the error could not be determined.
             return "OMX_ErrorUndefined";
 
         case OMX_ErrorInvalidComponentName:
+            //The component name string was not valid.
             return "OMX_ErrorInvalidComponentName";
 
         case OMX_ErrorComponentNotFound:
+            //No component with the specified name string was found.
             return "OMX_ErrorComponentNotFound";
 
         case OMX_ErrorInvalidComponent:
+            //The component specified did not have a "OMX_ComponentInit" or "OMX_ComponentDeInit entry point.
             return "OMX_ErrorInvalidComponent";
 
         case OMX_ErrorBadParameter:
+            //One or more parameters were not valid.
             return "OMX_ErrorBadParameter";
 
         case OMX_ErrorNotImplemented:
+            //The requested function is not implemented.
             return "OMX_ErrorNotImplemented";
 
         case OMX_ErrorUnderflow:
+            //The buffer was emptied before the next buffer was ready.
             return "OMX_ErrorUnderflow";
 
         case OMX_ErrorOverflow:
+            //The buffer was not available when it was needed.
             return "OMX_ErrorOverflow";
 
         case OMX_ErrorHardware:
+            //The hardware failed to respond as expected.
             return "OMX_ErrorHardware";
 
         case OMX_ErrorInvalidState:
+            //The component is in the state OMX_StateInvalid.
             return "OMX_ErrorInvalidState";
 
         case OMX_ErrorStreamCorrupt:
+            //Stream is found to be corrupt.
             return "OMX_ErrorStreamCorrupt";
 
         case OMX_ErrorPortsNotCompatible:
+            //Ports being connected are not compatible.
             return "OMX_ErrorPortsNotCompatible";
 
         case OMX_ErrorResourcesLost:
+            //Resources allocated to an idle component have been lost resulting in the component returning to the loaded state.
             return "OMX_ErrorResourcesLost";
 
         case OMX_ErrorNoMore:
+            //No more indicies can be enumerated.
             return "OMX_ErrorNoMore";
 
         case OMX_ErrorVersionMismatch:
+            //The component detected a version mismatch.
             return "OMX_ErrorVersionMismatch";
 
         case OMX_ErrorNotReady:
+            //The component is not ready to return data at this time.
             return "OMX_ErrorNotReady";
 
         case OMX_ErrorTimeout:
+            //There was a timeout that occurred.
             return "OMX_ErrorTimeout";
 
         case OMX_ErrorSameState:
+            //This error occurs when trying to transition into the state you are already in.
             return "OMX_ErrorSameState";
 
         case OMX_ErrorResourcesPreempted:
+            //Resources allocated to an executing or paused component have been preempted, causing the component to return to the idle state.
             return "OMX_ErrorResourcesPreempted";
 
         case OMX_ErrorPortUnresponsiveDuringAllocation:
+            //A non-supplier port sends this error to the IL client (via the EventHandler callback) during the allocation of buffers (on a transition from the LOADED to the IDLE state or on a port restart) when it deems that it has waited an unusually long time for the supplier to send it an allocated buffer via a UseBuffer call.
             return "OMX_ErrorPortUnresponsiveDuringAllocation";
 
         case OMX_ErrorPortUnresponsiveDuringDeallocation:
+            //A non-supplier port sends this error to the IL client (via the EventHandler callback) during the deallocation of buffers (on a transition from the IDLE to LOADED state or on a port stop) when it deems that it has waited an unusually long time for the supplier to request the deallocation of a buffer header via a FreeBuffer call.
             return "OMX_ErrorPortUnresponsiveDuringDeallocation";
 
         case OMX_ErrorPortUnresponsiveDuringStop:
+            //A supplier port sends this error to the IL client (via the EventHandler callback) during the stopping of a port (either on a transition from the IDLE to LOADED state or a port stop) when it deems that it has waited an unusually long time for the non-supplier to return a buffer via an EmptyThisBuffer or FillThisBuffer call.
             return "OMX_ErrorPortUnresponsiveDuringStop";
 
         case OMX_ErrorIncorrectStateTransition:
+            //Attempting a state transtion that is not allowed.
             return "OMX_ErrorIncorrectStateTransition";
 
         case OMX_ErrorIncorrectStateOperation:
+            //Attempting a command that is not allowed during the present state.
             return "OMX_ErrorIncorrectStateOperation";
 
         case OMX_ErrorUnsupportedSetting:
+            //The values encapsulated in the parameter or config structure are not supported.
             return "OMX_ErrorUnsupportedSetting";
 
         case OMX_ErrorUnsupportedIndex:
+            //The parameter or config indicated by the given index is not supported.
             return "OMX_ErrorUnsupportedIndex";
 
         case OMX_ErrorBadPortIndex:
+            //The port index supplied is incorrect.
             return "OMX_ErrorBadPortIndex";
 
         case OMX_ErrorPortUnpopulated:
+            //The port has lost one or more of its buffers and it thus unpopulated.
             return "OMX_ErrorPortUnpopulated";
 
         case OMX_ErrorComponentSuspended:
+            //Component suspended due to temporary loss of resources.
             return "OMX_ErrorComponentSuspended";
 
         case OMX_ErrorDynamicResourcesUnavailable:
+            //Component suspended due to an inability to acquire dynamic resources.
             return "OMX_ErrorDynamicResourcesUnavailable";
 
         case OMX_ErrorMbErrorsInFrame:
+            //When the macroblock error reporting is enabled the component returns new error for every frame that has errors.
             return "OMX_ErrorMbErrorsInFrame";
 
         case OMX_ErrorFormatNotDetected:
+            //A component reports this error when it cannot parse or determine the format of an input stream.
             return "OMX_ErrorFormatNotDetected";
 
         case OMX_ErrorContentPipeOpenFailed:
+            //The content open operation failed.
             return "OMX_ErrorContentPipeOpenFailed";
 
         case OMX_ErrorContentPipeCreationFailed:
+            //The content creation operation failed.
             return "OMX_ErrorContentPipeCreationFailed";
 
         case OMX_ErrorSeperateTablesUsed:
+            //Separate table information is being used.
             return "OMX_ErrorSeperateTablesUsed";
 
         case OMX_ErrorTunnelingUnsupported:
+            //Tunneling is unsupported by the component.
             return "OMX_ErrorTunnelingUnsupported";
+
+        //OMX_ErrorKhronosExtensions 0x8F000000 (Reserved region for introducing Khronos Standard Extensions.)
+        //OMX_ErrorVendorStartUnused 0x90000000 (Reserved region for introducing Vendor Extensions)
+
+        case OMX_ErrorDiskFull:
+            //Disk Full error.
+            return "OMX_ErrorDiskFull";
+
+        case OMX_ErrorMaxFileSize:
+            //Max file size is reached.
+            return "OMX_ErrorMaxFileSize";
+
+        case OMX_ErrorDrmUnauthorised:
+            //Unauthorised to play a DRM protected file.
+            return "OMX_ErrorDrmUnauthorised";
+
+        case OMX_ErrorDrmExpired:
+            //The DRM protected file has expired.
+            return "OMX_ErrorDrmExpired";
+
+        case OMX_ErrorDrmGeneral:
+            //Some other DRM library error.
+            return "OMX_ErrorDrmGeneral";
     }
 
     //unknown error
     std::stringstream ss;
 
-    ss << "unknown OMX error: " << err;
+    ss << "unknown OMX error: " << std::hex << err;
 
     return ss.str();
 }
