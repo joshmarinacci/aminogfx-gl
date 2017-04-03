@@ -391,7 +391,7 @@ void AminoOmxVideoPlayer::omxErrorHandler(void *userData, COMPONENT_T *comp, OMX
     //see http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___core_8h.html
     std::string error = getOmxError(data);
 
-    fprintf(stderr, "OMX error: %f\n", error.c_str());
+    fprintf(stderr, "OMX error: %s\n", error.c_str());
 }
 
 /**
