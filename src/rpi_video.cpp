@@ -3,6 +3,7 @@
 
 #include "bcm_host.h"
 #include "interface/vchiq_arm/vchiq_if.h"
+#include "interface/vcos/vcos_logging.h"
 
 #include <linux/input.h>
 #include <dirent.h>
