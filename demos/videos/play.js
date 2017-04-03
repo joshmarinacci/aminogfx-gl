@@ -21,7 +21,7 @@ player.playVideo({
     gfxOpts: {
         //resolution: '1080p@25'
         //resolution: '1080p@30'
-        resolution: '1080p@60'
+        //resolution: '1080p@60'
     }
 }, (err, video) => {
     //empty

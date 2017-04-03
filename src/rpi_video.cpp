@@ -569,7 +569,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         status = -17;
         goto end;
     }
-
+cbx move
     //set buffer count (Note: default buffer count is 20)
     /*
     OMX_PARAM_PORTDEFINITIONTYPE portdef;
@@ -864,7 +864,7 @@ int AminoOmxVideoPlayer::playOmx() {
 
                 printf("video: %dx%d@%.2f bitrate=%i minBuffers=%i buffer=%i bufferSize=%i\n", videoW, videoH, fps, (int)portdef.format.video.nBitrate, portdef.nBufferCountMin, portdef.nBufferCountActual, portdef.nBufferSize);
             }
-
+cbx
             //set egl render buffer
             //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
             //FIXME cbx fails -> too late?
