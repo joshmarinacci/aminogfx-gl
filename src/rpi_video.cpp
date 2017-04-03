@@ -195,7 +195,6 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     }
 }
 
-//cbx TODO -2147479534
 /**
  * Get an OMX error as string.
  */
@@ -380,7 +379,7 @@ std::string AminoOmxVideoPlayer::getOmxError(OMX_S32 err) {
     //unknown error
     std::stringstream ss;
 
-    ss << "unknown OMX error: " << std::hex << err;
+    ss << "unknown OMX error: 0x" << std::hex << err;
 
     return ss.str();
 }
@@ -390,7 +389,7 @@ std::string AminoOmxVideoPlayer::getOmxError(OMX_S32 err) {
  */
 void AminoOmxVideoPlayer::omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data) {
     //see http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___core_8h.html
-    fprintf(stderr, "OMX error: %i\n", data);
+    fprintf(stderr, "OMX error: %f\n", getOmxError(data));
 }
 
 /**
