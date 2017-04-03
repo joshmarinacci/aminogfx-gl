@@ -75,6 +75,9 @@ private:
     uv_sem_t pauseSem;
     uv_sem_t textureSem;
 
+    static std::string getOmxError(int err);
+    static void omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data);
+
 public:
     COMPONENT_T *egl_render = NULL;
     OMX_BUFFERHEADERTYPE *eglBuffer = NULL;

@@ -14,6 +14,7 @@
 #define DEBUG_OMX false
 #define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
+#define DEBUG_OMX_ERRORS true
 
 //
 // AminoOmxVideoPlayer
@@ -195,9 +196,134 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 }
 
 /**
+ * Get an OMX error as string.
+ */
+std::string AminoOmxVideoPlayer::getOmxError(int err) {
+    switch (err) {
+        case OMX_ErrorInsufficientResources:
+            return "OMX_ErrorInsufficientResources";
+
+        case OMX_ErrorUndefined:
+            return "OMX_ErrorUndefined";
+
+        case OMX_ErrorInvalidComponentName:
+            return "OMX_ErrorInvalidComponentName";
+
+        case OMX_ErrorComponentNotFound:
+            return "OMX_ErrorComponentNotFound";
+
+        case OMX_ErrorInvalidComponent:
+            return "OMX_ErrorInvalidComponent";
+
+        case OMX_ErrorBadParameter:
+            return "OMX_ErrorBadParameter";
+
+        case OMX_ErrorNotImplemented:
+            return "OMX_ErrorNotImplemented";
+
+        case OMX_ErrorUnderflow:
+            return "OMX_ErrorUnderflow";
+
+        case OMX_ErrorOverflow:
+            return "OMX_ErrorOverflow";
+
+        case OMX_ErrorHardware:
+            return "OMX_ErrorHardware";
+
+        case OMX_ErrorInvalidState:
+            return "OMX_ErrorInvalidState";
+
+        case OMX_ErrorStreamCorrupt:
+            return "OMX_ErrorStreamCorrupt";
+
+        case OMX_ErrorPortsNotCompatible:
+            return "OMX_ErrorPortsNotCompatible";
+
+        case OMX_ErrorResourcesLost:
+            return "OMX_ErrorResourcesLost";
+
+        case OMX_ErrorNoMore:
+            return "OMX_ErrorNoMore";
+
+        case OMX_ErrorVersionMismatch:
+            return "OMX_ErrorVersionMismatch";
+
+        case OMX_ErrorNotReady:
+            return "OMX_ErrorNotReady";
+
+        case OMX_ErrorTimeout:
+            return "OMX_ErrorTimeout";
+
+        case OMX_ErrorSameState:
+            return "OMX_ErrorSameState";
+
+        case OMX_ErrorResourcesPreempted:
+            return "OMX_ErrorResourcesPreempted";
+
+        case OMX_ErrorPortUnresponsiveDuringAllocation:
+            return "OMX_ErrorPortUnresponsiveDuringAllocation";
+
+        case OMX_ErrorPortUnresponsiveDuringDeallocation:
+            return "OMX_ErrorPortUnresponsiveDuringDeallocation";
+
+        case OMX_ErrorPortUnresponsiveDuringStop:
+            return "OMX_ErrorPortUnresponsiveDuringStop";
+
+        case OMX_ErrorIncorrectStateTransition:
+            return "OMX_ErrorIncorrectStateTransition";
+
+        case OMX_ErrorIncorrectStateOperation:
+            return "OMX_ErrorIncorrectStateOperation";
+
+        case OMX_ErrorUnsupportedSetting:
+            return "OMX_ErrorUnsupportedSetting";
+
+        case OMX_ErrorUnsupportedIndex:
+            return "OMX_ErrorUnsupportedIndex";
+
+        case OMX_ErrorBadPortIndex:
+            return "OMX_ErrorBadPortIndex";
+
+        case OMX_ErrorPortUnpopulated:
+            return "OMX_ErrorPortUnpopulated";
+
+        case OMX_ErrorComponentSuspended:
+            return "OMX_ErrorComponentSuspended";
+
+        case OMX_ErrorDynamicResourcesUnavailable:
+            return "OMX_ErrorDynamicResourcesUnavailable";
+
+        case OMX_ErrorMbErrorsInFrame:
+            return "OMX_ErrorMbErrorsInFrame";
+
+        case OMX_ErrorFormatNotDetected:
+            return "OMX_ErrorFormatNotDetected";
+
+        case OMX_ErrorContentPipeOpenFailed:
+            return "OMX_ErrorContentPipeOpenFailed";
+
+        case OMX_ErrorContentPipeCreationFailed:
+            return "OMX_ErrorContentPipeCreationFailed";
+
+        case OMX_ErrorSeperateTablesUsed:
+            return "OMX_ErrorSeperateTablesUsed";
+
+        case OMX_ErrorTunnelingUnsupported:
+            return "OMX_ErrorTunnelingUnsupported";
+    }
+
+    //unknown error
+    std::stringstream ss;
+
+    ss << "unknown OMX error: " << err;
+
+    return ss.str();
+}
+
+/**
  * IL client reported errors.
  */
-void omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data) {
+void AminoOmxVideoPlayer::omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data) {
     //see http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___core_8h.html
     fprintf(stderr, "OMX error: %i\n", data);
 }
@@ -215,6 +341,9 @@ bool AminoOmxVideoPlayer::initOmx() {
         printf("-> init OMX\n");
     }
 
+    //VCOS log statements cbx
+    vcos_log_set_level(VCOS_LOG_CATEGORY, VCOS_LOG_TRACE);
+
     //init il client
     client = ilclient_init();
 
@@ -225,7 +354,13 @@ bool AminoOmxVideoPlayer::initOmx() {
     }
 
     //set error handler
-    ilclient_set_error_callback(client, omxErrorHandler, this);
+    if (DEBUG_OMX_ERRORS) {
+        ilclient_set_error_callback(client, omxErrorHandler, this);
+    }
+
+    //set EOS callback
+    //TODO check if call works as expected
+    //ilclient_set_eos_callback(handle, omxEosHandler, NULL);
 
     //init OMX
     if (OMX_Init() != OMX_ErrorNone) {
@@ -264,13 +399,14 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     list[2] = clock;
 
-    //config clock
+    //config clock (waiting for start time)
     OMX_TIME_CONFIG_CLOCKSTATETYPE cstate;
 
     memset(&cstate, 0, sizeof cstate);
     cstate.nSize = sizeof cstate;
     cstate.nVersion.nVersion = OMX_VERSION;
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
+//cbx try OMX_TIME_ClockStateRunning (without nWaitMask)
     cstate.nWaitMask = 1;
 
     if (OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
@@ -335,6 +471,9 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
+    //set speed
+    setOmxSpeed(1 << 16);
+
     //switch clock to executing state
     ilclient_change_component_state(clock, OMX_StateExecuting);
 
@@ -347,7 +486,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     memset(&format, 0, sizeof format);
     format.nSize = sizeof format;
     format.nVersion.nVersion = OMX_VERSION;
-    format.nPortIndex = 130;
+    format.nPortIndex = 130; //input
     format.eCompressionFormat = OMX_VIDEO_CodingAVC; //H264
     format.xFramerate = getOmxFramerate();
 
@@ -372,7 +511,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     memset(&portdef, 0, sizeof portdef);
     portdef.nSize = sizeof portdef;
     portdef.nVersion.nVersion = OMX_VERSION;
-    portdef.nPortIndex = 131;
+    portdef.nPortIndex = 130; //input buffer
 
     if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
         lastError = "could not get port definition";
@@ -380,7 +519,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    portdef.nPortIndex = 131;
+    portdef.nPortIndex = 130; //input buffers
     portdef.nBufferCountActual = 20; //default
 
     if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
@@ -404,7 +543,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //video decode buffers
+    //video decode input buffers
     if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
         lastError = "video decode port error";
         status = -18;
@@ -436,7 +575,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         memset(&nsft, 0, sizeof nsft);
         nsft.nSize = sizeof nsft;
         nsft.nVersion.nVersion = OMX_VERSION;
-        nsft.nPortIndex = 130;
+        nsft.nPortIndex = 130; //input
         nsft.eNaluFormat = OMX_NaluFormatStartCodes;
 
         if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), (OMX_INDEXTYPE)OMX_IndexParamNalStreamFormatSelect, &nsft) != OMX_ErrorNone) {
@@ -605,7 +744,7 @@ int AminoOmxVideoPlayer::playOmx() {
             printf("OMX: data read %i\n", (int)data_len);
         }
 
-        //handle port settings changes
+        //handle decoder output port settings changes
         if (!port_settings_changed &&
             ((data_len > 0 && ilclient_remove_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1) == 0) ||
             (data_len == 0 && ilclient_wait_for_event(video_decode, OMX_EventPortSettingsChanged, 131, 0, 0, 1, ILCLIENT_EVENT_ERROR | ILCLIENT_PARAMETER_CHANGED, 10000) == 0))) {
@@ -641,7 +780,7 @@ int AminoOmxVideoPlayer::playOmx() {
             memset(&portdef, 0, sizeof portdef);
             portdef.nSize = sizeof portdef;
             portdef.nVersion.nVersion = OMX_VERSION;
-            portdef.nPortIndex = 131;
+            portdef.nPortIndex = 131; //output buffer
 
             if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
                 lastError = "could not get video size";
@@ -667,7 +806,7 @@ int AminoOmxVideoPlayer::playOmx() {
             memset(&portdef, 0, sizeof portdef);
             portdef.nSize = sizeof portdef;
             portdef.nVersion.nVersion = OMX_VERSION;
-            portdef.nPortIndex = 221;
+            portdef.nPortIndex = 221; //output
             portdef.nBufferCountActual = 4; //cbx TODO
 
             if (OMX_SetParameter(ILC_GET_HANDLE(egl_render), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
@@ -718,7 +857,7 @@ int AminoOmxVideoPlayer::playOmx() {
         }
 
         if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
-            //first packet
+            //first packet (contains start time)
             buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
             first_packet = false;
         } else {
@@ -852,7 +991,7 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     memset(&lt, 0, sizeof lt);
     lt.nSize = sizeof lt;
     lt.nVersion.nVersion = OMX_VERSION;
-    lt.nPortIndex = 221;
+    lt.nPortIndex = 221; //output
     lt.bEnabled = OMX_TRUE;
     lt.nFilter = 2;
     lt.nTarget = 4000;
@@ -965,7 +1104,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
     //free buffers
     COMPONENT_T *video_decode = list[0];
 
-    ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL);
+    ilclient_disable_port_buffers(video_decode, 130, NULL, NULL, NULL); //input
 
     if (DEBUG_OMX) {
         printf("-> buffers disabled\n");
