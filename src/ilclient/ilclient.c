@@ -827,7 +827,7 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
 
    //debug
    //printf("buffers=%i size=%i\n", portdef.nBufferCountActual, portdef.nBufferSize);
-cbx showOmxBufferInfo(comp, port)
+
    for (i=0; i != portdef.nBufferCountActual; i++)
    {
       unsigned char *buf;

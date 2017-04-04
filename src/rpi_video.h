@@ -78,6 +78,8 @@ private:
     static std::string getOmxError(OMX_S32 err);
     static void omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data);
 
+    bool showOmxBufferInfo(COMPONENT_T *comp, int port);
+
 public:
     COMPONENT_T *egl_render = NULL;
     OMX_BUFFERHEADERTYPE *eglBuffer = NULL;

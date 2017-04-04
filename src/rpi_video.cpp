@@ -389,6 +389,13 @@ std::string AminoOmxVideoPlayer::getOmxError(OMX_S32 err) {
  */
 void AminoOmxVideoPlayer::omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data) {
     //see http://maemo.org/api_refs/5.0/beta/libomxil-bellagio/_o_m_x___core_8h.html
+
+    //filter harmless errors
+    if (data == OMX_ErrorSameState) {
+        return;
+    }
+
+    //output
     std::string error = getOmxError(data);
 
     fprintf(stderr, "OMX error: %s\n", error.c_str());
@@ -481,12 +488,14 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //HDMI sync (Note: not well documented; FIXME seeing no effect)
+    //HDMI sync (Note: not well documented; FIXME cbx seeing no effect)
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
     memset(&lt, 0, sizeof lt);
     lt.nSize = sizeof lt;
     lt.nVersion.nVersion = OMX_VERSION;
+
+    /*
     lt.nPortIndex = OMX_ALL;
     lt.bEnabled = OMX_TRUE;
     lt.nFilter = 10;
@@ -495,6 +504,16 @@ bool AminoOmxVideoPlayer::initOmx() {
     lt.nSpeedFactor = -60;
     lt.nInterFactor = 100;
     lt.nAdjCap = 100;
+    */
+
+    lt.nPortIndex = OMX_ALL;
+    lt.bEnabled = OMX_TRUE;
+    lt.nFilter = 2;
+    lt.nTarget = 4000;
+    lt.nShift = 3;
+    lt.nSpeedFactor = -135;
+    lt.nInterFactor = 500;
+    lt.nAdjCap = 20;
 
     if (OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigLatencyTarget, &lt) != OMX_ErrorNone) {
         lastError = "could not set clock latency";
@@ -569,7 +588,14 @@ bool AminoOmxVideoPlayer::initOmx() {
         status = -17;
         goto end;
     }
-cbx move
+
+    //show video_decode buffer sizes cbx
+    printf("video_decode input buffers:\n");
+    showOmxBufferInfo(video_decode, 130);
+
+    printf("video_decode output buffers:\n");
+    showOmxBufferInfo(video_decode, 131);
+
     //set buffer count (Note: default buffer count is 20)
     /*
     OMX_PARAM_PORTDEFINITIONTYPE portdef;
@@ -821,6 +847,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 printf("OMX: egl_render setup\n");
             }
 
+            //setup video_scheduler tunnel
             if (ilclient_setup_tunnel(tunnel, 0, 0) != 0) {
                 lastError = "video tunnel setup error";
                 res = -31;
@@ -864,7 +891,14 @@ int AminoOmxVideoPlayer::playOmx() {
 
                 printf("video: %dx%d@%.2f bitrate=%i minBuffers=%i buffer=%i bufferSize=%i\n", videoW, videoH, fps, (int)portdef.format.video.nBitrate, portdef.nBufferCountMin, portdef.nBufferCountActual, portdef.nBufferSize);
             }
-cbx
+
+            //show egl_render buffer sizes cbx
+            printf("egl_render input buffers:\n");
+            showOmxBufferInfo(egl_render, 220);
+
+            printf("egl_render output buffers:\n");
+            showOmxBufferInfo(egl_render, 221);
+
             //set egl render buffer
             //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
             //FIXME cbx fails -> too late?
@@ -874,6 +908,7 @@ cbx
             portdef.nVersion.nVersion = OMX_VERSION;
             portdef.nPortIndex = 221; //output
             portdef.nBufferCountActual = 4; //cbx TODO
+            //cbx try pNativeWindow set to display
 
             if (OMX_SetParameter(ILC_GET_HANDLE(egl_render), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
                 lastError = "could not set render buffer";
@@ -987,6 +1022,28 @@ cbx
 }
 
 /**
+ * Display buffer details on given port of component.
+ */
+bool AminoOmxVideoPlayer::showOmxBufferInfo(COMPONENT_T *comp, int port) {
+    OMX_PARAM_PORTDEFINITIONTYPE portdef;
+
+    memset(&portdef, 0, sizeof portdef);
+    portdef.nSize = sizeof portdef;
+    portdef.nVersion.nVersion = OMX_VERSION;
+    portdef.nPortIndex = port;
+
+    if (OMX_GetParameter(ILC_GET_HANDLE(comp), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+        printf("-> Could not get port definition!\n");
+        return false;
+    }
+
+    //show
+    printf("-> buffers=%i minBuffer=%i bufferSize=%i\n", portdef.nBufferCountActual, portdef.nBufferCountMin, portdef.nBufferSize);
+
+    return true;
+}
+
+/**
  * Stops the OMX playback thread.
  */
 void AminoOmxVideoPlayer::stopOmx() {
@@ -1051,13 +1108,13 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     OMX_HANDLETYPE eglHandle = ILC_GET_HANDLE(egl_render);
 
     //set render latency (Note: not supported on egl_render)
-    /*
+    //cbx trying once more with input port (undocumented???)
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
     memset(&lt, 0, sizeof lt);
     lt.nSize = sizeof lt;
     lt.nVersion.nVersion = OMX_VERSION;
-    lt.nPortIndex = 221; //output
+    lt.nPortIndex = 220; //input
     lt.bEnabled = OMX_TRUE;
     lt.nFilter = 2;
     lt.nTarget = 4000;
@@ -1070,7 +1127,6 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
         lastError = "OMX_IndexConfigLatencyTarget failed.";
         return false;
     }
-    */
 
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
     if (OMX_SendCommand(eglHandle, OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
