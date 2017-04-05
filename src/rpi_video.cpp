@@ -593,10 +593,10 @@ bool AminoOmxVideoPlayer::initOmx() {
 
     //show video_decode buffer sizes cbx
     printf("video_decode input buffers:\n");
-    showOmxBufferInfo(video_decode, 130);
+    showOmxBufferInfo(video_decode, 130); //buffers=20 minBuffer=1 bufferSize=81920)
 
     printf("video_decode output buffers:\n");
-    showOmxBufferInfo(video_decode, 131);
+    showOmxBufferInfo(video_decode, 131); //buffers=1 minBuffer=1 bufferSize=115200
 
     //set buffer count (Note: default buffer count is 20)
     /*
@@ -895,10 +895,10 @@ int AminoOmxVideoPlayer::playOmx() {
             }
 
             //show egl_render buffer sizes cbx
-            printf("egl_render input buffers:\n");
+            printf("egl_render input buffers:\n"); //buffers=0 minBuffer=0 bufferSize=3133440
             showOmxBufferInfo(egl_render, 220);
 
-            printf("egl_render output buffers:\n");
+            printf("egl_render output buffers:\n"); //buffers=1 minBuffer=1 bufferSize=0
             showOmxBufferInfo(egl_render, 221);
 
             //set egl render buffer
@@ -1109,26 +1109,7 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     //enable the output port and tell egl_render to use the texture as a buffer
     OMX_HANDLETYPE eglHandle = ILC_GET_HANDLE(egl_render);
 
-    //set render latency (Note: not supported on egl_render)
-    //cbx trying once more with input port (undocumented???)
-    OMX_CONFIG_LATENCYTARGETTYPE lt;
-
-    memset(&lt, 0, sizeof lt);
-    lt.nSize = sizeof lt;
-    lt.nVersion.nVersion = OMX_VERSION;
-    lt.nPortIndex = 220; //input
-    lt.bEnabled = OMX_TRUE;
-    lt.nFilter = 2;
-    lt.nTarget = 4000;
-    lt.nShift = 3;
-    lt.nSpeedFactor = -135;
-    lt.nInterFactor = 500;
-    lt.nAdjCap = 20;
-
-    if (OMX_SetConfig(eglHandle, OMX_IndexConfigLatencyTarget, &lt) != OMX_ErrorNone) {
-        lastError = "OMX_IndexConfigLatencyTarget failed.";
-        return false;
-    }
+    //Note: OMX_IndexConfigLatencyTarget not supported by egl_render (port 220)
 
     //ilclient_enable_port(egl_render, 221); THIS BLOCKS SO CAN'T BE USED
     if (OMX_SendCommand(eglHandle, OMX_CommandPortEnable, 221, NULL) != OMX_ErrorNone) {
