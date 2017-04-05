@@ -595,7 +595,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     printf("video_decode input buffers:\n");
     showOmxBufferInfo(video_decode, 130); //buffers=20 minBuffer=1 bufferSize=81920)
 
-setOmxBufferCount(video_decode, 131, 4); //cbx
+setOmxBufferCount(video_decode, 131, 4); //cbx no difference
 
     printf("video_decode output buffers:\n");
     showOmxBufferInfo(video_decode, 131); //buffers=1 minBuffer=1 bufferSize=115200
@@ -872,6 +872,9 @@ int AminoOmxVideoPlayer::playOmx() {
             }
 
             //show egl_render buffer sizes cbx
+setOmxBufferCount(egl_render, 220, 4); //cbx
+setOmxBufferCount(egl_render, 221, 4); //cbx
+
             printf("egl_render input buffers:\n"); //buffers=0 minBuffer=0 bufferSize=3133440
             showOmxBufferInfo(egl_render, 220);
 
