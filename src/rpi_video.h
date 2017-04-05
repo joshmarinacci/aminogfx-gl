@@ -79,6 +79,7 @@ private:
     static void omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data);
 
     bool showOmxBufferInfo(COMPONENT_T *comp, int port);
+    bool setOmxBufferCount(COMPONENT_T *comp, int port, int count);
 
 public:
     COMPONENT_T *egl_render = NULL;

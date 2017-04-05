@@ -595,33 +595,10 @@ bool AminoOmxVideoPlayer::initOmx() {
     printf("video_decode input buffers:\n");
     showOmxBufferInfo(video_decode, 130); //buffers=20 minBuffer=1 bufferSize=81920)
 
+setOmxBufferCount(video_decode, 131, 4); //cbx
+
     printf("video_decode output buffers:\n");
     showOmxBufferInfo(video_decode, 131); //buffers=1 minBuffer=1 bufferSize=115200
-
-    //set buffer count (Note: default buffer count is 20)
-    /*
-    OMX_PARAM_PORTDEFINITIONTYPE portdef;
-
-    memset(&portdef, 0, sizeof portdef);
-    portdef.nSize = sizeof portdef;
-    portdef.nVersion.nVersion = OMX_VERSION;
-    portdef.nPortIndex = 130; //input buffer
-
-    if (OMX_GetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-        lastError = "could not get port definition";
-        status = -170;
-        goto end;
-    }
-
-    portdef.nPortIndex = 130; //input buffers
-    portdef.nBufferCountActual = 20; //default
-
-    if (OMX_SetParameter(ILC_GET_HANDLE(video_decode), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-        lastError = "could not set port definition";
-        status = -171;
-        goto end;
-    }
-    */
 
     //free extra buffers
     OMX_PARAM_U32TYPE eb;
@@ -1041,6 +1018,27 @@ bool AminoOmxVideoPlayer::showOmxBufferInfo(COMPONENT_T *comp, int port) {
 
     //show
     printf("-> buffers=%i minBuffer=%i bufferSize=%i\n", portdef.nBufferCountActual, portdef.nBufferCountMin, portdef.nBufferSize);
+
+    return true;
+}
+
+/**
+ * Set the buffer count.
+ */
+bool AminoOmxVideoPlayer::setOmxBufferCount(COMPONENT_T *comp, int port, int count) {
+    OMX_PARAM_PORTDEFINITIONTYPE portdef;
+
+    memset(&portdef, 0, sizeof portdef);
+    portdef.nSize = sizeof portdef;
+    portdef.nVersion.nVersion = OMX_VERSION;
+    portdef.nPortIndex = port;
+
+    portdef.nBufferCountActual = count;
+
+    if (OMX_SetParameter(ILC_GET_HANDLE(comp), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+        printf("-> Could not set port definition!\n"); //cbx
+        return false;
+    }
 
     return true;
 }
