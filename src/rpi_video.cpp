@@ -834,9 +834,9 @@ int AminoOmxVideoPlayer::playOmx() {
             }
 
 printf("video_scheduler buffers:\n"); //cbx
-showOmxBufferInfo(video_scheduler, 10);
-showOmxBufferInfo(video_scheduler, 11);
-showOmxBufferInfo(video_scheduler, 12);
+showOmxBufferInfo(video_scheduler, 10); //buffers=0 minBuffer=0 bufferSize=3133440
+showOmxBufferInfo(video_scheduler, 11); //buffers=1 minBuffer=1 bufferSize=3133440
+showOmxBufferInfo(video_scheduler, 12); //buffers=1 minBuffer=1 bufferSize=48
 
             //start scheduler
             ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
@@ -877,8 +877,8 @@ showOmxBufferInfo(video_scheduler, 12);
             }
 
             //show egl_render buffer sizes cbx
-setOmxBufferCount(egl_render, 220, 4); //cbx does not work
-setOmxBufferCount(egl_render, 221, 4); //cbx does not work
+//setOmxBufferCount(egl_render, 220, 4); //cbx does not work
+setOmxBufferCount(egl_render, 221, 4); //cbx works
 
             printf("egl_render input buffers:\n"); //buffers=0 minBuffer=0 bufferSize=3133440
             showOmxBufferInfo(egl_render, 220);
