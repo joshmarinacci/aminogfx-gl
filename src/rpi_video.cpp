@@ -833,6 +833,11 @@ int AminoOmxVideoPlayer::playOmx() {
                 break;
             }
 
+printf("video_scheduler buffers:\n"); //cbx
+showOmxBufferInfo(video_scheduler, 10);
+showOmxBufferInfo(video_scheduler, 11);
+showOmxBufferInfo(video_scheduler, 12);
+
             //start scheduler
             ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
 
@@ -872,8 +877,8 @@ int AminoOmxVideoPlayer::playOmx() {
             }
 
             //show egl_render buffer sizes cbx
-setOmxBufferCount(egl_render, 220, 4); //cbx
-setOmxBufferCount(egl_render, 221, 4); //cbx
+setOmxBufferCount(egl_render, 220, 4); //cbx does not work
+setOmxBufferCount(egl_render, 221, 4); //cbx does not work
 
             printf("egl_render input buffers:\n"); //buffers=0 minBuffer=0 bufferSize=3133440
             showOmxBufferInfo(egl_render, 220);
@@ -1036,6 +1041,14 @@ bool AminoOmxVideoPlayer::setOmxBufferCount(COMPONENT_T *comp, int port, int cou
     portdef.nVersion.nVersion = OMX_VERSION;
     portdef.nPortIndex = port;
 
+    //get current settings
+    if (OMX_GetParameter(ILC_GET_HANDLE(comp), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
+        printf("-> Could not get port definition!\n");
+        return false;
+    }
+
+    //change values
+    portdef.nPortIndex = port;
     portdef.nBufferCountActual = count;
 
     if (OMX_SetParameter(ILC_GET_HANDLE(comp), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
