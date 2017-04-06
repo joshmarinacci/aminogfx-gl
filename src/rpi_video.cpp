@@ -176,9 +176,9 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
     assert(player);
 //cbx check param
-    if (DEBUG_OMX_BUFFER) {
-        printf("OMX: handleFillBufferDone() %p (%p)\n", comp, &list[0]); //cbx
-    }
+//    if (DEBUG_OMX_BUFFER) {
+        printf("OMX: handleFillBufferDone() %p (%p)\n", comp, list); //cbx
+//    }
 
     //check state
     if (player->omxDestroyed) {
