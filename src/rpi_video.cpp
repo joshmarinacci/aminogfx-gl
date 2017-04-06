@@ -175,9 +175,9 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(data);
 
     assert(player);
-
+//cbx check param
     if (DEBUG_OMX_BUFFER) {
-        printf("OMX: handleFillBufferDone()\n");
+        printf("OMX: handleFillBufferDone() %p (%p)\n", comp, list[0]); //cbx
     }
 
     //check state
@@ -490,7 +490,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //HDMI sync (Note: not well documented; FIXME cbx seeing no effect)
+    //HDMI sync (Note: not well documented; FIXME cbx seeing no effect, probably not needed)
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
     memset(&lt, 0, sizeof lt);
@@ -591,14 +591,14 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //show video_decode buffer sizes cbx
+    //show video_decode buffer sizes
+    /*
     printf("video_decode input buffers:\n");
     showOmxBufferInfo(video_decode, 130); //buffers=20 minBuffer=1 bufferSize=81920)
 
-setOmxBufferCount(video_decode, 131, 4); //cbx no difference
-
     printf("video_decode output buffers:\n");
     showOmxBufferInfo(video_decode, 131); //buffers=1 minBuffer=1 bufferSize=115200
+    */
 
     //free extra buffers
     OMX_PARAM_U32TYPE eb;
@@ -614,7 +614,7 @@ setOmxBufferCount(video_decode, 131, 4); //cbx no difference
         goto end;
     }
 
-    //video decode input buffers
+    //create video decode input buffers
     if (ilclient_enable_port_buffers(video_decode, 130, NULL, NULL, NULL) != 0) {
         lastError = "video decode port error";
         status = -18;
@@ -719,7 +719,7 @@ int AminoOmxVideoPlayer::playOmx() {
     //start decoding
     OMX_BUFFERHEADERTYPE *buf;
     bool port_settings_changed = false;
-    bool first_packet = true;
+    bool firstPacket = true;
     int res = 0;
 
     ilclient_change_component_state(video_decode, OMX_StateExecuting);
@@ -833,10 +833,13 @@ int AminoOmxVideoPlayer::playOmx() {
                 break;
             }
 
-printf("video_scheduler buffers:\n"); //cbx
-showOmxBufferInfo(video_scheduler, 10); //buffers=0 minBuffer=0 bufferSize=3133440
-showOmxBufferInfo(video_scheduler, 11); //buffers=1 minBuffer=1 bufferSize=3133440
-showOmxBufferInfo(video_scheduler, 12); //buffers=1 minBuffer=1 bufferSize=48
+            //debug video_scheduler buffers
+            /*
+            printf("video_scheduler buffers:\n");
+            showOmxBufferInfo(video_scheduler, 10); //buffers=0 minBuffer=0 bufferSize=3133440
+            showOmxBufferInfo(video_scheduler, 11); //buffers=1 minBuffer=1 bufferSize=3133440
+            showOmxBufferInfo(video_scheduler, 12); //buffers=1 minBuffer=1 bufferSize=48
+            */
 
             //start scheduler
             ilclient_change_component_state(video_scheduler, OMX_StateExecuting);
@@ -868,7 +871,7 @@ showOmxBufferInfo(video_scheduler, 12); //buffers=1 minBuffer=1 bufferSize=48
             videoW = portdef.format.video.nFrameWidth;
             videoH = portdef.format.video.nFrameHeight;
 
-//cbx            if (DEBUG_OMX) {
+            if (DEBUG_OMX) {
             {
                 //Note: buffer count not set.
                 double fps = portdef.format.video.xFramerate / (float)(1 << 16);
@@ -876,33 +879,19 @@ showOmxBufferInfo(video_scheduler, 12); //buffers=1 minBuffer=1 bufferSize=48
                 printf("video: %dx%d@%.2f bitrate=%i minBuffers=%i buffer=%i bufferSize=%i\n", videoW, videoH, fps, (int)portdef.format.video.nBitrate, portdef.nBufferCountMin, portdef.nBufferCountActual, portdef.nBufferSize);
             }
 
-            //show egl_render buffer sizes cbx
-//setOmxBufferCount(egl_render, 220, 4); //cbx does not work
-setOmxBufferCount(egl_render, 221, 4); //cbx works
-
+            //show egl_render buffer sizes
+            /*
             printf("egl_render input buffers:\n"); //buffers=0 minBuffer=0 bufferSize=3133440
             showOmxBufferInfo(egl_render, 220);
 
             printf("egl_render output buffers:\n"); //buffers=1 minBuffer=1 bufferSize=0
             showOmxBufferInfo(egl_render, 221);
-
-            //set egl render buffer
-            //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
-            //FIXME cbx fails -> too late?
-            /*
-            memset(&portdef, 0, sizeof portdef);
-            portdef.nSize = sizeof portdef;
-            portdef.nVersion.nVersion = OMX_VERSION;
-            portdef.nPortIndex = 221; //output
-            portdef.nBufferCountActual = 4; //cbx TODO
-            //cbx try pNativeWindow set to display
-
-            if (OMX_SetParameter(ILC_GET_HANDLE(egl_render), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-                lastError = "could not set render buffer";
-                res = -330;
-                break;
-            }
             */
+
+            //cbx TODO use multiple output buffers
+            //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
+            //set egl render buffer
+            //setOmxBufferCount(egl_render, 221, 4); //cbx works but crashes so far (EGL not initialized)
 
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
@@ -944,10 +933,13 @@ setOmxBufferCount(egl_render, 221, 4); //cbx works
             buf->nTimeStamp.nHighPart = omxData.timeStamp >> 32;
         }
 
-        if (first_packet && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
+        //debug cbx
+        printf("timestamp: %i %i\n", buf->nTimeStamp.nHighPart, buf->nTimeStamp.nLowPart);
+
+        if (firstPacket && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
             //first packet (contains start time)
             buf->nFlags |= OMX_BUFFERFLAG_STARTTIME;
-            first_packet = false;
+            firstPacket = false;
         } else {
             //video packet
             if (omxData.timeStamp) {
@@ -1052,7 +1044,7 @@ bool AminoOmxVideoPlayer::setOmxBufferCount(COMPONENT_T *comp, int port, int cou
     portdef.nBufferCountActual = count;
 
     if (OMX_SetParameter(ILC_GET_HANDLE(comp), OMX_IndexParamPortDefinition, &portdef) != OMX_ErrorNone) {
-        printf("-> Could not set port definition!\n"); //cbx
+        printf("-> Could not set port definition!\n");
         return false;
     }
 
@@ -1131,6 +1123,7 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
         return false;
     }
 
+    //Note: pAppPrivate not used
     if (OMX_UseEGLImage(eglHandle, &eglBuffer, 221, NULL, eglImage) != OMX_ErrorNone) {
         lastError = "OMX_UseEGLImage failed.";
         return false;
