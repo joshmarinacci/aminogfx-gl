@@ -485,8 +485,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
     cstate.nWaitMask = OMX_CLOCKPORT0;
 
-    //cbx verify
-    cstate.nOffset.nLowPart = -200 * 1000;
+    cstate.nOffset.nLowPart = -200 * 1000; //200 ms
     cstate.nOffset.nHighPart = 0;
     //cbx check -> we never set the start time value
 
