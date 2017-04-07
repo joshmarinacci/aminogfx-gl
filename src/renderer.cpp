@@ -904,6 +904,8 @@ void AminoRenderer::drawRect(AminoRect *rect) {
 
             texture->prepareTexture();
             applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity, needsClampToBorder, rect->repeatX, rect->repeatY);
+//cbx video test
+ctx->unbindTexture();
         }
     } else {
         //color only

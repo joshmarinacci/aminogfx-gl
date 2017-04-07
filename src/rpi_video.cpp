@@ -932,8 +932,8 @@ int AminoOmxVideoPlayer::playOmx() {
             buf->nTimeStamp.nHighPart = omxData.timeStamp >> 32;
         }
 
-        //debug cbx FIXME not in order
-        printf("timestamp: %i %i\n", buf->nTimeStamp.nHighPart, buf->nTimeStamp.nLowPart);
+        //debug (Note: in presentation time order)
+        //printf("timestamp: %i %i\n", buf->nTimeStamp.nHighPart, buf->nTimeStamp.nLowPart);
 
         if (firstPacket && (omxData.flags & OMX_BUFFERFLAG_CODECCONFIG) != OMX_BUFFERFLAG_CODECCONFIG) {
             //first packet (contains start time)
@@ -942,7 +942,7 @@ int AminoOmxVideoPlayer::playOmx() {
         } else {
             //video packet
             if (omxData.timeStamp) {
-                //cbx time is in PTS
+                //Note: time is always in PTS (DTS not used)
                 //buf->nFlags |= OMX_BUFFERFLAG_TIME_IS_DTS;
             } else {
                 buf->nFlags |= OMX_BUFFERFLAG_TIME_UNKNOWN;
