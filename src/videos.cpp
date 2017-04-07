@@ -932,6 +932,10 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
                 } else {
                     //use last value
                     pts = lastPts;
+
+                    if (DEBUG_VIDEO_FRAMES) {
+                        printf("-> using internal timer\n");
+                    }
                 }
 
                 //calc next value
