@@ -482,7 +482,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     cstate.nVersion.nVersion = OMX_VERSION;
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
 //cbx try OMX_TIME_ClockStateRunning (without nWaitMask)
-    cstate.nWaitMask = 1;
+cstate.eState = OMX_TIME_ClockStateRunning; //cbx
+//    cstate.nWaitMask = 1;
 
     if (OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
         lastError = "could not set clock";
