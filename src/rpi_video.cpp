@@ -177,7 +177,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     assert(player);
 //cbx check param
 //    if (DEBUG_OMX_BUFFER) {
-        printf("OMX: handleFillBufferDone() %p (%p)\n", comp, (void *)list); //cbx
+        printf("OMX: handleFillBufferDone() %p (%p)\n", comp, player->list[0]); //cbx
 //    }
 
     //check state
@@ -481,7 +481,11 @@ bool AminoOmxVideoPlayer::initOmx() {
     cstate.nSize = sizeof cstate;
     cstate.nVersion.nVersion = OMX_VERSION;
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
-    cstate.nWaitMask = 1;
+    cstate.nWaitMask = OMX_CLOCKPORT1;
+
+    //cbx verify
+    cstate.nOffset.nLowPart = -200 * 1000;
+    cstate.nOffset.nHighPart = 0;
     //cbx check -> we never set the start time value
 
     if (OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
