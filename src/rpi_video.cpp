@@ -872,7 +872,6 @@ int AminoOmxVideoPlayer::playOmx() {
             videoH = portdef.format.video.nFrameHeight;
 
             if (DEBUG_OMX) {
-            {
                 //Note: buffer count not set.
                 double fps = portdef.format.video.xFramerate / (float)(1 << 16);
 
