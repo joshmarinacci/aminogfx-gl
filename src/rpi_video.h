@@ -35,6 +35,7 @@ public:
     static void omxThread(void *arg);
 #endif
     static void handleFillBufferDone(void *data, COMPONENT_T *comp);
+
     bool initOmx();
     int playOmx();
     void stopOmx();

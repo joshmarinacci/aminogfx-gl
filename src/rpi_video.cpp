@@ -170,15 +170,17 @@ void* AminoOmxVideoPlayer::omxThread(void *arg) {
 
 /**
  * OMX buffer callback.
+ *
+ * Note: egl_render buffer output buffer was filled.
  */
 void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(data);
 
     assert(player);
-//cbx check param
-//    if (DEBUG_OMX_BUFFER) {
-        printf("OMX: handleFillBufferDone() %p (%p)\n", comp, player->list[1]); //cbx
-//    }
+
+    if (DEBUG_OMX_BUFFER) {
+        printf("OMX: handleFillBufferDone() %p\n", comp);
+    }
 
     //check state
     if (player->omxDestroyed) {
@@ -186,7 +188,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         return;
     }
 
-    //write to texture buffer
+    //fill this buffer again (and write to texture)
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), player->eglBuffer) != OMX_ErrorNone) {
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
