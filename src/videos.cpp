@@ -817,7 +817,7 @@ double VideoDemuxer::getFramePts(AVPacket *packet) {
     if (!stream || !packet) {
         return 0;
     }
-cbx
+
     if (packet->pts != (int64_t)AV_NOPTS_VALUE) {
         return packet->pts * av_q2d(stream->time_base);
     }
@@ -916,7 +916,6 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
                     pts = av_frame_get_best_effort_timestamp(frame) * av_q2d(stream->time_base);
 #else
                     //fallback (currently not yet used)
-cbx
                     if (frame->pts != (int64_t)AV_NOPTS_VALUE) {
                         pts = frame->pts * av_q2d(stream->time_base);
                     } else {
@@ -1379,7 +1378,7 @@ unsigned int VideoFileStream::read(unsigned char *dest, unsigned int length, omx
 
         //timing
         omxData.timeStamp = demuxer->getFramePts(&packet) * 1000000;
-cbx
+
         //check state
         if (dataLen < (unsigned int)packet.size) {
             //data left

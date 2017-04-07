@@ -196,7 +196,7 @@ private:
 
     void resetTimeout(int timeoutMS);
 };
-cbx
+
 struct omx_metadata_t {
     unsigned int flags;
     signed long long timeStamp;
