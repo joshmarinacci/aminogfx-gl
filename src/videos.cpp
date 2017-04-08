@@ -184,6 +184,13 @@ AminoVideoPlayer::~AminoVideoPlayer() {
 }
 
 /**
+ * Get amount of textures needed by player.
+ */
+int AminoVideoPlayer::getNeededTextures() {
+    return 1;
+}
+
+/**
  * Destroy the video player.
  */
 void AminoVideoPlayer::destroy() {

@@ -945,7 +945,7 @@ void AminoMacVideoPlayer::initVideoTexture() {
  * Init texture.
  */
 bool AminoMacVideoPlayer::initTexture() {
-    glBindTexture(GL_TEXTURE_2D, texture->textureId);
+    glBindTexture(GL_TEXTURE_2D, texture->getTexture());
 
     //size (has to be equal to video dimension!)
     GLsizei textureW = videoW;
@@ -999,7 +999,7 @@ void AminoMacVideoPlayer::updateVideoTexture() {
 
     frameId = id;
 
-    glBindTexture(GL_TEXTURE_2D, texture->textureId);
+    glBindTexture(GL_TEXTURE_2D, texture->getTexture());
 
     GLsizei textureW = videoW;
     GLsizei textureH = videoH;

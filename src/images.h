@@ -65,7 +65,9 @@ class AminoTextureFactory;
  */
 class AminoTexture : public AminoJSObject {
 public:
-    GLuint textureId = INVALID_TEXTURE;
+    GLuint *textureIds = NULL;
+    int textureCount = 0;
+    int activeTexture = -1;
     bool ownTexture = true;
     int w = 0;
     int h = 0;
@@ -81,6 +83,9 @@ public:
 
     //init
     static v8::Local<v8::FunctionTemplate> GetInitFunction();
+
+    //texture
+    GLuint getTexture();
 
     //video
     void initVideoTexture();

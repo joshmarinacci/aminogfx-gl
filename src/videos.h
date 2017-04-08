@@ -59,6 +59,7 @@ public:
 
     virtual bool initStream() = 0; //called on main thread
     virtual void init() = 0; //called on OpenGL thread
+    virtual int getNeededTextures();
     virtual void initVideoTexture() = 0;
     virtual void updateVideoTexture() = 0;
     virtual void destroy();

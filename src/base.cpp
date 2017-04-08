@@ -1331,8 +1331,8 @@ amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMis
 /**
  * A new texture was created.
  */
-void AminoGfx::notifyTextureCreated() {
-    textureCount++;
+void AminoGfx::notifyTextureCreated(int count) {
+    textureCount += count;
 }
 
 /**

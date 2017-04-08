@@ -783,7 +783,7 @@ void AminoRenderer::drawModel(AminoModel *model) {
         AminoTexture *texture = static_cast<AminoTexture *>(model->propTexture->value);
 
         texture->prepareTexture();
-        ctx->bindTexture(texture->textureId);
+        ctx->bindTexture(texture->getTexture());
     }
 
     //alpha
@@ -878,7 +878,7 @@ void AminoRenderer::drawRect(AminoRect *rect) {
         //has optional texture
         AminoTexture *texture = static_cast<AminoTexture *>(rect->propTexture->value);
 
-        if (texture && texture->textureId != INVALID_TEXTURE) {
+        if (texture && texture->textureCount > 0) {
             //texture
 
             //debug
@@ -903,7 +903,7 @@ void AminoRenderer::drawRect(AminoRect *rect) {
             bool needsClampToBorder = (tx < 0 || tx > 1) || (tx2 < 0 || tx2 > 1) || (ty < 0 || ty > 1) || (ty2 < 0 || ty2 > 1) || rect->repeatX || rect->repeatY;
 
             texture->prepareTexture();
-            applyTextureShader((float *)verts, 2, 6, texCoords, texture->textureId, opacity, needsClampToBorder, rect->repeatX, rect->repeatY);
+            applyTextureShader((float *)verts, 2, 6, texCoords, texture->getTexture(), opacity, needsClampToBorder, rect->repeatX, rect->repeatY);
         }
     } else {
         //color only
@@ -1025,7 +1025,7 @@ amino_atlas_t AminoRenderer::getAtlasTexture(texture_atlas_t *atlas, bool create
     amino_atlas_t res = fontShader->getAtlasTexture(atlas, createIfMissing, newTexture);
 
     if (newTexture) {
-        gfx->notifyTextureCreated();
+        gfx->notifyTextureCreated(1);
     }
 
     return res;

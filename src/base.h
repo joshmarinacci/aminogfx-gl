@@ -59,7 +59,7 @@ public:
     //text
     void textUpdateNeeded(AminoText *text);
     amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture);
-    void notifyTextureCreated();
+    void notifyTextureCreated(int count);
     static void updateAtlasTextures(texture_atlas_t *atlas);
 
     //video

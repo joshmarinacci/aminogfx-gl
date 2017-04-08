@@ -711,13 +711,23 @@ void AminoTexture::destroyAminoTexture() {
     }
 
     //free texture
-    if (textureId != INVALID_TEXTURE) {
+    if (textureCount > 0) {
         //Note: we are on the main thread
+
         if (eventHandler && ownTexture) {
-            (static_cast<AminoGfx *>(eventHandler))->deleteTextureAsync(textureId);
+            AminoGfx *gfx = static_cast<AminoGfx *>(eventHandler);
+
+            for (int i = 0; i < textureCount; i++) {
+                gfx->deleteTextureAsync(textureIds[i]);
+            }
         }
 
-        textureId = INVALID_TEXTURE;
+        delete[] textureIds;
+        textureIds = NULL;
+        textureCount = 0;
+        activeTexture = -1;
+        ownTexture = false;
+
         w = 0;
         h = 0;
 
@@ -796,6 +806,17 @@ void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
 }
 
 /**
+ * Get the current active texture.
+ */
+GLuint AminoTexture::getTexture() {
+    if (activeTexture >= 0) {
+        return textureIds[activeTexture];
+    }
+
+    return INVALID_TEXTURE;
+}
+
+/**
  * Load texture asynchronously.
  *
  * loadTextureFromImage(img, callback)
@@ -812,7 +833,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
 
     assert(obj);
 
-    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+    if (obj->callback || obj->textureCount > 0) {
         //already set
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
@@ -845,7 +866,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
 }
 
 /**
- * Create texture.
+ * Create texture from image.
  */
 void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
     if (state == AsyncValueUpdate::STATE_APPLY) {
@@ -859,33 +880,40 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
 
         assert(img);
 
-        bool newTexture = this->textureId == INVALID_TEXTURE;
-        GLuint textureId = img->createTexture(this->textureId);
+        bool newTexture = textureCount == 0;
+        GLuint textureId = img->createTexture(getTexture());
 
         //debug
         //printf("-> createTexture() new=%i id=%i\n", (int)newTexture, (int)textureId);
 
         if (textureId != INVALID_TEXTURE) {
             //set values
-            this->textureId = textureId;
-
             if (newTexture) {
+                textureIds = new GLuint[1];
+                textureIds[0] = textureId;
+                textureCount = 1;
+                activeTexture = 0;
                 ownTexture = true;
+            } else {
+                //re-used texture
+                assert(getTexture() == textureId);
             }
 
             w = img->w;
             h = img->h;
 
             if (newTexture) {
-               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated(1);
             }
+        } else {
+            activeTexture = -1;
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
 
         v8::Local<v8::Object> obj = handle();
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (activeTexture < 0) {
             //failed
 
             if (callback) {
@@ -932,7 +960,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
     assert(obj);
 
-    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+    if (obj->callback || obj->textureCount > 0) {
         //already set
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
@@ -1018,7 +1046,6 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
     if (state == AsyncValueUpdate::STATE_APPLY) {
         //create texture on OpenGL thread
-
         if (DEBUG_IMAGES) {
             printf("-> createVideoTexture()\n");
         }
@@ -1027,48 +1054,72 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
 
         assert(video);
 
-        bool newTexture = this->textureId == INVALID_TEXTURE;
-        GLuint textureId = this->textureId;
+        //get amount of textures
+        uv_mutex_lock(&videoLock);
 
-        if (newTexture) {
-            glGenTextures(1, &textureId);
+        int count = 0;
 
-            assert(textureId != INVALID_TEXTURE);
+        if (videoPlayer) {
+            count = videoPlayer->getNeededTextures();
+
+            assert(count > 0);
+        }
+
+        uv_mutex_unlock(&videoLock);
+
+        //create own textures
+        if (!ownTexture || count > textureCount) {
+            //free first
+            if (ownTexture) {
+                glDeleteTextures(textureCount, textureIds);
+                delete[] textureIds;
+                textureIds = NULL;
+                textureCount = 0;
+                activeTexture = -1;
+            }
+
+            //create
+            textureIds = new GLuint[count];
+
+            for (int i = 0; i < count; i++) {
+                textureIds[i] = INVALID_TEXTURE;
+            }
+
+            glGenTextures(count, textureIds);
+
+            for (int i = 0; i < count; i++) {
+                assert(textureIds[i] != INVALID_TEXTURE);
+            }
+
+            textureCount = count;
+            activeTexture = 0;
+            ownTexture = true;
+
+            //stats
+            (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated(count);
+        } else {
+            //re-use textures
         }
 
         //debug
         if (DEBUG_VIDEOS) {
-            printf("-> createVideoTexture() new=%i id=%i\n", (int)newTexture, (int)textureId);
+            printf("-> createVideoTexture() count=%i id=%i\n", count, textureIds[0]);
         }
 
-        if (textureId != INVALID_TEXTURE) {
-            //set values
-            this->textureId = textureId;
-
-            if (newTexture) {
-                ownTexture = true;
+        //initialize
+        uv_mutex_lock(&videoLock);
+        if (videoPlayer) {
+            if (DEBUG_VIDEOS) {
+                printf("-> init video player\n");
             }
 
-            //initialize
-            uv_mutex_lock(&videoLock);
-            if (videoPlayer) {
-                if (DEBUG_VIDEOS) {
-                    printf("-> init video player\n");
-                }
-
-                videoPlayer->init();
-            }
-            uv_mutex_unlock(&videoLock);
-
-            //stats
-            if (newTexture) {
-               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
-            }
+            videoPlayer->init();
         }
+        uv_mutex_unlock(&videoLock);
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (textureCount == 0) {
             //failed
 
             if (callback) {
@@ -1295,19 +1346,30 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
 
         assert(textureData);
 
-        bool newTexture = this->textureId == INVALID_TEXTURE;
-        GLuint textureId = AminoImage::createTexture(this->textureId, textureData->bufferData, textureData->bufferLen, textureData->w, textureData->h, textureData->bpp);
+        bool newTexture = textureCount == 0;
+        GLuint textureId = AminoImage::createTexture(getTexture(), textureData->bufferData, textureData->bufferLen, textureData->w, textureData->h, textureData->bpp);
 
         if (textureId != INVALID_TEXTURE) {
             //set values
-            this->textureId = textureId;
+            if (newTexture) {
+                textureIds = new GLuint[1];
+                textureIds[0] = textureId;
+                textureCount = 1;
+                activeTexture = 0;
+                ownTexture = true;
+            } else {
+                //re-used texture
+                assert(getTexture() == textureId);
+            }
 
             w = textureData->w;
             h = textureData->h;
 
             if (newTexture) {
-                (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+                (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated(1);
             }
+        } else {
+            activeTexture = -1;
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
@@ -1315,7 +1377,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
 
         assert(textureData);
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (activeTexture < 0) {
             //failed
 
             if (textureData->callback) {
@@ -1366,7 +1428,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromFont) {
     //callback
     v8::Local<v8::Function> callback = info[1].As<v8::Function>();
 
-    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+    if (obj->callback || obj->textureCount > 0) {
         //already set
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
@@ -1410,11 +1472,18 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
 
         if (textureId != INVALID_TEXTURE) {
             //set values
-            this->textureId = textureId;
+            assert(textureIds == NULL);
+
+            textureIds = new GLuint[1];
+            textureIds[0] = textureId;
+            textureCount = 1;
+            activeTexture = 0;
             ownTexture = false;
 
             w = atlas->width;
             h = atlas->height;
+        } else {
+            activeTexture = -1;
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
@@ -1422,7 +1491,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
 
         assert(fontSize);
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (activeTexture < 0) {
             //failed
 
             if (callback) {
