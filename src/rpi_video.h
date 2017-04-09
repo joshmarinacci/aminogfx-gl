@@ -57,7 +57,7 @@ public:
     bool setOmxSpeed(OMX_S32 speed);
 
 private:
-    EGLImageKHR eglImage = EGL_NO_IMAGE_KHR;
+    EGLImageKHR *eglImages = NULL;
     ILCLIENT_T *client = NULL;
     AnyVideoStream *stream = NULL;
 
@@ -84,7 +84,13 @@ private:
 
 public:
     COMPONENT_T *egl_render = NULL;
-    OMX_BUFFERHEADERTYPE *eglBuffer = NULL;
+    OMX_BUFFERHEADERTYPE *eglBuffers[] = NULL;
+    uv_mutex_t bufferLock;
+
+    int textureActive = 0;
+    int textureFilling = 1;
+    int textureReady = -1;
+
     bool bufferFilled = false;
     bool bufferError = false;
 };

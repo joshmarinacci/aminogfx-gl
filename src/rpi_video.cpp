@@ -16,6 +16,8 @@
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
 
+#define OMX_EGL_BUFFERS 3
+
 //
 // AminoOmxVideoPlayer
 //
@@ -31,6 +33,18 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
 
     assert(res == 0);
     assert(res2 == 0);
+
+    //egl
+    eglImages = new EGLImageKHR[OMX_EGL_BUFFERS];
+    eglBuffers = new OMX_BUFFERHEADERTYPE*[OMX_EGL_BUFFERS];
+
+    for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+        eglImages[i] = EGL_NO_IMAGE_KHR;
+        eglBuffers[i] = NULL;
+    }
+
+    //lock
+    uv_mutex_init(&bufferLock);
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
@@ -39,6 +53,13 @@ AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
     //semaphore
     uv_sem_destroy(&pauseSem);
     uv_sem_destroy(&textureSem);
+
+    //eglImages
+    delete[] eglImages;
+    delete[] eglBuffers;
+
+    //lock
+    uv_mutex_destroy(&bufferLock);
 }
 
 /**
@@ -128,13 +149,17 @@ void AminoOmxVideoPlayer::destroyAminoOmxVideoPlayer() {
     stopOmx();
 
     //free EGL texture
-    if (eglImage != EGL_NO_IMAGE_KHR) {
-        AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
+    AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
 
-        assert(gfx);
+    assert(gfx);
 
-        gfx->destroyEGLImage(eglImage);
-        eglImage = EGL_NO_IMAGE_KHR;
+    for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+        EGLImageKHR eglImage = eglImages[i];
+
+        if (eglImage != EGL_NO_IMAGE_KHR) {
+            gfx->destroyEGLImage(eglImage);
+            eglImages[i] = EGL_NO_IMAGE_KHR;
+        }
     }
 }
 
@@ -188,8 +213,31 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         return;
     }
 
-    //fill this buffer again (and write to texture)
-    if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), player->eglBuffer) != OMX_ErrorNone) {
+    //fill the next buffer (and write to texture)
+    uv_mutex_lock(&bufferLock);
+
+    int lastReady = player->textureReady;
+
+    player->textureReady = player->textureFilling;
+
+    if (lastReady >= 0) {
+        //rotate buffers (-> frame skipped)
+        player->textureFilling = lastReady;
+    } else {
+        //switch to new buffer
+        for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+            if (i != player->textureReady && i != player->textureActive) {
+                player->textureFilling = i;
+                break;
+            }
+        }
+    }
+
+    OMX_BUFFERHEADERTYPE *eglBuffer = player->eglBuffers[player->textureFilling];
+
+    uv_mutex_unlock(&bufferLock);
+
+    if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), eglBuffer) != OMX_ErrorNone) {
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
     } else {
@@ -892,18 +940,16 @@ int AminoOmxVideoPlayer::playOmx() {
             showOmxBufferInfo(egl_render, 221);
             */
 
-            //cbx TODO use multiple output buffers
-            //max buffers is 8? (https://github.com/raspberrypi/firmware/issues/718)
-            //set egl render buffer
-            //setOmxBufferCount(egl_render, 221, 4); //cbx works but crashes so far (EGL not initialized)
+            //set egl render buffers (max 8; https://github.com/raspberrypi/firmware/issues/718)
+            setOmxBufferCount(egl_render, 221, OMX_EGL_BUFFERS);
 
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
 
             //wait for texture
             uv_sem_wait(&textureSem);
-
-            if (!eglImage || doStop) {
+//cbx check fail condition
+            if (doStop) {
                 //failed to create texture
                 handleInitDone(false);
                 break;
@@ -1091,6 +1137,14 @@ void AminoOmxVideoPlayer::stopOmx() {
     }
 }
 
+
+/**
+ * Needed OpenGL textures.
+ */
+int AminoOmxVideoPlayer::getNeededTextures() {
+    return OMX_EGL_BUFFERS;
+}
+
 /**
  * Init video texture on OpenGL thread.
  */
@@ -1128,15 +1182,17 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
         return false;
     }
 
-    //Note: pAppPrivate not used
-    if (OMX_UseEGLImage(eglHandle, &eglBuffer, 221, NULL, eglImage) != OMX_ErrorNone) {
-        lastError = "OMX_UseEGLImage failed.";
-        return false;
-    }
+    for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+        //Note: pAppPrivate not used
+        if (OMX_UseEGLImage(eglHandle, &eglBuffers[i], 221, NULL, eglImages[i]) != OMX_ErrorNone) {
+            lastError = "OMX_UseEGLImage failed.";
+            return false;
+        }
 
-    if (!eglBuffer) {
-        lastError = "could not get buffer";
-        return false;
+        if (!eglBuffers[i]) {
+            lastError = "could not get buffer";
+            return false;
+        }
     }
 
     if (DEBUG_OMX) {
@@ -1151,7 +1207,7 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     }
 
     //request egl_render to write data to the texture buffer
-    if (OMX_FillThisBuffer(eglHandle, eglBuffer) != OMX_ErrorNone) {
+    if (OMX_FillThisBuffer(eglHandle, eglBuffers[textureFilling]) != OMX_ErrorNone) {
         lastError = "OMX_FillThisBuffer failed.";
         return false;
     }
@@ -1163,30 +1219,37 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
  * Init texture (on rendering thread).
  */
 bool AminoOmxVideoPlayer::initTexture() {
-    glBindTexture(GL_TEXTURE_2D, texture->textureId);
+    texture->activeTexture = 0;
 
-    //size (has to be equal to video dimension!)
-    GLsizei textureW = videoW;
-    GLsizei textureH = videoH;
+    for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+        GLuint textureId = texture->textureIds[i];
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        assert(textureId != INVALID_TEXTURE);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, textureId);
 
-    //create EGL Image
-    AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
+        //size (has to be equal to video dimension!)
+        GLsizei textureW = videoW;
+        GLsizei textureH = videoH;
 
-    assert(texture->textureId != INVALID_TEXTURE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-    eglImage = gfx->createEGLImage(texture->textureId);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    if (eglImage == EGL_NO_IMAGE_KHR) {
-        lastError = "eglCreateImageKHR failed";
+        //create EGL Image
+        AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
+        EGLImageKHR eglImage = gfx->createEGLImage(textureId);
 
-        return false;
+        eglImages[i] = eglImage;
+
+        if (eglImage == EGL_NO_IMAGE_KHR) {
+            lastError = "eglCreateImageKHR failed";
+
+            return false;
+        }
     }
 
     return true;
@@ -1196,7 +1259,17 @@ bool AminoOmxVideoPlayer::initTexture() {
  * Update the video texture.
  */
 void AminoOmxVideoPlayer::updateVideoTexture() {
-    //not needed
+    uv_mutex_lock(&bufferLock);
+
+    if (textureReady >= 0) {
+        //new frame available
+        textureActive = textureReady;
+        textureReady = -1;
+
+        texture->activeTexture = textureActive;
+    }
+
+    uv_mutex_unlock(&bufferLock);
 }
 
 /**
@@ -1242,9 +1315,11 @@ void AminoOmxVideoPlayer::destroyOmx() {
     //Note: blocks forever!!! Anyway, we are not re-using this player instance.
     //ilclient_state_transition(list, OMX_StateLoaded);
 
-    if (eglBuffer) {
-        OMX_FreeBuffer(ILC_GET_HANDLE(egl_render), 221, eglBuffer);
-        eglBuffer = NULL;
+    for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+        if (eglBuffers[i]) {
+            OMX_FreeBuffer(ILC_GET_HANDLE(egl_render), 221, eglBuffers[i]);
+            eglBuffer = NULL;
+        }
     }
 
     egl_render = NULL;
