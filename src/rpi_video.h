@@ -58,6 +58,7 @@ public:
 
 private:
     EGLImageKHR *eglImages = NULL;
+    bool eglImagesReady = false;
     ILCLIENT_T *client = NULL;
     AnyVideoStream *stream = NULL;
 

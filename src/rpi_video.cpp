@@ -948,8 +948,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
             //wait for texture
             uv_sem_wait(&textureSem);
-//cbx check fail condition
-            if (doStop) {
+
+            if (!eglImagesReady || doStop) {
                 //failed to create texture
                 handleInitDone(false);
                 break;
@@ -1164,6 +1164,7 @@ void AminoOmxVideoPlayer::initVideoTexture() {
     }
 
     //ready
+    eglImagesReady = true;
     uv_sem_post(&textureSem);
 }
 
