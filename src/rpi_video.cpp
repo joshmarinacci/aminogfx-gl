@@ -226,7 +226,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
         //cbx FIXME happens -> need queue to show all frames
         printf("-> frame skipped\n"); //cbx
-        usleep(1000 / 60 * 1000); //cbx try to sleep for a while
+        //usleep(1000 / 60 * 1000); //cbx try to sleep for a while
     } else {
         //switch to new buffer
         for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
@@ -1239,8 +1239,15 @@ bool AminoOmxVideoPlayer::initTexture() {
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
+//cbx check performance
+/*
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+*/
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
