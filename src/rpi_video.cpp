@@ -1279,6 +1279,9 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
         textureReady = -1;
 
         texture->activeTexture = textureActive;
+    } else {
+        //no new frame
+        printf("-> underflow\n"); //cbx
     }
 
     uv_mutex_unlock(&bufferLock);
