@@ -85,7 +85,7 @@ private:
 
 public:
     COMPONENT_T *egl_render = NULL;
-    OMX_BUFFERHEADERTYPE *eglBuffers[] = NULL;
+    OMX_BUFFERHEADERTYPE **eglBuffers = NULL;
     uv_mutex_t bufferLock;
 
     int textureActive = 0;
