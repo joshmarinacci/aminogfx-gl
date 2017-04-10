@@ -18,8 +18,9 @@ player.playVideo({
     src: path.join(process.cwd(), file),
     opts: 'amino_dump_format=1',
     gfxOpts: {
+        //cbx
         //resolution: '1080p@25'
-        //resolution: '1080p@30'
+        resolution: '1080p@30'
         //resolution: '1080p@60'
     }
 }, (err, video) => {

@@ -223,6 +223,8 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     if (lastReady >= 0) {
         //rotate buffers (-> frame skipped)
         player->textureFilling = lastReady;
+
+        printf("-> frame skipped\n"); //cbx
     } else {
         //switch to new buffer
         for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
@@ -550,7 +552,6 @@ bool AminoOmxVideoPlayer::initOmx() {
     lt.nSize = sizeof lt;
     lt.nVersion.nVersion = OMX_VERSION;
 
-    /*
     lt.nPortIndex = OMX_ALL;
     lt.bEnabled = OMX_TRUE;
     lt.nFilter = 10;
@@ -559,8 +560,8 @@ bool AminoOmxVideoPlayer::initOmx() {
     lt.nSpeedFactor = -60;
     lt.nInterFactor = 100;
     lt.nAdjCap = 100;
-    */
 
+    /*
     lt.nPortIndex = OMX_ALL;
     lt.bEnabled = OMX_TRUE;
     lt.nFilter = 2;
@@ -569,6 +570,7 @@ bool AminoOmxVideoPlayer::initOmx() {
     lt.nSpeedFactor = -135;
     lt.nInterFactor = 500;
     lt.nAdjCap = 20;
+    */
 
     if (OMX_SetConfig(ILC_GET_HANDLE(clock), OMX_IndexConfigLatencyTarget, &lt) != OMX_ErrorNone) {
         lastError = "could not set clock latency";
