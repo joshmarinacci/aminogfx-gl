@@ -224,7 +224,9 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         //rotate buffers (-> frame skipped)
         player->textureFilling = lastReady;
 
+        //cbx FIXME happens -> need queue to show all frames
         printf("-> frame skipped\n"); //cbx
+        usleep(1000 / 60 * 1000); //cbx try to sleep for a while
     } else {
         //switch to new buffer
         for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
