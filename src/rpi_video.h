@@ -19,6 +19,7 @@ public:
     ~AminoOmxVideoPlayer();
 
     void init() override;
+    int getNeededTextures() override;
     bool initTexture();
 
     void destroy() override;

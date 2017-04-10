@@ -214,7 +214,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     }
 
     //fill the next buffer (and write to texture)
-    uv_mutex_lock(&bufferLock);
+    uv_mutex_lock(&player->bufferLock);
 
     int lastReady = player->textureReady;
 
@@ -235,7 +235,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
     OMX_BUFFERHEADERTYPE *eglBuffer = player->eglBuffers[player->textureFilling];
 
-    uv_mutex_unlock(&bufferLock);
+    uv_mutex_unlock(&player->bufferLock);
 
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), eglBuffer) != OMX_ErrorNone) {
         player->bufferError = true;
@@ -1319,7 +1319,7 @@ void AminoOmxVideoPlayer::destroyOmx() {
     for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
         if (eglBuffers[i]) {
             OMX_FreeBuffer(ILC_GET_HANDLE(egl_render), 221, eglBuffers[i]);
-            eglBuffer = NULL;
+            eglBuffers[i] = NULL;
         }
     }
 
