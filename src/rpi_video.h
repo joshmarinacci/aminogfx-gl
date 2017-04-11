@@ -91,8 +91,8 @@ public:
 
     int textureActive = 0;
     int textureFilling = 1;
-    std::stack<int> textureReady;
-    std::stack<int> textureNew;
+    std::queue<int> textureReady;
+    std::queue<int> textureNew;
 
     bool bufferFilled = false;
     bool bufferError = false;

@@ -33,7 +33,7 @@ public:
      * Destructor.
      */
     virtual ~GLContext() {
-        assert(matrixStack.size() == 0);
+        assert(matrixStack.empty());
         delete[] globaltx;
     }
 
@@ -41,7 +41,7 @@ public:
      * Reset context (prepare for next cycle).
      */
     void reset() {
-        assert(matrixStack.size() == 0);
+        assert(matrixStack.empty());
         assert(depth == 0);
 
         //reset
