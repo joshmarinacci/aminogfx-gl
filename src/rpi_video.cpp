@@ -220,6 +220,8 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     //fill the next buffer (and write to texture)
     uv_mutex_lock(&player->bufferLock);
 
+    printf("-> filled: %i\n", player->textureFilling); //cbx
+
     player->textureReady.push(player->textureFilling);
 
     if (!player->textureNew.empty()) {
@@ -1297,6 +1299,8 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
         ctx->unbindTexture();
         texture->activeTexture = textureActive;
+
+        printf("-> displaying: %i\n", textureActive); //cbx
     } else {
         //no new frame
         printf("-> underflow\n"); //cbx
