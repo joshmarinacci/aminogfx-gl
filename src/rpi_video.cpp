@@ -226,6 +226,7 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
         //cbx FIXME happens -> need queue to show all frames
         printf("-> frame skipped\n"); //cbx
+        //usleep(1000 * 1000); //cbx 1s delay
         //usleep(1000 / 60 * 1000); //cbx try to sleep for a while
     } else {
         //switch to new buffer
@@ -946,6 +947,21 @@ int AminoOmxVideoPlayer::playOmx() {
 
             //set egl render buffers (max 8; https://github.com/raspberrypi/firmware/issues/718)
             setOmxBufferCount(egl_render, 221, OMX_EGL_BUFFERS);
+
+            //do not discard input buffers
+            OMX_CONFIG_PORTBOOLEANTYPE dm;
+
+            memset(&dm, 0, sizeof dm);
+            dm.nSize = sizeof dm;
+            dm.nVersion.nVersion = OMX_VERSION;
+            dm.nPortIndex = 220; //input buffer
+            dm.bEnabled = OMX_FALSE;
+
+            if (OMX_SetParameter(ILC_GET_HANDLE(egl_render), OMX_IndexParamBrcmVideoEGLRenderDiscardMode, &dm) != OMX_ErrorNone) {
+                lastError = "could not disable discard mode";
+                res = -330;
+                break;
+            }
 
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
