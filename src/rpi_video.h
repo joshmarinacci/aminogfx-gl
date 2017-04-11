@@ -1,6 +1,8 @@
 #ifndef _AMINO_RPI_VIDEO_H
 #define _AMINO_RPI_VIDEO_H
 
+#include <queue>
+
 #include "base.h"
 
 extern "C" {
