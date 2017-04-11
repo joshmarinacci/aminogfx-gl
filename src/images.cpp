@@ -1232,7 +1232,7 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
  *
  * Note: texture is valid.
  */
-void AminoTexture::prepareTexture() {
+void AminoTexture::prepareTexture(GLContext *ctx) {
     if (!videoLockUsed) {
         return;
     }
@@ -1240,7 +1240,7 @@ void AminoTexture::prepareTexture() {
     uv_mutex_lock(&videoLock);
 
     if (videoPlayer) {
-        videoPlayer->updateVideoTexture();
+        videoPlayer->updateVideoTexture(ctx);
     }
 
     uv_mutex_unlock(&videoLock);

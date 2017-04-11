@@ -972,7 +972,7 @@ bool AminoMacVideoPlayer::initTexture() {
 /**
  * Update the texture (on rendering thread).
  */
-void AminoMacVideoPlayer::updateVideoTexture() {
+void AminoMacVideoPlayer::updateVideoTexture(GLContext *ctx) {
     uv_mutex_lock(&frameLock);
 
     if (!demuxer) {

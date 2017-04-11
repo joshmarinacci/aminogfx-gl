@@ -25,7 +25,7 @@ public:
     bool initStream() override;
     void init() override;
     void initVideoTexture() override;
-    void updateVideoTexture() override;
+    void updateVideoTexture(GLContext *ctx) override;
     bool initTexture();
 
     //metadata

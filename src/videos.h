@@ -14,6 +14,7 @@ extern "C" {
 
 class AminoVideoFactory;
 class AminoTexture;
+class GLContext;
 
 /**
  * Amino Video Loader.
@@ -61,7 +62,7 @@ public:
     virtual void init() = 0; //called on OpenGL thread
     virtual int getNeededTextures();
     virtual void initVideoTexture() = 0;
-    virtual void updateVideoTexture() = 0;
+    virtual void updateVideoTexture(GLContext *ctx) = 0;
     virtual void destroy();
     void destroyAminoVideoPlayer();
 

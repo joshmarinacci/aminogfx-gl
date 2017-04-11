@@ -90,7 +90,7 @@ public:
     //video
     void initVideoTexture();
     void videoPlayerInitDone();
-    void prepareTexture();
+    void prepareTexture(GLContext *ctx);
     void fireVideoEvent(std::string event);
 
 private:

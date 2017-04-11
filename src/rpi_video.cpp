@@ -1285,7 +1285,7 @@ bool AminoOmxVideoPlayer::initTexture() {
 /**
  * Update the video texture.
  */
-void AminoOmxVideoPlayer::updateVideoTexture() {
+void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
     uv_mutex_lock(&bufferLock);
 
     if (!textureReady.empty()) {
@@ -1295,6 +1295,7 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
         textureActive = textureReady.top();
         textureReady.pop();
 
+        ctx->unbindTexture();
         texture->activeTexture = textureActive;
     } else {
         //no new frame

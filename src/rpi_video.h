@@ -43,7 +43,7 @@ public:
     void destroyOmx();
 
     void initVideoTexture() override;
-    void updateVideoTexture() override;
+    void updateVideoTexture(GLContext *ctx) override;
     bool setupOmxTexture();
 
     //metadata
