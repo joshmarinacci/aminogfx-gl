@@ -16,7 +16,7 @@
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
 
-#define OMX_EGL_BUFFERS 3
+#define OMX_EGL_BUFFERS 4
 
 //
 // AminoOmxVideoPlayer
@@ -41,6 +41,10 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
     for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
         eglImages[i] = EGL_NO_IMAGE_KHR;
         eglBuffers[i] = NULL;
+
+        if (i > 1) {
+            textureNew.push(i);
+        }
     }
 
     //lock
@@ -216,26 +220,19 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     //fill the next buffer (and write to texture)
     uv_mutex_lock(&player->bufferLock);
 
-    int lastReady = player->textureReady;
+    player->textureReady.push(player->textureFilling);
 
-    player->textureReady = player->textureFilling;
-
-    if (lastReady >= 0) {
-        //rotate buffers (-> frame skipped)
-        player->textureFilling = lastReady;
+    if (!player->textureNew.empty()) {
+        //use new
+        player->textureFilling = player->textureNew.pop();
+    } else {
+        //remove oldest frame
+        player->textureFilling = player->textureReady.pop();
 
         //cbx FIXME happens -> need queue to show all frames
         printf("-> frame skipped\n"); //cbx
         //usleep(1000 * 1000); //cbx 1s delay
         //usleep(1000 / 60 * 1000); //cbx try to sleep for a while
-    } else {
-        //switch to new buffer
-        for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
-            if (i != player->textureReady && i != player->textureActive) {
-                player->textureFilling = i;
-                break;
-            }
-        }
     }
 
     OMX_BUFFERHEADERTYPE *eglBuffer = player->eglBuffers[player->textureFilling];
@@ -1289,10 +1286,10 @@ bool AminoOmxVideoPlayer::initTexture() {
 void AminoOmxVideoPlayer::updateVideoTexture() {
     uv_mutex_lock(&bufferLock);
 
-    if (textureReady >= 0) {
+    if (!textureReady.empty()) {
         //new frame available
-        textureActive = textureReady;
-        textureReady = -1;
+        textureNew.push(textureActive);
+        textureActive = textureReady.pop();
 
         texture->activeTexture = textureActive;
     } else {
