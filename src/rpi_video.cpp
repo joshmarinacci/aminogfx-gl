@@ -224,10 +224,12 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
     if (!player->textureNew.empty()) {
         //use new
-        player->textureFilling = player->textureNew.pop();
+        player->textureFilling = player->textureNew.top();
+        player->textureNew.pop();
     } else {
         //remove oldest frame
-        player->textureFilling = player->textureReady.pop();
+        player->textureFilling = player->textureReady.top();
+        player->textureReady.pop();
 
         //cbx FIXME happens -> need queue to show all frames
         printf("-> frame skipped\n"); //cbx
@@ -1289,7 +1291,9 @@ void AminoOmxVideoPlayer::updateVideoTexture() {
     if (!textureReady.empty()) {
         //new frame available
         textureNew.push(textureActive);
-        textureActive = textureReady.pop();
+
+        textureActive = textureReady.top();
+        textureReady.pop();
 
         texture->activeTexture = textureActive;
     } else {
