@@ -999,6 +999,8 @@ int AminoOmxVideoPlayer::playOmx() {
         buf->nFlags = omxData.flags;
 
         if (omxData.timeStamp) {
+            omxData.timeStamp *= 10; //cbx trying slower playback
+
             //in microseconds
             buf->nTimeStamp.nLowPart = omxData.timeStamp;
             buf->nTimeStamp.nHighPart = omxData.timeStamp >> 32;
@@ -1297,10 +1299,15 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         textureActive = textureReady.front();
         textureReady.pop();
 
-        ctx->unbindTexture();
+        //ctx->unbindTexture(); //cbx not necessary
         texture->activeTexture = textureActive;
 
-        printf("-> displaying: %i\n", textureActive); //cbx
+        //debug cbx
+        OMX_BUFFERHEADERTYPE *eglBuffer = eglBuffers[textureActive];
+        int64_t timestamp = eglBuffer->nTimestamp.nLowPart | ((int64_t)eglBuffer->nTimestamp.nHighPart << 32);
+        float timeSecs = timestamp / 1000000.f;
+
+        printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
     } else {
         //no new frame
         printf("-> underflow\n"); //cbx
@@ -1400,6 +1407,7 @@ double AminoOmxVideoPlayer::getMediaTime() {
         return -1;
     }
 
+    //microseconds
     int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)ts.nTimestamp.nHighPart << 32);
 
     return timestamp / 1000000.f;
