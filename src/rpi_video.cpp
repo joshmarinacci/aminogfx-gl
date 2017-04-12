@@ -243,6 +243,9 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
 
     uv_mutex_unlock(&player->bufferLock);
 
+    eglBuffer->nFlags = 0;
+    eglBuffer->nFilledLen = 0;
+
     if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), eglBuffer) != OMX_ErrorNone) {
         player->bufferError = true;
         printf("OMX_FillThisBuffer failed in callback\n");
@@ -1231,7 +1234,12 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     }
 
     //request egl_render to write data to the texture buffer
-    if (OMX_FillThisBuffer(eglHandle, eglBuffers[textureFilling]) != OMX_ErrorNone) {
+    OMX_BUFFERHEADERTYPE *eglBuffer = eglBuffers[textureFilling];
+
+    eglBuffer->nFlags = 0;
+    eglBuffer->nFilledLen = 0;
+
+    if (OMX_FillThisBuffer(eglHandle, eglBuffer) != OMX_ErrorNone) {
         lastError = "OMX_FillThisBuffer failed.";
         return false;
     }
