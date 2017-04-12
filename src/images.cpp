@@ -670,7 +670,7 @@ AminoTexture::AminoTexture(): AminoJSObject(getFactory()->name) {
  */
 AminoTexture::~AminoTexture()  {
     if (!destroyed) {
-        destroyAminoTexture();
+        destroyAminoTexture(true);
     }
 
     //lock
@@ -687,7 +687,7 @@ void AminoTexture::destroy() {
         return;
     }
 
-    destroyAminoTexture();
+    destroyAminoTexture(false);
 
     //Note: frees eventHandler
     AminoJSObject::destroy();
@@ -696,7 +696,7 @@ void AminoTexture::destroy() {
 /**
  * Free resources (on main thread).
  */
-void AminoTexture::destroyAminoTexture() {
+void AminoTexture::destroyAminoTexture(bool destructorCall) {
     if (callback) {
         delete callback;
         callback = NULL;
@@ -731,10 +731,13 @@ void AminoTexture::destroyAminoTexture() {
         w = 0;
         h = 0;
 
-        v8::Local<v8::Object> obj = handle();
+        if (!destructorCall) {
+            //Note: we have an active scope
+            v8::Local<v8::Object> obj = handle();
 
-        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::Undefined());
-        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
+            Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::Undefined());
+            Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
+        }
     }
 }
 

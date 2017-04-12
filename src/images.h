@@ -76,7 +76,7 @@ public:
     ~AminoTexture();
 
     void destroy() override;
-    void destroyAminoTexture();
+    void destroyAminoTexture(bool destructorCall);
 
     //creation
     static AminoTextureFactory* getFactory();
