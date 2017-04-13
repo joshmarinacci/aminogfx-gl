@@ -1312,7 +1312,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
         //debug cbx
         OMX_BUFFERHEADERTYPE *eglBuffer = eglBuffers[textureActive];
-        int64_t timestamp = eglBuffer->nTimestamp.nLowPart | ((int64_t)eglBuffer->nTimestamp.nHighPart << 32);
+        int64_t timestamp = eglBuffer->nTimeStamp.nLowPart | ((int64_t)eglBuffer->nTimeStamp.nHighPart << 32);
         float timeSecs = timestamp / 1000000.f;
 
         printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
@@ -1416,7 +1416,7 @@ double AminoOmxVideoPlayer::getMediaTime() {
     }
 
     //microseconds
-    int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)ts.nTimestamp.nHighPart << 32);
+    int64_t timestamp = ts.nTimeStamp.nLowPart | ((int64_t)ts.nTimeStamp.nHighPart << 32);
 
     return timestamp / 1000000.f;
 }
