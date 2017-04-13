@@ -1231,7 +1231,7 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
 /**
  * Fill the next egl_render buffer.
  */
-void AminoOmxVideoPlayer::omxFillNextEglBuffer() {
+bool AminoOmxVideoPlayer::omxFillNextEglBuffer() {
     if (textureFilling == -1) {
         return false;
     }
@@ -1304,7 +1304,7 @@ bool AminoOmxVideoPlayer::initTexture() {
  * Update the video texture.
  */
 void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
-    if (paused || stopped) {
+    if (paused || !playing) {
         return;
     }
 
