@@ -47,6 +47,7 @@ public:
     void initVideoTexture() override;
     void updateVideoTexture(GLContext *ctx) override;
     bool setupOmxTexture();
+    bool omxFillNextEglBuffer();
 
     //metadata
     double getMediaTime() override;
@@ -98,6 +99,9 @@ public:
 
     bool bufferFilled = false;
     bool bufferError = false;
+
+    double mediaTime = -1;
+    double timeStartSys = -1;
 };
 
 #endif

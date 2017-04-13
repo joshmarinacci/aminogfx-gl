@@ -230,28 +230,16 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         player->textureFilling = player->textureNew.front();
         player->textureNew.pop();
     } else {
-        //remove oldest frame
-        player->textureFilling = player->textureReady.front();
-        player->textureReady.pop();
+        //stop filling
+        player->textureFilling = -1;
 
-        //cbx FIXME happens -> need exact display timing
         //debug
-        //printf("-> frame skipped\n");
+        //printf("-> buffering paused\n");
     }
-
-    OMX_BUFFERHEADERTYPE *eglBuffer = player->eglBuffers[player->textureFilling];
 
     uv_mutex_unlock(&player->bufferLock);
 
-    eglBuffer->nFlags = 0;
-    eglBuffer->nFilledLen = 0;
-
-    if (OMX_FillThisBuffer(ilclient_get_handle(player->egl_render), eglBuffer) != OMX_ErrorNone) {
-        player->bufferError = true;
-        printf("OMX_FillThisBuffer failed in callback\n");
-    } else {
-        player->bufferFilled = true;
-    }
+    player->omxFillNextEglBuffer();
 }
 
 /**
@@ -1002,8 +990,6 @@ int AminoOmxVideoPlayer::playOmx() {
         buf->nFlags = omxData.flags;
 
         if (omxData.timeStamp) {
-            //omxData.timeStamp *= 10; //cbx trying slower playback
-
             //in microseconds
             buf->nTimeStamp.nLowPart = omxData.timeStamp;
             buf->nTimeStamp.nHighPart = omxData.timeStamp >> 32;
@@ -1234,15 +1220,35 @@ bool AminoOmxVideoPlayer::setupOmxTexture() {
     }
 
     //request egl_render to write data to the texture buffer
+    if (!omxFillNextEglBuffer()) {
+        lastError = "OMX_FillThisBuffer failed.";
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Fill the next egl_render buffer.
+ */
+void AminoOmxVideoPlayer::omxFillNextEglBuffer() {
+    if (textureFilling == -1) {
+        return false;
+    }
+
     OMX_BUFFERHEADERTYPE *eglBuffer = eglBuffers[textureFilling];
 
     eglBuffer->nFlags = 0;
     eglBuffer->nFilledLen = 0;
 
-    if (OMX_FillThisBuffer(eglHandle, eglBuffer) != OMX_ErrorNone) {
-        lastError = "OMX_FillThisBuffer failed.";
+    if (OMX_FillThisBuffer(ilclient_get_handle(egl_render), eglBuffer) != OMX_ErrorNone) {
+        bufferError = true;
+        printf("OMX_FillThisBuffer failed in callback\n");
+
         return false;
     }
+
+    bufferFilled = true;
 
     return true;
 }
@@ -1298,24 +1304,57 @@ bool AminoOmxVideoPlayer::initTexture() {
  * Update the video texture.
  */
 void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
+    if (paused || stopped) {
+        return;
+    }
+
     uv_mutex_lock(&bufferLock);
-//cbx TODO use own timing
+
+    bool newBuffer = false;
+
     if (!textureReady.empty()) {
         //new frame available
-        textureNew.push(textureActive);
 
-        textureActive = textureReady.front();
-        textureReady.pop();
-
-        //ctx->unbindTexture(); //cbx not necessary
-        texture->activeTexture = textureActive;
-
-        //debug cbx
-        OMX_BUFFERHEADERTYPE *eglBuffer = eglBuffers[textureActive];
+        //check media time
+        int nextFrame = textureReady.front();
+        OMX_BUFFERHEADERTYPE *eglBuffer = eglBuffers[nextFrame];
         int64_t timestamp = eglBuffer->nTimeStamp.nLowPart | ((int64_t)eglBuffer->nTimeStamp.nHighPart << 32);
-        float timeSecs = timestamp / 1000000.f;
+        double timeSecs = timestamp / 1000000.f;
+        double timeNowSys = getTime() / 1000;
+        double playTime;
 
-        printf("-> displaying: %i (pos: %f s; time: %f)\n", textureActive, timeSecs, getMediaTime());
+        if (timeStartSys == -1) {
+            playTime = 0;
+            timeStartSys = timeNowSys;
+        } else {
+            playTime = timeNowSys - timeStartSys;
+        }
+
+        if (playTime >= timeSecs) {
+            //switch to next frame
+            textureNew.push(textureActive);
+
+            textureActive = nextFrame;
+            textureReady.pop();
+
+            //ctx->unbindTexture(); //cbx not necessary
+            texture->activeTexture = textureActive;
+
+            //update media time
+            mediaTime = timeSecs;
+
+            //check buffer state
+            if (textureFilling == -1) {
+                //fill next buffer
+                textureFilling = textureNew.front();
+                textureNew.pop();
+
+                newBuffer = true;
+            }
+
+            //debug cbx
+            printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
+        }
     } else {
         //no new frame
 
@@ -1324,6 +1363,10 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
     }
 
     uv_mutex_unlock(&bufferLock);
+
+    if (newBuffer) {
+        omxFillNextEglBuffer();
+    }
 }
 
 /**
@@ -1405,6 +1448,9 @@ double AminoOmxVideoPlayer::getMediaTime() {
         return -1;
     }
 
+    return mediaTime;
+
+    /*
     COMPONENT_T *clock = list[2];
     OMX_TIME_CONFIG_TIMESTAMPTYPE ts;
 
@@ -1421,6 +1467,7 @@ double AminoOmxVideoPlayer::getMediaTime() {
     int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)ts.nTimestamp.nHighPart << 32);
 
     return timestamp / 1000000.f;
+    */
 }
 
 /**
@@ -1483,7 +1530,7 @@ bool AminoOmxVideoPlayer::pausePlayback() {
     if (DEBUG_OMX) {
         printf("pausing OMX\n");
     }
-
+//cbx FIXME pause timer
     doPause = true; //signal thread to pause
 
     if (!setOmxSpeed(0)) {
