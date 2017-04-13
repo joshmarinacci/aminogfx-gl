@@ -1416,7 +1416,7 @@ double AminoOmxVideoPlayer::getMediaTime() {
     }
 
     //microseconds
-    int64_t timestamp = ts.nTimeStamp.nLowPart | ((int64_t)ts.nTimeStamp.nHighPart << 32);
+    int64_t timestamp = ts.nTimestamp.nLowPart | ((int64_t)ts.nTimestamp.nHighPart << 32);
 
     return timestamp / 1000000.f;
 }
