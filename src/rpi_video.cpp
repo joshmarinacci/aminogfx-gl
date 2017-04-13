@@ -1002,7 +1002,7 @@ int AminoOmxVideoPlayer::playOmx() {
         buf->nFlags = omxData.flags;
 
         if (omxData.timeStamp) {
-            omxData.timeStamp *= 10; //cbx trying slower playback
+            //omxData.timeStamp *= 10; //cbx trying slower playback
 
             //in microseconds
             buf->nTimeStamp.nLowPart = omxData.timeStamp;
