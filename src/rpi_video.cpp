@@ -220,7 +220,8 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
     //fill the next buffer (and write to texture)
     uv_mutex_lock(&player->bufferLock);
 
-    printf("-> filled: %i\n", player->textureFilling); //cbx
+    //debug
+    //printf("-> filled: %i\n", player->textureFilling);
 
     player->textureReady.push(player->textureFilling);
 
@@ -233,10 +234,9 @@ void AminoOmxVideoPlayer::handleFillBufferDone(void *data, COMPONENT_T *comp) {
         player->textureFilling = player->textureReady.front();
         player->textureReady.pop();
 
-        //cbx FIXME happens -> need queue to show all frames
-        printf("-> frame skipped\n"); //cbx
-        //usleep(1000 * 1000); //cbx 1s delay
-        //usleep(1000 / 60 * 1000); //cbx try to sleep for a while
+        //cbx FIXME happens -> need exact display timing
+        //debug
+        //printf("-> frame skipped\n");
     }
 
     OMX_BUFFERHEADERTYPE *eglBuffer = player->eglBuffers[player->textureFilling];
@@ -1299,7 +1299,7 @@ bool AminoOmxVideoPlayer::initTexture() {
  */
 void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
     uv_mutex_lock(&bufferLock);
-
+//cbx TODO use own timing
     if (!textureReady.empty()) {
         //new frame available
         textureNew.push(textureActive);
@@ -1315,10 +1315,12 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         int64_t timestamp = eglBuffer->nTimeStamp.nLowPart | ((int64_t)eglBuffer->nTimeStamp.nHighPart << 32);
         float timeSecs = timestamp / 1000000.f;
 
-        printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
+        printf("-> displaying: %i (pos: %f s; time: %f)\n", textureActive, timeSecs, getMediaTime());
     } else {
         //no new frame
-        printf("-> underflow\n"); //cbx
+
+        //debug
+        //printf("-> underflow\n");
     }
 
     uv_mutex_unlock(&bufferLock);
