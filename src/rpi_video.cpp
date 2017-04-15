@@ -1305,6 +1305,8 @@ bool AminoOmxVideoPlayer::initTexture() {
 
 /**
  * Update the video texture.
+ *
+ * Displays the next frame once available.
  */
 void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
     if (paused || !playing) {
@@ -1327,9 +1329,11 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         double playTime;
 
         if (timeStartSys == -1) {
+            //start of playbacl
             playTime = 0;
             timeStartSys = timeNowSys;
         } else {
+            //ongoing playback
             playTime = timeNowSys - timeStartSys;
         }
 
@@ -1345,7 +1349,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
             texture->activeTexture = textureActive;
 
-            //update media time
+            //update media time (use frame time, not actual time)
             mediaTime = timeSecs;
 
             //check buffer state
@@ -1358,6 +1362,21 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             }
 
             //debug cbx
+            if (playTime - timeSecs > 0.2) {
+                printf("-> frame shown too late (decoder too slow?)\n");
+            }
+
+            if (!textureReady.empty()) {
+                int nextFrame2 = textureReady.front();
+                OMX_BUFFERHEADERTYPE *eglBuffer2 = eglBuffers[nextFrame2];
+                int64_t timestamp2 = eglBuffer2->nTimeStamp.nLowPart | ((int64_t)eglBuffer2->nTimeStamp.nHighPart << 32);
+                double timeSecs2 = timestamp / 1000000.f;
+
+                if (playTime >= timeSecs2) {
+                    printf("-> playback queue lag (rendering too slow)\n");
+                }
+            }
+
             printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
         }
     } else {
