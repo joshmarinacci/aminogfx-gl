@@ -530,9 +530,10 @@ bool AminoOmxVideoPlayer::initOmx() {
     cstate.eState = OMX_TIME_ClockStateWaitingForStartTime;
     cstate.nWaitMask = OMX_CLOCKPORT0;
 
+    /*
     cstate.nOffset.nLowPart = -200 * 1000; //200 ms
     cstate.nOffset.nHighPart = 0;
-    //cbx check -> we never set the start time value
+    */
 
     if (OMX_SetParameter(ILC_GET_HANDLE(clock), OMX_IndexConfigTimeClockState, &cstate) != OMX_ErrorNone) {
         lastError = "could not set clock";
@@ -540,7 +541,7 @@ bool AminoOmxVideoPlayer::initOmx() {
         goto end;
     }
 
-    //HDMI sync (Note: not well documented; FIXME cbx seeing no effect, probably not needed)
+    //HDMI sync (Note: not well documented; seeing no effect, probably not needed)
     OMX_CONFIG_LATENCYTARGETTYPE lt;
 
     memset(&lt, 0, sizeof lt);
@@ -854,6 +855,8 @@ int AminoOmxVideoPlayer::playOmx() {
 
                 break;
             }
+
+            //cbx check media time
 
             handleRewind();
 
@@ -1337,7 +1340,9 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             textureActive = nextFrame;
             textureReady.pop();
 
-            //ctx->unbindTexture(); //cbx not necessary
+            //Note: not necessary
+            //ctx->unbindTexture();
+
             texture->activeTexture = textureActive;
 
             //update media time
@@ -1530,8 +1535,9 @@ bool AminoOmxVideoPlayer::pausePlayback() {
     if (DEBUG_OMX) {
         printf("pausing OMX\n");
     }
-//cbx FIXME pause timer
+
     doPause = true; //signal thread to pause
+    pauseTime = getTime() / 1000;
 
     if (!setOmxSpeed(0)) {
         return false;
@@ -1561,6 +1567,11 @@ bool AminoOmxVideoPlayer::resumePlayback() {
     if (!paused) {
         return true;
     }
+
+    //change time
+    double resumeTime = getTime() / 1000;
+
+    timeStartSys += resumeTime - pauseTime;
 
     //resume thread
     if (!doPause) {

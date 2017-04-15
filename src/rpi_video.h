@@ -78,6 +78,7 @@ private:
     bool omxDestroyed = false;
     bool doStop = false;
     bool doPause = false;
+    double pauseTime;
     uv_sem_t pauseSem;
     uv_sem_t textureSem;
 
