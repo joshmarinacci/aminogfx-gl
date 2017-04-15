@@ -94,7 +94,7 @@ void AminoOmxVideoPlayer::init() {
         lastError = "unsupported format";
         delete stream;
         stream = NULL;
-
+//cbx software decoder
         handleInitDone(false);
 
         return;
@@ -1370,7 +1370,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                 int nextFrame2 = textureReady.front();
                 OMX_BUFFERHEADERTYPE *eglBuffer2 = eglBuffers[nextFrame2];
                 int64_t timestamp2 = eglBuffer2->nTimeStamp.nLowPart | ((int64_t)eglBuffer2->nTimeStamp.nHighPart << 32);
-                double timeSecs2 = timestamp / 1000000.f;
+                double timeSecs2 = timestamp2 / 1000000.f;
 
                 if (playTime >= timeSecs2) {
                     printf("-> playback queue lag (rendering too slow)\n");
