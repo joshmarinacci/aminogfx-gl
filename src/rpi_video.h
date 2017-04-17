@@ -60,6 +60,10 @@ public:
     OMX_U32 getOmxFramerate();
     bool setOmxSpeed(OMX_S32 speed);
 
+    //software decoder
+    static void decoderThread(void *arg);
+    void initDemuxer();
+
 private:
     EGLImageKHR *eglImages = NULL;
     bool eglImagesReady = false;
@@ -72,6 +76,7 @@ private:
     uv_thread_t thread;
 #endif
     bool threadRunning = false;
+    bool softwareDecoding = false;
 
     TUNNEL_T tunnel[4];
     COMPONENT_T *list[5];
@@ -81,6 +86,8 @@ private:
     double pauseTime;
     uv_sem_t pauseSem;
     uv_sem_t textureSem;
+
+    int frameId = -1;
 
     static std::string getOmxError(OMX_S32 err);
     static void omxErrorHandler(void *userData, COMPONENT_T *comp, OMX_U32 data);

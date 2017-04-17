@@ -228,6 +228,8 @@ public:
     virtual double getDuration() = 0;
     virtual double getFramerate() = 0;
 
+    virtual VideoDemuxer* getDemuxer() = 0;
+
     std::string getLastError();
 
 protected:
@@ -257,6 +259,8 @@ public:
     bool hasH264NaluStartCodes() override;
     double getDuration() override;
     double getFramerate() override;
+
+    VideoDemuxer* getDemuxer() override;
 
 private:
     std::string filename;

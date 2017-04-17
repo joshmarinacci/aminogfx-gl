@@ -91,11 +91,20 @@ void AminoOmxVideoPlayer::init() {
 
     //check format
     if (!stream->isH264()) {
-        lastError = "unsupported format";
-        delete stream;
-        stream = NULL;
-//cbx software decoder
-        handleInitDone(false);
+        if (!stream->getDemuxer()) {
+            lastError = "unsupported format";
+            delete stream;
+            stream = NULL;
+
+            handleInitDone(false);
+        }
+
+        softwareDecoding = true;
+        threadRunning = true;
+
+        int res = uv_thread_create(&thread, decoderThread, this);
+
+        assert(res == 0);
 
         return;
     }
@@ -1118,7 +1127,7 @@ bool AminoOmxVideoPlayer::setOmxBufferCount(COMPONENT_T *comp, int port, int cou
 }
 
 /**
- * Stops the OMX playback thread.
+ * Stops the OMX playback thread (or software decoding).
  */
 void AminoOmxVideoPlayer::stopOmx() {
     if (!omxDestroyed) {
@@ -1142,7 +1151,14 @@ void AminoOmxVideoPlayer::stopOmx() {
             }
 
 #ifdef USE_OMX_VCOS_THREAD
-            vcos_thread_join(&thread, NULL);
+            if (softwareDecoding) {
+                int res = uv_thread_join(&thread);
+
+                assert(res == 0);
+            } else {
+                //VCOS
+                vcos_thread_join(&thread, NULL);
+            }
 #else
             int res = uv_thread_join(&thread);
 
@@ -1152,12 +1168,11 @@ void AminoOmxVideoPlayer::stopOmx() {
     }
 }
 
-
 /**
  * Needed OpenGL textures.
  */
 int AminoOmxVideoPlayer::getNeededTextures() {
-    return OMX_EGL_BUFFERS;
+    return softwareDecoding ? 1:OMX_EGL_BUFFERS;
 }
 
 /**
@@ -1262,7 +1277,9 @@ bool AminoOmxVideoPlayer::omxFillNextEglBuffer() {
 bool AminoOmxVideoPlayer::initTexture() {
     texture->activeTexture = 0;
 
-    for (int i = 0; i < OMX_EGL_BUFFERS; i++) {
+    int textureCount = getNeededTextures();
+
+    for (int i = 0; i < textureCount; i++) {
         GLuint textureId = texture->textureIds[i];
 
         assert(textureId != INVALID_TEXTURE);
@@ -1273,7 +1290,15 @@ bool AminoOmxVideoPlayer::initTexture() {
         GLsizei textureW = videoW;
         GLsizei textureH = videoH;
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        GLvoid *data = NULL;
+
+        if (softwareDecoding) {
+            data = stream->getDemuxer()->getFrameData(frameId);
+
+            assert(data);
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureW, textureH, 0,GL_RGBA, GL_UNSIGNED_BYTE, data);
 
         //Note: no performance hit seen
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1287,16 +1312,18 @@ bool AminoOmxVideoPlayer::initTexture() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        //create EGL Image
-        AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
-        EGLImageKHR eglImage = gfx->createEGLImage(textureId);
+        if (!softwareDecoding) {
+            //create EGL Image
+            AminoGfxRPi *gfx = static_cast<AminoGfxRPi *>(texture->getEventHandler());
+            EGLImageKHR eglImage = gfx->createEGLImage(textureId);
 
-        eglImages[i] = eglImage;
+            eglImages[i] = eglImage;
 
-        if (eglImage == EGL_NO_IMAGE_KHR) {
-            lastError = "eglCreateImageKHR failed";
+            if (eglImage == EGL_NO_IMAGE_KHR) {
+                lastError = "eglCreateImageKHR failed";
 
-            return false;
+                return false;
+            }
         }
     }
 
@@ -1313,6 +1340,34 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         return;
     }
 
+    if (softwareDecoding) {
+        //get current frame
+        int id;
+        GLvoid *data = stream->getDemuxer()->getFrameData(id);
+
+        if (!data) {
+            return;
+        }
+
+        if (id == frameId) {
+            //debug
+            //printf("skipping frame\n");
+
+            return;
+        }
+
+        frameId = id;
+
+        glBindTexture(GL_TEXTURE_2D, texture->getTexture());
+
+        GLsizei textureW = videoW;
+        GLsizei textureH = videoH;
+
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, textureW, textureH, GL_RGB, GL_UNSIGNED_BYTE, data);
+        return;
+    }
+
+    //hardware decoder
     uv_mutex_lock(&bufferLock);
 
     bool newBuffer = false;
@@ -1363,7 +1418,9 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
             //debug cbx
             if (playTime - timeSecs > 0.2) {
-                printf("-> frame shown too late (decoder too slow?)\n");
+                float diff = playTime - timeSecs;
+
+                printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff);
             }
 
             if (!textureReady.empty()) {
@@ -1475,6 +1532,7 @@ double AminoOmxVideoPlayer::getMediaTime() {
     return mediaTime;
 
     /*
+    //OMX decoder (Note: blocks sometimes)
     COMPONENT_T *clock = list[2];
     OMX_TIME_CONFIG_TIMESTAMPTYPE ts;
 
@@ -1558,8 +1616,10 @@ bool AminoOmxVideoPlayer::pausePlayback() {
     doPause = true; //signal thread to pause
     pauseTime = getTime() / 1000;
 
-    if (!setOmxSpeed(0)) {
-        return false;
+    if (!softwareDecoding) {
+        if (!setOmxSpeed(0)) {
+            return false;
+        }
     }
 
     if (DEBUG_OMX) {
@@ -1592,6 +1652,9 @@ bool AminoOmxVideoPlayer::resumePlayback() {
 
     timeStartSys += resumeTime - pauseTime;
 
+    //resume stream
+    stream->resume();
+
     //resume thread
     if (!doPause) {
         uv_sem_post(&pauseSem);
@@ -1599,15 +1662,14 @@ bool AminoOmxVideoPlayer::resumePlayback() {
         doPause = false;
     }
 
-    //resume stream
-    stream->resume();
-
     //resume OMX
     if (DEBUG_OMX) {
         printf("resume OMX\n");
     }
 
-    setOmxSpeed(1 << 16);
+    if (!softwareDecoding) {
+        setOmxSpeed(1 << 16);
+    }
 
     //set state
     handlePlaybackResumed();
@@ -1634,4 +1696,154 @@ bool AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
     }
 
     return res;
+}
+
+/**
+ * Software decoder.
+ */
+void AminoOmxVideoPlayer::decoderThread(void *arg) {
+    AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(arg);
+
+    assert(player);
+
+    //init demuxer
+    player->initDemuxer();
+
+    //close stream
+    player->closeStream();
+
+    //done
+    player->threadRunning = false;
+}
+
+/**
+ * Software decoding loop.
+ */
+void AminoOmxVideoPlayer::initDemuxer() {
+    VideoDemuxer *demuxer = stream->getDemuxer();
+
+    assert(demuxer);
+
+    //set video size
+    videoW = demuxer->width;
+    videoH = demuxer->height;
+
+    //read first frame
+    double timeStart;
+    READ_FRAME_RESULT res = demuxer->readRGBFrame(timeStart);
+
+    timeStartSys = getTime() / 1000;
+
+    if (res == READ_END_OF_VIDEO) {
+        lastError = "empty video";
+        handleInitDone(false);
+        return;
+    }
+
+    if (res == READ_ERROR) {
+        lastError = "could not load video stream";
+        handleInitDone(false);
+        return;
+    }
+
+    //switch to renderer thread
+    texture->initVideoTexture();
+
+    //wait for texture
+    uv_sem_wait(&textureSem);
+
+    if (!eglImagesReady || doStop) {
+        //failed to create texture
+        handleInitDone(false);
+        break;
+    }
+
+    //texture ready
+    handleInitDone(true);
+
+    //playback loop
+    while (true) {
+        //check stop
+        if (doStop) {
+            //end playback
+            handlePlaybackStopped();
+            return;
+        }
+
+        //check pause
+        if (doPause) {
+            //wait
+            doPause = false; //signal we are waiting
+            uv_sem_wait(&pauseSem);
+
+            //next
+            continue;
+        }
+
+        //next frame
+        double time;
+        int res = demuxer->readRGBFrame(time);
+        double timeSys = getTime() / 1000;
+
+        if (res == READ_ERROR) {
+            if (DEBUG_VIDEOS) {
+                printf("-> read error\n");
+            }
+
+            handlePlaybackError();
+            return;
+        }
+
+        if (res == READ_END_OF_VIDEO) {
+            if (DEBUG_VIDEOS) {
+                printf("-> end of video\n");
+            }
+
+            if (loop > 0) {
+                loop--;
+            }
+
+            if (loop == 0) {
+                //end playback
+                handlePlaybackDone();
+                return;
+            }
+
+            //rewind
+            if (!demuxer->rewindRGB(timeStart)) {
+                handlePlaybackError();
+                return;
+            }
+
+            timeStartSys = getTime() / 1000;
+            timeSys = timeStartSys;
+
+            time = timeStart;
+
+            handleRewind();
+
+            if (DEBUG_VIDEOS) {
+                printf("-> rewind\n");
+            }
+        }
+
+        //correct timing
+        if (!demuxer->realtime) {
+            double timeSleep = (time - timeStart) - (timeSys - timeStartSys);
+
+            if (timeSleep > 0) {
+                usleep(timeSleep * 1000000);
+
+                if (DEBUG_VIDEO_TIMING) {
+                    printf("sleep: %f ms\n", timeSleep * 1000);
+                }
+            }
+        }
+
+        //show
+        demuxer->switchRGBFrame();
+
+        //update media time
+        mediaTime = getTime() / 1000 - timeStartSys;
+    }
 }
