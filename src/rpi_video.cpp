@@ -1397,12 +1397,14 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         if (timeSecs < mediaTime || (mediaTime > 0 && timeSecs - mediaTime > 3.)) {
             //rewind or sudden jump detected (for instance 1080p HTTP test case; in other cases no reset occurs)
 
-            //-> resync time cbx
+            //-> resync time
             mediaTime = timeSecs;
             timeStartSys = timeNowSys - mediaTime;
             playTime = mediaTime;
 
-            printf("-> resync time\n");//cbx
+            if (DEBUG_VIDEO_TIMING) {
+                printf("-> resync time\n");
+            }
         }
 
         if (playTime >= timeSecs) {
@@ -1433,7 +1435,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             if (DEBUG_VIDEO_TIMING) {
                 if (playTime - timeSecs > 0.2) {
                     float diff = playTime - timeSecs;
-//cbx 44 s on 1080p HTTP rewind!
+
                     printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff * 1000);
                 }
             }
@@ -1454,12 +1456,11 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     textureReady.pop();
                     textureNew.push(nextFrame2);
                     */
-//cbx check if it still works
+
                     //resync time
                     timeStartSys = timeNowSys - mediaTime;
                 }
             }
-//cbx jump on HTTPS 1080p rewind!
 
             if (DEBUG_VIDEO_TIMING) {
                 printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
@@ -1469,9 +1470,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
             //debug
             if (DEBUG_VIDEO_TIMING) {
-//cbx sudden jump to 44!?!
                 printf("-> next frame is ready (wait: %f s)\n", timeSecs - playTime);
-                printf("   timeSecs: %f\n", timeSecs); //cbx
             }
         }
     } else {
