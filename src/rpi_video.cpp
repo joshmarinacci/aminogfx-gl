@@ -15,8 +15,7 @@
 #define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
-//cbx
-#define DEBUG_VIDEO_TIMING true
+#define DEBUG_VIDEO_TIMING false
 
 #define OMX_EGL_BUFFERS 4
 
