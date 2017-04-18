@@ -959,8 +959,7 @@ int AminoOmxVideoPlayer::playOmx() {
             //set egl render buffers (max 8; https://github.com/raspberrypi/firmware/issues/718)
             setOmxBufferCount(egl_render, 221, OMX_EGL_BUFFERS);
 
-            //do not discard input buffers
-/* cbx check discard mode
+            //do not discard input buffers (needed to get smooth playback)
             OMX_CONFIG_PORTBOOLEANTYPE dm;
 
             memset(&dm, 0, sizeof dm);
@@ -974,7 +973,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 res = -330;
                 break;
             }
-*/
+
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
 
@@ -1392,6 +1391,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         } else {
             //ongoing playback
             playTime = timeNowSys - timeStartSys;
+//cbx TODO check delayed playback
         }
 
         if (playTime >= timeSecs) {
@@ -1434,7 +1434,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                 if (playTime >= timeSecs2) {
                     printf("-> playback queue lag (rendering too slow)\n");
 
-                    //TODO drop frame
+                    //TODO drop frame?
                     //cbx
                 }
             }
