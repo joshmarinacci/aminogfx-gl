@@ -1420,7 +1420,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             //debug cbx
             if (playTime - timeSecs > 0.2) {
                 float diff = playTime - timeSecs;
-
+//cbx 44 s on 1080p HTTP rewind!
                 printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff * 1000);
             }
 
@@ -1443,7 +1443,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     timeStartSys = timeNowSys - mediaTime;
                 }
             }
-
+//cbx jump on HTTPS 1080p rewind!
             printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
         } else {
             //waiting
@@ -1815,7 +1815,7 @@ void AminoOmxVideoPlayer::initDemuxer() {
             if (DEBUG_VIDEOS) {
                 printf("-> end of video\n");
             }
-
+//cbx FIXME happens on animated gif (RPi only)
             if (loop > 0) {
                 loop--;
             }
