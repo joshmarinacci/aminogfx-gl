@@ -872,7 +872,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 break;
             }
 
-            //cbx check media time (FIXME 1080p HTTPS test fails, others work)
+            //Note: media time continues
 
             handleRewind();
 
@@ -1444,7 +1444,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     */
 
                     //resync time
-                    timeStartSys = timeNowSys - mediaTime;
+//cbx check                    timeStartSys = timeNowSys - mediaTime;
                 }
             }
 //cbx jump on HTTPS 1080p rewind!
