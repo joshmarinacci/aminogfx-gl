@@ -860,9 +860,9 @@ int AminoOmxVideoPlayer::playOmx() {
                 break;
             }
 
-//cbx            if (DEBUG_OMX) {
+            if (DEBUG_OMX) {
                 printf("OMX: rewind stream\n");
-//            }
+            }
 
             if (!stream->rewind()) {
                 //could not rewind -> end playback
@@ -1386,12 +1386,20 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         double playTime;
 
         if (timeStartSys == -1) {
-            //start of playbacl
+            //start of playback
             playTime = 0;
             timeStartSys = timeNowSys;
         } else {
             //ongoing playback
             playTime = timeNowSys - timeStartSys;
+        }
+
+        if (timeSecs < mediaTime) {
+            //rewind detected (for instance 1080p HTTP test case; in other cases no reset occurs)
+
+            //-> resync time cbx
+            mediaTime = timeSecs;
+            timeStartSys = timeNowSys - mediaTime;
         }
 
         if (playTime >= timeSecs) {
@@ -1445,7 +1453,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     */
 
                     //resync time
-//cbx check                    timeStartSys = timeNowSys - mediaTime;
+                    timeStartSys = timeNowSys - mediaTime;
                 }
             }
 //cbx jump on HTTPS 1080p rewind!
