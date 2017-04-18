@@ -1454,9 +1454,9 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     textureReady.pop();
                     textureNew.push(nextFrame2);
                     */
-
+//cbx check if it still works
                     //resync time
-//cbx check                    timeStartSys = timeNowSys - mediaTime;
+                    timeStartSys = timeNowSys - mediaTime;
                 }
             }
 //cbx jump on HTTPS 1080p rewind!
