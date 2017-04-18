@@ -872,7 +872,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 break;
             }
 
-            //cbx check media time
+            //cbx check media time (FIXME 1080p HTTPS test fails, others work)
 
             handleRewind();
 
@@ -1391,7 +1391,6 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         } else {
             //ongoing playback
             playTime = timeNowSys - timeStartSys;
-//cbx TODO check delayed playback
         }
 
         if (playTime >= timeSecs) {
@@ -1442,7 +1441,6 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
                     //resync time cbx
                     timeStartSys = timeNowSys - mediaTime;
-                    //cbx
                 }
             }
 
@@ -1451,7 +1449,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             //waiting
 
             //debug
-            printf("-> next frame is ready\n"); //cbx
+            printf("-> next frame is ready (wait: %f s)\n", timeSecs - playTime); //cbx
         }
     } else {
         //no new frame
