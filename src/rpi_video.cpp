@@ -15,7 +15,8 @@
 #define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
-#define DEBUG_VIDEO_TIMING false
+//cbx
+#define DEBUG_VIDEO_TIMING true
 
 #define OMX_EGL_BUFFERS 4
 
@@ -859,9 +860,9 @@ int AminoOmxVideoPlayer::playOmx() {
                 break;
             }
 
-            if (DEBUG_OMX) {
+//cbx            if (DEBUG_OMX) {
                 printf("OMX: rewind stream\n");
-            }
+//            }
 
             if (!stream->rewind()) {
                 //could not rewind -> end playback
