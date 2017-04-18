@@ -795,6 +795,8 @@ READ_FRAME_RESULT VideoDemuxer::readFrame(AVPacket *packet) {
                 printf("-> end of file\n");
             }
 
+            //FIXME getting EOF on RPi (libav) if animated gif is played!
+
             return READ_END_OF_VIDEO;
         }
 

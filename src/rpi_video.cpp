@@ -1417,11 +1417,13 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                 newBuffer = true;
             }
 
-            //debug cbx
-            if (playTime - timeSecs > 0.2) {
-                float diff = playTime - timeSecs;
+            //debug
+            if (DEBUG_VIDEO_TIMING) {
+                if (playTime - timeSecs > 0.2) {
+                    float diff = playTime - timeSecs;
 //cbx 44 s on 1080p HTTP rewind!
-                printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff * 1000);
+                    printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff * 1000);
+                }
             }
 
             if (!textureReady.empty()) {
@@ -1431,7 +1433,9 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                 double timeSecs2 = timestamp2 / 1000000.f;
 
                 if (playTime >= timeSecs2) {
-                    printf("-> playback queue lag (rendering too slow)\n");
+                    if (DEBUG_VIDEO_TIMING) {
+                        printf("-> playback queue lag (rendering too slow)\n");
+                    }
 
                     //drop frame (-> playback no longer smooth)
                     /*
@@ -1439,17 +1443,22 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     textureNew.push(nextFrame2);
                     */
 
-                    //resync time cbx
+                    //resync time
                     timeStartSys = timeNowSys - mediaTime;
                 }
             }
 //cbx jump on HTTPS 1080p rewind!
-            printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
+
+            if (DEBUG_VIDEO_TIMING) {
+                printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
+            }
         } else {
             //waiting
 
             //debug
-            printf("-> next frame is ready (wait: %f s)\n", timeSecs - playTime); //cbx
+            if (DEBUG_VIDEO_TIMING) {
+                printf("-> next frame is ready (wait: %f s)\n", timeSecs - playTime);
+            }
         }
     } else {
         //no new frame
@@ -1815,7 +1824,7 @@ void AminoOmxVideoPlayer::initDemuxer() {
             if (DEBUG_VIDEOS) {
                 printf("-> end of video\n");
             }
-//cbx FIXME happens on animated gif (RPi only)
+
             if (loop > 0) {
                 loop--;
             }

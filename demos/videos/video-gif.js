@@ -7,7 +7,8 @@ const player = require('./player');
  *
  * Note: not supported on RPi yet.
  *
- * FIXME garbage in first frame
+ * FIXME FFmpeg errors
+ * FIXME libav reports EOF
  */
 
 player.playVideo({

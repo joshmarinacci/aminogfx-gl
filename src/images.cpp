@@ -1063,6 +1063,7 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
         int count = 0;
 
         if (videoPlayer) {
+            //FIXME creating too many texture on RPi (non-H264 playback case)
             count = videoPlayer->getNeededTextures();
 
             assert(count > 0);
