@@ -1636,9 +1636,9 @@ Object.defineProperty(AminoImage.prototype, 'src', {
                 }, (err, response, buffer) => {
                     this.request = null;
 
-                    if (err) {
+                    if (err || (response && response.statusCode !== 200)) {
                         if (this.onload) {
-                            this.onload(err);
+                            this.onload(err || new Error(response.statusCode));
                         }
 
                         return;
