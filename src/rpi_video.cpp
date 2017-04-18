@@ -1394,6 +1394,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             playTime = timeNowSys - timeStartSys;
         }
 
+/*
         if (timeSecs < mediaTime) {
             //rewind detected (for instance 1080p HTTP test case; in other cases no reset occurs)
 
@@ -1404,6 +1405,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
             printf("-> resync time\n");//cbx
         }
+*/
 
         if (playTime >= timeSecs) {
             //switch to next frame
@@ -1456,7 +1458,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                     */
 
                     //resync time
-                    timeStartSys = timeNowSys - mediaTime;
+//cbx check                    timeStartSys = timeNowSys - mediaTime;
                 }
             }
 //cbx jump on HTTPS 1080p rewind!
