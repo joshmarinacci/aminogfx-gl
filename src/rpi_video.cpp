@@ -1394,8 +1394,8 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             playTime = timeNowSys - timeStartSys;
         }
 
-        if (timeSecs < mediaTime) {
-            //rewind detected (for instance 1080p HTTP test case; in other cases no reset occurs)
+        if (timeSecs < mediaTime || (mediaTime > 0 && timeSecs - mediaTime > 3.)) {
+            //rewind or sudden jump detected (for instance 1080p HTTP test case; in other cases no reset occurs)
 
             //-> resync time cbx
             mediaTime = timeSecs;
