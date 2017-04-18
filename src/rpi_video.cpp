@@ -960,6 +960,7 @@ int AminoOmxVideoPlayer::playOmx() {
             setOmxBufferCount(egl_render, 221, OMX_EGL_BUFFERS);
 
             //do not discard input buffers
+/* cbx check discard mode
             OMX_CONFIG_PORTBOOLEANTYPE dm;
 
             memset(&dm, 0, sizeof dm);
@@ -973,7 +974,7 @@ int AminoOmxVideoPlayer::playOmx() {
                 res = -330;
                 break;
             }
-
+*/
             //switch to renderer thread (switches to playing state)
             texture->initVideoTexture();
 
@@ -1421,7 +1422,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             if (playTime - timeSecs > 0.2) {
                 float diff = playTime - timeSecs;
 
-                printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff);
+                printf("-> frame shown too late (decoder too slow?; %f ms)\n", diff * 1000);
             }
 
             if (!textureReady.empty()) {
@@ -1432,10 +1433,18 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
                 if (playTime >= timeSecs2) {
                     printf("-> playback queue lag (rendering too slow)\n");
+
+                    //TODO drop frame
+                    //cbx
                 }
             }
 
             printf("-> displaying: %i (pos: %f s)\n", textureActive, timeSecs);
+        } else {
+            //waiting
+
+            //debug
+            printf("-> next frame is ready\n"); //cbx
         }
     } else {
         //no new frame
