@@ -34,8 +34,10 @@ public:
     //OMX
 #ifdef USE_OMX_VCOS_THREAD
     static void* omxThread(void *arg);
+    static void* decoderThread(void *arg);
 #else
     static void omxThread(void *arg);
+    static void decoderThread(void *arg);
 #endif
     static void handleFillBufferDone(void *data, COMPONENT_T *comp);
 
@@ -61,7 +63,6 @@ public:
     bool setOmxSpeed(OMX_S32 speed);
 
     //software decoder
-    static void decoderThread(void *arg);
     void initDemuxer();
 
 private:

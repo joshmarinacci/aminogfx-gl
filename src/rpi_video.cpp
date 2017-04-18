@@ -15,6 +15,7 @@
 #define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
+#define DEBUG_VIDEO_TIMING false
 
 #define OMX_EGL_BUFFERS 4
 
@@ -102,9 +103,15 @@ void AminoOmxVideoPlayer::init() {
         softwareDecoding = true;
         threadRunning = true;
 
+#ifdef USE_OMX_VCOS_THREAD
+        VCOS_STATUS_T res = vcos_thread_create(&thread, "decoder thread", NULL, &decoderThread, this);
+
+        assert(res == VCOS_SUCCESS);
+#else
         int res = uv_thread_create(&thread, decoderThread, this);
 
         assert(res == 0);
+#endif
 
         return;
     }
@@ -1151,14 +1158,8 @@ void AminoOmxVideoPlayer::stopOmx() {
             }
 
 #ifdef USE_OMX_VCOS_THREAD
-            if (softwareDecoding) {
-                int res = uv_thread_join(&thread);
-
-                assert(res == 0);
-            } else {
-                //VCOS
-                vcos_thread_join(&thread, NULL);
-            }
+            //VCOS
+            vcos_thread_join(&thread, NULL);
 #else
             int res = uv_thread_join(&thread);
 
@@ -1701,7 +1702,7 @@ bool AminoOmxVideoPlayer::setOmxSpeed(OMX_S32 speed) {
 /**
  * Software decoder.
  */
-void AminoOmxVideoPlayer::decoderThread(void *arg) {
+void* AminoOmxVideoPlayer::decoderThread(void *arg) {
     AminoOmxVideoPlayer *player = static_cast<AminoOmxVideoPlayer *>(arg);
 
     assert(player);
@@ -1714,6 +1715,8 @@ void AminoOmxVideoPlayer::decoderThread(void *arg) {
 
     //done
     player->threadRunning = false;
+
+    return NULL;
 }
 
 /**
@@ -1755,7 +1758,7 @@ void AminoOmxVideoPlayer::initDemuxer() {
     if (!eglImagesReady || doStop) {
         //failed to create texture
         handleInitDone(false);
-        break;
+        return;
     }
 
     //texture ready
