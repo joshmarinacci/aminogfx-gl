@@ -1434,7 +1434,9 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
                 if (playTime >= timeSecs2) {
                     printf("-> playback queue lag (rendering too slow)\n");
 
-                    //TODO drop frame?
+                    //TODO drop frame? cbx
+                    textureReady.pop();
+                    textureNew.push(nextFrame2);
                     //cbx
                 }
             }
