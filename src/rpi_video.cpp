@@ -1469,9 +1469,9 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
             //debug
             if (DEBUG_VIDEO_TIMING) {
-//cbx sudden jump to 44! playTime negative???
+//cbx sudden jump to 44!?!
                 printf("-> next frame is ready (wait: %f s)\n", timeSecs - playTime);
-                printf("   playtime: %f\n", playTime); //cbx
+                printf("   timeSecs: %f\n", timeSecs); //cbx
             }
         }
     } else {
