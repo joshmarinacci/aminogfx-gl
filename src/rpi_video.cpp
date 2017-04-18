@@ -1401,6 +1401,8 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             mediaTime = timeSecs;
             timeStartSys = timeNowSys - mediaTime;
             playTime = mediaTime;
+
+            printf("-> resync time\n");//cbx
         }
 
         if (playTime >= timeSecs) {
@@ -1469,6 +1471,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
             if (DEBUG_VIDEO_TIMING) {
 //cbx sudden jump to 44! playTime negative???
                 printf("-> next frame is ready (wait: %f s)\n", timeSecs - playTime);
+                printf("   playtime: %f\n", playTime); //cbx
             }
         }
     } else {
