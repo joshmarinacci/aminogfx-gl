@@ -110,7 +110,7 @@ struct _COMPONENT_T {
    ILCLIENT_T *client;
 
    //extension cbx
-   bool stop_input;
+   unsigned int stop_input;
 };
 
 #define random_wait()
@@ -1375,7 +1375,7 @@ printf("-> cycle\n"); //cbx
  */
 void ilclient_stop_input_buffering(COMPONENT_T *comp) {
       vcos_semaphore_wait(&comp->sema);
-      comp->stop_input = true;
+      comp->stop_input = 1;
       vcos_semaphore_post(&comp->sema);
 
       //simulate empty buffer
