@@ -1352,10 +1352,10 @@ printf("-> got semaphore\n"); //cbx
          ret->pAppPrivate = NULL;
       }
       vcos_semaphore_post(&comp->sema);
-
+printf("-> posted semaphore\n"); //cbx
       if(block && !ret)
          vcos_event_flags_get(&comp->event, ILCLIENT_EMPTY_BUFFER_DONE, VCOS_OR_CONSUME, -1, &set);
-
+printf("-> cycle\n"); //cbx
    } while(block && !ret);
 
    return ret;
