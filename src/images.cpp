@@ -722,10 +722,10 @@ void AminoTexture::destroyAminoTexture(bool destructorCall) {
             }
         }
 
+        activeTexture = -1;
         delete[] textureIds;
         textureIds = NULL;
         textureCount = 0;
-        activeTexture = -1;
         ownTexture = false;
 
         w = 0;
@@ -813,6 +813,8 @@ void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
  */
 GLuint AminoTexture::getTexture() {
     if (activeTexture >= 0) {
+        assert(textureIds);
+
         return textureIds[activeTexture];
     }
 
