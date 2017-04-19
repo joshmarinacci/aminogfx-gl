@@ -13,7 +13,7 @@
 
 //cbx FIXME
 #define DEBUG_OMX true
-#define DEBUG_OMX_READ false
+#define DEBUG_OMX_READ true
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
 #define DEBUG_VIDEO_TIMING false
@@ -781,6 +781,10 @@ end:
  * OMX playback loop.
  */
 int AminoOmxVideoPlayer::playOmx() {
+    if (DEBUG_OMX) {
+        printf("playOmx()\n");
+    }
+
     COMPONENT_T *video_decode = list[0];
     COMPONENT_T *video_scheduler = list[3];
 
@@ -809,11 +813,15 @@ int AminoOmxVideoPlayer::playOmx() {
 
     //data loop (Note: never returns NULL)
     while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
+        if (DEBUG_OMX_READ) {
+            printf("-> got input buffer\n");
+        }
+
         //check stop
         if (doStop) {
             break;
         }
-
+//cbx check loop
         //check pause (prevent reading while paused; might not be called)
         if (doPause) {
             if (DEBUG_OMX) {
@@ -1037,9 +1045,17 @@ int AminoOmxVideoPlayer::playOmx() {
             res = -41;
             break;
         }
+
+        if (DEBUG_OMX_READ) {
+            printf("-> waiting for next input buffer\n");
+        }
     }
 
     //end of feeding loop (end of stream case)
+
+    if (DEBUG_OMX) {
+        printf("-> end of OMX data loop\n");
+    }
 
     //safety check
     assert(buf);
