@@ -1060,36 +1060,35 @@ int AminoOmxVideoPlayer::playOmx() {
         printf("-> end of OMX data loop\n");
     }
 
-    //safety check
-    assert(buf);
+    //send end of stream (if not aborted)
+    if (buf) {
+        buf->nFilledLen = 0;
+        buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
 
-    //send end of stream
-    buf->nFilledLen = 0;
-    buf->nFlags = OMX_BUFFERFLAG_TIME_UNKNOWN | OMX_BUFFERFLAG_EOS;
+        if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
+            lastError = "could not empty buffer (2)";
+            res = -50;
+        }
 
-    if (OMX_EmptyThisBuffer(ILC_GET_HANDLE(video_decode), buf) != OMX_ErrorNone) {
-        lastError = "could not empty buffer (2)";
-        res = -50;
-    }
+        if (DEBUG_OMX) {
+            printf("OMX: decoder EOS\n");
+        }
 
-    if (DEBUG_OMX) {
-        printf("OMX: decoder EOS\n");
-    }
+        //wait for EOS from renderer
 
-    //wait for EOS from renderer
+        //Note: the following code is not working, getting a timeout after 10 s!
+        //ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
 
-    //Note: the following code is not working, getting a timeout after 10 s!
-    //ilclient_wait_for_event(egl_render, OMX_EventBufferFlag, 220, 0, OMX_BUFFERFLAG_EOS, 0, ILCLIENT_BUFFER_FLAG_EOS, 10000);
+        // -> monitor buffer update (last image was successfully shown)
+        while (bufferFilled && !doStop && res == 0) {
+            //wait 100 ms (enough time to show the next frame)
+            bufferFilled = false;
+            usleep(100 * 1000);
+        }
 
-    // -> monitor buffer update (last image was successfully shown)
-    while (bufferFilled && !doStop && res == 0) {
-        //wait 100 ms (enough time to show the next frame)
-        bufferFilled = false;
-        usleep(100 * 1000);
-    }
-
-    if (DEBUG_OMX) {
-        printf("OMX: renderer EOS\n");
+        if (DEBUG_OMX) {
+            printf("OMX: renderer EOS\n");
+        }
     }
 
     //need to flush the renderer to allow video_decode to disable its input port
