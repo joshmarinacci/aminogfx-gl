@@ -455,7 +455,8 @@ TextureShader::TextureShader() : AnyAminoShader() {
             uv = texCoord;
         }
     )";
-
+//cbx try simplest
+    //supports opacity and discarding of fully transparent pixels
     fragmentShader = R"(
         varying vec2 uv;
 
