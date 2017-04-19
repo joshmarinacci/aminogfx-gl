@@ -1170,17 +1170,18 @@ void AminoOmxVideoPlayer::stopOmx() {
             //resume thread
             uv_sem_post(&pauseSem);
             uv_sem_post(&textureSem);
-
-            //prevent deadlock
-            COMPONENT_T *video_decode = list[0];
-
-            ilclient_stop_input_buffering(video_decode);
         } else {
             doPause = false;
         }
 
+        //prevent deadlock
+        COMPONENT_T *video_decode = list[0];
+
+        ilclient_stop_input_buffering(video_decode);
+
         uv_mutex_unlock(&bufferLock);
 
+        //wait for thread
         if (threadRunning) {
             if (DEBUG_OMX) {
                 printf("waiting for OMX thread to end\n");
