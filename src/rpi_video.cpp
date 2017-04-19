@@ -11,9 +11,8 @@
 
 #include <sstream>
 
-//cbx FIXME
-#define DEBUG_OMX true
-#define DEBUG_OMX_READ true
+#define DEBUG_OMX false
+#define DEBUG_OMX_READ false
 #define DEBUG_OMX_BUFFER false
 #define DEBUG_OMX_ERRORS true
 #define DEBUG_VIDEO_TIMING false
@@ -814,7 +813,7 @@ int AminoOmxVideoPlayer::playOmx() {
      *
      */
 
-    //data loop (Note: never returns NULL) cbx
+    //data loop
     while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
         if (DEBUG_OMX_READ) {
             printf("-> got input buffer\n");

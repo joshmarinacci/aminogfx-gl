@@ -109,7 +109,7 @@ struct _COMPONENT_T {
    ILEVENT_T *list;
    ILCLIENT_T *client;
 
-   //extension cbx
+   //extension
    unsigned int stop_input;
 };
 
@@ -1339,10 +1339,10 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, unsigned int 
 
    do {
       VCOS_UNSIGNED set;
-printf("-> wait for semaphore\n"); //cbx
+
       vcos_semaphore_wait(&comp->sema);
       ret = comp->in_list;
-printf("-> got semaphore\n"); //cbx
+
       while(ret != NULL && ret->nInputPortIndex != portIndex)
       {
          prev = ret;
@@ -1359,12 +1359,11 @@ printf("-> got semaphore\n"); //cbx
          ret->pAppPrivate = NULL;
       }
       vcos_semaphore_post(&comp->sema);
-printf("-> posted semaphore\n"); //cbx
+
       if(block && !ret) {
          //waits forever until a new empty buffer is available
          vcos_event_flags_get(&comp->event, ILCLIENT_EMPTY_BUFFER_DONE, VCOS_OR_CONSUME, -1, &set);
       }
-printf("-> cycle\n"); //cbx
    } while(block && !ret && !comp->stop_input);
 
    return ret;
