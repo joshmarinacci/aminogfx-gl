@@ -1045,7 +1045,7 @@ int AminoOmxVideoPlayer::playOmx() {
             res = -41;
             break;
         }
-
+//cbx blocks here!!!
         if (DEBUG_OMX_READ) {
             printf("-> waiting for next input buffer\n");
         }

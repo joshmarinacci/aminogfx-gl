@@ -1332,10 +1332,10 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, unsigned int 
 
    do {
       VCOS_UNSIGNED set;
-
+printf("-> wait for semaphore\n"); //cbx
       vcos_semaphore_wait(&comp->sema);
       ret = comp->in_list;
-
+printf("-> got semaphore\n"); //cbx
       while(ret != NULL && ret->nInputPortIndex != portIndex)
       {
          prev = ret;
