@@ -760,7 +760,10 @@ end:
         }
     }
 
+    //Note: using bufferLock instead of an extra lock
+    uv_mutex_lock(&bufferLock);
     destroyOmx();
+    uv_mutex_unlock(&bufferLock);
 
     if (status == 0) {
         if (!initDone) {
@@ -811,7 +814,7 @@ int AminoOmxVideoPlayer::playOmx() {
      *
      */
 
-    //data loop (Note: never returns NULL)
+    //data loop (Note: never returns NULL) cbx
     while ((buf = ilclient_get_input_buffer(video_decode, 130, 1)) != NULL) {
         if (DEBUG_OMX_READ) {
             printf("-> got input buffer\n");
@@ -821,7 +824,7 @@ int AminoOmxVideoPlayer::playOmx() {
         if (doStop) {
             break;
         }
-//cbx check loop
+
         //check pause (prevent reading while paused; might not be called)
         if (doPause) {
             if (DEBUG_OMX) {
@@ -1045,7 +1048,7 @@ int AminoOmxVideoPlayer::playOmx() {
             res = -41;
             break;
         }
-//cbx blocks here!!!
+
         if (DEBUG_OMX_READ) {
             printf("-> waiting for next input buffer\n");
         }
@@ -1154,6 +1157,8 @@ bool AminoOmxVideoPlayer::setOmxBufferCount(COMPONENT_T *comp, int port, int cou
  * Stops the OMX playback thread (or software decoding).
  */
 void AminoOmxVideoPlayer::stopOmx() {
+    uv_mutex_lock(&bufferLock);
+
     if (!omxDestroyed) {
         if (DEBUG_OMX) {
             printf("stopping OMX\n");
@@ -1165,9 +1170,16 @@ void AminoOmxVideoPlayer::stopOmx() {
             //resume thread
             uv_sem_post(&pauseSem);
             uv_sem_post(&textureSem);
+
+            //prevent deadlock
+            COMPONENT_T *video_decode = list[0];
+
+            ilclient_stop_input_buffering(video_decode);
         } else {
             doPause = false;
         }
+
+        uv_mutex_unlock(&bufferLock);
 
         if (threadRunning) {
             if (DEBUG_OMX) {
@@ -1183,6 +1195,8 @@ void AminoOmxVideoPlayer::stopOmx() {
             assert(res == 0);
 #endif
         }
+    } else {
+        uv_mutex_unlock(&bufferLock);
     }
 }
 

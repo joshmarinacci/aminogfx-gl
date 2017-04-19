@@ -11,7 +11,7 @@
  *  At least 1'500 cycles stable without any leaks.
  */
 
-//cbx FIXME hangs on RPi!
+//cbx FIXME hangs on RPi (deadlock)!
 const path = require('path');
 const amino = require('../../main.js');
 const player = require('./player');

@@ -108,6 +108,9 @@ struct _COMPONENT_T {
    unsigned int private;
    ILEVENT_T *list;
    ILCLIENT_T *client;
+
+   //extension cbx
+   bool stop_input;
 };
 
 #define random_wait()
@@ -1330,6 +1333,10 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, unsigned int 
 {
    OMX_BUFFERHEADERTYPE *ret = NULL, *prev = NULL;
 
+   if (comp->stop_input) {
+      return NULL;
+   }
+
    do {
       VCOS_UNSIGNED set;
 printf("-> wait for semaphore\n"); //cbx
@@ -1353,12 +1360,26 @@ printf("-> got semaphore\n"); //cbx
       }
       vcos_semaphore_post(&comp->sema);
 printf("-> posted semaphore\n"); //cbx
-      if(block && !ret)
+      if(block && !ret) {
+         //waits forever until a new empty buffer is available
          vcos_event_flags_get(&comp->event, ILCLIENT_EMPTY_BUFFER_DONE, VCOS_OR_CONSUME, -1, &set);
+      }
 printf("-> cycle\n"); //cbx
-   } while(block && !ret);
+   } while(block && !ret && !comp->stop_input);
 
    return ret;
+}
+
+/**
+ * Extension: stop the input buffering (prevent deadlock in ilclient_get_input_buffer()).
+ */
+void ilclient_stop_input_buffering(COMPONENT_T *comp) {
+      vcos_semaphore_wait(&comp->sema);
+      comp->stop_input = true;
+      vcos_semaphore_post(&comp->sema);
+
+      //simulate empty buffer
+      vcos_event_flags_set(&comp->event, ILCLIENT_EMPTY_BUFFER_DONE, VCOS_OR);
 }
 
 /***********************************************************
