@@ -8,7 +8,7 @@ const player = require('./player');
  */
 
 player.playVideo({
-    //low res
+    //1080p
     src: path.join(__dirname, 'test.h264'),
     loop: false,
 
