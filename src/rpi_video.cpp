@@ -17,16 +17,18 @@
 #define DEBUG_OMX_ERRORS true
 #define DEBUG_VIDEO_TIMING false
 
-//cbx TODO compare performance
 /*
  * Buffers.
  *
  * 1) video 1080p@30, display 1080p@60, high bitrate
  *
+ *  - 3 buffers: 27 fps
  *  - 4 buffers: 27 fps
  *  - 8 buffers: 27 fps (no improvement)
+ *
+ *  Summary: buffers do not influence playback performance
  */
-#define OMX_EGL_BUFFERS 3
+#define OMX_EGL_BUFFERS 4
 
 //
 // AminoOmxVideoPlayer
