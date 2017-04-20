@@ -100,6 +100,7 @@ public:
     COMPONENT_T *egl_render = NULL;
     OMX_BUFFERHEADERTYPE **eglBuffers = NULL;
     uv_mutex_t bufferLock;
+    uv_mutex_t destroyLock;
 
     int textureActive = 0;
     int textureFilling = 1;

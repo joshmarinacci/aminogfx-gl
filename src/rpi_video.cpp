@@ -17,6 +17,14 @@
 #define DEBUG_OMX_ERRORS true
 #define DEBUG_VIDEO_TIMING false
 
+//cbx TODO compare performance
+/*
+ * Buffers.
+ *
+ * 1) video 1080p@30, display 1080p@60, high bitrate
+ *
+ *  - 4 buffers: 27 fps
+ */
 #define OMX_EGL_BUFFERS 4
 
 //
@@ -48,8 +56,9 @@ AminoOmxVideoPlayer::AminoOmxVideoPlayer(AminoTexture *texture, AminoVideo *vide
         }
     }
 
-    //lock
+    //locks
     uv_mutex_init(&bufferLock);
+    uv_mutex_init(&destroyLock);
 }
 
 AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
@@ -63,8 +72,9 @@ AminoOmxVideoPlayer::~AminoOmxVideoPlayer() {
     delete[] eglImages;
     delete[] eglBuffers;
 
-    //lock
+    //locks
     uv_mutex_destroy(&bufferLock);
+    uv_mutex_destroy(&destroyLock);
 }
 
 /**
@@ -759,10 +769,9 @@ end:
         }
     }
 
-    //Note: using bufferLock instead of an extra lock
-    uv_mutex_lock(&bufferLock);
+    uv_mutex_lock(&destroyLock);
     destroyOmx();
-    uv_mutex_unlock(&bufferLock);
+    uv_mutex_unlock(&destroyLock);
 
     if (status == 0) {
         if (!initDone) {
@@ -1155,7 +1164,7 @@ bool AminoOmxVideoPlayer::setOmxBufferCount(COMPONENT_T *comp, int port, int cou
  * Stops the OMX playback thread (or software decoding).
  */
 void AminoOmxVideoPlayer::stopOmx() {
-    uv_mutex_lock(&bufferLock);
+    uv_mutex_lock(&destroyLock);
 
     if (!omxDestroyed) {
         if (DEBUG_OMX) {
@@ -1177,7 +1186,7 @@ void AminoOmxVideoPlayer::stopOmx() {
 
         ilclient_stop_input_buffering(video_decode);
 
-        uv_mutex_unlock(&bufferLock);
+        uv_mutex_unlock(&destroyLock);
 
         //wait for thread
         if (threadRunning) {
@@ -1195,7 +1204,7 @@ void AminoOmxVideoPlayer::stopOmx() {
 #endif
         }
     } else {
-        uv_mutex_unlock(&bufferLock);
+        uv_mutex_unlock(&destroyLock);
     }
 }
 
@@ -1362,12 +1371,15 @@ bool AminoOmxVideoPlayer::initTexture() {
 }
 
 /**
- * Update the video texture.
+ * Update the video texture (on OpenGL thread).
  *
  * Displays the next frame once available.
  */
 void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
-    if (paused || !playing) {
+    uv_mutex_lock(&destroyLock);
+
+    if (paused || !playing || omxDestroyed) {
+        uv_mutex_unlock(&destroyLock);
         return;
     }
 
@@ -1377,12 +1389,15 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         GLvoid *data = stream->getDemuxer()->getFrameData(id);
 
         if (!data) {
+            uv_mutex_unlock(&destroyLock);
             return;
         }
 
         if (id == frameId) {
             //debug
             //printf("skipping frame\n");
+
+            uv_mutex_unlock(&destroyLock);
 
             return;
         }
@@ -1395,6 +1410,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
         GLsizei textureH = videoH;
 
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, textureW, textureH, GL_RGB, GL_UNSIGNED_BYTE, data);
+        uv_mutex_unlock(&destroyLock);
         return;
     }
 
@@ -1510,6 +1526,7 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
     }
 
     uv_mutex_unlock(&bufferLock);
+    uv_mutex_unlock(&destroyLock);
 
     if (newBuffer) {
         omxFillNextEglBuffer();
