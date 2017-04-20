@@ -475,7 +475,8 @@ TextureShader::TextureShader() : AnyAminoShader() {
         }
     )";
 
-    //cbx try simplest
+    //simplest shader (Note: not faster on video rendering)
+    /*
     fragmentShader = R"(
         varying vec2 uv;
 
@@ -486,6 +487,7 @@ TextureShader::TextureShader() : AnyAminoShader() {
             gl_FragColor = texture2D(tex, uv);
         }
     )";
+    */
 }
 
 /**
