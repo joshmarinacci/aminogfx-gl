@@ -24,8 +24,9 @@
  * 1) video 1080p@30, display 1080p@60, high bitrate
  *
  *  - 4 buffers: 27 fps
+ *  - 8 buffers: 27 fps (no improvement)
  */
-#define OMX_EGL_BUFFERS 8
+#define OMX_EGL_BUFFERS 3
 
 //
 // AminoOmxVideoPlayer
