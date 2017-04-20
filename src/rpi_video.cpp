@@ -25,7 +25,7 @@
  *
  *  - 4 buffers: 27 fps
  */
-#define OMX_EGL_BUFFERS 4
+#define OMX_EGL_BUFFERS 8
 
 //
 // AminoOmxVideoPlayer
