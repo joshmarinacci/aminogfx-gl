@@ -1,6 +1,7 @@
 'use strict';
 
 const amino = require('../../main.js');
+const path = require('path');
 
 const gfx = new amino.AminoGfx();
 
@@ -10,11 +11,17 @@ gfx.start(function (err) {
         return;
     }
 
-    //video 1 (720p)
+    //video 1
     const video1 = new amino.AminoVideo();
 
+    // 720p
+    /*
     video1.src = 'rtsp://mm2.pcslab.com/mm/7h1500.mp4';
     video1.opts = 'rtsp_transport=tcp';
+    */
+
+    //1080p
+    video1.src = path.join(__dirname, 'test.h264');
 
     const iv1 = this.createImageView().position('center').size('contain').src(video1);
 
