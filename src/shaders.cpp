@@ -455,7 +455,7 @@ TextureShader::TextureShader() : AnyAminoShader() {
             uv = texCoord;
         }
     )";
-//cbx try simplest
+
     //supports opacity and discarding of fully transparent pixels
     fragmentShader = R"(
         varying vec2 uv;
@@ -472,6 +472,18 @@ TextureShader::TextureShader() : AnyAminoShader() {
             }
 
             gl_FragColor = vec4(pixel.rgb, pixel.a * opacity);
+        }
+    )";
+
+    //cbx try simplest
+    fragmentShader = R"(
+        varying vec2 uv;
+
+        uniform float opacity;
+        uniform sampler2D tex;
+
+        void main() {
+            gl_FragColor = texture2D(tex, uv);
         }
     )";
 }

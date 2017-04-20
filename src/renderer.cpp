@@ -901,7 +901,7 @@ void AminoRenderer::drawRect(AminoRect *rect) {
 
             //check clamp to border
             bool needsClampToBorder = (tx < 0 || tx > 1) || (tx2 < 0 || tx2 > 1) || (ty < 0 || ty > 1) || (ty2 < 0 || ty2 > 1) || rect->repeatX || rect->repeatY;
-
+if (needsClampToBorder) printf("needsClampToBorder\n"); //cbx
             texture->prepareTexture(ctx);
             applyTextureShader((float *)verts, 2, 6, texCoords, texture->getTexture(), opacity, needsClampToBorder, rect->repeatX, rect->repeatY);
         }
