@@ -19,8 +19,6 @@
                 "src/fonts/mat4.c",
                 "src/fonts.cpp",
 
-                #"src/images/nanojpeg.c",
-                #"src/images/upng.c",
                 "src/images.cpp",
 
                 "src/videos.cpp",
@@ -37,6 +35,8 @@
             ],
             "cflags": [
                 "-Wall",
+            ],
+            "cxxflags": [
                 "-std=c++11"
             ],
 
@@ -56,7 +56,8 @@
                         '-ljpeg',
                         '-lpng',
                         '-lavcodec',
-                        '-lavformat'
+                        '-lavformat',
+                        '-lswscale'
                     ],
                     "sources": [
                         "src/mac.cpp",
@@ -103,7 +104,8 @@
                                 "-ljpeg",
                                 "-lpng",
                                 '-lavcodec',
-                                '-lavformat'
+                                '-lavformat',
+                                '-lswscale'
 		                    ],
 		                    "defines": [
 		                        "RPI"

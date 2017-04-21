@@ -356,7 +356,7 @@ void mul_matrix(GLfloat *prod, const GLfloat *a, const GLfloat *b) {
       P(i,3) = ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3);
    }
 
-   memcpy(prod, p, sizeof(p));
+   memcpy(prod, p, sizeof p);
 #undef A
 #undef B
 #undef PROD
@@ -459,24 +459,24 @@ void loadPixelPerfectMatrix(GLfloat *m, float width, float height, float z_eye, 
     float ksz = - (kdf + kdn) / (kdf - kdn);
     float ktz = - (2.0f * kdn * kdf) / (kdf - kdn);
 
-    m[0] = (2.0f * z_eye) / width;
+    m[0] = (2.0f * z_eye) / width; //sx
     m[1] = 0;
     m[2] = 0;
     m[3] = 0;
 
     m[4] = 0;
-    m[5] = (2.0f * z_eye) / height;
+    m[5] = (2.0f * z_eye) / height; //sy
     m[6] = 0;
     m[7] = 0;
 
     m[8]  = 0;
     m[9]  = 0;
-    m[10] = ktz - ksz * z_eye;
-    m[11] = -1.0f;
+    m[10] = ktz - ksz * z_eye; //sz
+    m[11] = -1.0f; //wz
 
     m[12] = 0;
     m[13] = 0;
-    m[14] = ksz;
+    m[14] = ksz; //tz
     m[15] = z_eye;
 }
 

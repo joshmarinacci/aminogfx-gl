@@ -4,9 +4,6 @@
 #include <uv.h>
 
 extern "C" {
-    //#include "nanojpeg.h"
-    //#include "upng.h"
-
     #include <jpeglib.h>
 
     #define PNG_SKIP_SETJMP_CHECK
@@ -23,23 +20,23 @@ extern "C" {
 //
 
 struct myjpeg_error_mgr {
-  struct jpeg_error_mgr pub;	/* "public" fields */
+    struct jpeg_error_mgr pub;	/* "public" fields */
 
-  jmp_buf setjmp_buffer;	/* for return to caller */
+    jmp_buf setjmp_buffer;	/* for return to caller */
 };
 
 typedef struct myjpeg_error_mgr *myjpeg_error_ptr;
 
 METHODDEF(void) myjpeg_error_exit(j_common_ptr cinfo) {
-  /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
-  myjpeg_error_ptr myerr = (myjpeg_error_ptr) cinfo->err;
+    /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
+    myjpeg_error_ptr myerr = (myjpeg_error_ptr) cinfo->err;
 
-  /* Always display the message. */
-  /* We could postpone this until after returning, if we chose. */
-  (*cinfo->err->output_message)(cinfo);
+    /* Always display the message. */
+    /* We could postpone this until after returning, if we chose. */
+    (*cinfo->err->output_message)(cinfo);
 
-  /* Return control to the setjmp point */
-  longjmp(myerr->setjmp_buffer, 1);
+    /* Return control to the setjmp point */
+    longjmp(myerr->setjmp_buffer, 1);
 }
 
 //
@@ -85,14 +82,6 @@ private:
     bool imgAlpha;
     int imgBPP;
 
-    //temp buffers
-    //upng_t *upng = NULL;
-    bool isJpeg = false;
-
-    //mutex
-    static uv_mutex_t jpegMutex;
-    static bool jpegMutexInitialized;
-
 public:
     AsyncImageWorker(Nan::Callback *callback, v8::Local<v8::Object> &obj, v8::Local<v8::Value> &bufferObj) : AsyncWorker(callback) {
         SaveToPersistent("object", obj);
@@ -102,15 +91,6 @@ public:
 
         buffer = node::Buffer::Data(bufferObj);
         bufferLen = node::Buffer::Length(bufferObj);
-
-        //mutex
-        if (!jpegMutexInitialized) {
-            jpegMutexInitialized = true;
-
-            int res = uv_mutex_init(&jpegMutex);
-
-            assert(res == 0);
-        }
     }
 
     /**
@@ -145,13 +125,6 @@ public:
             decodePng();
         } else {
             decodeJpeg();
-
-            /*
-            //Note: libuv uses thread-pool, therefore use mutex to prevent parallel execution of JPEG decoder (parallel execution would be better in future using thread-safe code)
-            uv_mutex_lock(&jpegMutex);
-            decodeJpeg2();
-            uv_mutex_unlock(&jpegMutex);
-            */
         }
 
         if (DEBUG_THREADS) {
@@ -324,58 +297,6 @@ public:
     }
 
     /**
-     * Decode PNG image (using upng).
-     *
-     * Note: this code is thread-safe.
-     */
-     /*
-    void decodePng2() {
-        if (DEBUG_IMAGES) {
-            printf("decodePng()\n");
-        }
-
-        upng = upng_new_from_bytes((const unsigned char *)buffer, bufferLen);
-
-        if (upng == NULL) {
-            SetErrorMessage("error decoding PNG file");
-
-            if (DEBUG_IMAGES) {
-                printf("-> failed\n");
-            }
-
-            //console
-            if (DEBUG_IMAGES_CONSOLE) {
-                printf("error decoding PNG file\n");
-            }
-
-            return;
-        }
-
-        upng_decode(upng);
-
-        //    printf("width = %d %d\n",upng_get_width(upng), upng_get_height(upng));
-        //    printf("bytes per pixel = %d\n",upng_get_pixelsize(upng));
-
-        char *image = (char *)upng_get_buffer(upng);
-        int lengthout = upng_get_size(upng);
-
-        //    printf("length of uncompressed buffer = %d\n", lengthout);
-
-        //metadata
-        imgData = image;
-        imgDataLen = lengthout;
-        imgW = upng_get_width(upng);
-        imgH = upng_get_height(upng);
-        imgAlpha = upng_get_components(upng) == 4; //RGBA
-        imgBPP = upng_get_bpp(upng) / 8;
-
-        if (DEBUG_IMAGES) {
-            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
-        }
-    }
-    */
-
-    /**
      * Decode JPEG image (using libjpeg).
      *
      * Note: NOT thread-safe! Has to be called in single queue.
@@ -465,84 +386,6 @@ public:
         if (DEBUG_IMAGES) {
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
-
-        isJpeg = true;
-    }
-
-    /**
-     * Decode JPEG image (unsing nanojpeg).
-     *
-     * Note: NOT thread-safe! Has to be called in single queue.
-     */
-     /*
-    void decodeJpegOld() {
-        if (DEBUG_IMAGES) {
-            printf("decodeJpeg()\n");
-        }
-
-        //check thread
-        / *
-        uv_thread_t threadId = uv_thread_self();
-
-        printf("JPEG thread: %lu\n", threadId);
-        * /
-
-        njInit();
-
-        if (njDecode(buffer, bufferLen)) {
-            SetErrorMessage("error decoding JPEG file");
-
-            if (DEBUG_IMAGES) {
-                printf("-> failed\n");
-            }
-
-            //console
-            if (DEBUG_IMAGES_CONSOLE) {
-                printf("Error decoding the JPEG file.\n");
-            }
-
-            njDone();
-
-            return;
-        }
-
-        if (DEBUG_IMAGES) {
-            printf("-> got an image %dx%d\n", njGetWidth(), njGetHeight());
-            printf("-> data size = %d\n", njGetImageSize());
-        }
-
-        imgDataLen = njGetImageSize();
-        imgData = (char *)njGetImage();
-
-        imgW = njGetWidth();
-        imgH = njGetHeight();
-        imgAlpha = false;
-        imgBPP = njGetBPP();
-
-        //get ownership
-        njUnlinkImageData();
-
-        //free instance
-        njDone();
-
-        if (DEBUG_IMAGES) {
-            printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
-        }
-
-        isJpeg = true;
-    }
-    */
-
-    /**
-     * Free all allocated buffers.
-     */
-    void freeImageBuffers() {
-        //free image and buffers
-        /*
-        if (upng) {
-            upng_free(upng);
-        }
-        */
     }
 
     /**
@@ -559,16 +402,8 @@ public:
         v8::Local<v8::Object> obj = GetFromPersistent("object")->ToObject();
         v8::Local<v8::Object> buff;
 
-        if (isJpeg) {
-            //transfer ownership
-            buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
-        } else {
-            //transfer ownership (libpng)
-            buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
-
-            //create copy (upng)
-            //buff = Nan::CopyBuffer(imgData, imgDataLen).ToLocalChecked();
-        }
+        //transfer ownership
+        buff = Nan::NewBuffer(imgData, imgDataLen).ToLocalChecked();
 
         //create object
         Nan::Set(obj, Nan::New("w").ToLocalChecked(),      Nan::New(imgW));
@@ -576,9 +411,6 @@ public:
         Nan::Set(obj, Nan::New("alpha").ToLocalChecked(),  Nan::New(imgAlpha));
         Nan::Set(obj, Nan::New("bpp").ToLocalChecked(),    Nan::New(imgBPP));
         Nan::Set(obj, Nan::New("buffer").ToLocalChecked(), buff);
-
-        //free memory
-        freeImageBuffers();
 
         //store local values
         AminoImage *img = Nan::ObjectWrap::Unwrap<AminoImage>(obj);
@@ -593,9 +425,6 @@ public:
         callback->Call(2, argv);
     }
 };
-
-uv_mutex_t AsyncImageWorker::jpegMutex;
-bool AsyncImageWorker::jpegMutexInitialized = false;
 
 //
 // AminoImage
@@ -689,6 +518,8 @@ GLuint AminoImage::createTexture(GLuint textureId, char *bufferData, size_t buff
 
     glBindTexture(GL_TEXTURE_2D, texture);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    //Note: glTexSubImage2D() would probably be faster for updates
 
     if (bpp == 3) {
         //RGB (24-bit)
@@ -839,7 +670,12 @@ AminoTexture::AminoTexture(): AminoJSObject(getFactory()->name) {
  */
 AminoTexture::~AminoTexture()  {
     if (!destroyed) {
-        destroyAminoTexture();
+        destroyAminoTexture(true);
+    }
+
+    //lock
+    if (videoLockUsed) {
+        uv_mutex_destroy(&videoLock);
     }
 }
 
@@ -851,40 +687,57 @@ void AminoTexture::destroy() {
         return;
     }
 
-    destroyAminoTexture();
+    destroyAminoTexture(false);
 
     //Note: frees eventHandler
     AminoJSObject::destroy();
 }
 
 /**
- * Free resources.
+ * Free resources (on main thread).
  */
-void AminoTexture::destroyAminoTexture() {
+void AminoTexture::destroyAminoTexture(bool destructorCall) {
     if (callback) {
         delete callback;
         callback = NULL;
     }
 
-    if (textureId != INVALID_TEXTURE) {
+    if (videoPlayer) {
+        //acquire lock (rendering thread could access the videoPlayer right now)
+        uv_mutex_lock(&videoLock);
+        delete videoPlayer;
+        videoPlayer = NULL;
+        uv_mutex_unlock(&videoLock);
+    }
+
+    //free texture
+    if (textureCount > 0) {
         //Note: we are on the main thread
+
         if (eventHandler && ownTexture) {
-            (static_cast<AminoGfx *>(eventHandler))->deleteTextureAsync(textureId);
+            AminoGfx *gfx = static_cast<AminoGfx *>(eventHandler);
+
+            for (int i = 0; i < textureCount; i++) {
+                gfx->deleteTextureAsync(textureIds[i]);
+            }
         }
 
-        textureId = INVALID_TEXTURE;
+        activeTexture = -1;
+        delete[] textureIds;
+        textureIds = NULL;
+        textureCount = 0;
+        ownTexture = false;
+
         w = 0;
         h = 0;
 
-        v8::Local<v8::Object> obj = handle();
+        if (!destructorCall) {
+            //Note: we have an active scope
+            v8::Local<v8::Object> obj = handle();
 
-        Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::Undefined());
-        Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
-    }
-
-    if (video) {
-        video->release();
-        video = NULL;
+            Nan::Set(obj, Nan::New("w").ToLocalChecked(), Nan::Undefined());
+            Nan::Set(obj, Nan::New("h").ToLocalChecked(), Nan::Undefined());
+        }
     }
 }
 
@@ -912,7 +765,16 @@ v8::Local<v8::FunctionTemplate> AminoTexture::GetInitFunction() {
     Nan::SetPrototypeMethod(tpl, "loadTextureFromVideo", LoadTextureFromVideo);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromBuffer", LoadTextureFromBuffer);
     Nan::SetPrototypeMethod(tpl, "loadTextureFromFont", LoadTextureFromFont);
+
     Nan::SetPrototypeMethod(tpl, "destroy", Destroy);
+
+    // playback
+    Nan::SetPrototypeMethod(tpl, "getMediaTime", GetMediaTime);
+    Nan::SetPrototypeMethod(tpl, "getDuration", GetDuration);
+    Nan::SetPrototypeMethod(tpl, "getState", GetState);
+    Nan::SetPrototypeMethod(tpl, "stop", StopPlayback);
+    Nan::SetPrototypeMethod(tpl, "pause", PausePlayback);
+    Nan::SetPrototypeMethod(tpl, "play", ResumePlayback);
 
     //template function
     return tpl;
@@ -947,6 +809,19 @@ void AminoTexture::preInit(Nan::NAN_METHOD_ARGS_TYPE info) {
 }
 
 /**
+ * Get the current active texture.
+ */
+GLuint AminoTexture::getTexture() {
+    if (activeTexture >= 0) {
+        assert(textureIds);
+
+        return textureIds[activeTexture];
+    }
+
+    return INVALID_TEXTURE;
+}
+
+/**
  * Load texture asynchronously.
  *
  * loadTextureFromImage(img, callback)
@@ -963,7 +838,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
 
     assert(obj);
 
-    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+    if (obj->callback || obj->textureCount > 0) {
         //already set
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
@@ -996,7 +871,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromImage) {
 }
 
 /**
- * Create texture.
+ * Create texture from image.
  */
 void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
     if (state == AsyncValueUpdate::STATE_APPLY) {
@@ -1010,33 +885,40 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
 
         assert(img);
 
-        bool newTexture = this->textureId == INVALID_TEXTURE;
-        GLuint textureId = img->createTexture(this->textureId);
+        bool newTexture = textureCount == 0;
+        GLuint textureId = img->createTexture(getTexture());
 
         //debug
         //printf("-> createTexture() new=%i id=%i\n", (int)newTexture, (int)textureId);
 
         if (textureId != INVALID_TEXTURE) {
             //set values
-            this->textureId = textureId;
-
             if (newTexture) {
+                textureIds = new GLuint[1];
+                textureIds[0] = textureId;
+                textureCount = 1;
+                activeTexture = 0;
                 ownTexture = true;
+            } else {
+                //re-used texture
+                assert(getTexture() == textureId);
             }
 
             w = img->w;
             h = img->h;
 
             if (newTexture) {
-               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated(1);
             }
+        } else {
+            activeTexture = -1;
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
 
         v8::Local<v8::Object> obj = handle();
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (activeTexture < 0) {
             //failed
 
             if (callback) {
@@ -1083,7 +965,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
     assert(obj);
 
-    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+    if (obj->callback || obj->textureCount > 0) {
         //already set
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
@@ -1097,7 +979,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
     assert(video);
 
-    if (!video->hasVideo()) {
+    if (video->getPlaybackSource().empty()) {
         //missing video
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("missing video data") };
@@ -1106,20 +988,23 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
         return;
     }
 
-    //check old instance
-    if (obj->video) {
-        obj->video->release();
-        obj->video = NULL;
-    }
-
     if (obj->videoPlayer) {
-        delete obj->videoPlayer;
-        obj->videoPlayer = NULL;
+        //acquire lock
+        uv_mutex_lock(&obj->videoLock);
+
+        if (obj->videoPlayer) {
+            delete obj->videoPlayer;
+            obj->videoPlayer = NULL;
+        }
+
+        uv_mutex_unlock(&obj->videoLock);
     }
 
-    //keep instance
-    video->retain();
-    obj->video = video;
+    //create lock
+    if (!obj->videoLockUsed) {
+        uv_mutex_init(&obj->videoLock);
+        obj->videoLockUsed = true;
+    }
 
     //create player
     if (DEBUG_VIDEOS) {
@@ -1136,8 +1021,14 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 
         callback->Call(info.This(), argc, argv);
 
-        delete obj->videoPlayer;
-        obj->videoPlayer = NULL;
+        uv_mutex_lock(&obj->videoLock);
+
+        if (obj->videoPlayer) {
+            delete obj->videoPlayer;
+            obj->videoPlayer = NULL;
+        }
+
+        uv_mutex_unlock(&obj->videoLock);
 
         return;
     }
@@ -1160,7 +1051,6 @@ NAN_METHOD(AminoTexture::LoadTextureFromVideo) {
 void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
     if (state == AsyncValueUpdate::STATE_APPLY) {
         //create texture on OpenGL thread
-
         if (DEBUG_IMAGES) {
             printf("-> createVideoTexture()\n");
         }
@@ -1169,46 +1059,73 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
 
         assert(video);
 
-        bool newTexture = this->textureId == INVALID_TEXTURE;
-        GLuint textureId = this->textureId;
+        //get amount of textures
+        uv_mutex_lock(&videoLock);
 
-        if (newTexture) {
-            glGenTextures(1, &textureId);
+        int count = 0;
 
-            assert(textureId != INVALID_TEXTURE);
+        if (videoPlayer) {
+            //FIXME creating too many texture on RPi (non-H264 playback case)
+            count = videoPlayer->getNeededTextures();
+
+            assert(count > 0);
+        }
+
+        uv_mutex_unlock(&videoLock);
+
+        //create own textures
+        if (!ownTexture || count > textureCount) {
+            //free first
+            if (ownTexture) {
+                glDeleteTextures(textureCount, textureIds);
+                delete[] textureIds;
+                textureIds = NULL;
+                textureCount = 0;
+                activeTexture = -1;
+            }
+
+            //create
+            textureIds = new GLuint[count];
+
+            for (int i = 0; i < count; i++) {
+                textureIds[i] = INVALID_TEXTURE;
+            }
+
+            glGenTextures(count, textureIds);
+
+            for (int i = 0; i < count; i++) {
+                assert(textureIds[i] != INVALID_TEXTURE);
+            }
+
+            textureCount = count;
+            activeTexture = 0;
+            ownTexture = true;
+
+            //stats
+            (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated(count);
+        } else {
+            //re-use textures
         }
 
         //debug
         if (DEBUG_VIDEOS) {
-            printf("-> createVideoTexture() new=%i id=%i\n", (int)newTexture, (int)textureId);
+            printf("-> createVideoTexture() count=%i id=%i\n", count, textureIds[0]);
         }
 
-        if (textureId != INVALID_TEXTURE) {
-            //set values
-            this->textureId = textureId;
-
-            if (newTexture) {
-                ownTexture = true;
+        //initialize
+        uv_mutex_lock(&videoLock);
+        if (videoPlayer) {
+            if (DEBUG_VIDEOS) {
+                printf("-> init video player\n");
             }
 
-            //initialize
-            if (videoPlayer) {
-                if (DEBUG_VIDEOS) {
-                    printf("-> init video player\n");
-                }
-
-                videoPlayer->init();
-            }
-
-            //stats
-            if (newTexture) {
-               (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
-            }
+            videoPlayer->init();
         }
+        uv_mutex_unlock(&videoLock);
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (textureCount == 0) {
             //failed
 
             if (callback) {
@@ -1239,9 +1156,13 @@ void AminoTexture::initVideoTextureHandler(AsyncValueUpdate *update, int state) 
         return;
     }
 
-    assert(videoPlayer);
+    uv_mutex_lock(&videoLock);
 
-    videoPlayer->initVideoTexture();
+    if (videoPlayer) {
+        videoPlayer->initVideoTexture();
+    }
+
+    uv_mutex_unlock(&videoLock);
 }
 
 /**
@@ -1264,7 +1185,9 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
         printf("handleVideoPlayerInitDone()\n");
     }
 
-    assert(videoPlayer);
+    if (!videoPlayer) {
+        return;
+    }
 
     //create scope
     Nan::HandleScope scope;
@@ -1308,6 +1231,60 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
             callback = NULL;
         }
     }
+}
+
+/**
+ * Prepare the texture (on rendering thread).
+ *
+ * Note: texture is valid.
+ */
+void AminoTexture::prepareTexture(GLContext *ctx) {
+    if (!videoLockUsed) {
+        return;
+    }
+
+    uv_mutex_lock(&videoLock);
+
+    if (videoPlayer) {
+        videoPlayer->updateVideoTexture(ctx);
+    }
+
+    uv_mutex_unlock(&videoLock);
+}
+
+/**
+ * Fire video event.
+ */
+void AminoTexture::fireVideoEvent(std::string event) {
+    //switch to main thread
+    std::string *param = new std::string(event);
+
+    enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoTexture::handleFireVideoEvent), NULL, param);
+}
+
+/**
+ * Fire video event (on main thread).
+ */
+void AminoTexture::handleFireVideoEvent(JSCallbackUpdate *update) {
+    std::string *event = static_cast<std::string *>(update->data);
+
+    assert(event);
+
+    if (DEBUG_VIDEOS) {
+        printf("handleFireVideoEvent() %s\n", event->c_str());
+    }
+
+    //create scope
+    Nan::HandleScope scope;
+
+    //call
+    v8::Local<v8::Function> fireEventFunc = Nan::Get(handle(), Nan::New<v8::String>("fireEvent").ToLocalChecked()).ToLocalChecked().As<v8::Function>();
+    int argc = 1;
+    v8::Local<v8::Value> argv[] = { Nan::New<v8::String>(event->c_str()).ToLocalChecked() };
+
+    fireEventFunc->Call(handle(), argc, argv);
+
+    delete event;
 }
 
 typedef struct {
@@ -1375,19 +1352,30 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
 
         assert(textureData);
 
-        bool newTexture = this->textureId == INVALID_TEXTURE;
-        GLuint textureId = AminoImage::createTexture(this->textureId, textureData->bufferData, textureData->bufferLen, textureData->w, textureData->h, textureData->bpp);
+        bool newTexture = textureCount == 0;
+        GLuint textureId = AminoImage::createTexture(getTexture(), textureData->bufferData, textureData->bufferLen, textureData->w, textureData->h, textureData->bpp);
 
         if (textureId != INVALID_TEXTURE) {
             //set values
-            this->textureId = textureId;
+            if (newTexture) {
+                textureIds = new GLuint[1];
+                textureIds[0] = textureId;
+                textureCount = 1;
+                activeTexture = 0;
+                ownTexture = true;
+            } else {
+                //re-used texture
+                assert(getTexture() == textureId);
+            }
 
             w = textureData->w;
             h = textureData->h;
 
             if (newTexture) {
-                (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated();
+                (static_cast<AminoGfx *>(eventHandler))->notifyTextureCreated(1);
             }
+        } else {
+            activeTexture = -1;
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
@@ -1395,7 +1383,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
 
         assert(textureData);
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (activeTexture < 0) {
             //failed
 
             if (textureData->callback) {
@@ -1446,7 +1434,7 @@ NAN_METHOD(AminoTexture::LoadTextureFromFont) {
     //callback
     v8::Local<v8::Function> callback = info[1].As<v8::Function>();
 
-    if (obj->callback || obj->textureId != INVALID_TEXTURE) {
+    if (obj->callback || obj->textureCount > 0) {
         //already set
         int argc = 1;
         v8::Local<v8::Value> argv[1] = { Nan::Error("already loading") };
@@ -1490,11 +1478,18 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
 
         if (textureId != INVALID_TEXTURE) {
             //set values
-            this->textureId = textureId;
+            assert(textureIds == NULL);
+
+            textureIds = new GLuint[1];
+            textureIds[0] = textureId;
+            textureCount = 1;
+            activeTexture = 0;
             ownTexture = false;
 
             w = atlas->width;
             h = atlas->height;
+        } else {
+            activeTexture = -1;
         }
     } else if (state == AsyncValueUpdate::STATE_DELETE) {
         //on main thread
@@ -1502,7 +1497,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
 
         assert(fontSize);
 
-        if (this->textureId == INVALID_TEXTURE) {
+        if (activeTexture < 0) {
             //failed
 
             if (callback) {
@@ -1545,6 +1540,96 @@ NAN_METHOD(AminoTexture::Destroy) {
 
     //destroy instance
     obj->destroy();
+}
+
+/**
+ * Get the media time (video playback).
+ */
+NAN_METHOD(AminoTexture::GetMediaTime) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    double mediaTime = -1;
+
+    if (obj->videoPlayer) {
+        mediaTime = obj->videoPlayer->getMediaTime();
+    }
+
+    info.GetReturnValue().Set(Nan::New(mediaTime));
+}
+
+/**
+ * Get the duration (video playback).
+ */
+NAN_METHOD(AminoTexture::GetDuration) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    double duration = -1;
+
+    if (obj->videoPlayer) {
+        duration = obj->videoPlayer->getDuration();
+    }
+
+    info.GetReturnValue().Set(Nan::New(duration));
+}
+
+/**
+ * Get player state.
+ */
+NAN_METHOD(AminoTexture::GetState) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    std::string state = "";
+
+    if (obj->videoPlayer) {
+        state = obj->videoPlayer->getState();
+    }
+
+    info.GetReturnValue().Set(Nan::New(state.c_str()).ToLocalChecked());
+}
+
+/**
+ * Stop playback.
+ */
+NAN_METHOD(AminoTexture::StopPlayback) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    if (obj->videoPlayer) {
+        obj->videoPlayer->stopPlayback();
+    }
+}
+
+/**
+ * Pause playback.
+ */
+NAN_METHOD(AminoTexture::PausePlayback) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    if (obj->videoPlayer) {
+        obj->videoPlayer->pausePlayback();
+    }
+}
+
+/**
+ * Resume playback.
+ */
+NAN_METHOD(AminoTexture::ResumePlayback) {
+    AminoTexture *obj = Nan::ObjectWrap::Unwrap<AminoTexture>(info.This());
+
+    assert(obj);
+
+    if (obj->videoPlayer) {
+        obj->videoPlayer->resumePlayback();
+    }
 }
 
 //

@@ -81,7 +81,7 @@ bool AnyShader::create() {
         //get error
         GLchar messages[256];
 
-        glGetProgramInfoLog(handle, sizeof(messages), 0, &messages[0]);
+        glGetProgramInfoLog(handle, sizeof messages, 0, &messages[0]);
 
         if (DEBUG_SHADER_ERRORS) {
             printf("shader linking failed: %s\n", messages);
@@ -133,7 +133,7 @@ GLuint AnyShader::compileShader(std::string source, const GLenum type) {
         //get error
         GLchar messages[256];
 
-        glGetShaderInfoLog(handle, sizeof(messages), 0, &messages[0]);
+        glGetShaderInfoLog(handle, sizeof messages, 0, &messages[0]);
 
         if (DEBUG_SHADER_ERRORS) {
             std::string typeStr;
@@ -456,6 +456,7 @@ TextureShader::TextureShader() : AnyAminoShader() {
         }
     )";
 
+    //supports opacity and discarding of fully transparent pixels
     fragmentShader = R"(
         varying vec2 uv;
 
@@ -473,6 +474,20 @@ TextureShader::TextureShader() : AnyAminoShader() {
             gl_FragColor = vec4(pixel.rgb, pixel.a * opacity);
         }
     )";
+
+    //simplest shader (Note: not faster on video rendering)
+    /*
+    fragmentShader = R"(
+        varying vec2 uv;
+
+        uniform float opacity;
+        uniform sampler2D tex;
+
+        void main() {
+            gl_FragColor = texture2D(tex, uv);
+        }
+    )";
+    */
 }
 
 /**

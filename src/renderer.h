@@ -33,7 +33,7 @@ public:
      * Destructor.
      */
     virtual ~GLContext() {
-        assert(matrixStack.size() == 0);
+        assert(matrixStack.empty());
         delete[] globaltx;
     }
 
@@ -41,7 +41,7 @@ public:
      * Reset context (prepare for next cycle).
      */
     void reset() {
-        assert(matrixStack.size() == 0);
+        assert(matrixStack.empty());
         assert(depth == 0);
 
         //reset
@@ -309,8 +309,9 @@ private:
     //perspective
     bool orthographic = true;
     float near = 150;
-    float far = -2048;//dynamic: -2048/-300
+    float far = -2048; //dynamic: -2048/-300
     float eye = 600;
+    GLfloat vanishingPoint[2] = { .5f, .5f };
 
     GLfloat corrSrc[8] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
     GLfloat corrDst[8] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };

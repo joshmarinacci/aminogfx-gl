@@ -970,11 +970,21 @@ ImageView.prototype.init = function () {
         applySize(texture, this.size(), this.position());
     });
 
+    this.w.watch(w => {
+        applySize(this.image(), this.size(), this.position());
+    });
+
+    this.h.watch(h => {
+        applySize(this.image(), this.size(), this.position());
+    });
+
     this.position.watch(pos => {
+        //new texture position
         applySize(this.image(), this.size(), pos);
     });
 
     this.size.watch(mode => {
+        //new mode
         applySize(this.image(), mode, this.position());
     });
 
@@ -1066,7 +1076,6 @@ ImageView.prototype.init = function () {
                         self.left(horz);
                         self.right(1);
                     }
-
 
                     // 2) vert
                     if (posVert === 'center') {
@@ -1244,6 +1253,7 @@ ImageView.prototype.destroy = function () {
         this.image(null);
         abortTempImage(this);
         img.destroy();
+        img.listeners = null;
     }
 };
 
@@ -1532,6 +1542,7 @@ Model.prototype.destroy = function () {
     if (texture) {
         abortTempImage(this);
         texture.destroy();
+        texture.listeners = null;
     }
 };
 
@@ -1625,9 +1636,9 @@ Object.defineProperty(AminoImage.prototype, 'src', {
                 }, (err, response, buffer) => {
                     this.request = null;
 
-                    if (err) {
+                    if (err || (response && response.statusCode !== 200)) {
                         if (this.onload) {
-                            this.onload(err);
+                            this.onload(err || new Error(response.statusCode));
                         }
 
                         return;
@@ -1712,6 +1723,7 @@ AminoFonts.prototype.init = function () {
 
     //default fonts
     this.registerFont({
+        //Source Sans Pro (https://fonts.google.com/specimen/Source+Sans+Pro)
         name: 'source',
         weights: {
             200: {
@@ -1726,7 +1738,6 @@ AminoFonts.prototype.init = function () {
                 normal: 'SourceSansPro-Regular.ttf',
                 italic: 'SourceSansPro-Italic.ttf'
             },
-
             600: {
                 normal: 'SourceSansPro-Semibold.ttf',
                 italic: 'SourceSansPro-SemiboldItalic.ttf'
@@ -1743,6 +1754,22 @@ AminoFonts.prototype.init = function () {
     });
 
     this.registerFont({
+        //Noto UI (https://fonts.google.com/specimen/Source+Sans+Pro)
+        name: 'noto-ui',
+        weights: {
+            400: {
+                normal: 'NotoSansUI-Regular.ttf',
+                italic: 'NotoSansUI-Italic.ttf'
+            },
+            700: {
+                normal: 'NotoSansUI-Bold.ttf',
+                italic: 'NotoSansUI-BoldItalic'
+            }
+        }
+    });
+
+    this.registerFont({
+        //Font-Awesome (https://github.com/FortAwesome/Font-Awesome/blob/master/fonts/fontawesome-webfont.ttf)
         name: 'awesome',
         weights: {
             400: {
@@ -1790,8 +1817,8 @@ AminoFonts.prototype.getFont = function (descr, callback) {
 
     const name = descr.name || this.defaultFont.name;
     const size = Math.round(descr.size || 20);
-    const weight = descr.weight || 400;
-    const style = descr.style || 'normal';
+    let weight = descr.weight || 400;
+    let style = descr.style || 'normal';
 
     //console.log('getFont() ' + name + ' ' + size + ' ' + weight + ' ' + style);
 
@@ -1983,6 +2010,88 @@ Texture.prototype.loadTexture = function (src, callback) {
         this.loadTextureFromFont(src, callback);
     } else {
         throw new Error('unknown source');
+    }
+};
+
+/**
+ * Add an event listener.
+ */
+Texture.prototype.addEventListener = function (event, callback) {
+    if (arguments.length === 1) {
+        callback = event;
+        event = '_all';
+    }
+
+    if (!this.listeners) {
+        this.listeners = [];
+    }
+
+    let items = this.listeners[event];
+
+    if (!items) {
+        items = [ callback ];
+        this.listeners[event] = items;
+    } else {
+        items.push(callback);
+    }
+
+    return this;
+};
+
+/**
+ * Remove a event listener.
+ */
+Texture.prototype.removeEventListener = function (event, callback) {
+    if (!this.listeners) {
+        return this;
+    }
+
+    if (arguments.length === 1) {
+        callback = event;
+        event = '_all';
+    }
+
+    const items = this.listeners[event];
+
+    if (items) {
+        const idx = items.indexOf(callback);
+
+        if (idx !== -1) {
+            this.listeners.splice(idx, 1);
+        }
+    }
+
+    return this;
+};
+
+/**
+ * Fire an event.
+ */
+Texture.prototype.fireEvent = function (event) {
+    if (!this.listeners) {
+        return;
+    }
+
+    //event handlers
+    let items = this.listeners[event];
+
+    if (items) {
+        const count = items.length;
+
+        for (let i = 0; i < count; i++) {
+            items[i](event);
+        }
+    }
+
+    //global handlers
+    items = this.listeners['_all'];
+
+    if (items) {
+        const count = items.length;
+
+        for (let i = 0; i < count; i++) {
+            items[i](event);
+        }
     }
 };
 

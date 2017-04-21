@@ -65,7 +65,9 @@ class AminoTextureFactory;
  */
 class AminoTexture : public AminoJSObject {
 public:
-    GLuint textureId = INVALID_TEXTURE;
+    GLuint *textureIds = NULL;
+    int textureCount = 0;
+    int activeTexture = -1;
     bool ownTexture = true;
     int w = 0;
     int h = 0;
@@ -74,7 +76,7 @@ public:
     ~AminoTexture();
 
     void destroy() override;
-    void destroyAminoTexture();
+    void destroyAminoTexture(bool destructorCall);
 
     //creation
     static AminoTextureFactory* getFactory();
@@ -82,16 +84,22 @@ public:
     //init
     static v8::Local<v8::FunctionTemplate> GetInitFunction();
 
+    //texture
+    GLuint getTexture();
+
     //video
     void initVideoTexture();
     void videoPlayerInitDone();
+    void prepareTexture(GLContext *ctx);
+    void fireVideoEvent(std::string event);
 
 private:
     Nan::Callback *callback = NULL;
 
     //video
-    AminoVideo *video = NULL;
     AminoVideoPlayer *videoPlayer = NULL;
+    uv_mutex_t videoLock;
+    bool videoLockUsed = false;
 
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 
@@ -104,6 +112,12 @@ private:
     static NAN_METHOD(LoadTextureFromBuffer);
     static NAN_METHOD(LoadTextureFromFont);
     static NAN_METHOD(Destroy);
+    static NAN_METHOD(GetMediaTime);
+    static NAN_METHOD(GetDuration);
+    static NAN_METHOD(GetState);
+    static NAN_METHOD(StopPlayback);
+    static NAN_METHOD(PausePlayback);
+    static NAN_METHOD(ResumePlayback);
 
     void createTexture(AsyncValueUpdate *update, int state);
     void createVideoTexture(AsyncValueUpdate *update, int state);
@@ -112,6 +126,7 @@ private:
 
     void initVideoTextureHandler(AsyncValueUpdate *update, int state);
     void handleVideoPlayerInitDone(JSCallbackUpdate *update);
+    void handleFireVideoEvent(JSCallbackUpdate *update);
 };
 
 /**

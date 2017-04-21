@@ -23,11 +23,6 @@
 #include "vertex-buffer.h"
 #include "texture-font.h"
 
-extern "C" {
-    #include "nanojpeg.h"
-    #include "upng.h"
-}
-
 #define DEBUG_CRASH false
 
 const int GROUP = 1;
@@ -64,7 +59,7 @@ public:
     //text
     void textUpdateNeeded(AminoText *text);
     amino_atlas_t getAtlasTexture(texture_atlas_t *atlas, bool createIfMissing, bool &newTexture);
-    void notifyTextureCreated();
+    void notifyTextureCreated(int count);
     static void updateAtlasTextures(texture_atlas_t *atlas);
 
     //video
@@ -299,6 +294,10 @@ public:
      * Free all resources.
      */
     void destroy() override {
+        if (destroyed) {
+            return;
+        }
+
         AminoJSObject::destroy();
 
         //to be overwritten

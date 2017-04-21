@@ -6,6 +6,7 @@
 
 #define DEBUG_GLFW false
 #define DEBUG_RENDER false
+#define DEBUG_VIDEO_TIMING false
 
 /**
  * Mac AminoGfx implementation.
@@ -660,10 +661,6 @@ std::map<GLFWwindow *, AminoGfxMac *> *AminoGfxMac::windowMap = new std::map<GLF
 // AminoGfxMacFactory
 //
 
-AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
-    //empty
-}
-
 /**
  * Create AminoGfx factory.
  */
@@ -682,37 +679,412 @@ AminoJSObject* AminoGfxMacFactory::create() {
 // AminoMacVideoPlayer
 //
 
+AminoMacVideoPlayer::AminoMacVideoPlayer(AminoTexture *texture, AminoVideo *video): AminoVideoPlayer(texture, video) {
+    //semaphore
+    int res = uv_sem_init(&pauseSem, 0);
+
+    assert(res == 0);
+
+    //lock
+    uv_mutex_init(&frameLock);
+}
+
+AminoMacVideoPlayer::~AminoMacVideoPlayer() {
+    closeDemuxer();
+
+    //semaphore
+    uv_sem_destroy(&pauseSem);
+
+    //lock
+    uv_mutex_destroy(&frameLock);
+}
+
 /**
- * Initialize the stream.
+ * Initialize the stream (on main thread).
  */
 bool AminoMacVideoPlayer::initStream() {
     //get file name
-    filename = video->getLocalFile();
+    filename = video->getPlaybackSource();
+    options = video->getPlaybackOptions();
 
     return true;
 }
 
 /**
- * Initialize the video player.
+ * Initialize the video player (on the rendering thread).
  */
 void AminoMacVideoPlayer::init() {
-    //cbx test
-    VideoDemuxer *demuxer = new VideoDemuxer();
+    //initialize demuxer
+    assert(filename.length());
 
-    demuxer->init();
-    demuxer->loadFile(filename);
-    delete demuxer;
+    demuxer = new VideoDemuxer();
 
-    //stop
-    lastError = "videos not supported";
-    handleInitDone(false);
+    if (!demuxer->init()) {
+        lastError = demuxer->getLastError();
+        delete demuxer;
+        demuxer = NULL;
+
+        handleInitDone(false);
+
+        return;
+    }
+
+    //create demuxer thread
+    int res = uv_thread_create(&thread, demuxerThread, this);
+
+    assert(res == 0);
+
+    threadRunning = true;
+}
+
+/**
+ * Demuxer thread.
+ */
+void AminoMacVideoPlayer::demuxerThread(void *arg) {
+    AminoMacVideoPlayer *player = static_cast<AminoMacVideoPlayer *>(arg);
+
+    assert(player);
+
+    //init demuxer
+    player->initDemuxer();
+
+    //Note: demuxer not closed
+
+    //done
+    player->threadRunning = false;
+}
+
+/**
+ * Init demuxer.
+ */
+void AminoMacVideoPlayer::initDemuxer() {
+    assert(demuxer);
+
+    //load file
+    if (!demuxer->loadFile(filename, options)) {
+        lastError = demuxer->getLastError();
+        handleInitDone(false);
+        return;
+    }
+
+    //set video size
+    videoW = demuxer->width;
+    videoH = demuxer->height;
+
+    //initialize stream
+    if (!demuxer->initStream()) {
+        lastError = demuxer->getLastError();
+        handleInitDone(false);
+        return;
+    }
+
+    //read first frame
+    double timeStart;
+    READ_FRAME_RESULT res = demuxer->readRGBFrame(timeStart);
+    double timeStartSys = getTime() / 1000;
+
+    if (res == READ_END_OF_VIDEO) {
+        lastError = "empty video";
+        handleInitDone(false);
+        return;
+    }
+
+    if (res == READ_ERROR) {
+        lastError = "could not load video stream";
+        handleInitDone(false);
+        return;
+    }
+
+    //switch to renderer thread
+    texture->initVideoTexture();
+
+    //playback loop
+    while (true) {
+        //check stop
+        if (doStop) {
+            //end playback
+            handlePlaybackStopped();
+            return;
+        }
+
+        //check pause
+        if (doPause) {
+            double pauseTime = getTime() / 1000;
+
+            demuxer->pause();
+            handlePlaybackPaused();
+
+            //wait
+            uv_sem_wait(&pauseSem);
+            doPause = false;
+
+            if (!doStop) {
+                //change state
+                demuxer->resume();
+                handlePlaybackResumed();
+
+                //change time
+                double resumeTime = getTime() / 1000;
+
+                timeStartSys += resumeTime - pauseTime;
+            }
+
+            //next
+            continue;
+        }
+
+        //next frame
+        double time;
+        int res = demuxer->readRGBFrame(time);
+        double timeSys = getTime() / 1000;
+
+        if (res == READ_ERROR) {
+            if (DEBUG_VIDEOS) {
+                printf("-> read error\n");
+            }
+
+            handlePlaybackError();
+            return;
+        }
+
+        if (res == READ_END_OF_VIDEO) {
+            if (DEBUG_VIDEOS) {
+                printf("-> end of video\n");
+            }
+
+            if (loop > 0) {
+                loop--;
+            }
+
+            if (loop == 0) {
+                //end playback
+                handlePlaybackDone();
+                return;
+            }
+
+            //rewind
+            if (!demuxer->rewindRGB(timeStart)) {
+                handlePlaybackError();
+                return;
+            }
+
+            timeStartSys = getTime() / 1000;
+            timeSys = timeStartSys;
+
+            time = timeStart;
+
+            handleRewind();
+
+            if (DEBUG_VIDEOS) {
+                printf("-> rewind\n");
+            }
+        }
+
+        //correct timing
+        if (!demuxer->realtime) {
+            double timeSleep = (time - timeStart) - (timeSys - timeStartSys);
+
+            if (timeSleep > 0) {
+                usleep(timeSleep * 1000000);
+
+                if (DEBUG_VIDEO_TIMING) {
+                    printf("sleep: %f ms\n", timeSleep * 1000);
+                }
+            }
+        }
+
+        //show
+        demuxer->switchRGBFrame();
+
+        //update media time
+        mediaTime = getTime() / 1000 - timeStartSys;
+    }
+}
+
+/**
+ * Free the demuxer instance (on main thread).
+ */
+void AminoMacVideoPlayer::closeDemuxer() {
+    //stop playback
+    stopPlayback();
+
+    //wait for thread
+    if (threadRunning) {
+        int res = uv_thread_join(&thread);
+
+        assert(res == 0);
+    }
+
+    //free demuxer
+    if (demuxer) {
+        uv_mutex_lock(&frameLock);
+        delete demuxer;
+        demuxer = NULL;
+        uv_mutex_unlock(&frameLock);
+    }
 }
 
 /**
  * Init video texture on OpenGL thread.
  */
 void AminoMacVideoPlayer::initVideoTexture() {
-    //ignored
+    if (DEBUG_VIDEOS) {
+        printf("video: init video texture\n");
+    }
+
+    if (!initTexture()) {
+        handleInitDone(false);
+        return;
+    }
+
+    //done
+    handleInitDone(true);
+}
+
+/**
+ * Init texture.
+ */
+bool AminoMacVideoPlayer::initTexture() {
+    glBindTexture(GL_TEXTURE_2D, texture->getTexture());
+
+    //size (has to be equal to video dimension!)
+    GLsizei textureW = videoW;
+    GLsizei textureH = videoH;
+
+    assert(demuxer);
+
+    GLvoid *data = demuxer->getFrameData(frameId);
+
+    assert(data);
+    assert(textureW > 0);
+    assert(textureH > 0);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureW, textureH, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    return true;
+}
+
+/**
+ * Update the texture (on rendering thread).
+ */
+void AminoMacVideoPlayer::updateVideoTexture(GLContext *ctx) {
+    uv_mutex_lock(&frameLock);
+
+    if (!demuxer) {
+        uv_mutex_unlock(&frameLock);
+        return;
+    }
+
+    //get current frame
+    int id;
+    GLvoid *data = demuxer->getFrameData(id);
+
+    if (!data) {
+        uv_mutex_unlock(&frameLock);
+        return;
+    }
+
+    if (id == frameId) {
+        //debug
+        //printf("skipping frame\n");
+
+        uv_mutex_unlock(&frameLock);
+        return;
+    }
+
+    frameId = id;
+
+    glBindTexture(GL_TEXTURE_2D, texture->getTexture());
+
+    GLsizei textureW = videoW;
+    GLsizei textureH = videoH;
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, textureW, textureH, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    uv_mutex_unlock(&frameLock);
+}
+
+/**
+ * Get current media time.
+ */
+double AminoMacVideoPlayer::getMediaTime() {
+    if (playing || paused) {
+        return mediaTime;
+    }
+
+    return -1;
+}
+
+/**
+ * Get video duration (-1 if unknown).
+ */
+double AminoMacVideoPlayer::getDuration() {
+    if (demuxer) {
+        return demuxer->durationSecs;
+    }
+
+    return -1;
+}
+
+/**
+ * Get the framerate (0 if unknown).
+ */
+double AminoMacVideoPlayer::getFramerate() {
+    if (demuxer) {
+        return demuxer->fps;
+    }
+
+    return 0;
+}
+
+/**
+ * Stop playback.
+ */
+void AminoMacVideoPlayer::stopPlayback() {
+    if (!playing && !paused) {
+        return;
+    }
+
+    //stop
+    doStop = true;
+
+    if (paused) {
+        //resume thread
+        uv_sem_post(&pauseSem);
+    }
+}
+
+/**
+ * Pause playback.
+ */
+bool AminoMacVideoPlayer::pausePlayback() {
+    if (!playing) {
+        return true;
+    }
+
+    //pause
+    doPause = true;
+
+    return true;
+}
+
+/**
+ * Resume (stopped) playback.
+ */
+bool AminoMacVideoPlayer::resumePlayback() {
+    if (!paused) {
+        return true;
+    }
+
+    //resume thread
+    uv_sem_post(&pauseSem);
+
+    return true;
 }
 
 //

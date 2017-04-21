@@ -1331,8 +1331,8 @@ amino_atlas_t AminoGfx::getAtlasTexture(texture_atlas_t *atlas, bool createIfMis
 /**
  * A new texture was created.
  */
-void AminoGfx::notifyTextureCreated() {
-    textureCount++;
+void AminoGfx::notifyTextureCreated(int count) {
+    textureCount += count;
 }
 
 /**
@@ -1524,6 +1524,8 @@ void AminoText::updateTextureFromAtlas(GLuint textureId, texture_atlas_t *atlas)
     }
 
     glBindTexture(GL_TEXTURE_2D, textureId);
+
+    //Note: glTexSubImage2D() would probably be faster
 
     if (atlas->depth == 1) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, atlas->width, atlas->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, atlas->data);

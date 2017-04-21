@@ -405,6 +405,23 @@ void AminoGfxRPi::populateRuntimeProperties(v8::Local<v8::Object> &obj) {
     //GLES
     Nan::Set(obj, Nan::New("eglVendor").ToLocalChecked(), Nan::New(std::string(eglQueryString(display, EGL_VENDOR))).ToLocalChecked());
     Nan::Set(obj, Nan::New("eglVersion").ToLocalChecked(), Nan::New(std::string(eglQueryString(display, EGL_VERSION))).ToLocalChecked());
+
+    //VC
+    char resp[80] = "";
+
+    if (vc_gencmd(resp, sizeof resp, "get_mem gpu") == 0) {
+        //GPU memory in MB
+        int gpuMem = 0;
+
+        vc_gencmd_number_property(resp, "gpu", &gpuMem);
+
+        if (gpuMem > 0) {
+            Nan::Set(obj, Nan::New("gpu_mem").ToLocalChecked(), Nan::New(gpuMem));
+
+            //debug
+            //printf("gpu_mem: %i\n", gpuMem);
+        }
+    }
 }
 
 /**
@@ -485,6 +502,7 @@ void AminoGfxRPi::initRenderer() {
 
     surface = eglCreateWindowSurface(display, config, &native_window, NULL);
 
+    //Note: happens for instance if there is a resource leak (restart the RPi in this case)
     assert(surface != EGL_NO_SURFACE);
 
     //activate context (needed by JS code to create shaders)
@@ -547,11 +565,11 @@ void AminoGfxRPi::initInput() {
 
             char name[256] = "Unknown";
 
-            ioctl(fd, EVIOCGNAME(sizeof (name)), name);
+            ioctl(fd, EVIOCGNAME(sizeof name), name);
 
             printf("Reading from: %s (%s)\n", str,name);
 
-            ioctl(fd, EVIOCGPHYS(sizeof (name)), name);
+            ioctl(fd, EVIOCGPHYS(sizeof name), name);
 
             printf("Location %s (%s)\n", str,name);
 
@@ -561,7 +579,7 @@ void AminoGfxRPi::initInput() {
 
             u_int8_t evtype_b[(EV_MAX+7)/8];
 
-            memset(evtype_b, 0, sizeof(evtype_b));
+            memset(evtype_b, 0, sizeof evtype_b);
 
             if (ioctl(fd, EVIOCGBIT(0, EV_MAX), evtype_b) < 0) {
                 printf("error reading device info\n");
@@ -904,8 +922,44 @@ AminoVideoPlayer* AminoGfxRPi::createVideoPlayer(AminoTexture *texture, AminoVid
  * Create EGL Image.
  */
 EGLImageKHR AminoGfxRPi::createEGLImage(GLuint textureId) {
-    //TODO eglDestroyImageKHR(state->display, (EGLImageKHR) eglImage) cbx
+    /*
+     * Notes:
+     *
+     * - In case of failure check gpu_mem is high enough and only one process is using OMX.
+     *
+     * Sample error:
+     *
+     *   eglCreateImageKHR:  failed to create image for buffer 0x4 target 12465 error 0x300c
+     */
+
     return eglCreateImageKHR(display, context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)textureId, 0);
+}
+
+/**
+ * Destroy EGL Image.
+ */
+void AminoGfxRPi::destroyEGLImage(EGLImageKHR eglImage) {
+    //switch to rendering thread
+    AminoJSObject::enqueueValueUpdate(0, eglImage, static_cast<asyncValueCallback>(&AminoGfxRPi::destroyEGLImageHandler));
+}
+
+/**
+ * Destroy EGL Image texture on OpenGL thread.
+ */
+void AminoGfxRPi::destroyEGLImageHandler(AsyncValueUpdate *update, int state) {
+    if (state != AsyncValueUpdate::STATE_APPLY) {
+        return;
+    }
+
+    assert(update->data);
+
+    if (DEBUG_VIDEOS) {
+        printf("destroying EGL image\n");
+    }
+
+    EGLBoolean res = eglDestroyImageKHR(display, (EGLImageKHR)update->data);
+
+    assert(res == EGL_TRUE);
 }
 
 //static initializers

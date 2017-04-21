@@ -761,6 +761,10 @@ VCHPRE_ OMX_BUFFERHEADERTYPE* VCHPOST_ ilclient_get_input_buffer(COMPONENT_T *co
                                                                  unsigned int portIndex,
                                                                  int block);
 
+/**
+ * Extension: stop the input buffering (prevent deadlock in ilclient_get_input_buffer()).
+ */
+void ilclient_stop_input_buffering(COMPONENT_T *comp);
 
 /**
  * The <DFN>ilclient_remove_event()</DFN> function queries the event list for the

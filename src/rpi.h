@@ -30,6 +30,7 @@ public:
     static NAN_MODULE_INIT(Init);
 
     EGLImageKHR createEGLImage(GLuint textureId);
+    void destroyEGLImage(EGLImageKHR eglImage);
 
 private:
     static bool glESInitialized;
@@ -89,6 +90,8 @@ private:
     void atlasTextureHasChangedHandler(JSCallbackUpdate *update);
 
     AminoVideoPlayer *createVideoPlayer(AminoTexture *texture, AminoVideo *video) override;
+
+    void destroyEGLImageHandler(AsyncValueUpdate *update, int state);
 };
 
 #endif

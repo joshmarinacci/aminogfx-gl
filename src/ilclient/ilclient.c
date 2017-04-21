@@ -108,6 +108,9 @@ struct _COMPONENT_T {
    unsigned int private;
    ILEVENT_T *list;
    ILCLIENT_T *client;
+
+   //extension
+   unsigned int stop_input;
 };
 
 #define random_wait()
@@ -825,6 +828,9 @@ int ilclient_enable_port_buffers(COMPONENT_T *comp, int portIndex,
    error = OMX_SendCommand(comp->comp, OMX_CommandPortEnable, portIndex, NULL);
    vc_assert(error == OMX_ErrorNone);
 
+   //debug
+   //printf("buffers=%i size=%i\n", portdef.nBufferCountActual, portdef.nBufferSize);
+
    for (i=0; i != portdef.nBufferCountActual; i++)
    {
       unsigned char *buf;
@@ -1327,6 +1333,10 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, unsigned int 
 {
    OMX_BUFFERHEADERTYPE *ret = NULL, *prev = NULL;
 
+   if (comp->stop_input) {
+      return NULL;
+   }
+
    do {
       VCOS_UNSIGNED set;
 
@@ -1350,12 +1360,25 @@ OMX_BUFFERHEADERTYPE *ilclient_get_input_buffer(COMPONENT_T *comp, unsigned int 
       }
       vcos_semaphore_post(&comp->sema);
 
-      if(block && !ret)
+      if(block && !ret) {
+         //waits forever until a new empty buffer is available
          vcos_event_flags_get(&comp->event, ILCLIENT_EMPTY_BUFFER_DONE, VCOS_OR_CONSUME, -1, &set);
-
-   } while(block && !ret);
+      }
+   } while(block && !ret && !comp->stop_input);
 
    return ret;
+}
+
+/**
+ * Extension: stop the input buffering (prevent deadlock in ilclient_get_input_buffer()).
+ */
+void ilclient_stop_input_buffering(COMPONENT_T *comp) {
+      vcos_semaphore_wait(&comp->sema);
+      comp->stop_input = 1;
+      vcos_semaphore_post(&comp->sema);
+
+      //simulate empty buffer
+      vcos_event_flags_set(&comp->event, ILCLIENT_EMPTY_BUFFER_DONE, VCOS_OR);
 }
 
 /***********************************************************
