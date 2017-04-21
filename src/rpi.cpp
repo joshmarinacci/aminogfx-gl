@@ -922,6 +922,16 @@ AminoVideoPlayer* AminoGfxRPi::createVideoPlayer(AminoTexture *texture, AminoVid
  * Create EGL Image.
  */
 EGLImageKHR AminoGfxRPi::createEGLImage(GLuint textureId) {
+    /*
+     * Notes:
+     *
+     * - In case of failure check gpu_mem is high enough and only one process is using OMX.
+     *
+     * Sample error:
+     *
+     *   eglCreateImageKHR:  failed to create image for buffer 0x4 target 12465 error 0x300c
+     */
+
     return eglCreateImageKHR(display, context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)textureId, 0);
 }
 
