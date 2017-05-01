@@ -154,6 +154,8 @@ private:
         GLFWmonitor *primary = glfwGetPrimaryMonitor();
         const GLFWvidmode *vidmode = glfwGetVideoMode(primary);
 
+        assert(vidmode);
+
         w = vidmode->width;
         h = vidmode->height;
         refreshRate = vidmode->refreshRate;
