@@ -179,6 +179,7 @@ void AminoGfx::setup() {
     }
 
     if (getScreenInfo(w, h, refreshRate, fullscreen)) {
+        //populate screen property (static)
         v8::Local<v8::Object> obj = Nan::New<v8::Object>();
 
         //add screen property
@@ -957,6 +958,7 @@ void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
 
     //rendering performance (FPS)
     if (MEASURE_FPS && lastFPS) {
+        //populate fps
         v8::Local<v8::Object> fpsObj = Nan::New<v8::Object>();
 
         Nan::Set(fpsObj, Nan::New("fps").ToLocalChecked(), Nan::New(lastFPS));
@@ -968,7 +970,6 @@ void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
     }
 
     //renderer
-
     if (SHOW_RENDERER_ERRORS) {
         Nan::Set(obj, Nan::New("errors").ToLocalChecked(), Nan::New(rendererErrors));
     }
