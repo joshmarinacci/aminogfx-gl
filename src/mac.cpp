@@ -152,6 +152,9 @@ private:
 
         //get monitor properties
         GLFWmonitor *primary = glfwGetPrimaryMonitor();
+
+        assert(primary);
+
         const GLFWvidmode *vidmode = glfwGetVideoMode(primary);
 
         assert(vidmode);
