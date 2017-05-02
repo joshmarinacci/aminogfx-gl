@@ -381,7 +381,7 @@ bool AminoGfxRPi::getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscre
 /**
  * Get runtime statistics.
  */
-void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
+void AminoGfxRPi::getStats(v8::Local<v8::Object> &obj) {
     AminoGfx::getStats(obj);
 
     //HDMI (see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h)
@@ -435,7 +435,7 @@ void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
 
         //properties
         Nan::Set(deviceObj, Nan::New("vendor").ToLocalChecked(), Nan::New(id.vendor).ToLocalChecked());
-        Nan::Set(deviceObj, Nan::New("monitor").ToLocalChecked(), Nan::New(id.monitor).ToLocalChecked());
+        Nan::Set(deviceObj, Nan::New("monitorName").ToLocalChecked(), Nan::New(id.monitor_name).ToLocalChecked());
         Nan::Set(deviceObj, Nan::New("serialNum").ToLocalChecked(), Nan::New(id.serial_num));
     }
 }
@@ -467,7 +467,7 @@ void AminoGfxRPi::forceHdmiMode(uint32_t code) {
 /**
  * Switch HDMI off.
  */
-void AminoGfxRPi::void switchHdmiOff() {
+void AminoGfxRPi::switchHdmiOff() {
     if (DEBUG_HDMI) {
         printf("Switching HDMI off.\n");
     }
