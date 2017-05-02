@@ -185,6 +185,8 @@ protected:
 
     void setRoot(AminoGroup *group);
 
+    void getStats(v8::Local<v8::Object> &obj) override;
+
 private:
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 
@@ -207,7 +209,6 @@ private:
     void deleteVertexBuffer(AsyncValueUpdate *update, int state);
 
     //stats
-    void getStats(v8::Local<v8::Object> &obj) override;
     void measureRenderingStart();
     void measureRenderingEnd();
 };
