@@ -84,8 +84,8 @@ void AminoGfxRPi::setup() {
          */
         vc_tv_register_callback(tvservice_cb, NULL);
 
-        //show info screen
-        vc_tv_show_info(1); //cbx check
+        //show info screen (Note: seems not to work!)
+        //vc_tv_show_info(1);
 
         //handle preferred resolution
         if (!createParams.IsEmpty()) {
@@ -239,6 +239,7 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
          * - Raspberry Pi 3 default:
          *    - hdmi_force_hotplug=1 is being used in /boot/config.txt
          *    - 1920x1080@60Hz on HDMI (mode=16, group=1)
+         *    - monitor data gets cached, reported as connected even if the HDMI cable was unplugged!
          */
 
         //debug
@@ -248,7 +249,7 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
 
         //check HDMI
         if ((tvstate->state & VC_HDMI_UNPLUGGED) == VC_HDMI_UNPLUGGED) {
-            //unplugged
+            //unplugged (so notes above)
             if (DEBUG_HDMI) {
                 printf("-> unplugged\n");
             }
@@ -388,6 +389,8 @@ void AminoGfxRPi::getStats(v8::Local<v8::Object> &obj) {
     TV_DISPLAY_STATE_T *tvState = getDisplayState();
 
     if (!tvState) {
+        //Note: does not occur on detached cable (see getDisplayState())
+
         return;
     }
 
