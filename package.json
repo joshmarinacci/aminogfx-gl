@@ -1,6 +1,6 @@
 {
   "name": "aminogfx-gl",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "description": "AminoGfx implementation for OpenGL 2 / OpenGL ES 2",
   "main": "main.js",
   "scripts": {
