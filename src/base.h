@@ -1013,6 +1013,9 @@ public:
      */
     void stop() {
         if (!destroyed) {
+            //keep instance until destroyed
+            retain();
+
             //remove animation
             if (eventHandler) {
                 (static_cast<AminoGfx *>(eventHandler))->removeAnimation(this);
@@ -1020,6 +1023,9 @@ public:
 
             //free resources
             destroy();
+
+            //release instance
+            release();
         }
     }
 

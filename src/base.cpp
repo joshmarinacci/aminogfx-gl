@@ -31,6 +31,14 @@ AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
     // animLock
     res = pthread_mutex_init(&animLock, &attr);
     assert(res == 0);
+
+    //debug
+    /*
+    assert(pthread_mutex_lock(&animLock) == 0);
+    assert(pthread_mutex_lock(&animLock) == 0);
+    assert(pthread_mutex_unlock(&animLock) == 0);
+    assert(pthread_mutex_unlock(&animLock) == 0);
+    */
 }
 
 AminoGfx::~AminoGfx() {
@@ -1019,6 +1027,8 @@ void AminoGfx::removeAnimation(AminoAnim *anim) {
         return;
     }
 
+    assert(anim);
+
     //remove
     int res = pthread_mutex_lock(&animLock);
 
@@ -1031,6 +1041,15 @@ void AminoGfx::removeAnimation(AminoAnim *anim) {
 
         //free instance
         anim->release();
+    } else {
+        //animation not found
+        if (DEBUG_RENDERER) {
+            printf("animation already stopped\n");
+        }
+    }
+
+    if (DEBUG_RENDERER) {
+        printf("animations: %i\n", animations.size());
     }
 
     res = pthread_mutex_unlock(&animLock);
