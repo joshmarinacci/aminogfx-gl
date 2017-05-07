@@ -1049,7 +1049,7 @@ void AminoGfx::removeAnimation(AminoAnim *anim) {
     }
 
     if (DEBUG_RENDERER) {
-        printf("animations: %i\n", animations.size());
+        printf("animations: %i\n", (int)animations.size());
     }
 
     res = pthread_mutex_unlock(&animLock);
