@@ -12,6 +12,8 @@
         "utility": "cpp",
         "deque": "cpp",
         "string": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "__functional_03": "cpp",
+        "__tree": "cpp"
     }
 }
