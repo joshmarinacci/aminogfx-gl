@@ -985,6 +985,8 @@ void AminoMacVideoPlayer::updateVideoTexture(GLContext *ctx) {
         return;
     }
 
+    //FIXME crashes observed somewhere here
+
     //get current frame
     int id;
     GLvoid *data = demuxer->getFrameData(id);
