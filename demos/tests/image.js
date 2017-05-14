@@ -20,7 +20,7 @@ img.src = path.join(__dirname, '../slideshow/images/iTermScreenSnapz001.png');
 
 //GC test
 /*
-for (var i = 0; i < 10000; i++) {
+for (let i = 0; i < 10000; i++) {
     const img = new amino.AminoImage();
 
     img.src = path.join(__dirname, '../slideshow/images/iTermScreenSnapz001.png');

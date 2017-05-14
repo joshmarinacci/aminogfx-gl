@@ -1,16 +1,16 @@
 'use strict';
 
-var cp = require('child_process');
-var amino = require('../../main.js');
+const cp = require('child_process');
+const amino = require('../../main.js');
 
 console.log('I am the master!');
 
 //create children
-var children = [];
-var readyCount = 0;
+const children = [];
+let readyCount = 0;
 
 function createChild() {
-    var child = cp.fork('demos/projection/slave.js');
+    const child = cp.fork('demos/projection/slave.js');
 
     children.push(child);
 
@@ -32,7 +32,7 @@ createChild();
 createChild();
 
 function projectProp(val, prop, obj) {
-    var props = {};
+    const props = {};
 
     props[prop.propName] = obj[prop.propName]();
 
@@ -90,7 +90,7 @@ function anim(id, prop) {
             return this;
         },
         send: function (_val) {
-            var self = this;
+            const self = this;
 
             children.forEach(function (ch) {
                 ch.send({
@@ -113,7 +113,7 @@ function start() {
     //configure the child windows
     console.log('configuring...');
 
-    for (var i = 0; i < children.length; i++) {
+    for (let i = 0; i < children.length; i++) {
         children[i].send({
             command: 'configure',
             props: {
@@ -128,7 +128,7 @@ function start() {
     }
 
     //create rect
-    var rect = new Rect();
+    const rect = new Rect();
 
     make('amino.Rect', { id: rect.id() });
 

@@ -1,4 +1,4 @@
-var amino = require('../../main.js');
+const amino = require('../../main.js');
 
 function Adsr() {
     amino.makeProps(this, {
@@ -11,7 +11,7 @@ function Adsr() {
     return this;
 }
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -20,29 +20,29 @@ gfx.start(function (err) {
     }
 
     //create the model
-    var adsr = new Adsr();
+    const adsr = new Adsr();
 
     //root for the whole window
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.setRoot(root);
 
     //group for the polygons and controls (not the text labels)
-    var g = this.createGroup();
+    const g = this.createGroup();
 
     root.add(g);
 
     //4 polygons, each a different color
-    var aPoly = this.createPolygon().fill('#00eecc');
-    var dPoly = this.createPolygon().fill('#00cccc');
-    var sPoly = this.createPolygon().fill('#00aacc');
-    var rPoly = this.createPolygon().fill('#0088aa');
+    const aPoly = this.createPolygon().fill('#00eecc');
+    const dPoly = this.createPolygon().fill('#00cccc');
+    const sPoly = this.createPolygon().fill('#00aacc');
+    const rPoly = this.createPolygon().fill('#0088aa');
 
     g.add(aPoly, dPoly, sPoly, rPoly);
     g.find('Polygon').filled(true);
 
     //5th polygon for the border, not filled
-    var border = this.createPolygon().fill('#ffffff').filled(false);
+    const border = this.createPolygon().fill('#ffffff').filled(false);
 
     g.add(border);
 
@@ -91,7 +91,7 @@ gfx.start(function (err) {
     }
 
     //make a handle bound to the adsr.a value
-    var A = this.createRect().y(50 - 10);
+    const A = this.createRect().y(50 - 10);
 
     A.acceptsMouseEvents = true;
 
@@ -106,7 +106,7 @@ gfx.start(function (err) {
     });
 
     //make a handle bound to the adsr.d value
-    var D = this.createRect();
+    const D = this.createRect();
 
     D.acceptsMouseEvents = true;
     D.x.bindTo(adsr.d, minus(10));
@@ -123,7 +123,7 @@ gfx.start(function (err) {
     });
 
     //make a handle bound to the adsr.r value
-    var R = this.createRect();
+    const R = this.createRect();
 
     R.acceptsMouseEvents = true;
     R.y.bindTo(adsr.s, minus(10));
@@ -151,19 +151,19 @@ gfx.start(function (err) {
     }
 
     //make 4 text labels, each bound to an adsr value
-    var label1 = this.createText().y(50 * 1);
+    const label1 = this.createText().y(50 * 1);
 
     label1.text.bindTo(adsr.a, format('A: %'));
 
-    var label2 = this.createText().y(50 * 2);
+    const label2 = this.createText().y(50 * 2);
 
     label2.text.bindTo(adsr.d, format('D: %'));
 
-    var label3 = this.createText().y(50 * 3);
+    const label3 = this.createText().y(50 * 3);
 
     label3.text.bindTo(adsr.s, format('S: %'));
 
-    var label4 = this.createText().y(50 * 4);
+    const label4 = this.createText().y(50 * 4);
 
     label4.text.bindTo(adsr.r, format('R: %'));
 

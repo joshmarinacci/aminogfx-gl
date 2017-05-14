@@ -1,8 +1,8 @@
 'use strict';
 
-var DEBUG = false;
+const DEBUG = false;
 
-var KEYS = {
+const KEYS = {
     RIGHT: "RIGHT",
     LEFT: "LEFT",
     DOWN: 'DOWN',
@@ -15,7 +15,7 @@ var KEYS = {
 
 
 //for browser
-var browsercodes_to_keys = {
+const browsercodes_to_keys = {
     39: KEYS.RIGHT,
     37: KEYS.LEFT,
     40: 'DOWN',
@@ -26,7 +26,7 @@ var browsercodes_to_keys = {
     16: KEYS.SHIFT
 };
 
-var aminocodes_to_keys = {
+const aminocodes_to_keys = {
     286: KEYS.RIGHT,
     285: KEYS.LEFT,
     283: KEYS.UP,
@@ -48,15 +48,15 @@ var aminocodes_to_keys = {
 };
 
 //American keyboard
-var shift_keys = [ 287, 288, 344 ];
-var aminoshift_map = { };
-var aminocodes_to_chars = {  32: ' ' };
-var browsercodes_to_chars = { };
-var browsershift_map = { };
+const shift_keys = [ 287, 288, 344 ];
+const aminoshift_map = { };
+const aminocodes_to_chars = {  32: ' ' };
+const browsercodes_to_chars = { };
+const browsershift_map = { };
 
 exports.init = function () {
     function insertMap(map, start, len, str) {
-        for (var i = 0; i < len; i++) {
+        for (let i = 0; i < len; i++) {
             map[start + i] = str[i];
         }
     }
@@ -68,7 +68,7 @@ exports.init = function () {
             throw new Error('not an even number of chars');
         }
 
-        for (var i = 0; i < str.length / 2; i++) {
+        for (let i = 0; i < str.length / 2; i++) {
             aminocodes_to_chars[start + i] = str[i * 2 + 0];
             aminoshift_map[start + i] = str[i * 2 + 1];
         }
@@ -96,11 +96,11 @@ exports.fromBrowserKeyboardEvent = function (evt) {
         console.log('processing browser event', evt);
     }
 
-    var shift = false;
+    let shift = false;
 
     shift = (evt.shift == 1);
 
-    var key = browsercodes_to_keys[evt.keycode];
+    const key = browsercodes_to_keys[evt.keycode];
 
     if (key) {
         return {
@@ -148,16 +148,16 @@ exports.fromBrowserKeyboardEvent = function (evt) {
  * Handle amino native keyboard events.
  */
 exports.fromAminoKeyboardEvent = function (evt, states) {
-    var keycode = evt.keycode;
+    const keycode = evt.keycode;
 
     if (DEBUG) {
         console.log('keycode: ' + keycode);
     }
 
     //check shift
-    var shift = false;
+    let shift = false;
 
-    for (var i = 0; i < shift_keys.length; i++) {
+    for (let i = 0; i < shift_keys.length; i++) {
         if (states[shift_keys[i]] === true) {
             shift = true;
             break;
@@ -165,7 +165,7 @@ exports.fromAminoKeyboardEvent = function (evt, states) {
     }
 
     //named function keys
-    var key = aminocodes_to_keys[keycode];
+    const key = aminocodes_to_keys[keycode];
 
     if (key) {
         return {
@@ -244,24 +244,24 @@ function cookKeyboardEvent(e) {
     }
 
     //American keyboard
-    var shift_map = { };
+    const shift_map = { };
 
     function insertMap(map, start, len, str) {
-        for (var i = 0; i < len; i++) {
+        for (let i = 0; i < len; i++) {
             map[start +i ] = str[i];
         }
     }
 
     insertMap(shift_map, 48, 10, ')!@#$%^&*(');
 
-    var codes_to_chars = {  32:' ' };
+    const codes_to_chars = {  32:' ' };
 
     function addKeysWithShift(start, str) {
         if (str.length % 2 != 0) {
             throw new Error("not an even number of chars");
         }
 
-        for (var i = 0; i < str.length / 2; i++) {
+        for (let i = 0; i < str.length / 2; i++) {
             codes_to_chars[start + i] = str[i * 2 + 0];
             shift_map[start + i] = str[i * 2 + 1];
         }
@@ -274,7 +274,7 @@ function cookKeyboardEvent(e) {
     // /console.log("keycode = ", e.keyCode);
 
     if (codes_to_chars[e.keyCode]) {
-        var char = codes_to_chars[e.keyCode];
+        let char = codes_to_chars[e.keyCode];
 
         if (e.shiftKey && shift_map[e.keyCode]) {
             char = shift_map[e.keyCode];
@@ -293,7 +293,7 @@ function cookKeyboardEvent(e) {
 
     //alphabet
     if (e.keyCode >= 65 && e.keyCode <= 90) {
-        var char = String.fromCharCode(e.keyCode);
+        let char = String.fromCharCode(e.keyCode);
 
         if (e.shiftKey) {
             char = char.toUpperCase();

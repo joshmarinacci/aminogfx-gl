@@ -2,9 +2,9 @@
 
 console.log('I am the slave. :(');
 
-var amino = require('../../main.js');
+const amino = require('../../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -12,7 +12,7 @@ gfx.start(function (err) {
         return;
     }
 
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.w(400);
     this.h(400);
@@ -39,9 +39,9 @@ gfx.start(function (err) {
 
     function make(m) {
         if (m.target == 'amino.Rect') {
-            var obj = gfx.createRect();
+            const obj = gfx.createRect();
 
-            for (var name in m.props) {
+            for (let name in m.props) {
                 obj[name](m.props[name]);
             }
 
@@ -50,8 +50,8 @@ gfx.start(function (err) {
     }
 
     function find(root, id) {
-        for (var i = 0; i < root.children.length; i++) {
-            var child = root.children[i];
+        for (let i = 0; i < root.children.length; i++) {
+            const child = root.children[i];
 
             if (child.id() == id) {
                 return child;
@@ -65,13 +65,13 @@ gfx.start(function (err) {
      * Update properties.
      */
     function update(m) {
-        var obj = find(root, m.id);
+        const obj = find(root, m.id);
 
         if (!obj) {
             throw new Error('Node not found: ' + m.id);
         }
 
-        for (var name in m.props) {
+        for (let name in m.props) {
             //call setter
             obj[name](m.props[name]);
         }
@@ -81,9 +81,9 @@ gfx.start(function (err) {
      * Animate property of node.
      */
     function anim(m) {
-        var obj = find(root, m.id);
-        var prop = obj[m.prop];
-        var anim = prop.anim().from(m.anim.from).to(m.anim.to).dur(m.anim.dur).loop(m.anim.loop);
+        const obj = find(root, m.id);
+        const prop = obj[m.prop];
+        const anim = prop.anim().from(m.anim.from).to(m.anim.to).dur(m.anim.dur).loop(m.anim.loop);
 
         anim.start();
     }

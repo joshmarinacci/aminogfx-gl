@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../main.js');
+const path = require('path');
+const amino = require('../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -15,12 +15,12 @@ gfx.start(function (err) {
     this.fill('#00ff00');
 
     //setup root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.setRoot(root);
 
     //blue rectangle (at 0/0)
-    var rect = this.createRect().w(200).h(250).x(0).y(0).fill('#0000ff');
+    const rect = this.createRect().w(200).h(250).x(0).y(0).fill('#0000ff');
 
     root.add(rect);
     rect.acceptsMouseEvents = true;
@@ -35,7 +35,7 @@ gfx.start(function (err) {
     });
 
     //circle (at 100/100)
-    var circle = this.createCircle().radius(50)
+    const circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(100).y(100);
 
@@ -50,14 +50,14 @@ gfx.start(function (err) {
     //images
 
     //tree at 0/0
-    var iv = this.createImageView();
+    const iv = this.createImageView();
 
     iv.src(path.join(__dirname, '/images/tree.png'));
     iv.sx(4).sy(4);
     root.add(iv);
 
     //yosemite animated
-    var iv2 = this.createImageView();
+    const iv2 = this.createImageView();
 
     iv2.src(path.join(__dirname, '/images/yose.jpg'));
     iv2.sx(4).sy(4);

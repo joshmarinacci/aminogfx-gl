@@ -45,7 +45,7 @@ function testAsync() {
 }
 
 function block(max) {
-    var time = new Date().getTime();
+    const time = new Date().getTime();
 
     while (new Date().getTime() - time < max) {
         //loop

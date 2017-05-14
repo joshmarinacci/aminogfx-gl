@@ -1,7 +1,7 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../main.js');
+const path = require('path');
+const amino = require('../main.js');
 
 //register font
 amino.fonts.registerFont({
@@ -21,7 +21,7 @@ amino.fonts.registerFont({
 });
 
 exports.go = function () {
-	var gfx = new amino.AminoGfx();
+	const gfx = new amino.AminoGfx();
 
 	gfx.start(function (err) {
 		if (err) {
@@ -33,11 +33,11 @@ exports.go = function () {
 		console.log('width = ', this.w());
 
 		//root
-		var root = this.createGroup();
+		const root = this.createGroup();
 
 		function simpleTests() {
 			//add rect
-			var rect1 = gfx.createRect().w(100).h(50).fill('#ff00ff');
+			const rect1 = gfx.createRect().w(100).h(50).fill('#ff00ff');
 
 			root.add(rect1);
 
@@ -46,14 +46,14 @@ exports.go = function () {
 			//loop animate the opacity of the rect
 
 			//plain text
-			var text1 = gfx.createText().text('some green text')
+			const text1 = gfx.createText().text('some green text')
 				.fontSize(20)
 				.fill('#00ff00').x(20).y(20);
 
 			root.add(text1);
 
 			//text with custom font
-			var text2 = gfx.createText().text('a custom font')
+			const text2 = gfx.createText().text('a custom font')
 				.fontSize(30)
 				.fontName('Oswald')
 				.x(20).y(120);
@@ -69,15 +69,15 @@ exports.go = function () {
 		 * press drag under an overlay
 		 */
 		function pressDragReleaseTest() {
-			var g = gfx.createGroup();
+			const g = gfx.createGroup();
 
 			//text
-			var t = gfx.createText().text('press to turn blue, then drag').x(20).y(20).fontSize(20);
+			const t = gfx.createText().text('press to turn blue, then drag').x(20).y(20).fontSize(20);
 
             g.add(t);
 
 			//green rect
-			var r = gfx.createRect().w(50).h(50).fill('#00ff00').x(50).y(50);
+			const r = gfx.createRect().w(50).h(50).fill('#00ff00').x(50).y(50);
 
 			r.acceptsMouseEvents = true;
 
@@ -100,14 +100,14 @@ exports.go = function () {
 			g.add(r);
 
 			//overlay rect
-			var overlay = gfx.createRect().w(100).h(100).fill('#cccccc').x(20).y(100);
+			const overlay = gfx.createRect().w(100).h(100).fill('#cccccc').x(20).y(100);
 
 			overlay.opacity(0.6);
 			overlay.acceptsMouseEvents = true;
 			g.add(overlay);
 
 			//text
-			var tt = gfx.createText().text('mouse blocking overlay').x(20).y(100).fontSize(20);
+			const tt = gfx.createText().text('mouse blocking overlay').x(20).y(100).fontSize(20);
 
 			g.add(tt);
 			g.x(250).y(20);
@@ -122,8 +122,8 @@ exports.go = function () {
 		 */
 		function imageSwappingTests() {
 			//image 1
-			var iv = gfx.createImageView();
-			var im1 = null;
+			const iv = gfx.createImageView();
+			let im1 = null;
 
 			iv.image.watch(function () {
 				if (im1) {
@@ -139,7 +139,7 @@ exports.go = function () {
 			iv.sx(4).sy(4);
 
 			//group (animation: rotation)
-			var g = gfx.createGroup();
+			const g = gfx.createGroup();
 
 			g.add(iv);
             g.rz.anim().from(0).to(360 * 4).dur(10000).loop(-1).start();
@@ -147,8 +147,8 @@ exports.go = function () {
 			root.add(g);
 
 			//image 2
-			var iv2 = gfx.createImageView();
-			var im2 = null;
+			const iv2 = gfx.createImageView();
+			let im2 = null;
 
 			iv2.image.watch(function () {
 				if (im2) {
@@ -186,7 +186,7 @@ exports.go = function () {
 		 */
 		function imageAnimTests() {
 			//create image view
-            var i1 = gfx.createImageView().src(path.join(__dirname, '/images/tree.png'));
+            const i1 = gfx.createImageView().src(path.join(__dirname, '/images/tree.png'));
 
 			//animate x position
 			i1.x.anim().from(0).to(100).dur(1000).loop(-1).autoreverse(true).start();
@@ -195,7 +195,7 @@ exports.go = function () {
 			i1.opacity.anim().from(0).to(1.0).dur(1000).loop(-1).autoreverse(true).start();
 
 			//group
-			var g = gfx.createGroup().x(20).y(500).add(i1);
+			const g = gfx.createGroup().x(20).y(500).add(i1);
 
 			root.add(g);
 		}

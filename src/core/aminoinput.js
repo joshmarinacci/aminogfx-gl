@@ -6,9 +6,9 @@
  * of the inputevents module
  */
 
-var DEBUG = false;
+const DEBUG = false;
 
-var IE = require('./inputevents');
+const IE = require('./inputevents');
 
 /**
  * Create a point.
@@ -19,13 +19,13 @@ function makePoint(x, y) {
         y: y,
         minus: function () {
             if (arguments.length == 1) {
-                var pt = arguments[0];
+                const pt = arguments[0];
 
                 return makePoint(this.x - pt.x, this.y - pt.y);
             }
 
             if (arguments.length == 2) {
-                var xy = arguments;
+                const xy = arguments;
 
                 return makePoint(this.x - xy[0], this.y - xy[1]);
             }
@@ -95,14 +95,14 @@ exports.createEventHandler = function (gfx) {
     return new AminoEvents(gfx);
 };
 
-var handlers = {
+const handlers = {
     'mouse.position': function (obj, evt) {
-        var s = obj.statusObjects.pointer;
+        const s = obj.statusObjects.pointer;
 
         s.prevPt = s.pt;
         s.pt = makePoint(evt.x, evt.y);
 
-        var target = obj.focusObjects.pointer.target;
+        const target = obj.focusObjects.pointer.target;
 
         if (target != null && obj.statusObjects.pointer.state == 1) {
             obj.sendDragEvent(evt);
@@ -119,7 +119,7 @@ var handlers = {
 
             //pressed
             if (evt.state == 1) {
-                var pts = obj.statusObjects.pointer;
+                const pts = obj.statusObjects.pointer;
 
                 if (DEBUG) {
                     console.log('-> pressed');
@@ -143,7 +143,7 @@ var handlers = {
         }
     },
     'mousewheel.v': function (obj, evt) {
-        var pts = obj.statusObjects.pointer;
+        const pts = obj.statusObjects.pointer;
 
         obj.setupScrollFocus(pts.pt);
         obj.sendScrollEvent(evt);
@@ -151,7 +151,7 @@ var handlers = {
     'key.press': function (obj, evt) {
         obj.statusObjects.keyboard.state[evt.keycode] = true;
 
-        var evt2 = IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state);
+        const evt2 = IE.fromAminoKeyboardEvent(evt, obj.statusObjects.keyboard.state);
 
         obj.sendKeyboardPressEvent(evt2);
     },
@@ -175,7 +175,7 @@ AminoEvents.prototype.processEvent = function (evt) {
         console.log('processEvent() ' + JSON.stringify(evt));
     }
 
-    var handler = handlers[evt.type];
+    const handler = handlers[evt.type];
 
     if (handler) {
         return handler(this, evt);
@@ -222,7 +222,7 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
     }
 
     //get all nodes
-    var nodes = this.gfx.findNodesAtXY(pt, function (node) {
+    const nodes = this.gfx.findNodesAtXY(pt, function (node) {
         //filter opt-out
         if (node.children && node.acceptsMouseEvents === false) {
             return false;
@@ -232,7 +232,7 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
     });
 
     //get nodes accepting mouse events
-    var pressNodes = nodes.filter(function (n) {
+    const pressNodes = nodes.filter(function (n) {
         return n.acceptsMouseEvents === true;
     });
 
@@ -242,7 +242,7 @@ AminoEvents.prototype.setupPointerFocus = function (pt) {
         this.focusObjects.pointer.target = null;
     }
 
-    var keyboardNodes = nodes.filter(function (n) {
+    const keyboardNodes = nodes.filter(function (n) {
         return n.acceptsKeyboardEvents === true;
     });
 
@@ -277,13 +277,13 @@ AminoEvents.prototype.stopPointerFocus = function () {
 };
 
 AminoEvents.prototype.sendPressEvent = function (e) {
-    var node = this.focusObjects.pointer.target;
+    const node = this.focusObjects.pointer.target;
 
     if (node == null) {
         return;
     }
 
-    var pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
+    const pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
 
     this.fireEventAtTarget(node, {
         type: 'press',
@@ -294,14 +294,14 @@ AminoEvents.prototype.sendPressEvent = function (e) {
 };
 
 AminoEvents.prototype.sendReleaseEvent = function (e) {
-    var node = this.focusObjects.pointer.target;
+    const node = this.focusObjects.pointer.target;
 
     if (node == null) {
         return;
     }
 
     //release
-    var pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
+    const pt = this.gfx.globalToLocal(this.statusObjects.pointer.pt, node);
 
     this.fireEventAtTarget(node, {
         type: 'release',
@@ -322,15 +322,15 @@ AminoEvents.prototype.sendReleaseEvent = function (e) {
 };
 
 AminoEvents.prototype.sendDragEvent = function (e) {
-    var node = this.focusObjects.pointer.target;
-    var s = this.statusObjects.pointer;
+    const node = this.focusObjects.pointer.target;
+    const s = this.statusObjects.pointer;
 
     if (node == null) {
         return;
     }
 
-    var localpt = this.gfx.globalToLocal(s.pt, node);
-    var localprev = this.gfx.globalToLocal(s.prevPt, node);
+    const localpt = this.gfx.globalToLocal(s.pt, node);
+    const localprev = this.gfx.globalToLocal(s.prevPt, node);
 
     this.fireEventAtTarget(node, {
         type: 'drag',
@@ -342,7 +342,7 @@ AminoEvents.prototype.sendDragEvent = function (e) {
 };
 
 AminoEvents.prototype.setupScrollFocus = function (pt) {
-    var nodes = this.gfx.findNodesAtXY(pt);
+    let nodes = this.gfx.findNodesAtXY(pt);
 
     nodes = nodes.filter(function (n) {
         return n.acceptsScrollEvents === true;
@@ -356,7 +356,7 @@ AminoEvents.prototype.setupScrollFocus = function (pt) {
 };
 
 AminoEvents.prototype.sendScrollEvent = function (e) {
-    var target = this.focusObjects.scroll.target;
+    const target = this.focusObjects.scroll.target;
 
     if (target == null) {
         return;
@@ -400,7 +400,7 @@ AminoEvents.prototype.fireEventAtTarget = function (target, event) {
         console.log('Warning: event has no type!');
     }
 
-    var funcs = this.listeners[event.type];
+    const funcs = this.listeners[event.type];
 
     if (funcs) {
         funcs.forEach(function (l) {

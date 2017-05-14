@@ -71,20 +71,20 @@ gfx.start(function (err) {
     }
 
     //polygon
-    var poly = this.createPolygon().dimension(2).fill('#00FF00');
+    const poly = this.createPolygon().dimension(2).fill('#00FF00');
 
     poly.geometry([100, 10, 150, 300, 200, 10]);
     g.add(poly);
 
     //circle
-    var circle = this.createCircle().radius(50)
+    const circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(200).y(200).opacity(0.2);
 
     g.add(circle);
 
     //image
-    var iv = this.createImageView().x(300).y(300);
+    const iv = this.createImageView().x(300).y(300);
 
     iv.src(path.join(__dirname, '../images/tree.png'));
 
@@ -120,7 +120,7 @@ gfx.start(function (err) {
     //testProps();
 
     //text
-    var text = this.createText()
+    const text = this.createText()
         .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
         .fontSize(80)
         .x(0).y(0)
@@ -145,7 +145,7 @@ function testImages(g) {
     const count = 1000;
 
     for (let i = 0; i < count; i++) {
-        var iv = gfx.createImageView().x(Math.random() * w).y(Math.random() * h);
+        const iv = gfx.createImageView().x(Math.random() * w).y(Math.random() * h);
 
         iv.src(img);
 

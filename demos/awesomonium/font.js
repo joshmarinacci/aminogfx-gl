@@ -1,7 +1,7 @@
 'use strict';
 
-var amino = require('../../main.js');
-var path = require('path');
+const amino = require('../../main.js');
+const path = require('path');
 
 amino.fonts.registerFont({
     name: 'mech',
@@ -14,7 +14,7 @@ amino.fonts.registerFont({
     }
 });
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -22,7 +22,7 @@ gfx.start(function (err) {
         return;
     }
 
-    var group = this.createGroup();
+    const group = this.createGroup();
 
     //mech
     group.add(gfx.createText()

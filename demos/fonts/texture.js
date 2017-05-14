@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../../main.js');
+const path = require('path');
+const amino = require('../../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 //fonts
 amino.fonts.registerFont({
@@ -29,7 +29,7 @@ gfx.start(function (err) {
     }
 
     //root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.w(512);
     this.h(512);
@@ -39,12 +39,12 @@ gfx.start(function (err) {
     this.setRoot(root);
 
     //image
-    var iv = this.createImageView();
+    const iv = this.createImageView();
 
     root.add(iv);
 
     //text
-    var text = this.createText().fontName('Oswald')
+    const text = this.createText().fontName('Oswald')
         .text('The quick brown fox jumps over the lazy dog.')
         .y(200) //outside viewport
         .w(512)
@@ -55,7 +55,7 @@ gfx.start(function (err) {
         .fontWeight(200);
 
     text.font.watch((font) => {
-        var texture = this.createTexture();
+        const texture = this.createTexture();
 
         texture.loadTexture(font, err => {
             if (err) {

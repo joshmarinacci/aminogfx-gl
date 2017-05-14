@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../../main.js');
+const path = require('path');
+const amino = require('../../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 //fonts
 amino.fonts.registerFont({
@@ -29,7 +29,7 @@ gfx.start(function (err) {
     }
 
     //root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.w(600);
     this.h(800);
@@ -37,13 +37,13 @@ gfx.start(function (err) {
     this.setRoot(root);
 
     //rects
-    var rect = this.createRect().x(0).y(0).w(600).h(80).fill('#ffffff');
-    var rect2 = this.createRect().x(0).y(80).w(600).h(80).fill('#dddddd');
+    const rect = this.createRect().x(0).y(0).w(600).h(80).fill('#ffffff');
+    const rect2 = this.createRect().x(0).y(80).w(600).h(80).fill('#dddddd');
 
     root.add(rect, rect2);
 
     //text
-    var text = this.createText().fontName('Oswald')
+    const text = this.createText().fontName('Oswald')
         .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
         //.text('This is a very long text which is wrapped. ')
         //.text('Aaaaaaaaa_ Bbbbbbbbb_ Ccccccccc_ Ddddddddd_ Eeeeeeeee_ Fffffffff_')
@@ -65,7 +65,7 @@ gfx.start(function (err) {
 
     //anim
     setInterval(() => {
-        var value = text.text();
+        const value = text.text();
 
         text.text(value.substring(1) + value[0]);
     }, 1000);

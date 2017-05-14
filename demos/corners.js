@@ -29,39 +29,39 @@ gfx.start(function (err) {
         return;
     }
 
-    var w = this.w();
-    var h = this.h();
-    var rectW = w / 6;
-    var rectH = h / 6;
+    const w = this.w();
+    const h = this.h();
+    const rectW = w / 6;
+    const rectH = h / 6;
 
     //white background
     this.fill('#ffffff');
 
     //setup root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.setRoot(root);
 
     //top-left (red)
-    var rectTL = this.createRect().w(rectW).h(rectH).x(0).y(0).fill("#ff0000");
+    const rectTL = this.createRect().w(rectW).h(rectH).x(0).y(0).fill("#ff0000");
 
     root.add(rectTL);
     addClickHandler(this, rectTL, '#00ffff');
 
     //top-right (green)
-    var rectTR = this.createRect().w(rectW).h(rectH).x(w - rectW).y(0).fill("#00ff00");
+    const rectTR = this.createRect().w(rectW).h(rectH).x(w - rectW).y(0).fill("#00ff00");
 
     root.add(rectTR);
     addClickHandler(this, rectTR, '#ff00ff');
 
     //bottom-left (green)
-    var rectBL = this.createRect().w(rectW).h(rectH).x(0).y(h - rectH).fill("#00ff00");
+    const rectBL = this.createRect().w(rectW).h(rectH).x(0).y(h - rectH).fill("#00ff00");
 
     root.add(rectBL);
     addClickHandler(this, rectBL, '#ff00ff');
 
     //bottom-right (red)
-    var rectBR = this.createRect().w(rectW).h(rectH).x(w - rectW).y(h - rectH).fill("#ff0000");
+    const rectBR = this.createRect().w(rectW).h(rectH).x(w - rectW).y(h - rectH).fill("#ff0000");
 
     root.add(rectBR);
     addClickHandler(this, rectBR, '#00ffff');
@@ -98,7 +98,7 @@ gfx.start(function (err) {
 function addClickHandler(gfx, rect, selColor) {
     rect.acceptsMouseEvents = true;
 
-    var color = rect.fill();
+    const color = rect.fill();
 
     gfx.on('press', rect, function () {
         rect.fill(selColor);

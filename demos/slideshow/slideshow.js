@@ -2,17 +2,17 @@
  * Sample: node demos/slideshow/slideshow.js demos/slideshow/images/
  */
 
-var amino = require('../../main.js');
-var fs = require('fs');
-var path = require('path');
+const amino = require('../../main.js');
+const fs = require('fs');
+const path = require('path');
 
 if (process.argv.length < 3) {
     console.log('you must provide a directory to use');
     return;
 }
 
-var dir = process.argv[2];
-var filelist = fs.readdirSync(dir).map(function (file) {
+const dir = process.argv[2];
+const filelist = fs.readdirSync(dir).map(function (file) {
     return path.join(dir, file);
 });
 
@@ -27,9 +27,9 @@ function CircularBuffer(arr) {
 }
 
 //wrap files in a circular buffer
-var files = new CircularBuffer(filelist);
+const files = new CircularBuffer(filelist);
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     //setup size
@@ -37,16 +37,16 @@ gfx.start(function (err) {
     this.h(600);
 
     //init root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.setRoot(root);
 
-    var sw = this.w();
-    var sh = this.h();
+    const sw = this.w();
+    const sh = this.h();
 
     //create two image views
-    var iv1 = this.createImageView().x(0);
-    var iv2 = this.createImageView().x(1000);
+    const iv1 = this.createImageView().x(0);
+    const iv2 = this.createImageView().x(1000);
 
     //add to the scene
     root.add(iv1, iv2);
@@ -58,7 +58,7 @@ gfx.start(function (err) {
             return;
         }
 
-        var scale = Math.min(sw / img.w, sh / img.h);
+        const scale = Math.min(sw / img.w, sh / img.h);
 
         obj.sx(scale).sy(scale);
     }

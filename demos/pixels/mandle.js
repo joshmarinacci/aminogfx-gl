@@ -1,10 +1,10 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../../main.js');
-var child = require('child_process');
+const path = require('path');
+const amino = require('../../main.js');
+const child = require('child_process');
 
-var Workman = {
+const Workman = {
     count: 4,
     chs:[],
     init: function (chpath, cb, count) {
@@ -14,7 +14,7 @@ var Workman = {
 
         console.log('using thread count', this.count);
 
-        for (var i = 0; i < this.count; i++) {
+        for (let i = 0; i < this.count; i++) {
             this.chs[i] = child.fork(chpath);
             this.chs[i].on('message', cb);
         }
@@ -26,7 +26,7 @@ var Workman = {
     }
 };
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -34,8 +34,8 @@ gfx.start(function (err) {
         return;
     }
 
-    var root = this.createGroup().x(0).y(0);
-    var pv = this.createPixelView().pw(500).w(500).ph(500).h(500);
+    const root = this.createGroup().x(0).y(0);
+    const pv = this.createPixelView().pw(500).w(500).ph(500).h(500);
 
     root.add(pv);
     this.setRoot(root);
@@ -43,14 +43,14 @@ gfx.start(function (err) {
     this.h(500);
 
     function generateMandlebrot() {
-        var w = pv.pw();
-        var h = pv.ph();
+        const w = pv.pw();
+        const h = pv.ph();
 
         function handleRow(m) {
-            var y = m.iy;
+            const y = m.iy;
 
-            for (var x = 0; x < m.row.length; x++) {
-                var c = lookupColor(m.row[x]);
+            for (let x = 0; x < m.row.length; x++) {
+                const c = lookupColor(m.row[x]);
 
                 pv.setPixel(x, y, c[0], c[1], c[2], 255);
             }
@@ -58,13 +58,13 @@ gfx.start(function (err) {
             pv.updateTexture();
         }
 
-        var workman = Workman;
+        const workman = Workman;
 
         workman.init(path.join(__dirname, 'mandle_child.js'), handleRow);
 
-        for (var y = 0; y < h; y++) {
-            var py = (y - h / 2) * 0.01;
-            var msg = {
+        for (let y = 0; y < h; y++) {
+            const py = (y - h / 2) * 0.01;
+            const msg = {
                 x0: (- w / 2) * 0.01,
                 x1: (+ w / 2) * 0.01,
                 y: py,
@@ -77,10 +77,10 @@ gfx.start(function (err) {
         }
     }
 
-    var lut = [];
+    const lut = [];
 
-    for (var i = 0; i < 10; i++) {
-        var s = (255 / 10) * i;
+    for (let i = 0; i < 10; i++) {
+        const s = (255 / 10) * i;
 
         lut.push([0, s, s]);
     }

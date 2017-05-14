@@ -1,16 +1,16 @@
 'use strict';
 
-var amino = require('../../main.js');
-var FeedParser = require('feedparser');
-var http = require('http');
+const amino = require('../../main.js');
+const FeedParser = require('feedparser');
+const http = require('http');
 
-var sw = 1280;
-var sh = 720;
+let sw = 1280;
+let sh = 720;
 
 parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
     titles = new CircularBuffer(titles);
 
-    var gfx = new amino.AminoGfx();
+    const gfx = new amino.AminoGfx();
 
     gfx.start(function (err) {
         if (err) {
@@ -26,24 +26,24 @@ parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
         }
 
         //root
-        var root = this.createGroup();
+        const root = this.createGroup();
 
         this.w(sw);
         this.h(sh);
         this.setRoot(root);
 
         //background
-        var bg = this.createGroup();
+        const bg = this.createGroup();
 
         root.add(bg);
 
         //text group
-        var textgroup = this.createGroup();
+        const textgroup = this.createGroup();
 
         root.add(textgroup);
 
-        var line1 = this.createText().x(50).y(200).fill('#ffffff').fontSize(80);
-        var line2 = this.createText().x(50).y(300).fill('#ffffff').fontSize(80);
+        const line1 = this.createText().x(50).y(200).fill('#ffffff').fontSize(80);
+        const line2 = this.createText().x(50).y(300).fill('#ffffff').fontSize(80);
 
         textgroup.add(line1, line2);
 
@@ -57,7 +57,7 @@ parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
         }
 
         function setHeadlines(headline, t1, t2) {
-            var max = 34;
+            const max = 34;
 
             //simple wrapping (does not really work)
             if (headline.length > max) {
@@ -72,9 +72,9 @@ parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
         rotateIn();
 
         //three rects that fill the screen: red, green, blue.  50% translucent
-        var rect1 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#ff0000');
-        var rect2 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#00ff00');
-        var rect3 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#0000ff');
+        const rect1 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#ff0000');
+        const rect2 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#00ff00');
+        const rect3 = this.createRect().w(sw).h(sh).opacity(0.5).fill('#0000ff');
 
         bg.add(rect1, rect2, rect3);
 
@@ -89,7 +89,7 @@ parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
 });
 
 function parseFeed(url, cb) {
-    var headlines = [];
+    const headlines = [];
 
     http.get(url, function (res) {
         res.pipe(new FeedParser())
