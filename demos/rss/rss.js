@@ -8,7 +8,7 @@ var sw = 1280;
 var sh = 720;
 
 parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
-    var titles = new CircularBuffer(titles);
+    titles = new CircularBuffer(titles);
 
     var gfx = new amino.AminoGfx();
 
@@ -18,12 +18,12 @@ parseFeed('http://www.npr.org/rss/rss.php?id=1001', function (titles) {
             return;
         }
         //setup
-	    console.log("stage = ", this.w(), this.h());
+        console.log("stage = ", this.w(), this.h());
 
-	    if (this.w() > 100) {
-		    sw = this.w();
-		    sh = this.h();
-	    }
+        if (this.w() > 100) {
+            sw = this.w();
+            sh = this.h();
+        }
 
         //root
         var root = this.createGroup();
@@ -93,14 +93,14 @@ function parseFeed(url, cb) {
 
     http.get(url, function (res) {
         res.pipe(new FeedParser())
-            .on('meta',function(meta) {
+            .on('meta',function (meta) {
                 //console.log('the meta is',meta);
             })
-            .on('data',function(article) {
+            .on('data',function (article) {
                 console.log('title = ', article.title);
                 headlines.push(article.title);
             })
-            .on('end',function() {
+            .on('end',function () {
                 console.log('ended');
                 cb(headlines);
             });

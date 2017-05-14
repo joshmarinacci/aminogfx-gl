@@ -9,7 +9,7 @@ function Adsr() {
     });
 
     return this;
-};
+}
 
 var gfx = new amino.AminoGfx();
 
@@ -88,7 +88,7 @@ gfx.start(function (err) {
         return function (val) {
             return val - coeff;
         };
-    };
+    }
 
     //make a handle bound to the adsr.a value
     var A = this.createRect().y(50 - 10);
@@ -97,7 +97,7 @@ gfx.start(function (err) {
 
     A.x.bindTo(adsr.a, minus(10));
 
-    this.on('press', A, function( e) {
+    this.on('press', A, function (e) {
         //adsr.a(e.target.x());
     });
 

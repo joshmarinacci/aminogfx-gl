@@ -8,9 +8,8 @@ var amino = require('../../main.js');
 console.log('create temporary instance');
 
 var gfx = new amino.AminoGfx();
-var gfxCollected = false;
-var weak = new amino.AminoWeakReference(gfx, () => {
-    gfxCollected = true;
+
+new amino.AminoWeakReference(gfx, () => {
     console.log('-> gfx garbage collected');
 });
 

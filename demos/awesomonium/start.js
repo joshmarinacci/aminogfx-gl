@@ -45,8 +45,8 @@ gfx.start(function (err) {
 
     //setup
     if (this.w() > 100) {
-	    w = this.w();
-	    h = this.h();
+        w = this.w();
+        h = this.h();
     }
 
     this.w(w);
@@ -288,7 +288,7 @@ function buildGlobe(group) {
 
     //add a line at portland
     cities.features.forEach(function (city) {
-        var color = '#ff00ff';
+        //var color = '#ff00ff';
         var hue = city.properties.city.length / 20;
 
         addLine(city.geometry.coordinates[1],
@@ -342,6 +342,8 @@ function createBar1(w, h, count, color) {
     return gr;
 }
 
+/*
 function frand(min, max) {
     return Math.random() * (max - min) + min;
 }
+*/

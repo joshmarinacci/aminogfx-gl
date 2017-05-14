@@ -6,11 +6,19 @@
             "jsx": true
         }
     },
+    "extends": [
+        "eslint:recommended"
+    ],
     "rules": {
-        "semi": 2
+        "semi": 2,
+        "no-const-assign": 2,
+        "no-console": 0
     },
     "env": {
         "browser": true,
         "node": true
+    },
+    "globals": {
+        "Uint8Array": true
     }
 }

@@ -1,6 +1,5 @@
 'use strict';
 
-var moment = require('moment');
 var path = require('path');
 var amino = require('../main.js');
 
@@ -9,15 +8,15 @@ amino.fonts.registerFont({
 	name: 'Oswald',
 	path: path.join(__dirname, '/oswald/'),
 	weights: {
-	    200: {
-	        normal: 'Oswald-Light.ttf'
-	    },
-	    400: {
-	        normal: 'Oswald-Regular.ttf'
-	    },
-	    800: {
-	        normal: 'Oswald-Bold.ttf'
-	    }
+		200: {
+			normal: 'Oswald-Light.ttf'
+		},
+		400: {
+			normal: 'Oswald-Regular.ttf'
+		},
+		800: {
+			normal: 'Oswald-Bold.ttf'
+		}
 	}
 });
 
@@ -26,9 +25,9 @@ exports.go = function () {
 
 	gfx.start(function (err) {
 		if (err) {
-        	console.log('Start failed: ' + err.message);
-        	return;
-    	}
+			console.log('Start failed: ' + err.message);
+			return;
+		}
 
 		//output width
 		console.log('width = ', this.w());

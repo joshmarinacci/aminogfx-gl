@@ -27,7 +27,7 @@ gfx.start(function (err) {
     root.add(bgRect);
 
     //depth rect
-    const depthRect = this.createGroup().originX(.5).originY(.5).w(500).h(500);;
+    const depthRect = this.createGroup().originX(.5).originY(.5).w(500).h(500);
 
     depthRect.depth(true);
 
