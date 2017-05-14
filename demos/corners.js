@@ -1,9 +1,8 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../main.js');
+const amino = require('../main.js');
 
-var gfx = new amino.AminoGfx({
+const gfx = new amino.AminoGfx({
     perspective: {
         /*
         src: [
@@ -68,7 +67,7 @@ gfx.start(function (err) {
     addClickHandler(this, rectBR, '#00ffff');
 
     //resize
-    this.on('window.size', function (evt) {
+    this.on('window.size', function (_evt) {
         //move corners
         rectTR.x(gfx.w() - rectW);
         rectBL.y(gfx.h() - rectH);

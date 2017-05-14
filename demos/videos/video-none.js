@@ -1,6 +1,5 @@
 'use strict';
 
-const path = require('path');
 const player = require('./player');
 
 /*
@@ -10,6 +9,6 @@ const player = require('./player');
 player.playVideo({
     //Note: TCP stream needed (UDP timeout, retrying with TCP)
     src: 'http://www.opticodec.com/test/tropic.mp4'
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

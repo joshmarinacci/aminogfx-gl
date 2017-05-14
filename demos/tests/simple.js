@@ -1,5 +1,7 @@
 'use strict';
 
+/*eslint no-unused-vars: 0*/
+
 const amino = require('../../main.js');
 const path = require('path');
 

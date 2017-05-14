@@ -3,6 +3,7 @@
 var gfx = require('../../main.js');
 var cs = require('../../src/core/srcConstraintSolver').getGlobal(); //FIXME broken
 
+/*
 var Lbuild = function () {
     var text  = new gfx.Text();
 
@@ -18,6 +19,7 @@ var Lbuild = function () {
 
     return text;
 };
+*/
 
 gfx.start(function (core, stage) {
     var root = new gfx.Group();

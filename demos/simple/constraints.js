@@ -54,11 +54,11 @@ gfx.start(function (core, stage) {
 
     var self = base;
 
-    gfx.getCore().on('press', base.bg, function(e){
+    gfx.getCore().on('press', base.bg, function (_e){
         base.bg.fill('#00ff00');
     });
 
-    gfx.getCore().on('release',base.bg, function(e){
+    gfx.getCore().on('release',base.bg, function (_e){
         base.bg.fill('#0000ff');
 
         if (self.cb) {

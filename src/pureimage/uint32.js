@@ -10,7 +10,7 @@
     'use strict';
 
     var POW_2_32 = 0x0100000000;
-    var POW_2_52 = 0x10000000000000;
+    //var POW_2_52 = 0x10000000000000;
 
     //
     //  Creating and Extracting
@@ -97,7 +97,7 @@
      *  @param {Number} argv one or more uint32 values
      *  @return {Number} the bitwise OR uint32 value
      */
-    exporter.or = function (uint32val0, argv) {
+    exporter.or = function (uint32val0, _argv) {
         var result = uint32val0;
         for (var index = 1; index < arguments.length; index += 1) {
             result = (result | arguments[index]);
@@ -111,7 +111,7 @@
      *  @param {Number} argv one or more uint32 values
      *  @return {Number} the bitwise AND uint32 value
      */
-    exporter.and = function (uint32val0, argv) {
+    exporter.and = function (uint32val0, _argv) {
         var result = uint32val0;
         for (var index = 1; index < arguments.length; index += 1) {
             result = (result & arguments[index]);
@@ -125,7 +125,7 @@
      *  @param {Number} argv one or more uint32 values
      *  @return {Number} the bitwise XOR uint32 value
      */
-    exporter.xor = function (uint32val0, argv) {
+    exporter.xor = function (uint32val0, _argv) {
         var result = uint32val0;
         for (var index = 1; index < arguments.length; index += 1) {
             result = (result ^ arguments[index]);

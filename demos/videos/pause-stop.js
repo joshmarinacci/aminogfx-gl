@@ -37,6 +37,6 @@ player.playVideo({
             console.log('media time: ' + video.getMediaTime());
         }, 1000);
     }
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

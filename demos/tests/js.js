@@ -72,4 +72,5 @@ class Circle extends Polygon {
 }
 
 const gfx = new AminoGfx();
-const circle = new Circle(gfx);
+
+new Circle(gfx);

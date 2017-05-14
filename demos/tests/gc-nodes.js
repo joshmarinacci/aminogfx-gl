@@ -2,6 +2,8 @@
 
 //launch: node --expose-gc demos/tests/gc-nodes.js
 
+/*eslint no-unused-vars: 0*/
+
 const amino = require('../../main.js');
 
 //create single instance
@@ -100,8 +102,6 @@ function generateWeakReferenceGarbage() {
 function generateRectGarbage(maxTime) {
     const startTime = new Date().getTime();
     const timer = setInterval(() => {
-        let obj = {};
-
         for (let i = 0; i < 10000; i++) {
             gfx.createRect();
         }

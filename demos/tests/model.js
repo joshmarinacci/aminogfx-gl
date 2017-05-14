@@ -1,5 +1,7 @@
 'use strict';
 
+/*eslint no-unused-vars: 0*/
+
 const path = require('path');
 const amino = require('../../main.js');
 
@@ -451,7 +453,7 @@ function showSphereLighted(model) {
     var indexData = [];
 
     for (var latNumber = 0; latNumber < latitudeBands; latNumber++) {
-        for (var longNumber = 0; longNumber < longitudeBands; longNumber++) {
+        for (let longNumber = 0; longNumber < longitudeBands; longNumber++) {
             var first = (latNumber * (longitudeBands + 1)) + longNumber;
             var second = first + longitudeBands + 1;
 

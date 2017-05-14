@@ -93,7 +93,7 @@ function parseFeed(url, cb) {
 
     http.get(url, function (res) {
         res.pipe(new FeedParser())
-            .on('meta',function (meta) {
+            .on('meta',function (_meta) {
                 //console.log('the meta is',meta);
             })
             .on('data',function (article) {

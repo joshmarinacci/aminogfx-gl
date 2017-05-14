@@ -966,11 +966,11 @@ ImageView.prototype.init = function () {
         applySize(texture, this.size(), this.position());
     });
 
-    this.w.watch(w => {
+    this.w.watch(_w => {
         applySize(this.image(), this.size(), this.position());
     });
 
-    this.h.watch(h => {
+    this.h.watch(_h => {
         applySize(this.image(), this.size(), this.position());
     });
 
@@ -2603,9 +2603,3 @@ const input = require('./src/core/aminoinput');
 input.init();
 
 exports.input = input;
-
-//extended
-//exports.RichTextView = amino_core.RichTextView;
-
-//exports.PureImageView = amino.primitives.PureImageView;
-//exports.ConstraintSolver = require('./src/ConstraintSolver');

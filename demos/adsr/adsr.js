@@ -97,7 +97,7 @@ gfx.start(function (err) {
 
     A.x.bindTo(adsr.a, minus(10));
 
-    this.on('press', A, function (e) {
+    this.on('press', A, function (_e) {
         //adsr.a(e.target.x());
     });
 
@@ -112,7 +112,7 @@ gfx.start(function (err) {
     D.x.bindTo(adsr.d, minus(10));
     D.y.bindTo(adsr.s, minus(10));
 
-    this.on('press', D, function (e) {
+    this.on('press', D, function (_e) {
         //adsr.d(e.target.x());
         //adsr.s(e.target.y());
     });
@@ -129,7 +129,7 @@ gfx.start(function (err) {
     R.y.bindTo(adsr.s, minus(10));
     R.x.bindTo(adsr.r, minus(10));
 
-    this.on('press', R, function (e) {
+    this.on('press', R, function (_e) {
         //adsr.s(e.target.y());
         //adsr.r(e.target.x());
     });

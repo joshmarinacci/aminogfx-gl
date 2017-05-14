@@ -8,7 +8,6 @@
 
 
 var opentype = require('opentype.js');
-var fs = require('fs');
 var PNG = require('pngjs').PNG;
 var JPEG = require('jpeg-js');
 var trans = require('./transform');
@@ -37,7 +36,7 @@ function Bitmap4BBP(w,h,options) {
         return (this.width * Math.floor(y) + Math.floor(x))*4;
     };
 
-    this.getContext = function(type) {
+    this.getContext = function(_type) {
         return new Bitmap4BBPContext(this);
     };
 }
@@ -113,13 +112,13 @@ function Bitmap4BBPContext(bitmap) {
 
     this.drawImage2 = function(img2,
         sx,sy,sw,sh,
-        dx,dy,dw,dh) {
+        dx,dy,_dw,_dh) {
         //console.log('draw image2 invoked',sx,sy,sw,sh, dx,dy,dw,dh);
         //console.log("this image = ", this._bitmap.width, this._bitmap.height);
         var i2w = img2.width;
-        var i2h = img2.height;
+        //var i2h = img2.height;
         var i1w = this._bitmap.width;
-        var i1h = this._bitmap.height;
+        //var i1h = this._bitmap.height;
         for(var j=0; j<sh; j++) {
             for(var i=0; i<sw; i++) {
                 var ns = ((sy+j)*i2w + (sx+i))*4;
@@ -178,7 +177,7 @@ function Bitmap4BBPContext(bitmap) {
     this.bezierCurveTo = function(cp1x, cp1y, cp2x, cp2y, x, y) {
         this.path.push(['b', cp1x, cp1y, cp2x, cp2y, x, y]);
     };
-    this.arc = function(x,y, rad, start, end, clockwise) {
+    this.arc = function(x,y, rad, start, end, _clockwise) {
         function addCirclePoint(ctx,type,a) {
             ctx.path.push([type,x+Math.sin(a)*rad,y+Math.cos(a)*rad]);
         }
@@ -198,7 +197,7 @@ function Bitmap4BBPContext(bitmap) {
             //fill between each pair of intersections
             for(var i=0; i<ints.length; i+=2) {
                 var fstartf = fract(ints[i]);
-                var fendf   = fract(ints[i+1]);
+                //var fendf   = fract(ints[i+1]);
                 var start = Math.floor(ints[i]);
                 var end   = Math.floor(ints[i+1]);
                 for(var ii=start; ii<=end; ii++) {
@@ -210,7 +209,7 @@ function Bitmap4BBPContext(bitmap) {
                     }
                     if(ii == end) {
                         //last
-                        var int = uint32.or(rgb,fendf*255);
+                        //var int = uint32.or(rgb,fendf*255);
                         this.compositePixel(ii,j, int);
                         continue;
                     }
@@ -273,7 +272,7 @@ function Bitmap4BBPContext(bitmap) {
     function renderGlyphToBitmap(font, ch, size) {
         var ysize = (font.font.ascender - font.font.descender)/font.font.unitsPerEm*size;
         var glyph = font.font.charToGlyph(ch);
-        var ysize = (glyph.yMax-glyph.yMin)/font.font.unitsPerEm*size;
+        //var ysize = (glyph.yMax-glyph.yMin)/font.font.unitsPerEm*size;
         var xsize = (glyph.xMax-glyph.xMin)/font.font.unitsPerEm*size + 3;
 
         var path = font.font.getPath(ch, 0, glyph.yMax/font.font.unitsPerEm*size, size);
@@ -344,7 +343,7 @@ function Bitmap4BBPContext(bitmap) {
                     var glyph = renderGlyphToBitmap(font,ch,size);
                     cache.insert(font,size,ch,glyph);
                 }
-                var glyph = cache.get(font,size,ch);
+                //var glyph = cache.get(font,size,ch);
                 var fx = x+off;
                 var fy = y-glyph.ascent;
                 var fpt = ctx.transform.transformPoint(fx,fy);
@@ -387,7 +386,7 @@ function Bitmap4BBPContext(bitmap) {
         };
     };
 
-    this.getImageData = function(x, y, widh, height) {
+    this.getImageData = function(_x, _y, _widh, _height) {
       return {
         data: new Uint8Array(this._bitmap._buffer)
       };
@@ -439,7 +438,7 @@ exports.decodePNG = function(instream, cb) {
         var bitmap =  new Bitmap4BBP(this.width,this.height);
         for(var i=0; i<bitmap._buffer.length; i++) {
             bitmap._buffer[i] = this.data[i];
-        };
+        }
         if(cb) cb(bitmap);
     });
 };
@@ -513,11 +512,13 @@ function makeLine  (start,end) {  return {start:start, end:end}; }
 function fract(v) {  return v-Math.floor(v);   }
 function lerp(a,b,t) {  return a + (b-a)*t; }
 
+/*
 function calcQuadraticAtT(p, t) {
     var x = (1-t)*(1-t)*p[0].x + 2*(1-t)*t*p[1].x + t*t*p[2].x;
     var y = (1-t)*(1-t)*p[0].y + 2*(1-t)*t*p[1].y + t*t*p[2].y;
     return {x:x,y:y};
 }
+*/
 
 function calcBezierAtT(p, t) {
     var x = (1-t)*(1-t)*(1-t)*p[0].x + 3*(1-t)*(1-t)*t*p[1].x + 3*(1-t)*t*t*p[2].x + t*t*t*p[3].x;
@@ -540,15 +541,15 @@ function pathToLines(path) {
         if(cmd[0] == 'q') {
             var pts = [curr, makePoint(cmd[1],cmd[2]), makePoint(cmd[3],cmd[4])];
             for(var t=0; t<1; t+=0.1) {
-                var pt = calcQuadraticAtT(pts,t);
+                //var pt = calcQuadraticAtT(pts,t);
                 lines.push(makeLine(curr,pt));
                 curr = pt;
             }
         }
         if(cmd[0] == 'b') {
-            var pts = [curr, makePoint(cmd[1],cmd[2]), makePoint(cmd[3],cmd[4]), makePoint(cmd[5],cmd[6])];
-            for(var t=0; t<1; t+=0.1) {
-                var pt = calcBezierAtT(pts,t);
+            //var pts = [curr, makePoint(cmd[1],cmd[2]), makePoint(cmd[3],cmd[4]), makePoint(cmd[5],cmd[6])];
+            for(let t=0; t<1; t+=0.1) {
+                const pt = calcBezierAtT(pts,t);
                 lines.push(makeLine(curr,pt));
                 curr = pt;
             }
@@ -600,6 +601,7 @@ function drawLine(image, line, color) {
     var dy = Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
     var err = (dx>dy ? dx : -dy)/2;
 
+    /*eslint no-constant-condition: 0*/
     while (true) {
         image.compositePixel(x0,y0,color);
         if (x0 === x1 && y0 === y1) break;
@@ -607,7 +609,7 @@ function drawLine(image, line, color) {
         if (e2 > -dx) { err -= dy; x0 += sx; }
         if (e2 < dy) { err += dx; y0 += sy; }
     }
-};
+}
 
 
 //composite pixel doubles the time. need to implement replace with a better thing
@@ -619,7 +621,7 @@ exports.compositePixel  = function(src,dst,omode) {
     var dst_rgba = uint32.getBytesBigEndian(dst);
 
     var src_alpha = src_rgba[3]/255;
-    var dst_alpha = dst_rgba[3]/255;
+    //var dst_alpha = dst_rgba[3]/255;
     var final_a = dst_rgba[3];
 
     var final_rgba = [

@@ -12,7 +12,8 @@
     "rules": {
         "semi": 2,
         "no-const-assign": 2,
-        "no-console": 0
+        "no-console": 0,
+        "no-unused-vars": [ "error", { "argsIgnorePattern": "^_" }]
     },
     "env": {
         "browser": true,

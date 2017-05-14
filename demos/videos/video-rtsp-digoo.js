@@ -1,6 +1,5 @@
 'use strict';
 
-const path = require('path');
 const player = require('./player');
 
 /*
@@ -44,6 +43,6 @@ player.playVideo({
     //opts: 'amino_realtime=0' //packet based timing (do not use!)
     //opts: 'rtsp_transport=udp pkt_size=65535 buffer_size=256000' //UDP
     //opts: 'rtsp_transport=tcp pkt_size=65535 buffer_size=256000' //TCP
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

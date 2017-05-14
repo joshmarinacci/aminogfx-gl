@@ -121,7 +121,7 @@ function buildDashboard() {
     }
 
     {
-        var x = 0;
+        let x = 0;
         addLine("ENDO SYS OS / MAKR PROC", x, 0);
         addSmallLine("RDOZ - 25889", x, 30);
         addSmallLine("ZODR - 48639", x, 50);
@@ -130,8 +130,8 @@ function buildDashboard() {
     }
 
     {
-        var x = 0;
-        var y = 130;
+        let x = 0;
+        let y = 130;
         addLine("FOO_MAR.TCX", x, y + 0, '\uf071');
         addSmallLine("analysis - 48%", x, y + 30);
         addSmallLine("actualizing - 99%", x, y + 50);
@@ -139,8 +139,8 @@ function buildDashboard() {
     }
 
     {
-        var x = w - 200 - 10;
-        var y = 0;
+        let x = w - 200 - 10;
+        let y = 0;
         addLine("Core Extraction", x, y + 0, '\uf0e4');
         addSmallLine("pulverton - 143.888", x, y + 30);
         addSmallLine("minotaur - 105%", x, y + 50);
@@ -148,8 +148,8 @@ function buildDashboard() {
     }
 
     {
-        var x = w - 200 - 10;
-        var y = 120;
+        let x = w - 200 - 10;
+        let y = 120;
         addLine("FEED CR55X \\ Analysis", x, y + 0);
         addSmallLine("reconst - 48%", x, y + 30);
         addSmallLine("fargonite - 99%", x, y + 50);
@@ -157,16 +157,16 @@ function buildDashboard() {
 
     }
     {
-        var x = w - 200 - 10;
-        var y = 250;
+        let x = w - 200 - 10;
+        let y = 250;
         addLine("$SHIP_CAM$.FXD", x, y + 0, '\uf06d');
         addSmallLine("fracturizing - 128%", x, y + 30);
         addSmallLine("detox - 43%", x, y + 50);
         addSmallLine("xantos 45% 8%", x, y + 70);
     }
     {
-        var x = w - 200 - 10;
-        var y = 350;
+        let x = w - 200 - 10;
+        let y = 350;
         addLine("XenoPhage", x, y + 0, '\uf126');
         addSmallLine("scent analysis - 128%", x, y + 30);
         addSmallLine("oxygenize - 43%", x, y + 50);

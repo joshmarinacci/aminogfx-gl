@@ -89,7 +89,7 @@ function anim(id, prop) {
             this._loop = val;
             return this;
         },
-        send: function (val) {
+        send: function (_val) {
             var self = this;
 
             children.forEach(function (ch) {

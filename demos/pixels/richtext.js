@@ -79,26 +79,26 @@ function makeStyledJSDoc() {
         ' It really is pretty long, don\'t you think?');
 
     //second block
-    var blk = frame.insertBlock();
+    blk = frame.insertBlock();
 
     blk.stylename = 'header';
     blk.insertSpan('This is a header');
 
     //third block
-    var blk = frame.insertBlock();
+    blk = frame.insertBlock();
 
     blk.stylename = 'subheader';
     blk.insertSpan('This is a sub header');
 
     //fourth block
-    var blk = frame.insertBlock();
+    blk = frame.insertBlock();
 
     //FIXME not visible
     blk.stylename = 'paragraph';
     blk.insertSpan('Another paragraph of text is here. I think this is pretty cool. Don\'t you think so? Let\'s type some more so that the text will wrap.');
 
     //fifth block
-    var blk = frame.insertBlock();
+    blk = frame.insertBlock();
 
     //FIXME not visible
     blk.stylename = 'paragraph';
