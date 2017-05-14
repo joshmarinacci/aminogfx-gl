@@ -112,7 +112,7 @@ exports.fromBrowserKeyboardEvent = function (evt) {
     }
 
     if (browsercodes_to_chars[evt.keycode]) {
-        var char = browsercodes_to_chars[evt.keycode];
+        let char = browsercodes_to_chars[evt.keycode];
 
         if (shift && browsershift_map[evt.keycode]) {
             char = browsershift_map[evt.keycode];
@@ -127,7 +127,7 @@ exports.fromBrowserKeyboardEvent = function (evt) {
     }
 
     if (evt.keycode >= 65 && evt.keycode <= 90) {
-        var char = String.fromCharCode(evt.keycode);
+        let char = String.fromCharCode(evt.keycode);
 
         if (shift) {
             char = char.toUpperCase();
@@ -178,7 +178,7 @@ exports.fromAminoKeyboardEvent = function (evt, states) {
 
     //character mappings
     if (aminocodes_to_chars[keycode]) {
-        var char = aminocodes_to_chars[keycode];
+        let char = aminocodes_to_chars[keycode];
 
         if (shift && aminoshift_map[keycode]) {
             char = aminoshift_map[keycode];
@@ -194,7 +194,7 @@ exports.fromAminoKeyboardEvent = function (evt, states) {
 
     //save latin1 values
     if (keycode >= 65 && keycode <= 90) {
-        var char = String.fromCharCode(keycode);
+        let char = String.fromCharCode(keycode);
 
         if (shift) {
             char = char.toUpperCase();
@@ -229,6 +229,7 @@ exports.fromAminoKeyboardEvent = function (evt, states) {
     };
 };
 
+/*
 function cookKeyboardEvent(e) {
     if (codes_to_keys[e.keyCode]) {
         return {
@@ -315,3 +316,4 @@ function cookKeyboardEvent(e) {
         recognized: false
     };
 }
+*/

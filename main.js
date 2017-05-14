@@ -15,7 +15,6 @@ const native = require(binding_path);
 
 let request = require('request');
 const fs = require('fs');
-const util =  require('util');
 
 const packageInfo = require('./package.json');
 
@@ -281,7 +280,7 @@ AminoGfx.prototype.setSize = setSize;
 
 function setSize(w, h) {
     this.w(w).h(h);
-};
+}
 
 /**
  * Get runtime system info.
@@ -433,7 +432,7 @@ function findNodeAtXY(root, x, y, tab) {
     }
 
     return null;
-};
+}
 
 /**
  * Convert screen coordinate to local node coordinate.
@@ -447,14 +446,14 @@ AminoGfx.prototype.globalToLocal = function (pt, node) {
 function convertGlobalToLocal(pt, node) {
     //check parent
     if (node.parent) {
-    	pt = convertGlobalToLocal(pt, node.parent);
+        pt = convertGlobalToLocal(pt, node.parent);
     }
 
     return input.makePoint(
         (pt.x - node.x()) / node.sx(),
         (pt.y - node.y()) / node.sy()
     );
-};
+}
 
 /*
 function calcGlobalToLocalTransform(node) {
@@ -776,7 +775,7 @@ Group.prototype.find = function (pattern) {
 };
 
 function treeSearch (root, considerRoot, filter) {
-    const res = [];
+    let res = [];
 
     if (root.isGroup) {
         const count = root.children.length;
@@ -905,9 +904,6 @@ Rect.prototype.rotate = rotateFunc;
  * @param pt coordinate relative to origin of node
  */
 function contains(pt) {
-    const x = this.x();
-    const y = this.y();
-
     return pt.x >= 0 && pt.x < this.w() &&
            pt.y >= 0 && pt.y < this.h();
 }
@@ -1322,7 +1318,7 @@ PixelView.prototype.initDone = function () {
         }
 
         self.updateTexture();
-    };
+    }
 
     //texture
     this.texture = this.amino.createTexture();
@@ -2371,7 +2367,7 @@ Anim.prototype.timeFunc = function (value) {
     this.checkStarted();
 
     if (timeFuncs.indexOf(value) === -1) {
-        throw new Error('unknown time function: ' + val);
+        throw new Error('unknown time function: ' + value);
     }
 
     this._timeFunc = value;
@@ -2442,7 +2438,7 @@ function makeProps(obj, props) {
     }
 
     return obj;
-};
+}
 
 /**
  * Create property handlers.
@@ -2591,7 +2587,7 @@ function makeProp(obj, name, val) {
 
     //attach
     obj[name] = prop;
-};
+}
 
 exports.makeProps = makeProps;
 

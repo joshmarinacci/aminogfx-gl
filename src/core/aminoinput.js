@@ -46,7 +46,7 @@ exports.makePoint = makePoint;
  */
 exports.init = function () {
     if (DEBUG) {
-        console.log('initializing input for OS', OS);
+        console.log('initializing input');
     }
 
     IE.init();
@@ -343,7 +343,8 @@ AminoEvents.prototype.sendDragEvent = function (e) {
 
 AminoEvents.prototype.setupScrollFocus = function (pt) {
     var nodes = this.gfx.findNodesAtXY(pt);
-    var nodes = nodes.filter(function (n) {
+
+    nodes = nodes.filter(function (n) {
         return n.acceptsScrollEvents === true;
     });
 
