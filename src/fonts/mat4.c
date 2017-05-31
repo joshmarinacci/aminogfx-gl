@@ -45,6 +45,10 @@ mat4 *
 mat4_new( void )
 {
     mat4 *self = (mat4 *) malloc( sizeof(mat4) );
+
+    //@appamics.CB: extra check
+    assert(self);
+
     return self;
 
 }

@@ -874,6 +874,9 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
 
             bufferSize = numBytes * sizeof(uint8_t);
             buffer = (uint8_t *)av_malloc(bufferSize);
+
+            assert(buffer);
+
             memset(buffer, 0, bufferSize);
 
             if (!bufferCurrent) {

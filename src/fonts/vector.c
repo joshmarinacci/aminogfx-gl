@@ -55,6 +55,10 @@ vector_new( size_t item_size )
     self->size      = 0;
     self->capacity  = 1;
     self->items     = malloc( self->item_size * self->capacity );
+
+    //@appamics.CB: extra check
+    assert(self->items);
+
     return self;
 }
 

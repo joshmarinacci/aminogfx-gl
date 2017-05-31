@@ -683,6 +683,9 @@ cleanup_stroker:
 
     unsigned char *buffer = calloc( tgt_w * tgt_h, sizeof(unsigned char) );
 
+    //@appamics.CB: extra check
+    assert(buffer);
+
     for( i = 0; i < src_h; i++ )
     {
         memcpy( buffer + (i + padding.top) * tgt_w + padding.left, ft_bitmap.buffer + i * ft_bitmap.pitch, src_w );

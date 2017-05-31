@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "opengl.h"
 #include "shader.h"
 
@@ -55,6 +56,10 @@ shader_read( const char *filename )
 	size = ftell( file );
 	fseek(file, 0, SEEK_SET );
     buffer = (char *) malloc( (size+1) * sizeof( char *) );
+
+    //@appamics.CB: extra check
+    assert(buffer);
+
 	fread( buffer, sizeof(char), size, file );
     buffer[size] = 0;
     fclose( file );

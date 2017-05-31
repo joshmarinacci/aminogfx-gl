@@ -229,6 +229,8 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
      */
     TV_DISPLAY_STATE_T *tvstate = (TV_DISPLAY_STATE_T *)malloc(sizeof(TV_DISPLAY_STATE_T));
 
+    assert(tvstate);
+
     if (vc_tv_get_display_state(tvstate) != 0) {
         free(tvstate);
         tvstate = NULL;
