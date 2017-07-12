@@ -29,6 +29,15 @@ function setRequestHandler(handler) {
 
 exports.setRequestHandler = setRequestHandler;
 
+/**
+ * Get the request handler.
+ */
+function getRequestHandler() {
+    return request;
+}
+
+exports.getRequestHandler = getRequestHandler;
+
 //
 //  AminoGfx
 //
@@ -168,64 +177,118 @@ AminoGfx.prototype.getRoot = function () {
 /**
  * Create group element.
  */
-AminoGfx.prototype.createGroup = function () {
-    return new AminoGfx.Group(this);
+AminoGfx.prototype.createGroup = function (attrs) {
+    const group = new AminoGfx.Group(this);
+
+    if (attrs) {
+        group.attr(attrs);
+    }
+
+    return group;
 };
 
 /**
  * Create rect element.
  */
-AminoGfx.prototype.createRect = function () {
-    return new AminoGfx.Rect(this);
+AminoGfx.prototype.createRect = function (attrs) {
+    const rect = new AminoGfx.Rect(this);
+
+    if (attrs) {
+        rect.attr(attrs);
+    }
+
+    return rect;
 };
 
 /**
  * Create image view element.
  */
-AminoGfx.prototype.createImageView = function () {
-    return new AminoGfx.ImageView(this);
+AminoGfx.prototype.createImageView = function (attrs) {
+    const iv = new AminoGfx.ImageView(this);
+
+    if (attrs) {
+        iv.attr(attrs);
+    }
+
+    return iv;
 };
 
 /**
  * Create pixel view element.
  */
-AminoGfx.prototype.createPixelView = function () {
-    return new AminoGfx.PixelView(this);
+AminoGfx.prototype.createPixelView = function (attrs) {
+    const pv = new AminoGfx.PixelView(this);
+
+    if (attrs) {
+        pv.attr(attrs);
+    }
+
+    return pv;
 };
 
 /**
- * Create image view element.
+ * Create texture element.
  */
-AminoGfx.prototype.createTexture = function () {
-    return new AminoGfx.Texture(this);
+AminoGfx.prototype.createTexture = function (attrs) {
+    const texture = new AminoGfx.Texture(this);
+
+    if (attrs) {
+        texture.attr(attrs);
+    }
+
+    return texture;
 };
 
 /**
  * Create polygon element.
  */
-AminoGfx.prototype.createPolygon = function () {
-    return new AminoGfx.Polygon(this);
+AminoGfx.prototype.createPolygon = function (attrs) {
+    const polygon = new AminoGfx.Polygon(this);
+
+    if (attrs) {
+        polygon.attr(attrs);
+    }
+
+    return polygon;
 };
 
 /**
  * Create model element.
  */
-AminoGfx.prototype.createModel = function () {
-    return new AminoGfx.Model(this);
+AminoGfx.prototype.createModel = function (attrs) {
+    const model = new AminoGfx.Model(this);
+
+    if (attrs) {
+        model.attr(attrs);
+    }
+
+    return model;
 };
 
 /**
  * Create circle element.
  */
-AminoGfx.prototype.createCircle = function () {
-    return new AminoGfx.Circle(this);
+AminoGfx.prototype.createCircle = function (attrs) {
+    const circle = new AminoGfx.Circle(this);
+
+    if (attrs) {
+        circle.attr(attrs);
+    }
+
+    return circle;
 };
 
 /**
  * Create text element.
  */
-AminoGfx.prototype.createText = function () {
-    return new AminoGfx.Text(this);
+AminoGfx.prototype.createText = function (attrs) {
+    const text = new AminoGfx.Text(this);
+
+    if (attrs) {
+        text.attr(attrs);
+    }
+
+    return text;
 };
 
 /**
@@ -913,7 +976,7 @@ function contains(pt) {
 //
 
 const ImageView = AminoGfx.ImageView;
-
+//cbx more
 ImageView.prototype.init = function () {
     makeProps(this, {
         id: '',
@@ -2264,7 +2327,7 @@ Anim.prototype.init = function () {
     this._delay = 0;
     this._autoreverse = false;
     this._timeFunc = 'cubicInOut';
-    this._then_fun = null;
+    this._then = null;
 
     this.started = false;
 };
@@ -2341,7 +2404,7 @@ Anim.prototype.loop = function (val) {
 Anim.prototype.then = function (fun) {
     this.checkStarted();
 
-    this._then_fun = fun;
+    this._then = fun;
 
     return this;
 };
@@ -2422,7 +2485,7 @@ Anim.prototype.start = function (refTime) {
             count: this._loop,
             autoreverse: this._autoreverse,
             timeFunc: this._timeFunc,
-            then: this._then_fun
+            then: this._then
         });
     }, this._delay);
 
@@ -2453,7 +2516,7 @@ function makeProp(obj, name, val) {
      *
      * Getter and setter.
      */
-    const prop = function (v, nativeCall) {
+    const prop = function AminoProperty(v, nativeCall) {
         if (v != undefined) {
             return prop.set(v, obj, nativeCall);
         } else {
@@ -2547,7 +2610,7 @@ function makeProp(obj, name, val) {
     /**
      * Create animation.
      */
-    prop.anim = function () {
+    prop.anim = function (attrs) {
         if (!obj.amino) {
             throw new Error('not an amino object');
         }
@@ -2556,7 +2619,15 @@ function makeProp(obj, name, val) {
             throw new Error('property cannot be animated');
         }
 
-        return new AminoGfx.Anim(obj.amino, obj, this.propId);
+        const anim = new AminoGfx.Anim(obj.amino, obj, this.propId);
+
+        if (attrs) {
+            for (let key in attrs) {
+                anim['_' + key] = attrs[key];
+            }
+        }
+
+        return anim;
     };
 
     /**
@@ -2584,6 +2655,35 @@ function makeProp(obj, name, val) {
     };
 
     //Note: no unbind method -> use prop.unwatchAll()
+
+    obj.attr = function (attrs) {
+        for (let key in attrs) {
+            const prop = this[key];
+
+            if (prop) {
+                const value = attrs[key];
+
+                //check watch
+                if (typeof value === 'function') {
+                    prop.watch(value);
+                    return;
+                }
+
+                //check bindTo
+                if (value.name === 'AminoProperty') {
+                    prop.bindTo(value);
+                    return;
+                }
+
+                //normal assignment
+                prop(value);
+            } else {
+                console.log('unknown attribute: ' + key);
+            }
+        }
+
+        return this;
+    };
 
     //attach
     obj[name] = prop;
