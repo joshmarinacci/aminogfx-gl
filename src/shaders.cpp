@@ -126,10 +126,6 @@ GLuint AnyShader::compileShader(std::string source, const GLenum type) {
     glGetShaderiv(handle, GL_COMPILE_STATUS, &compileStatus);
 
     if (compileStatus == GL_FALSE) {
-        //free
-        glDeleteShader(handle);
-        handle = INVALID_SHADER;
-
         //get error
         GLchar messages[256];
 
@@ -148,6 +144,10 @@ GLuint AnyShader::compileShader(std::string source, const GLenum type) {
         }
 
         error = std::string(messages);
+
+        //free
+        glDeleteShader(handle);
+        handle = INVALID_SHADER;
     }
 
     return handle;

@@ -976,7 +976,7 @@ function contains(pt) {
 //
 
 const ImageView = AminoGfx.ImageView;
-//cbx more
+
 ImageView.prototype.init = function () {
     makeProps(this, {
         id: '',
@@ -1941,7 +1941,7 @@ AminoFonts.prototype.getFont = function (descr, callback) {
 
     if (cached) {
         if (cached instanceof Promise) {
-            cached.then(function (font) {
+            cached.then(font => {
                 font.getSize(size, callback);
             }, err => {
                 callback(err);
@@ -2412,7 +2412,7 @@ Anim.prototype.then = function (fun) {
 /**
  * Auto reverse animation.
  */
-Anim.prototype.autoreverse = function(val) {
+Anim.prototype.autoreverse = function (val) {
     this.checkStarted();
 
     this._autoreverse = val;
@@ -2421,7 +2421,7 @@ Anim.prototype.autoreverse = function(val) {
 };
 
 //Time function values.
-const timeFuncs = ['linear', 'cubicIn', 'cubicOut', 'cubicInOut'];
+const timeFuncs = [ 'linear', 'cubicIn', 'cubicOut', 'cubicInOut' ];
 
 /**
  * Time function.

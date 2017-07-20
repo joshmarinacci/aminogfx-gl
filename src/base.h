@@ -750,7 +750,7 @@ public:
         this->setEventHandler(obj);
         this->prop = prop;
 
-        //retain property
+        //retain property (Note: stop() has to be called to free the instance)
         prop->retain();
 
         //enqueue

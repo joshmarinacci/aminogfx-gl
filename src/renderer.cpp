@@ -367,7 +367,7 @@ void AminoRenderer::render(AminoNode *root) {
     //transform
     if (root->propW) {
         //apply origin
-        ctx->translate(root->propW->value* root->propOriginX->value, root->propH->value * root->propOriginY->value);
+        ctx->translate(root->propW->value * root->propOriginX->value, root->propH->value * root->propOriginY->value);
     }
 
     ctx->translate(root->propX->value, root->propY->value, root->propZ->value);

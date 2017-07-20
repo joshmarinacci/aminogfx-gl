@@ -62,7 +62,6 @@ gfx.start(function (err) {
     r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(1).then(animDone).start();
     //r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(-1).then(animDone).start(); //Note: no extra garbage seen
     r.b.watch((value) => {
-
         console.log('animation state: ' + value);
     });
 

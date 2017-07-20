@@ -1,6 +1,5 @@
 // Platzieren Sie Ihre Einstellungen in dieser Datei, um Standard- und Benutzereinstellungen zu überschreiben.
 {
-    "window.reopenFolders": "all",
     "files.trimTrailingWhitespace": true,
     "telemetry.enableTelemetry": false,
     "files.associations": {
@@ -15,5 +14,6 @@
         "vector": "cpp",
         "__functional_03": "cpp",
         "__tree": "cpp"
-    }
+    },
+    "C_Cpp.intelliSenseEngine": "Default"
 }
