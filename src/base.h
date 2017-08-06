@@ -867,6 +867,8 @@ public:
             timeFunc = TF_LINEAR;
         }
 
+        //TODO support CSS key frames
+
         //then
         v8::MaybeLocal<v8::Value> maybeThen = Nan::Get(data, Nan::New<v8::String>("then").ToLocalChecked());
 
