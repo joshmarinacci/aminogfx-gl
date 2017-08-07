@@ -1707,7 +1707,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
                     //console.log('image: buffer=' + Buffer.isBuffer(buffer) + ' len=' + buffer.length);
 
                     //native call
-                    this.loadImage(buffer, this.onload);
+                    this.loadImage(buffer, this.onload, this.maxWH);
                 });
 
                 return;
@@ -1730,7 +1730,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
                     if (this.onload) {
                         this.onload(err, img);
                     }
-                });
+                }, this.maxWH);
             });
 
             return;
@@ -1746,7 +1746,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
         }
 
         //native call
-        this.loadImage(src, this.onload);
+        this.loadImage(src, this.onload, this.maxWH);
     }
 });
 

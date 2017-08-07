@@ -13,7 +13,8 @@
         "string": "cpp",
         "vector": "cpp",
         "__functional_03": "cpp",
-        "__tree": "cpp"
+        "__tree": "cpp",
+        "iterator": "cpp"
     },
     "C_Cpp.intelliSenseEngine": "Default"
 }

@@ -83,6 +83,7 @@ protected:
     int viewportH;
     bool viewportChanged;
     int32_t swapInterval = 0;
+    GLint maxTextureSize = 0;
     int rendererErrors = 0;
     int textureCount = 0;
 
