@@ -4,6 +4,9 @@
 #include <uv.h>
 
 extern "C" {
+    #include "libavutil/imgutils.h"
+    #include "libswscale/swscale.h"
+
     #include <jpeglib.h>
 
     #define PNG_SKIP_SETJMP_CHECK
@@ -438,7 +441,7 @@ public:
                 break;
 
             case 2:
-                format = AV_PIX_FMT_GRAY8A;
+                format = AV_PIX_FMT_YA8; //AV_PIX_FMT_GRAY8A
                 break;
 
             case 3:
