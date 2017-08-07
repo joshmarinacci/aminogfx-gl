@@ -57,6 +57,7 @@
                         '-lpng',
                         '-lavcodec',
                         '-lavformat',
+                        '-lavutil',
                         '-lswscale'
                     ],
                     "sources": [
@@ -105,6 +106,7 @@
                                 "-lpng",
                                 '-lavcodec',
                                 '-lavformat',
+                                '-lavutil',
                                 '-lswscale'
 		                    ],
 		                    "defines": [
