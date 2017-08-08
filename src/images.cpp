@@ -407,6 +407,9 @@ public:
         return true;
     }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
     /**
      * Resize image.
      */
@@ -418,6 +421,8 @@ public:
         if (imgW < maxWH && imgH < maxWH) {
             return;
         }
+
+        assert(imgData != NULL);
 
         //new size
         int newW = maxWH;
@@ -432,8 +437,6 @@ public:
 
         //initialize SWS context for software scaling
         AVPixelFormat format;
-        uint8_t *srcSlice[4], *dstSlice[4];
-        int srcSlide[4], dstSlide[4];
 
         switch (imgBPP) {
             case 1:
@@ -456,14 +459,16 @@ public:
                 return;
         }
 
-        const int dstAlign = 32;
-        int dstDataLen = av_image_get_buffer_size(format, newW, newH, dstAlign);
-        char *dstData = (char *)malloc(dstDataLen);
-
         //debug
         //printf("new size: %ix%i\n", newW, newH);
 
+        //Note: FFmpeg version
+        /*
+        const int dstAlign = 32;
+        int dstDataLen = av_image_get_buffer_size(format, newW, newH, dstAlign);
         struct SwsContext *sws_ctx = sws_getContext(imgW, imgH, format, newW, newH, format, SWS_BILINEAR, NULL, NULL, NULL);
+        uint8_t *srcSlice[4], *dstSlice[4];
+        int srcSlide[4], dstSlide[4];
 
         av_image_alloc(srcSlice, srcSlide, imgW, imgH, format, 1);
         av_image_fill_pointers(srcSlice, format, imgH, (uint8_t *)imgData, srcSlide);
@@ -475,16 +480,38 @@ public:
 
         av_image_copy_to_buffer((uint8_t *)data, dataLen, dstSlice, dstSlide, format, newW, newH, 1);
 
-        sws_freeContext(sws_ctx);
         av_freep(&srcSlice[0]);
         av_freep(&dstSlice[0]);
-        free(dstData);
+        */
+
+        /*
+         * Note: using libav compatible code (deprecated on FFmpeg)
+         *
+         * Seeing some alignment warnings on macOS.
+         */
+        int dataLen = avpicture_get_size(format, newW, newH);
+        char *data = (char *)malloc(dataLen);
+        AVPicture srcPic, dstPic;
+        struct SwsContext *sws_ctx = sws_getContext(imgW, imgH, format, newW, newH, format, SWS_BILINEAR, NULL, NULL, NULL);
+
+        assert(data != NULL);
+
+        avpicture_fill(&srcPic, (uint8_t *)imgData, format, imgW, imgH);
+        avpicture_alloc(&dstPic, format, newW, newH);
+        sws_scale(sws_ctx, srcPic.data, srcPic.linesize, 0, imgH, dstPic.data, dstPic.linesize);
+        avpicture_layout(&dstPic, format, newW, newH, (unsigned char *)data, dataLen);
+        avpicture_free(&dstPic);
+
+        sws_freeContext(sws_ctx);
+        free(imgData);
 
         imgW = newW;
         imgH = newH;
         imgData = data;
         imgDataLen = dataLen;
     }
+
+#pragma GCC diagnostic pop
 
     /**
      * Back in main thread with JS access.
