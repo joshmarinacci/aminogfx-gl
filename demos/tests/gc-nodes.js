@@ -57,7 +57,7 @@ function checkMemory() {
 
         //GC
         if (stats.heapUsed < lastHeapUsed) {
-            lastGC = new Date();
+            lastGC = Date.now();
         }
 
         //show raw value
@@ -66,7 +66,7 @@ function checkMemory() {
         //more details
         if (step % 5 == 0) {
             if (lastGC) {
-                console.log('Last GC: ' + (new Date().getTime() - lastGC) + ' ms');
+                console.log('Last GC: ' + (Date.now() - lastGC) + ' ms');
             }
 
             console.log('Below max heap: ' + ((maxHeapUsed - stats.heapUsed) / 1024 / 1024) + ' MB' + ' (heap: ' + (stats.heapUsed / 1024 / 1024) + ' MB)');
@@ -100,14 +100,14 @@ function generateWeakReferenceGarbage() {
 }
 
 function generateRectGarbage(maxTime) {
-    const startTime = new Date().getTime();
+    const startTime = Date.now();
     const timer = setInterval(() => {
         for (let i = 0; i < 10000; i++) {
             gfx.createRect();
         }
 
         //check end
-        if (new Date().getTime() > startTime + maxTime) {
+        if (Date.now() > startTime + maxTime) {
             clearInterval(timer);
             callGC(true);
         }

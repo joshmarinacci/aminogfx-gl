@@ -180,7 +180,7 @@ function testFont() {
         console.log('font metrics: ' + JSON.stringify(font.getFontMetrics()));
 
         //width
-        const startTime = (new Date()).getTime();
+        const startTime = Date.now();
 
         font.calcTextWidth('The quick brown fox jumps over the lazy dog. Pack meinen Kasten mit fünf Dutzend Alkoholkrügen.', function (err, width) {
             if (err) {
@@ -190,7 +190,7 @@ function testFont() {
 
             console.log('width: ' + width);
 
-            const endTime = (new Date()).getTime();
+            const endTime = Date.now();
 
             console.log(' -> in ' + (endTime - startTime) + ' ms');
         });
@@ -319,7 +319,7 @@ function checkMemory() {
 
         //GC
         if (stats.heapUsed < lastHeapUsed) {
-            lastGC = new Date();
+            lastGC = Date.now();
         }
 
         //show raw value
@@ -328,7 +328,7 @@ function checkMemory() {
         //more details
         if (step % 5 == 0) {
             if (lastGC) {
-                console.log('Last GC: ' + (new Date().getTime() - lastGC) + ' ms');
+                console.log('Last GC: ' + (Date.now() - lastGC) + ' ms');
             }
 
             console.log('Below max heap: ' + ((maxHeapUsed - stats.heapUsed) / 1024 / 1024) + ' MB' + ' (heap: ' + (stats.heapUsed / 1024 / 1024) + ' MB)');

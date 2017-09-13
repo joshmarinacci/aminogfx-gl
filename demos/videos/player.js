@@ -80,7 +80,7 @@ let time;
  * Start measuring interval.
  */
 function measureStart() {
-    time = new Date().getTime();
+    time = Date.now();
 }
 
 /**
@@ -89,7 +89,7 @@ function measureStart() {
  * @param {*} name
  */
 function measureEnd(name) {
-    const now = new Date().getTime();
+    const now = Date.now();
 
     console.log(name + ': ' + (now - time) + ' ms');
 }

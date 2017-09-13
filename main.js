@@ -299,7 +299,7 @@ AminoGfx.prototype.handleEvent = function (evt) {
     //console.log('Event: ' + JSON.stringify(evt));
 
     //add timestamp
-    evt.time = new Date().getTime();
+    evt.time = Date.now();
 
     //pass to event processor
     this.inputHandler.processEvent(evt);
