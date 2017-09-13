@@ -8,7 +8,7 @@ const Workman = {
     count: 4,
     chs:[],
     init: function (chpath, cb, count) {
-        if (typeof count == 'number') {
+        if (typeof count === 'number') {
             this.count = count;
         }
 

@@ -38,7 +38,7 @@ gfx.start(function (err) {
     }
 
     function make(m) {
-        if (m.target == 'amino.Rect') {
+        if (m.target === 'amino.Rect') {
             const obj = gfx.createRect();
 
             for (let name in m.props) {

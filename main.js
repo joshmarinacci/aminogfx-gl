@@ -107,9 +107,9 @@ function watchFill(value, prop, obj) {
  *  - objects: r, g, b (0..1)
  */
 function parseRGBString(fill) {
-    if (typeof fill == 'string') {
+    if (typeof fill === 'string') {
         //strip off any leading #
-        if (fill.substring(0, 1) == '#') {
+        if (fill.substring(0, 1) === '#') {
             fill = fill.substring(1);
         }
 
@@ -1075,7 +1075,7 @@ ImageView.prototype.init = function () {
                     imgH *= w / imgW;
                     imgW = w;
 
-                    if (mode == 'cover') {
+                    if (mode === 'cover') {
                         if (imgH < h) {
                             //stretch height
                             imgW *= h / imgH;
@@ -1682,7 +1682,7 @@ Object.defineProperty(AminoImage.prototype, 'src', {
         }
 
         //check file
-        if (typeof src == 'string') {
+        if (typeof src === 'string') {
             //check URLs
             if (src.indexOf('http://') === 0 || src.indexOf('https://') === 0) {
                 this.request = request({

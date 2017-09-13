@@ -18,7 +18,7 @@ function createChild() {
     child.on('message', function (m) {
         console.log('Message from child: ' + JSON.stringify(m));
 
-        if (m.command == 'ready') {
+        if (m.command === 'ready') {
             readyCount++;
 
             if (readyCount == 2) {

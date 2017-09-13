@@ -52,7 +52,7 @@ gfx.start(function (err) {
             });
         }
 
-        if (e.key == 'BACK_DELETE') {
+        if (e.key === 'BACK_DELETE') {
             let text = label.text();
 
             if (text) {
