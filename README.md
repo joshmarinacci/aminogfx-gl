@@ -40,6 +40,7 @@ brew install freetype
 
 ### Raspberry Pi
 
+* libfreetype6-dev
 * libjpeg-dev
 * libav
 * libswscale-dev
@@ -49,7 +50,8 @@ brew install freetype
 Setup:
 
 ```
-sudo apt-get install libjpeg-dev libavformat-dev libswscale-dev libavcodec-dev
+sudo rpi-update
+sudo apt-get install libfreetype6-dev libjpeg-dev libavformat-dev libswscale-dev libavcodec-dev
 ```
 
 ## Installation
