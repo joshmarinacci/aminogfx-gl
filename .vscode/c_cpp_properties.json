@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/Library/Developer/CommandLineTools/usr/lib/clang/8.1.0/include/",
+                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/4.2.1/tr1/",
+                "/usr/include/c++/4.2.1",
+                "/usr/local/include",
+                "/usr/include",
+                "${workspaceRoot}",
+                "${workspaceRoot}/node_modules/nan"
+            ],
+            "intelliSenseMode": "clang-x64",
+            "browse": {
+                "path": [
+                    "/usr/local/include",
+                    "${workspaceRoot}",
+                    "${workspaceRoot}/node_modules/nan"
+                ]
+            },
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ]
+        }
+    ],
+    "version": 3
+}
