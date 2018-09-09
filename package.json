@@ -41,8 +41,5 @@
   "bugs": {
     "url": "https://github.com/joshmarinacci/aminogfx-gl/issues"
   },
-  "homepage": "https://github.com/joshmarinacci/aminogfx-gl",
-  "devDependencies": {
-    "aws-sdk": "^2.311.0"
-  }
+  "homepage": "https://github.com/joshmarinacci/aminogfx-gl"
 }
