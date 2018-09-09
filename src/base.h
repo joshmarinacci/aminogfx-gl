@@ -1055,6 +1055,7 @@ public:
                 printf("-> callback used\n");
             }
 
+            //Note: not using async Nan call to keep order with stop
             enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoAnim::callThen), NULL, NULL);
         }
 
@@ -1070,7 +1071,7 @@ public:
         Nan::HandleScope scope;
 
         //call
-        then->Call(handle(), 0, NULL);
+        Nan::Call(*then, handle(), 0, NULL);
     }
 
     /**

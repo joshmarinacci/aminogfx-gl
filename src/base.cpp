@@ -371,7 +371,7 @@ void AminoGfx::ready() {
             v8::Local<v8::Object> obj = handle();
             v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-            startCallback->Call(obj, 2, argv);
+            Nan::Call(*startCallback, obj, 2, argv);
         }
 
         //free callback

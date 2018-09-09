@@ -547,7 +547,7 @@ public:
         //call callback
         v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-        callback->Call(2, argv);
+        Nan::Call(*callback, 2, argv);
     }
 };
 
@@ -1053,7 +1053,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(obj, argc, argv);
+                Nan::Call(*callback, obj, argc, argv);
                 delete callback;
                 callback = NULL;
             }
@@ -1069,7 +1069,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            callback->Call(obj, argc, argv);
+            Nan::Call(*callback, obj, argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1260,7 +1260,7 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(handle(), argc, argv);
+                Nan::Call(*callback, handle(), argc, argv);
                 delete callback;
                 callback = NULL;
             }
@@ -1338,7 +1338,7 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            callback->Call(obj, argc, argv);
+            Nan::Call(*callback, obj, argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1354,7 +1354,7 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
             int argc = 1;
             v8::Local<v8::Value> argv[1] = { Nan::Error(error) };
 
-            callback->Call(handle(), argc, argv);
+            Nan::Call(*callback, handle(), argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1518,7 +1518,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                textureData->callback->Call(handle(), argc, argv);
+                Nan::Call(*textureData->callback, handle(), argc, argv);
                 delete textureData->callback;
             }
 
@@ -1535,7 +1535,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            textureData->callback->Call(obj, argc, argv);
+            Nan::Call(*textureData->callback, obj, argc, argv);
             delete textureData->callback;
         }
 
@@ -1632,7 +1632,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(handle(), argc, argv);
+                Nan::Call(*callback, handle(), argc, argv);
                 delete callback;
             }
 
@@ -1649,7 +1649,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            callback->Call(obj, argc, argv);
+            Nan::Call(*callback, obj, argc, argv);
             delete callback;
         }
     }
