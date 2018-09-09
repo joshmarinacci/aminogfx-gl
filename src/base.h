@@ -855,7 +855,7 @@ public:
         autoreverse = Nan::Get(data, Nan::New<v8::String>("autoreverse").ToLocalChecked()).ToLocalChecked()->BooleanValue();
 
         //time func
-        v8::String::Utf8Value str(Nan::Get(data, Nan::New<v8::String>("timeFunc").ToLocalChecked()).ToLocalChecked());
+        Nan::Utf8String str(Nan::Get(data, Nan::New<v8::String>("timeFunc").ToLocalChecked()).ToLocalChecked());
         std::string tf = std::string(*str);
 
         if (tf == "cubicIn") {

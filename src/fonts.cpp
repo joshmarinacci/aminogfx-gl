@@ -339,7 +339,7 @@ NAN_METHOD(AminoFontSize::CalcTextWidth) {
     assert(info.Length() == 1);
 
     AminoFontSize *obj = Nan::ObjectWrap::Unwrap<AminoFontSize>(info.This());
-    v8::String::Utf8Value str(info[0]);
+    Nan::Utf8String str(info[0]);
 
     assert(obj);
 
