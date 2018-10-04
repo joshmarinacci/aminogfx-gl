@@ -1,8 +1,8 @@
 'use strict';
 
-var amino = require('../../main.js');
+const amino = require('../../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -11,13 +11,13 @@ gfx.start(function (err) {
     }
 
     //root
-    var root = this.createGroup().id('group');
+    const root = this.createGroup().id('group');
 
     root.acceptsMouseEvents = true;
     this.setRoot(root);
 
     //rect
-    var rect = this.createRect().w(100).h(50).fill('#ccccff').x(50).y(50).id('clickrect');
+    const rect = this.createRect().w(100).h(50).fill('#ccccff').x(50).y(50).id('clickrect');
 
     rect.acceptsMouseEvents = true;
     root.add(rect);
@@ -37,7 +37,7 @@ gfx.start(function (err) {
     });
 
     //rect 2
-    var r2 = this.createRect().w(30).h(30).fill('#ff6666').x(300).y(50).id('dragrect');
+    const r2 = this.createRect().w(30).h(30).fill('#ff6666').x(300).y(50).id('dragrect');
 
     root.add(r2);
     r2.acceptsMouseEvents = true;
@@ -48,13 +48,13 @@ gfx.start(function (err) {
     });
 
     //overlay
-    var overlay = this.createRect().w(300).h(300).fill('#00ff00').x(20).y(20).opacity(0.2).id('overlay');
+    const overlay = this.createRect().w(300).h(300).fill('#00ff00').x(20).y(20).opacity(0.2).id('overlay');
 
     overlay.acceptsMouseEvents = false;
     root.add(overlay);
 
     //scroll
-    var scroll = this.createRect().w(50).h(200).fill('#0000ff').x(400).y(50).id('scroll');
+    const scroll = this.createRect().w(50).h(200).fill('#0000ff').x(400).y(50).id('scroll');
 
     root.add(scroll);
     scroll.acceptsScrollEvents = true;

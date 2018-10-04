@@ -84,6 +84,9 @@ void AminoGfxRPi::setup() {
          */
         vc_tv_register_callback(tvservice_cb, NULL);
 
+        //show info screen (Note: seems not to work!)
+        //vc_tv_show_info(1);
+
         //handle preferred resolution
         if (!createParams.IsEmpty()) {
             v8::Local<v8::Object> obj = Nan::New(createParams);
@@ -212,6 +215,11 @@ void AminoGfxRPi::initEGL() {
     }
 }
 
+/**
+ * Get the current display state.
+ *
+ * Returns null if no display is connected.
+ */
 TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
     /*
      * Get TV state.
@@ -220,6 +228,8 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
      * - https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h
      */
     TV_DISPLAY_STATE_T *tvstate = (TV_DISPLAY_STATE_T *)malloc(sizeof(TV_DISPLAY_STATE_T));
+
+    assert(tvstate);
 
     if (vc_tv_get_display_state(tvstate) != 0) {
         free(tvstate);
@@ -231,6 +241,7 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
          * - Raspberry Pi 3 default:
          *    - hdmi_force_hotplug=1 is being used in /boot/config.txt
          *    - 1920x1080@60Hz on HDMI (mode=16, group=1)
+         *    - monitor data gets cached, reported as connected even if the HDMI cable was unplugged!
          */
 
         //debug
@@ -240,6 +251,7 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
 
         //check HDMI
         if ((tvstate->state & VC_HDMI_UNPLUGGED) == VC_HDMI_UNPLUGGED) {
+            //unplugged (so notes above)
             if (DEBUG_HDMI) {
                 printf("-> unplugged\n");
             }
@@ -247,6 +259,7 @@ TV_DISPLAY_STATE_T* AminoGfxRPi::getDisplayState() {
             free(tvstate);
             tvstate = NULL;
         } else if ((tvstate->state & (VC_HDMI_HDMI | VC_HDMI_DVI)) == 0) {
+            //no HDMI (or DVI) output
             if (DEBUG_HDMI) {
                 printf("-> no HDMI display\n");
             }
@@ -369,6 +382,70 @@ bool AminoGfxRPi::getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscre
 }
 
 /**
+ * Get runtime statistics.
+ */
+void AminoGfxRPi::getStats(v8::Local<v8::Object> &obj) {
+    AminoGfx::getStats(obj);
+
+    //HDMI (see https://github.com/raspberrypi/userland/blob/master/interface/vmcs_host/vc_hdmi.h)
+    TV_DISPLAY_STATE_T *tvState = getDisplayState();
+
+    if (!tvState) {
+        //Note: does not occur on detached cable (see getDisplayState())
+
+        return;
+    }
+
+    v8::Local<v8::Object> hdmiObj = Nan::New<v8::Object>();
+
+    Nan::Set(obj, Nan::New("hdmi").ToLocalChecked(), hdmiObj);
+
+    // HDMI_DISPLAY_STATE_T
+    Nan::Set(hdmiObj, Nan::New("state").ToLocalChecked(), Nan::New(tvState->display.hdmi.state));
+    Nan::Set(hdmiObj, Nan::New("width").ToLocalChecked(), Nan::New(tvState->display.hdmi.width));
+    Nan::Set(hdmiObj, Nan::New("height").ToLocalChecked(), Nan::New(tvState->display.hdmi.height));
+    Nan::Set(hdmiObj, Nan::New("frameRate").ToLocalChecked(), Nan::New(tvState->display.hdmi.frame_rate));
+    Nan::Set(hdmiObj, Nan::New("scanMode").ToLocalChecked(), Nan::New(tvState->display.hdmi.scan_mode));
+    Nan::Set(hdmiObj, Nan::New("group").ToLocalChecked(), Nan::New(tvState->display.hdmi.group));
+    Nan::Set(hdmiObj, Nan::New("mode").ToLocalChecked(), Nan::New(tvState->display.hdmi.mode));
+    Nan::Set(hdmiObj, Nan::New("pixelRep").ToLocalChecked(), Nan::New(tvState->display.hdmi.pixel_rep));
+    Nan::Set(hdmiObj, Nan::New("aspectRatio").ToLocalChecked(), Nan::New(tvState->display.hdmi.aspect_ratio));
+    Nan::Set(hdmiObj, Nan::New("pixelEncoding").ToLocalChecked(), Nan::New(tvState->display.hdmi.pixel_encoding));
+    Nan::Set(hdmiObj, Nan::New("format3d").ToLocalChecked(), Nan::New(tvState->display.hdmi.format_3d));
+
+    //display options (HDMI_DISPLAY_OPTIONS_T)
+    v8::Local<v8::Object> displayObj = Nan::New<v8::Object>();
+
+    Nan::Set(hdmiObj, Nan::New("displayOptions").ToLocalChecked(), displayObj);
+
+    Nan::Set(displayObj, Nan::New("aspect").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.aspect));
+    Nan::Set(displayObj, Nan::New("verticalBarPresent").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.vertical_bar_present));
+    Nan::Set(displayObj, Nan::New("leftBarWidth").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.left_bar_width));
+    Nan::Set(displayObj, Nan::New("rightBarWidth").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.right_bar_width));
+    Nan::Set(displayObj, Nan::New("horizontalBarPresent").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.horizontal_bar_present));
+    Nan::Set(displayObj, Nan::New("topBarHeight").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.top_bar_height));
+    Nan::Set(displayObj, Nan::New("bottomBarHeight").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.bottom_bar_height));
+    Nan::Set(displayObj, Nan::New("overscanFlags").ToLocalChecked(), Nan::New(tvState->display.hdmi.display_options.overscan_flags));
+
+    //device
+    TV_DEVICE_ID_T id;
+
+    memset(&id, 0, sizeof(id));
+
+    if (vc_tv_get_device_id(&id) == 0 && id.vendor[0] != '\0' && id.monitor_name[0] != '\0') {
+        v8::Local<v8::Object> deviceObj = Nan::New<v8::Object>();
+
+        //add monitor property
+        Nan::Set(hdmiObj, Nan::New("device").ToLocalChecked(), deviceObj);
+
+        //properties
+        Nan::Set(deviceObj, Nan::New("vendor").ToLocalChecked(), Nan::New(id.vendor).ToLocalChecked());
+        Nan::Set(deviceObj, Nan::New("monitorName").ToLocalChecked(), Nan::New(id.monitor_name).ToLocalChecked());
+        Nan::Set(deviceObj, Nan::New("serialNum").ToLocalChecked(), Nan::New(id.serial_num));
+    }
+}
+
+/**
  * Switch to HDMI mode.
  */
 void AminoGfxRPi::forceHdmiMode(uint32_t code) {
@@ -390,6 +467,17 @@ void AminoGfxRPi::forceHdmiMode(uint32_t code) {
     sem_wait(&resSem);
     sem_destroy(&resSem);
     resSemValid = false;
+}
+
+/**
+ * Switch HDMI off.
+ */
+void AminoGfxRPi::switchHdmiOff() {
+    if (DEBUG_HDMI) {
+        printf("Switching HDMI off.\n");
+    }
+
+    vc_tv_power_off();
 }
 
 /**

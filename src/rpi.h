@@ -64,8 +64,10 @@ private:
     void destroyAminoGfxRPi();
 
     bool getScreenInfo(int &w, int &h, int &refreshRate, bool &fullscreen) override;
+    void getStats(v8::Local<v8::Object> &obj) override;
 
     void forceHdmiMode(uint32_t code);
+    void switchHdmiOff();
 
     void populateRuntimeProperties(v8::Local<v8::Object> &obj) override;
     void initRenderer() override;

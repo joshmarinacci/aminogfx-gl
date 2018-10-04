@@ -53,6 +53,7 @@ vertex_attribute_new( GLchar * name,
     vertex_attribute_t *attribute =
         (vertex_attribute_t *) malloc (sizeof(vertex_attribute_t));
 
+    assert(attribute);
     assert( size > 0 );
 
     attribute->name       = (GLchar *) strdup( name );

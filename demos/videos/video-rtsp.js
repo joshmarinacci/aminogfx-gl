@@ -20,6 +20,6 @@ player.playVideo({
 
     //Note: TCP stream needed (UDP timeout, retrying with TCP)
     opts: 'rtsp_transport=tcp amino_dump_format=1'
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

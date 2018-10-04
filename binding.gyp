@@ -57,6 +57,7 @@
                         '-lpng',
                         '-lavcodec',
                         '-lavformat',
+                        '-lavutil',
                         '-lswscale'
                     ],
                     "sources": [
@@ -95,8 +96,12 @@
 		                    "libraries": [
 		                        "-L/opt/vc/lib/",
                                 "-lbcm_host",
-		                        "-lGLESv2",
+                                # Jessie
+                                "-lGLESv2",
 		                        "-lEGL",
+                                # Stretch
+		                        #"-lbrcmGLESv2",
+		                        #"-lbrcmEGL",
                                 "-lopenmaxil",
                                 "-lvcos",
                                 "-lvchiq_arm",
@@ -105,6 +110,7 @@
                                 "-lpng",
                                 '-lavcodec',
                                 '-lavformat',
+                                '-lavutil',
                                 '-lswscale'
 		                    ],
 		                    "defines": [

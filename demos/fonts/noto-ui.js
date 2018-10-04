@@ -1,6 +1,5 @@
 'use strict';
 
-const path = require('path');
 const amino = require('../../main.js');
 
 const gfx = new amino.AminoGfx();

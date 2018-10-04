@@ -2,15 +2,14 @@
 
 //launch: node --expose-gc demos/tests/gc-gfx.js
 
-var amino = require('../../main.js');
+const amino = require('../../main.js');
 
 //GC test
 console.log('create temporary instance');
 
-var gfx = new amino.AminoGfx();
-var gfxCollected = false;
-var weak = new amino.AminoWeakReference(gfx, () => {
-    gfxCollected = true;
+let gfx = new amino.AminoGfx();
+
+new amino.AminoWeakReference(gfx, () => {
     console.log('-> gfx garbage collected');
 });
 
@@ -19,7 +18,7 @@ gfx.destroy();
 gfx = null;
 
 //create more instances
-var instanceCount = 0;
+let instanceCount = 0;
 
 for (let i = 0; i < 10; i++) {
     console.log('instance: ' + i);

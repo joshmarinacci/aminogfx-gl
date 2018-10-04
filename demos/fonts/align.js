@@ -1,6 +1,5 @@
 'use strict';
 
-const path = require('path');
 const amino = require('../../main.js');
 
 const gfx = new amino.AminoGfx();
@@ -26,7 +25,7 @@ gfx.start(function (err) {
     //text
 
     //right
-    var text = this.createText().align('right').w(200).vAlign('top').text('Sample Text').fill('#FF0000');
+    const text = this.createText().align('right').w(200).vAlign('top').text('Sample Text').fill('#FF0000');
 
     root.add(text);
 });

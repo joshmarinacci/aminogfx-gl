@@ -1,5 +1,7 @@
 'use strict';
 
+/*eslint no-unused-vars: 0*/
+
 const amino = require('../../main.js');
 const path = require('path');
 
@@ -60,7 +62,6 @@ gfx.start(function (err) {
     r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(1).then(animDone).start();
     //r.b.anim().from(0).to(1).dur(2000).autoreverse(true).loop(-1).then(animDone).start(); //Note: no extra garbage seen
     r.b.watch((value) => {
-
         console.log('animation state: ' + value);
     });
 
@@ -69,20 +70,20 @@ gfx.start(function (err) {
     }
 
     //polygon
-    var poly = this.createPolygon().dimension(2).fill('#00FF00');
+    const poly = this.createPolygon().dimension(2).fill('#00FF00');
 
     poly.geometry([100, 10, 150, 300, 200, 10]);
     g.add(poly);
 
     //circle
-    var circle = this.createCircle().radius(50)
+    const circle = this.createCircle().radius(50)
         .fill('#ffcccc').filled(true)
         .x(200).y(200).opacity(0.2);
 
     g.add(circle);
 
     //image
-    var iv = this.createImageView().x(300).y(300);
+    const iv = this.createImageView().x(300).y(300);
 
     iv.src(path.join(__dirname, '../images/tree.png'));
 
@@ -118,7 +119,7 @@ gfx.start(function (err) {
     //testProps();
 
     //text
-    var text = this.createText()
+    const text = this.createText()
         .text('This is a very long text which is wrapped.\nNew line here.\n  white space.  ')
         .fontSize(80)
         .x(0).y(0)
@@ -143,7 +144,7 @@ function testImages(g) {
     const count = 1000;
 
     for (let i = 0; i < count; i++) {
-        var iv = gfx.createImageView().x(Math.random() * w).y(Math.random() * h);
+        const iv = gfx.createImageView().x(Math.random() * w).y(Math.random() * h);
 
         iv.src(img);
 
@@ -179,7 +180,7 @@ function testFont() {
         console.log('font metrics: ' + JSON.stringify(font.getFontMetrics()));
 
         //width
-        const startTime = (new Date()).getTime();
+        const startTime = Date.now();
 
         font.calcTextWidth('The quick brown fox jumps over the lazy dog. Pack meinen Kasten mit fünf Dutzend Alkoholkrügen.', function (err, width) {
             if (err) {
@@ -189,7 +190,7 @@ function testFont() {
 
             console.log('width: ' + width);
 
-            const endTime = (new Date()).getTime();
+            const endTime = Date.now();
 
             console.log(' -> in ' + (endTime - startTime) + ' ms');
         });
@@ -318,7 +319,7 @@ function checkMemory() {
 
         //GC
         if (stats.heapUsed < lastHeapUsed) {
-            lastGC = new Date();
+            lastGC = Date.now();
         }
 
         //show raw value
@@ -327,7 +328,7 @@ function checkMemory() {
         //more details
         if (step % 5 == 0) {
             if (lastGC) {
-                console.log('Last GC: ' + (new Date().getTime() - lastGC) + ' ms');
+                console.log('Last GC: ' + (Date.now() - lastGC) + ' ms');
             }
 
             console.log('Below max heap: ' + ((maxHeapUsed - stats.heapUsed) / 1024 / 1024) + ' MB' + ' (heap: ' + (stats.heapUsed / 1024 / 1024) + ' MB)');

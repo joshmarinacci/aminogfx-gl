@@ -4,6 +4,9 @@
 #include <uv.h>
 
 extern "C" {
+    #include "libavutil/imgutils.h"
+    #include "libswscale/swscale.h"
+
     #include <jpeglib.h>
 
     #define PNG_SKIP_SETJMP_CHECK
@@ -73,6 +76,7 @@ private:
     //input buffer
     char *buffer;
     size_t bufferLen;
+    int maxWH;
 
     //image
     char *imgData = NULL;
@@ -83,7 +87,7 @@ private:
     int imgBPP;
 
 public:
-    AsyncImageWorker(Nan::Callback *callback, v8::Local<v8::Object> &obj, v8::Local<v8::Value> &bufferObj) : AsyncWorker(callback) {
+    AsyncImageWorker(Nan::Callback *callback, v8::Local<v8::Object> &obj, v8::Local<v8::Value> &bufferObj, int maxWH) : AsyncWorker(callback) {
         SaveToPersistent("object", obj);
 
         //process buffer
@@ -91,6 +95,10 @@ public:
 
         buffer = node::Buffer::Data(bufferObj);
         bufferLen = node::Buffer::Length(bufferObj);
+        this->maxWH = maxWH;
+
+        //debug
+        //this->maxWH = 10;
     }
 
     /**
@@ -121,10 +129,17 @@ public:
             buffer[7] == (char)10;
 
         //decode image
+        bool res;
+
         if (isPng) {
-            decodePng();
+            res = decodePng();
         } else {
-            decodeJpeg();
+            res = decodeJpeg();
+        }
+
+        //resize
+        if (res) {
+            resizeImage();
         }
 
         if (DEBUG_THREADS) {
@@ -137,7 +152,7 @@ public:
      *
      * See http://www.learnopengles.com/loading-a-png-into-memory-and-displaying-it-as-a-texture-with-opengl-es-2-using-almost-the-same-code-on-ios-android-and-emscripten/.
      */
-    void decodePng() {
+    bool decodePng() {
         //Note: header already checked
 
         //init
@@ -145,7 +160,7 @@ public:
 
         if (!png_ptr) {
             SetErrorMessage("could not init PNG decoder");
-            return;
+            return false;
         }
 
         png_infop info_ptr = png_create_info_struct(png_ptr);
@@ -155,7 +170,7 @@ public:
 
             png_destroy_read_struct(&png_ptr, NULL, NULL);
 
-            return;
+            return false;
         }
 
         //data handler
@@ -175,7 +190,7 @@ public:
                 imgData = NULL;
             }
 
-            return;
+            return false;
         }
 
         //PNG header
@@ -294,6 +309,8 @@ public:
         if (DEBUG_IMAGES) {
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
+
+        return true;
     }
 
     /**
@@ -301,7 +318,7 @@ public:
      *
      * Note: NOT thread-safe! Has to be called in single queue.
      */
-    void decodeJpeg() {
+    bool decodeJpeg() {
         if (DEBUG_IMAGES) {
             printf("decodeJpeg()\n");
         }
@@ -331,7 +348,7 @@ public:
                 imgData = NULL;
             }
 
-            return;
+            return false;
         }
 
         //init
@@ -347,7 +364,7 @@ public:
             SetErrorMessage("error not a JPEG file");
 
             jpeg_destroy_decompress(&cinfo);
-            return;
+            return false;
         }
 
         jpeg_start_decompress(&cinfo);
@@ -386,7 +403,115 @@ public:
         if (DEBUG_IMAGES) {
             printf("-> size=%ix%i, alpha=%i, bpp=%i\n", imgW, imgH, imgAlpha ? 1:0, imgBPP);
         }
+
+        return true;
     }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+    /**
+     * Resize image.
+     */
+    void resizeImage() {
+        if (!imgW || !imgH || maxWH <= 0) {
+            return;
+        }
+
+        if (imgW < maxWH && imgH < maxWH) {
+            return;
+        }
+
+        assert(imgData != NULL);
+
+        //new size
+        int newW = maxWH;
+        int newH = imgH * maxWH /imgW;
+
+        if (newH > maxWH) {
+            float fac = maxWH / newH;
+
+            newW *= fac;
+            newH *= fac;
+        }
+
+        //initialize SWS context for software scaling
+        AVPixelFormat format;
+
+        switch (imgBPP) {
+            case 1:
+                format = AV_PIX_FMT_GRAY8;
+                break;
+
+            case 2:
+                format = AV_PIX_FMT_YA8; //AV_PIX_FMT_GRAY8A
+                break;
+
+            case 3:
+                format = AV_PIX_FMT_RGB24;
+                break;
+
+            case 4:
+                format = AV_PIX_FMT_RGBA;
+                break;
+
+            default:
+                return;
+        }
+
+        //debug
+        //printf("new size: %ix%i\n", newW, newH);
+
+        //Note: FFmpeg version
+        /*
+        const int dstAlign = 32;
+        int dstDataLen = av_image_get_buffer_size(format, newW, newH, dstAlign);
+        struct SwsContext *sws_ctx = sws_getContext(imgW, imgH, format, newW, newH, format, SWS_BILINEAR, NULL, NULL, NULL);
+        uint8_t *srcSlice[4], *dstSlice[4];
+        int srcSlide[4], dstSlide[4];
+
+        av_image_alloc(srcSlice, srcSlide, imgW, imgH, format, 1);
+        av_image_fill_pointers(srcSlice, format, imgH, (uint8_t *)imgData, srcSlide);
+        av_image_alloc(dstSlice, dstSlide, newW, newH, format, dstAlign);
+        sws_scale(sws_ctx, srcSlice, srcSlide, 0, imgH, dstSlice, dstSlide);
+
+        int dataLen = newW * newH * imgBPP;
+        char *data = (char *)malloc(dataLen);
+
+        av_image_copy_to_buffer((uint8_t *)data, dataLen, dstSlice, dstSlide, format, newW, newH, 1);
+
+        av_freep(&srcSlice[0]);
+        av_freep(&dstSlice[0]);
+        */
+
+        /*
+         * Note: using libav compatible code (deprecated on FFmpeg)
+         *
+         * Seeing some alignment warnings on macOS.
+         */
+        int dataLen = avpicture_get_size(format, newW, newH);
+        char *data = (char *)malloc(dataLen);
+        AVPicture srcPic, dstPic;
+        struct SwsContext *sws_ctx = sws_getContext(imgW, imgH, format, newW, newH, format, SWS_BILINEAR, NULL, NULL, NULL);
+
+        assert(data != NULL);
+
+        avpicture_fill(&srcPic, (uint8_t *)imgData, format, imgW, imgH);
+        avpicture_alloc(&dstPic, format, newW, newH);
+        sws_scale(sws_ctx, srcPic.data, srcPic.linesize, 0, imgH, dstPic.data, dstPic.linesize);
+        avpicture_layout(&dstPic, format, newW, newH, (unsigned char *)data, dataLen);
+        avpicture_free(&dstPic);
+
+        sws_freeContext(sws_ctx);
+        free(imgData);
+
+        imgW = newW;
+        imgH = newH;
+        imgData = data;
+        imgDataLen = dataLen;
+    }
+
+#pragma GCC diagnostic pop
 
     /**
      * Back in main thread with JS access.
@@ -422,7 +547,7 @@ public:
         //call callback
         v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-        callback->Call(2, argv);
+        Nan::Call(*callback, 2, argv);
     }
 };
 
@@ -611,14 +736,17 @@ NAN_METHOD(AminoImage::New) {
  * Load image asynchronously.
  */
 NAN_METHOD(AminoImage::loadImage) {
-    assert(info.Length() == 2);
+    int params = info.Length();
+
+    assert(params >= 2);
 
     v8::Local<v8::Value> bufferObj = info[0];
     Nan::Callback *callback = new Nan::Callback(info[1].As<v8::Function>());
+    int maxWH = params >= 3 ? info[2]->Int32Value():0;
     v8::Local<v8::Object> obj = info.This();
 
     //async loading
-    AsyncQueueWorker(new AsyncImageWorker(callback, obj, bufferObj));
+    AsyncQueueWorker(new AsyncImageWorker(callback, obj, bufferObj, maxWH));
 }
 
 /**
@@ -925,7 +1053,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(obj, argc, argv);
+                Nan::Call(*callback, obj, argc, argv);
                 delete callback;
                 callback = NULL;
             }
@@ -941,7 +1069,7 @@ void AminoTexture::createTexture(AsyncValueUpdate *update, int state) {
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            callback->Call(obj, argc, argv);
+            Nan::Call(*callback, obj, argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1132,7 +1260,7 @@ void AminoTexture::createVideoTexture(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(handle(), argc, argv);
+                Nan::Call(*callback, handle(), argc, argv);
                 delete callback;
                 callback = NULL;
             }
@@ -1210,7 +1338,7 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            callback->Call(obj, argc, argv);
+            Nan::Call(*callback, obj, argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1226,7 +1354,7 @@ void AminoTexture::handleVideoPlayerInitDone(JSCallbackUpdate *update) {
             int argc = 1;
             v8::Local<v8::Value> argv[1] = { Nan::Error(error) };
 
-            callback->Call(handle(), argc, argv);
+            Nan::Call(*callback, handle(), argc, argv);
             delete callback;
             callback = NULL;
         }
@@ -1390,7 +1518,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                textureData->callback->Call(handle(), argc, argv);
+                Nan::Call(*textureData->callback, handle(), argc, argv);
                 delete textureData->callback;
             }
 
@@ -1407,7 +1535,7 @@ void AminoTexture::createTextureFromBuffer(AsyncValueUpdate *update, int state) 
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            textureData->callback->Call(obj, argc, argv);
+            Nan::Call(*textureData->callback, obj, argc, argv);
             delete textureData->callback;
         }
 
@@ -1504,7 +1632,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
                 int argc = 1;
                 v8::Local<v8::Value> argv[1] = { Nan::Error("could not create texture") };
 
-                callback->Call(handle(), argc, argv);
+                Nan::Call(*callback, handle(), argc, argv);
                 delete callback;
             }
 
@@ -1521,7 +1649,7 @@ void AminoTexture::createTextureFromFont(AsyncValueUpdate *update, int state) {
             int argc = 2;
             v8::Local<v8::Value> argv[2] = { Nan::Null(), obj };
 
-            callback->Call(obj, argc, argv);
+            Nan::Call(*callback, obj, argc, argv);
             delete callback;
         }
     }

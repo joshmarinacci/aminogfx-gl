@@ -37,6 +37,6 @@ player.playVideo({
     //src: 'https://media.giphy.com/media/rF2Cplr6KCDG8/giphy.gif',
 
     opts: 'amino_dump_format=1'
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

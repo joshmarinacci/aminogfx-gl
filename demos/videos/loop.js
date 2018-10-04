@@ -18,6 +18,6 @@ player.playVideo({
     //play forcever
     //loop: true
     //loop: -1
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

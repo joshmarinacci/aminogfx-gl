@@ -453,8 +453,10 @@ VideoDemuxer::~VideoDemuxer() {
  */
 bool VideoDemuxer::init() {
     //register all codecs and formats
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
     av_register_all();
     avcodec_register_all();
+#endif
 
     //support network calls
     avformat_network_init();
@@ -874,6 +876,9 @@ void VideoDemuxer::freeFrame(AVPacket *packet) {
 
             bufferSize = numBytes * sizeof(uint8_t);
             buffer = (uint8_t *)av_malloc(bufferSize);
+
+            assert(buffer);
+
             memset(buffer, 0, bufferSize);
 
             if (!bufferCurrent) {

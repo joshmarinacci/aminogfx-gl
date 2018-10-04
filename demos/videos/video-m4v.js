@@ -10,6 +10,6 @@ const player = require('./player');
 player.playVideo({
     src: path.join(__dirname, 'trailer_iphone.m4v'),
     opts: 'amino_dump_format=1'
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

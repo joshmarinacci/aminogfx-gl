@@ -31,10 +31,24 @@ function playVideo(opts, done) {
         //image view
         const dispW = this.w();
         const dispH = this.h();
-        const iv = this.createImageView().w(dispW).h(dispH).position('center top').size('contain').src(video);
+        const iv = this.createImageView().position(opts.center ? opts.center:'center top').size('contain');
 
-        iv.w.bindTo(this.w);
-        iv.h.bindTo(this.h);
+        if (opts.rot90) {
+            //rotate 90 degrees
+            iv.w(dispH).h(dispW).rz(90).x(dispW);
+
+            iv.w.bindTo(this.h);
+            iv.h.bindTo(this.w);
+            iv.x.bindTo(this.w);
+        } else {
+            //normal
+            iv.w(dispW).h(dispH);
+
+            iv.w.bindTo(this.w);
+            iv.h.bindTo(this.h);
+        }
+
+        iv.src(video);
 
         //events
         iv.image.watch(video => {
@@ -66,7 +80,7 @@ let time;
  * Start measuring interval.
  */
 function measureStart() {
-    time = new Date().getTime();
+    time = Date.now();
 }
 
 /**
@@ -75,7 +89,7 @@ function measureStart() {
  * @param {*} name
  */
 function measureEnd(name) {
-    const now = new Date().getTime();
+    const now = Date.now();
 
     console.log(name + ': ' + (now - time) + ' ms');
 }

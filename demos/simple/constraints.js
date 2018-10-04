@@ -1,10 +1,10 @@
 'use strict';
 
-var gfx = require('../../main.js');
-var cs = require('../../src/core/src/ConstraintSolver').getGlobal(); //FIXME broken
+const gfx = require('../../main.js');
+const cs = require('../../src/core/src/ConstraintSolver').getGlobal(); //FIXME broken
 
-var Lbuild = function () {
-    var text  = new gfx.Text();
+const Lbuild = function () {
+    const text  = new gfx.Text();
 
     gfx.makeProps(text,{ w: 10, h: 10 });
 
@@ -20,8 +20,8 @@ var Lbuild = function () {
 };
 
 gfx.start(function (core, stage) {
-    var root = new gfx.Group();
-    var base = new gfx.Group().id('button_base');
+    const root = new gfx.Group();
+    const base = new gfx.Group().id('button_base');
 
     //base.theme = theme.button;
     base.bg = new gfx.Rect().w(10).h(10).fill('#ff0000').id('button_bg');
@@ -52,13 +52,13 @@ gfx.start(function (core, stage) {
         return this;
     };
 
-    var self = base;
+    const self = base;
 
-    gfx.getCore().on('press', base.bg, function(e){
+    gfx.getCore().on('press', base.bg, function (_e){
         base.bg.fill('#00ff00');
     });
 
-    gfx.getCore().on('release',base.bg, function(e){
+    gfx.getCore().on('release',base.bg, function (_e){
         base.bg.fill('#0000ff');
 
         if (self.cb) {

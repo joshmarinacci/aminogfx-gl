@@ -1422,6 +1422,8 @@ void AminoOmxVideoPlayer::updateVideoTexture(GLContext *ctx) {
 
     bool newBuffer = false;
 
+    //FIXME a few crashes seen in long running instances (sometimes each day)
+
     if (!textureReady.empty()) {
         //new frame available
 

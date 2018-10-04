@@ -152,7 +152,12 @@ private:
 
         //get monitor properties
         GLFWmonitor *primary = glfwGetPrimaryMonitor();
+
+        assert(primary);
+
         const GLFWvidmode *vidmode = glfwGetVideoMode(primary);
+
+        assert(vidmode);
 
         w = vidmode->width;
         h = vidmode->height;
@@ -979,6 +984,8 @@ void AminoMacVideoPlayer::updateVideoTexture(GLContext *ctx) {
         uv_mutex_unlock(&frameLock);
         return;
     }
+
+    //FIXME crashes observed somewhere here
 
     //get current frame
     int id;

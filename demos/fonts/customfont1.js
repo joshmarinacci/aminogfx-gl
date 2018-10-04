@@ -1,9 +1,9 @@
 'use strict';
 
-var path = require('path');
-var amino = require('../../main.js');
+const path = require('path');
+const amino = require('../../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 //fonts
 amino.fonts.registerFont({
@@ -29,7 +29,7 @@ gfx.start(function (err) {
     }
 
     //root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.w(600);
     this.h(800);
@@ -37,13 +37,13 @@ gfx.start(function (err) {
     this.setRoot(root);
 
     //rects
-    var rect = this.createRect().x(50).y(150).w(600).h(80);
-    var rect2 = this.createRect().x(0).y(0).w(600).h(60);
+    const rect = this.createRect().x(50).y(150).w(600).h(80);
+    const rect2 = this.createRect().x(0).y(0).w(600).h(60);
 
     root.add(rect, rect2);
 
     //text
-    var text = this.createText().fontName('Oswald')
+    const text = this.createText().fontName('Oswald')
         .text('Oswald Regular')
         .fontSize(80)
         .fontWeight(200)
@@ -53,7 +53,7 @@ gfx.start(function (err) {
     root.add(text);
 
     //text 2
-    var text2 = this.createText().fontName('Oswald')
+    const text2 = this.createText().fontName('Oswald')
         .text('Oswald Regular')
         .fontSize(60)
         .fontWeight(200)
@@ -65,7 +65,7 @@ gfx.start(function (err) {
     root.add(text2);
 
     //text 3
-    var text3 = this.createText().fontName('awesome')
+    const text3 = this.createText().fontName('awesome')
         .text('\uf241 \uf140')
         .fontSize(40)
         .x(10).y(300)

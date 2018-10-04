@@ -34,6 +34,7 @@
 #include <float.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "edtaa3func.h"
 
 
@@ -48,6 +49,14 @@ make_distance_mapd( double *data, unsigned int width, unsigned int height )
     double * inside  = (double *) calloc( width * height, sizeof(double) );
     double vmin = DBL_MAX;
     unsigned int i;
+
+    //@appamics.CB: extra checks
+    assert(xdist);
+    assert(ydist);
+    assert(gx);
+    assert(gy);
+    assert(outside);
+    assert(inside);
 
     // Compute outside = edtaa3(bitmap); % Transform background (0's)
     computegradient( data, width, height, gx, gy);
@@ -101,6 +110,10 @@ make_distance_mapb( unsigned char *img,
     double * data    = (double *) calloc( width * height, sizeof(double) );
     unsigned char *out = (unsigned char *) malloc( width * height * sizeof(unsigned char) );
     unsigned int i;
+
+    //@appamics.CB: extra checks
+    assert(data);
+    assert(out);
 
     // find minimimum and maximum values
     double img_min = DBL_MAX;

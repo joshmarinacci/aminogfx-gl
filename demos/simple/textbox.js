@@ -1,8 +1,8 @@
 'use strict';
 
-var amino = require('../../main.js');
+const amino = require('../../main.js');
 
-var gfx = new amino.AminoGfx();
+const gfx = new amino.AminoGfx();
 
 gfx.start(function (err) {
     if (err) {
@@ -11,13 +11,13 @@ gfx.start(function (err) {
     }
 
     //root
-    var root = this.createGroup().id('group');
+    const root = this.createGroup().id('group');
 
     root.acceptsMouseEvents = true;
     this.setRoot(root);
 
     //rect
-    var rect = this.createRect().w(300).h(50).fill('#cccccc').x(50).y(50).id('bg');
+    const rect = this.createRect().w(300).h(50).fill('#cccccc').x(50).y(50).id('bg');
 
     rect.acceptsMouseEvents = true;
     rect.acceptsKeyboardEvents = true;
@@ -32,12 +32,12 @@ gfx.start(function (err) {
     });
 
     //cursor
-    var cursor = this.createRect().w(3).h(40).fill('#ff0000').x(50 + 20).y(55).id('cursor');
+    const cursor = this.createRect().w(3).h(40).fill('#ff0000').x(50 + 20).y(55).id('cursor');
 
     root.add(cursor);
 
     //label
-    var label = this.createText().x(50).y(50 + 40).fill('#000000').id('text').text('F').fontSize(40);
+    const label = this.createText().x(50).y(50 + 40).fill('#000000').id('text').text('F').fontSize(40);
 
     root.add(label);
 
@@ -52,8 +52,8 @@ gfx.start(function (err) {
             });
         }
 
-        if (e.key == 'BACK_DELETE') {
-            var text = label.text();
+        if (e.key === 'BACK_DELETE') {
+            let text = label.text();
 
             if (text) {
                 text = text.substring(0, text.length - 1);

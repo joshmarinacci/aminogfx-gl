@@ -1,5 +1,7 @@
 'use strict';
 
+/*eslint no-unused-vars: 0*/
+
 const path = require('path');
 const amino = require('../../main.js');
 
@@ -416,24 +418,24 @@ function showSphereLighted(model) {
     const longitudeBands = 30;
     const radius = 100;
 
-    var vertexPositionData = [];
-    var normalData = [];
-    var textureCoordData = [];
+    const vertexPositionData = [];
+    const normalData = [];
+    const textureCoordData = [];
 
     for (let latNumber = 0; latNumber <= latitudeBands; latNumber++) {
         const theta = latNumber * Math.PI / latitudeBands;
         const sinTheta = Math.sin(theta);
         const cosTheta = Math.cos(theta);
 
-        for (var longNumber = 0; longNumber <= longitudeBands; longNumber++) {
-            var phi = longNumber * 2 * Math.PI / longitudeBands;
-            var sinPhi = Math.sin(phi);
-            var cosPhi = Math.cos(phi);
-            var x = cosPhi * sinTheta;
-            var y = cosTheta;
-            var z = sinPhi * sinTheta;
-            var u = 1 - (longNumber / longitudeBands);
-            var v = latNumber / latitudeBands;
+        for (let longNumber = 0; longNumber <= longitudeBands; longNumber++) {
+            const phi = longNumber * 2 * Math.PI / longitudeBands;
+            const sinPhi = Math.sin(phi);
+            const cosPhi = Math.cos(phi);
+            const x = cosPhi * sinTheta;
+            const y = cosTheta;
+            const z = sinPhi * sinTheta;
+            const u = 1 - (longNumber / longitudeBands);
+            const v = latNumber / latitudeBands;
 
             normalData.push(x);
             normalData.push(-y); //y-inversion
@@ -448,12 +450,12 @@ function showSphereLighted(model) {
         }
     }
 
-    var indexData = [];
+    const indexData = [];
 
-    for (var latNumber = 0; latNumber < latitudeBands; latNumber++) {
-        for (var longNumber = 0; longNumber < longitudeBands; longNumber++) {
-            var first = (latNumber * (longitudeBands + 1)) + longNumber;
-            var second = first + longitudeBands + 1;
+    for (let latNumber = 0; latNumber < latitudeBands; latNumber++) {
+        for (let longNumber = 0; longNumber < longitudeBands; longNumber++) {
+            const first = (latNumber * (longitudeBands + 1)) + longNumber;
+            const second = first + longitudeBands + 1;
 
             indexData.push(first);
             indexData.push(second);

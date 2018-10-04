@@ -301,7 +301,7 @@ bool AminoJSObject::addPropertyWatcher(std::string name, int id, v8::Local<v8::V
         jsValue = valueMaybe.ToLocalChecked();
 
         if (DEBUG_BASE) {
-            v8::String::Utf8Value str(jsValue);
+            Nan::Utf8String str(jsValue);
 
             printf("-> default value: %s\n", *str);
         }
@@ -795,7 +795,7 @@ void AminoJSObject::updateProperty(AnyProperty *property) {
  */
 std::string AminoJSObject::toString(v8::Local<v8::Value> &value) {
     //convert anything to a string
-    v8::String::Utf8Value str(value);
+    Nan::Utf8String str(value);
 
     //convert it to string
     return std::string(*str);
@@ -808,7 +808,7 @@ std::string AminoJSObject::toString(v8::Local<v8::Value> &value) {
  */
 std::string* AminoJSObject::toNewString(v8::Local<v8::Value> &value) {
     //convert anything to a string
-    v8::String::Utf8Value str(value);
+    Nan::Utf8String str(value);
 
     //convert it to string
     return new std::string(*str);

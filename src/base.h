@@ -83,6 +83,7 @@ protected:
     int viewportH;
     bool viewportChanged;
     int32_t swapInterval = 0;
+    GLint maxTextureSize = 0;
     int rendererErrors = 0;
     int textureCount = 0;
 
@@ -185,6 +186,8 @@ protected:
 
     void setRoot(AminoGroup *group);
 
+    void getStats(v8::Local<v8::Object> &obj) override;
+
 private:
     void preInit(Nan::NAN_METHOD_ARGS_TYPE info) override;
 
@@ -207,7 +210,6 @@ private:
     void deleteVertexBuffer(AsyncValueUpdate *update, int state);
 
     //stats
-    void getStats(v8::Local<v8::Object> &obj) override;
     void measureRenderingStart();
     void measureRenderingEnd();
 };
@@ -749,7 +751,7 @@ public:
         this->setEventHandler(obj);
         this->prop = prop;
 
-        //retain property
+        //retain property (Note: stop() has to be called to free the instance)
         prop->retain();
 
         //enqueue
@@ -853,7 +855,7 @@ public:
         autoreverse = Nan::Get(data, Nan::New<v8::String>("autoreverse").ToLocalChecked()).ToLocalChecked()->BooleanValue();
 
         //time func
-        v8::String::Utf8Value str(Nan::Get(data, Nan::New<v8::String>("timeFunc").ToLocalChecked()).ToLocalChecked());
+        Nan::Utf8String str(Nan::Get(data, Nan::New<v8::String>("timeFunc").ToLocalChecked()).ToLocalChecked());
         std::string tf = std::string(*str);
 
         if (tf == "cubicIn") {
@@ -865,6 +867,8 @@ public:
         } else {
             timeFunc = TF_LINEAR;
         }
+
+        //TODO support CSS key frames
 
         //then
         v8::MaybeLocal<v8::Value> maybeThen = Nan::Get(data, Nan::New<v8::String>("then").ToLocalChecked());
@@ -1012,6 +1016,9 @@ public:
      */
     void stop() {
         if (!destroyed) {
+            //keep instance until destroyed
+            retain();
+
             //remove animation
             if (eventHandler) {
                 (static_cast<AminoGfx *>(eventHandler))->removeAnimation(this);
@@ -1019,6 +1026,9 @@ public:
 
             //free resources
             destroy();
+
+            //release instance
+            release();
         }
     }
 
@@ -1045,6 +1055,7 @@ public:
                 printf("-> callback used\n");
             }
 
+            //Note: not using async Nan call to keep order with stop
             enqueueJSCallbackUpdate(static_cast<jsUpdateCallback>(&AminoAnim::callThen), NULL, NULL);
         }
 
@@ -1060,7 +1071,7 @@ public:
         Nan::HandleScope scope;
 
         //call
-        then->Call(handle(), 0, NULL);
+        Nan::Call(*then, handle(), 0, NULL);
     }
 
     /**

@@ -1,4 +1,5 @@
 'use strict';
+//like circle.js but uses new attribute passing instead of property calls
 
 const path = require('path');
 const amino = require('../main.js');
@@ -20,24 +21,34 @@ gfx.start(function (err) {
     this.setRoot(root);
 
     //blue rectangle (at 0/0)
-    const rect = this.createRect().w(200).h(250).x(0).y(0).fill('#0000ff');
+    const rect = this.createRect({
+        w: 200,
+        h: 250,
+        x: 0,
+        y: 0,
+        fill: '#0000ff'
+    });
 
     root.add(rect);
     rect.acceptsMouseEvents = true;
     rect.acceptsKeyboardEvents = true;
 
-    this.on('key.press', rect, function (e) {
+    this.on('key.press', rect, e => {
         console.log('key was pressed', e.keycode, e.printable, e.char);
     });
 
-    this.on('click', rect, function () {
+    this.on('click', rect, () => {
         console.log('clicked on the rect');
     });
 
     //circle (at 100/100)
-    const circle = this.createCircle().radius(50)
-        .fill('#ffcccc').filled(true)
-        .x(100).y(100);
+    const circle = this.createCircle({
+        radius: 50,
+        fill: '#ffcccc',
+        filled: true,
+        x: 100,
+        y: 100
+    });
 
     circle.acceptsMouseEvents = true;
 
@@ -50,21 +61,30 @@ gfx.start(function (err) {
     //images
 
     //tree at 0/0
-    const iv = this.createImageView();
+    const iv = this.createImageView({
+        src: path.join(__dirname, '/images/tree.png'),
+        sx: 4,
+        sy: 4
+    });
 
-    iv.src(path.join(__dirname, '/images/tree.png'));
-    iv.sx(4).sy(4);
     root.add(iv);
 
     //yosemite animated
-    const iv2 = this.createImageView();
+    const iv2 = this.createImageView({
+        src: path.join(__dirname, '/images/yose.jpg'),
+        sx: 4,
+        sy: 4,
+        x: 300
+    });
 
-    iv2.src(path.join(__dirname, '/images/yose.jpg'));
-    iv2.sx(4).sy(4);
-    iv2.x(300);
     root.add(iv2);
 
     //jumps from 300 to 0 before animation starts
-    iv2.x.anim().delay(1000).from(0).to(1000).dur(3000).start();
+    iv2.x.anim({
+        delay: 1000,
+        from: 0,
+        to: 1000,
+        dur: 3000
+    }).start();
 
 });

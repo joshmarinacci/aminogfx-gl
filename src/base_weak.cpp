@@ -247,7 +247,7 @@ void AminoJSWeakReference::weakCallbackHandler(AminoWeakReference *weak) {
         v8::Local<v8::Object> obj = handle();
         v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-        callback->Call(obj, 2, argv);
+        Nan::Call(*callback, obj, 2, argv);
     }
 
     //free instance

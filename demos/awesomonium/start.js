@@ -4,18 +4,18 @@
 
 //Raspberry Pi 3 1080p@60: 13 fps (polygons could be improved)
 
-var amino = require('../../main.js');
-var data = require('./countries.js');
-var onecolor = require('onecolor');
+const amino = require('../../main.js');
+const data = require('./countries.js');
+const onecolor = require('onecolor');
 
-var fs = require('fs');
-var path = require('path');
-var cities = JSON.parse(fs.readFileSync(path.join(__dirname, 'cities.json')).toString());
+const fs = require('fs');
+const path = require('path');
+const cities = JSON.parse(fs.readFileSync(path.join(__dirname, 'cities.json')).toString());
 
-var w = 1280; //1920;
-var h = 768;  //1080;
-var radius = w / 6;
-var animated = true;
+let w = 1280; //1920;
+let h = 768;  //1080;
+const radius = w / 6;
+const animated = true;
 
 amino.fonts.registerFont({
     name: 'mech',
@@ -28,7 +28,7 @@ amino.fonts.registerFont({
     }
 });
 
-var gfx = new amino.AminoGfx({
+const gfx = new amino.AminoGfx({
     //resolution: '1080p@24'
     //resolution: '720p@50'
     //resolution: '720p@60'
@@ -45,20 +45,20 @@ gfx.start(function (err) {
 
     //setup
     if (this.w() > 100) {
-	    w = this.w();
-	    h = this.h();
+        w = this.w();
+        h = this.h();
     }
 
     this.w(w);
     this.h(h);
 
     //root
-    var root = this.createGroup();
+    const root = this.createGroup();
 
     this.setRoot(root);
 
     //the globe
-    var group = this.createGroup();
+    const group = this.createGroup();
 
     root.add(group);
 
@@ -79,7 +79,7 @@ gfx.start(function (err) {
 });
 
 function buildDashboard() {
-    var group = gfx.createGroup();
+    const group = gfx.createGroup();
 
     function addLine(text, x, y, glyph) {
         group.add(gfx.createRect()
@@ -121,7 +121,7 @@ function buildDashboard() {
     }
 
     {
-        var x = 0;
+        let x = 0;
         addLine("ENDO SYS OS / MAKR PROC", x, 0);
         addSmallLine("RDOZ - 25889", x, 30);
         addSmallLine("ZODR - 48639", x, 50);
@@ -130,8 +130,8 @@ function buildDashboard() {
     }
 
     {
-        var x = 0;
-        var y = 130;
+        let x = 0;
+        let y = 130;
         addLine("FOO_MAR.TCX", x, y + 0, '\uf071');
         addSmallLine("analysis - 48%", x, y + 30);
         addSmallLine("actualizing - 99%", x, y + 50);
@@ -139,8 +139,8 @@ function buildDashboard() {
     }
 
     {
-        var x = w - 200 - 10;
-        var y = 0;
+        let x = w - 200 - 10;
+        let y = 0;
         addLine("Core Extraction", x, y + 0, '\uf0e4');
         addSmallLine("pulverton - 143.888", x, y + 30);
         addSmallLine("minotaur - 105%", x, y + 50);
@@ -148,8 +148,8 @@ function buildDashboard() {
     }
 
     {
-        var x = w - 200 - 10;
-        var y = 120;
+        let x = w - 200 - 10;
+        let y = 120;
         addLine("FEED CR55X \\ Analysis", x, y + 0);
         addSmallLine("reconst - 48%", x, y + 30);
         addSmallLine("fargonite - 99%", x, y + 50);
@@ -157,16 +157,16 @@ function buildDashboard() {
 
     }
     {
-        var x = w - 200 - 10;
-        var y = 250;
+        let x = w - 200 - 10;
+        let y = 250;
         addLine("$SHIP_CAM$.FXD", x, y + 0, '\uf06d');
         addSmallLine("fracturizing - 128%", x, y + 30);
         addSmallLine("detox - 43%", x, y + 50);
         addSmallLine("xantos 45% 8%", x, y + 70);
     }
     {
-        var x = w - 200 - 10;
-        var y = 350;
+        let x = w - 200 - 10;
+        let y = 350;
         addLine("XenoPhage", x, y + 0, '\uf126');
         addSmallLine("scent analysis - 128%", x, y + 30);
         addSmallLine("oxygenize - 43%", x, y + 50);
@@ -177,8 +177,8 @@ function buildDashboard() {
 }
 
 function makeFooterSymbols(root) {
-    for (var i = 0; i < 7; i++)  {
-        var sun = gfx.createGroup().x(w / 2 - 300 + i * 100).y(h - 25).rz(30);
+    for (let i = 0; i < 7; i++)  {
+        const sun = gfx.createGroup().x(w / 2 - 300 + i * 100).y(h - 25).rz(30);
 
         //see http://fontawesome.io/icon/caret-up/
         sun.add(gfx.createText()
@@ -186,8 +186,8 @@ function makeFooterSymbols(root) {
             .x(-25).y(25).fill('#fcfbcf')
         );
 
-        var start = Math.random() * 90 - 45;
-        var len = Math.random() * 5000 + 5000;
+        const start = Math.random() * 90 - 45;
+        const len = Math.random() * 5000 + 5000;
 
         if (animated) {
             //rotate
@@ -199,7 +199,7 @@ function makeFooterSymbols(root) {
 }
 
 function makeHeader(root) {
-    var fontH = 70;
+    const fontH = 70;
 
     root.add(gfx.createRect().fill('#ff0000').w(w).h(100).opacity(0.5));
     root.add(gfx.createText()
@@ -230,30 +230,30 @@ function makeHeader(root) {
 }
 
 function buildGlobe(group) {
-    var cos = Math.cos;
-    var sin = Math.sin;
-    var PI = Math.PI;
+    const cos = Math.cos;
+    const sin = Math.sin;
+    const PI = Math.PI;
 
     function latlon2xyz(lat,lon, rad) {
-        var el = lat / 180.0 * PI;
-        var az = lon / 180.0 * PI;
-        var x = rad * cos(el) * sin(az);
-        var y = rad * cos(el) * cos(az);
-        var z = rad * sin(el);
+        const el = lat / 180.0 * PI;
+        const az = lon / 180.0 * PI;
+        const x = rad * cos(el) * sin(az);
+        const y = rad * cos(el) * cos(az);
+        const z = rad * sin(el);
 
         return [x, y, z];
     }
 
     function addCountry(nz) {
         //make the geometry
-        for (var i = 0; i < nz.borders.length; i++) {
-            var border = nz.borders[i];
-            var points = [];
-            var poly = gfx.createPolygon();
+        for (let i = 0; i < nz.borders.length; i++) {
+            const border = nz.borders[i];
+            const points = [];
+            const poly = gfx.createPolygon();
 
-            for (var j = 0; j < border.length; j++) {
-                var point = border[j];
-                var pts = latlon2xyz(point.lat, point.lng, radius);
+            for (let j = 0; j < border.length; j++) {
+                const point = border[j];
+                const pts = latlon2xyz(point.lat, point.lng, radius);
 
                 points.push(pts[0]);
                 points.push(pts[1]);
@@ -267,18 +267,18 @@ function buildGlobe(group) {
         }
     }
 
-    for (var i = 0; i < data.countries.length; i++) {
+    for (let i = 0; i < data.countries.length; i++) {
         addCountry(data.countries[i]);
     }
 
     // NOTE: on Raspberry pi we can't just make a line.
     // A polygon needs at least two segments.
     function addLine(lat, lon, el, color) {
-        var poly = gfx.createPolygon();
-        var pt1 = latlon2xyz(lat, lon, radius);
-        var pt2 = latlon2xyz(lat, lon, radius + el);
-        var pt3 = latlon2xyz(lat, lon, radius);
-        var points = pt1.concat(pt2).concat(pt3);
+        const poly = gfx.createPolygon();
+        const pt1 = latlon2xyz(lat, lon, radius);
+        const pt2 = latlon2xyz(lat, lon, radius + el);
+        const pt3 = latlon2xyz(lat, lon, radius);
+        const points = pt1.concat(pt2).concat(pt3);
 
         poly.fill(color);
         poly.geometry(points);
@@ -288,8 +288,8 @@ function buildGlobe(group) {
 
     //add a line at portland
     cities.features.forEach(function (city) {
-        var color = '#ff00ff';
-        var hue = city.properties.city.length / 20;
+        //const color = '#ff00ff';
+        const hue = city.properties.city.length / 20;
 
         addLine(city.geometry.coordinates[1],
                 city.geometry.coordinates[0],
@@ -313,12 +313,12 @@ function buildGlobe(group) {
 }
 
 function createBar1(w, h, count, color) {
-    var gr = gfx.createGroup();
-    var rects = [];
-    var barw = w / count;
+    const gr = gfx.createGroup();
+    const rects = [];
+    const barw = w / count;
 
-    for (var i = 0; i < count; i++) {
-        var rect = gfx.createRect()
+    for (let i = 0; i < count; i++) {
+        const rect = gfx.createRect()
             .x(i * barw).y(0)
             .w(barw - 5)
             .h(30)
@@ -342,6 +342,8 @@ function createBar1(w, h, count, color) {
     return gr;
 }
 
+/*
 function frand(min, max) {
     return Math.random() * (max - min) + min;
 }
+*/

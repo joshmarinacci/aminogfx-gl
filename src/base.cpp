@@ -31,6 +31,14 @@ AminoGfx::AminoGfx(std::string name): AminoJSEventObject(name) {
     // animLock
     res = pthread_mutex_init(&animLock, &attr);
     assert(res == 0);
+
+    //debug
+    /*
+    assert(pthread_mutex_lock(&animLock) == 0);
+    assert(pthread_mutex_lock(&animLock) == 0);
+    assert(pthread_mutex_unlock(&animLock) == 0);
+    assert(pthread_mutex_unlock(&animLock) == 0);
+    */
 }
 
 AminoGfx::~AminoGfx() {
@@ -179,6 +187,7 @@ void AminoGfx::setup() {
     }
 
     if (getScreenInfo(w, h, refreshRate, fullscreen)) {
+        //populate screen property (static)
         v8::Local<v8::Object> obj = Nan::New<v8::Object>();
 
         //add screen property
@@ -314,8 +323,6 @@ void AminoGfx::addRuntimeProperty() {
     Nan::Set(obj, Nan::New("extensions").ToLocalChecked(), Nan::New(std::string((char *)glGetString(GL_EXTENSIONS))).ToLocalChecked());
 
     // 2) texture size
-    GLint maxTextureSize;
-
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     Nan::Set(obj, Nan::New("maxTextureSize").ToLocalChecked(), Nan::New(maxTextureSize));
 
@@ -364,7 +371,7 @@ void AminoGfx::ready() {
             v8::Local<v8::Object> obj = handle();
             v8::Local<v8::Value> argv[] = { Nan::Null(), obj };
 
-            startCallback->Call(obj, 2, argv);
+            Nan::Call(*startCallback, obj, 2, argv);
         }
 
         //free callback
@@ -957,6 +964,7 @@ void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
 
     //rendering performance (FPS)
     if (MEASURE_FPS && lastFPS) {
+        //populate fps
         v8::Local<v8::Object> fpsObj = Nan::New<v8::Object>();
 
         Nan::Set(fpsObj, Nan::New("fps").ToLocalChecked(), Nan::New(lastFPS));
@@ -968,7 +976,6 @@ void AminoGfx::getStats(v8::Local<v8::Object> &obj) {
     }
 
     //renderer
-
     if (SHOW_RENDERER_ERRORS) {
         Nan::Set(obj, Nan::New("errors").ToLocalChecked(), Nan::New(rendererErrors));
     }
@@ -1018,6 +1025,8 @@ void AminoGfx::removeAnimation(AminoAnim *anim) {
         return;
     }
 
+    assert(anim);
+
     //remove
     int res = pthread_mutex_lock(&animLock);
 
@@ -1030,6 +1039,15 @@ void AminoGfx::removeAnimation(AminoAnim *anim) {
 
         //free instance
         anim->release();
+    } else {
+        //animation not found
+        if (DEBUG_RENDERER) {
+            printf("animation already stopped\n");
+        }
+    }
+
+    if (DEBUG_RENDERER) {
+        printf("animations: %i\n", (int)animations.size());
     }
 
     res = pthread_mutex_unlock(&animLock);

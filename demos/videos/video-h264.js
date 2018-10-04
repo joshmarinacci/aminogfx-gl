@@ -11,6 +11,6 @@ player.playVideo({
     //1920x1080, 25 fps
     src: path.join(__dirname, 'test.h264'),
     opts: 'amino_dump_format=1'
-}, (err, video) => {
+}, (_err, _video) => {
     //empty
 });

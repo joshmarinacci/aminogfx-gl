@@ -5,18 +5,18 @@ function lerp(a, b, t) {
 }
 
 process.on('message', function (m) {
-    var row = [];
+    const row = [];
 
-    for (var i = 0; i < m.iw; i++) {
-        var x0 = lerp(m.x0, m.x1, i / m.iw);
-        var y0 = m.y;
-        var x = 0.0;
-        var y = 0.0;
-        var iteration = 0;
-        var max_iteration = m.iter;
+    for (let i = 0; i < m.iw; i++) {
+        const x0 = lerp(m.x0, m.x1, i / m.iw);
+        const y0 = m.y;
+        let x = 0.0;
+        let y = 0.0;
+        let iteration = 0;
+        const max_iteration = m.iter;
 
         while (x * x + y * y < 2 * 2 && iteration < max_iteration) {
-            var xtemp = x * x - y * y + x0;
+            const xtemp = x * x - y * y + x0;
 
             y = 2 * x * y + y0;
             x = xtemp;
